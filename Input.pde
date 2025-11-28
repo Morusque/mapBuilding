@@ -7,6 +7,13 @@ boolean isInSitesPanel(int mx, int my) {
   return (my >= y0 && my <= y1);
 }
 
+boolean isInZonesPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_ZONES) return false;
+  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int y1 = y0 + ZONES_PANEL_HEIGHT;
+  return (my >= y0 && my <= y1);
+}
+
 boolean handleToolButtonClick(int mx, int my) {
   int barY = TOP_BAR_HEIGHT;
   int barH = TOOL_BAR_HEIGHT;
@@ -42,6 +49,8 @@ boolean handleToolButtonClick(int mx, int my) {
   return false;
 }
 
+// ----- Sites panel click -----
+
 boolean handleSitesPanelClick(int mx, int my) {
   if (!isInSitesPanel(mx, my)) return false;
 
@@ -51,9 +60,8 @@ boolean handleSitesPanelClick(int mx, int my) {
   int sliderW = 250;
   int sliderH = 16;
 
-  // Density slider bounds
+  // Density slider
   int densityY = panelY + 25;
-
   if (mx >= sliderX && mx <= sliderX + sliderW &&
       my >= densityY && my <= densityY + sliderH) {
     float t = (mx - sliderX) / (float)sliderW;
@@ -61,9 +69,8 @@ boolean handleSitesPanelClick(int mx, int my) {
     return true;
   }
 
-  // Fuzz slider bounds
+  // Fuzz slider
   int fuzzY = panelY + 25 + 22;
-
   if (mx >= sliderX && mx <= sliderX + sliderW &&
       my >= fuzzY && my <= fuzzY + sliderH) {
     float t = (mx - sliderX) / (float)sliderW;
@@ -71,7 +78,7 @@ boolean handleSitesPanelClick(int mx, int my) {
     return true;
   }
 
-  // Mode slider bounds
+  // Mode slider
   int modeSliderX = 10;
   int modeSliderY = panelY + 25 + 44;
   int modeSliderW = sliderW;
@@ -103,21 +110,45 @@ boolean handleSitesPanelClick(int mx, int my) {
   return false;
 }
 
-void handleSitesMousePressed(float wx, float wy) {
-  float maxDistWorld = 10.0f / viewport.zoom; // ~10 px tolerance
-  Site s = mapModel.findSiteNear(wx, wy, maxDistWorld);
+// ----- Zones panel click (biome selection) -----
 
-  if (s != null) {
-    mapModel.clearSiteSelection();
-    mapModel.selectSite(s);
-    draggingSite = s;
-    isDraggingSite = true;
-  } else {
-    Site ns = mapModel.addSite(wx, wy);
-    mapModel.clearSiteSelection();
-    mapModel.selectSite(ns);
-    draggingSite = ns;
-    isDraggingSite = true;
+boolean handleZonesPanelClick(int mx, int my) {
+  if (!isInZonesPanel(mx, my)) return false;
+  if (mapModel == null || mapModel.biomeTypes == null) return false;
+
+  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+
+  int n = mapModel.biomeTypes.size();
+  if (n == 0) return false;
+
+  int swatchW = 60;
+  int swatchH = 18;
+  int marginX = 10;
+  int gapX = 8;
+
+  int rowY = panelY + 28;
+
+  for (int i = 0; i < n; i++) {
+    int x = marginX + i * (swatchW + gapX);
+    int y = rowY;
+    int x2 = x + swatchW;
+    int y2 = y + swatchH;
+
+    if (mx >= x && mx <= x2 && my >= y && my <= y2) {
+      activeBiomeIndex = i;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// ---------- Painting helper ----------
+
+void paintBiomeAt(float wx, float wy) {
+  Cell c = mapModel.findCellContaining(wx, wy);
+  if (c != null) {
+    c.biomeId = activeBiomeIndex;
   }
 }
 
@@ -134,10 +165,17 @@ void mousePressed() {
     if (handleSitesPanelClick(mouseX, mouseY)) return;
   }
 
+  // Zones panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
+    if (handleZonesPanelClick(mouseX, mouseY)) return;
+  }
+
   // Ignore world interaction if inside any top UI area
   int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
   if (currentTool == Tool.EDIT_SITES) {
     uiBottom += SITES_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_ZONES) {
+    uiBottom += ZONES_PANEL_HEIGHT;
   }
   if (mouseY < uiBottom) return;
 
@@ -155,7 +193,27 @@ void mousePressed() {
 
     if (currentTool == Tool.EDIT_SITES) {
       handleSitesMousePressed(worldPos.x, worldPos.y);
+    } else if (currentTool == Tool.EDIT_ZONES) {
+      paintBiomeAt(worldPos.x, worldPos.y);
     }
+  }
+}
+
+void handleSitesMousePressed(float wx, float wy) {
+  float maxDistWorld = 10.0f / viewport.zoom; // ~10 px tolerance
+  Site s = mapModel.findSiteNear(wx, wy, maxDistWorld);
+
+  if (s != null) {
+    mapModel.clearSiteSelection();
+    mapModel.selectSite(s);
+    draggingSite = s;
+    isDraggingSite = true;
+  } else {
+    Site ns = mapModel.addSite(wx, wy);
+    mapModel.clearSiteSelection();
+    mapModel.selectSite(ns);
+    draggingSite = ns;
+    isDraggingSite = true;
   }
 }
 
@@ -212,12 +270,24 @@ void mouseDragged() {
     return;
   }
 
-  // Ignore world if dragging in UI
-  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  if (currentTool == Tool.EDIT_SITES) {
-    uiBottom += SITES_PANEL_HEIGHT;
+  // Zones: paint while dragging
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
+    int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + ZONES_PANEL_HEIGHT;
+    if (mouseY >= uiBottom) {
+      PVector w = viewport.screenToWorld(mouseX, mouseY);
+      paintBiomeAt(w.x, w.y);
+    }
+    return;
   }
-  if (mouseY < uiBottom) return;
+
+  // Ignore world if dragging in UI
+  int bottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  if (currentTool == Tool.EDIT_SITES) {
+    bottom += SITES_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_ZONES) {
+    bottom += ZONES_PANEL_HEIGHT;
+  }
+  if (mouseY < bottom) return;
 
   if (mouseButton == LEFT && currentTool == Tool.EDIT_SITES && isDraggingSite && draggingSite != null) {
     PVector worldPos = viewport.screenToWorld(mouseX, mouseY);

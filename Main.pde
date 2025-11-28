@@ -19,6 +19,7 @@ boolean isDraggingSite = false;
 final int TOP_BAR_HEIGHT = 30;
 final int TOOL_BAR_HEIGHT = 26;
 final int SITES_PANEL_HEIGHT = 140;  // sliders + generate
+final int ZONES_PANEL_HEIGHT = 80;   // biome palette
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -30,14 +31,26 @@ int placementModeIndex = 0; // 0 = GRID
 float siteDensity = 0.5;    // 0..1
 float siteFuzz = 0.0;       // 0..1
 
+// Zones (biomes) painting
+int activeBiomeIndex = 1;   // 0 = "None", 1..N = types
+
 void settings() {
   size(1200, 800, P2D);
 }
 
 void setup() {
-  surface.setTitle("Map Editor – Sites");
+  surface.setTitle("Map Editor – Sites + Zones");
   viewport = new Viewport();
   mapModel = new MapModel();
+  initBiomeTypes();
+}
+
+void initBiomeTypes() {
+  mapModel.biomeTypes.clear();
+  mapModel.biomeTypes.add(new ZoneType("None",  color(235)));
+  mapModel.biomeTypes.add(new ZoneType("Type 1", color(210, 230, 255)));
+  mapModel.biomeTypes.add(new ZoneType("Type 2", color(220, 255, 220)));
+  mapModel.biomeTypes.add(new ZoneType("Type 3", color(255, 240, 210)));
 }
 
 void draw() {
@@ -50,7 +63,7 @@ void draw() {
   mapModel.ensureVoronoiComputed();
   mapModel.drawCells(this);
 
-  // Only show sites in Sites or Paths modes (paths not implemented yet)
+  // Only show sites in Sites or Paths modes
   if (currentTool == Tool.EDIT_SITES || currentTool == Tool.EDIT_PATHS) {
     mapModel.drawSites(this);
   }
@@ -63,5 +76,7 @@ void draw() {
   drawToolButtons();
   if (currentTool == Tool.EDIT_SITES) {
     drawSitesPanel();
+  } else if (currentTool == Tool.EDIT_ZONES) {
+    drawZonesPanel();
   }
 }

@@ -8,10 +8,13 @@ class MapModel {
   ArrayList<Site> sites = new ArrayList<Site>();
   ArrayList<Cell> cells = new ArrayList<Cell>();
 
+  // Biomes / zone types
+  ArrayList<ZoneType> biomeTypes = new ArrayList<ZoneType>();
+
   boolean voronoiDirty = true;
 
   MapModel() {
-    // Nothing yet; world bounds are default 0..1
+    // biomeTypes will be filled from Main.initBiomeTypes()
   }
 
   // ---------- Drawing ----------
@@ -105,6 +108,8 @@ class MapModel {
     int n = sites.size();
     if (n == 0) return;
 
+    int defaultBiome = 0;
+
     // For each site, start with the world bounding box and clip by bisectors
     for (int i = 0; i < n; i++) {
       Site si = sites.get(i);
@@ -125,7 +130,7 @@ class MapModel {
       }
 
       if (poly.size() >= 3) {
-        cells.add(new Cell(i, poly));
+        cells.add(new Cell(i, poly, defaultBiome));
       }
     }
   }
@@ -179,6 +184,31 @@ class MapModel {
     return new PVector(x, y);
   }
 
+  // ---------- Zones / cells picking ----------
+
+  Cell findCellContaining(float wx, float wy) {
+    for (Cell c : cells) {
+      if (pointInPolygon(wx, wy, c.vertices)) return c;
+    }
+    return null;
+  }
+
+  boolean pointInPolygon(float x, float y, ArrayList<PVector> poly) {
+    if (poly == null || poly.size() < 3) return false;
+
+    boolean inside = false;
+    int n = poly.size();
+    for (int i = 0, j = n - 1; i < n; j = i++) {
+      PVector pi = poly.get(i);
+      PVector pj = poly.get(j);
+
+      boolean intersect = ((pi.y > y) != (pj.y > y)) &&
+                          (x < (pj.x - pi.x) * (y - pi.y) / (pj.y - pi.y + 1e-9f) + pi.x);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
   // ---------- Sites generation ----------
 
   void generateSites(PlacementMode mode, float density) {
@@ -210,7 +240,6 @@ class MapModel {
     float h = maxY - minY;
     float d = min(w, h);
 
-    // Max offset is fraction of world size; tweak if needed
     float maxOffset = fuzz * d / 10.0f;
 
     for (Site s : sites) {
@@ -354,5 +383,17 @@ class MapModel {
       PVector p = points.get(i);
       sites.add(new Site(p.x, p.y));
     }
+  }
+}
+
+// ---------- ZoneType ----------
+
+class ZoneType {
+  String name;
+  int col;
+
+  ZoneType(String name, int col) {
+    this.name = name;
+    this.col = col;
   }
 }

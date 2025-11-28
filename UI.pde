@@ -52,11 +52,12 @@ void drawToolButtons() {
   }
 }
 
+// ----- SITES PANEL -----
+
 void drawSitesPanel() {
   int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
   int panelH = SITES_PANEL_HEIGHT;
 
-  // Background
   noStroke();
   fill(245);
   rect(0, panelY, width, panelH);
@@ -69,7 +70,7 @@ void drawSitesPanel() {
   int sliderW = 250;
   int sliderH = 16;
 
-  // ----- Density slider (first line) -----
+  // Density slider
   int densityY = panelY + 25;
 
   stroke(160);
@@ -93,7 +94,7 @@ void drawSitesPanel() {
   text("Density: " + nf(siteDensity, 1, 2) + "  (~" + approxCount + " sites)",
        sliderX + sliderW + 10, densityY - 2);
 
-  // ----- Fuzz slider (second line) -----
+  // Fuzz slider
   int fuzzY = panelY + 25 + 22;
 
   stroke(160);
@@ -111,7 +112,7 @@ void drawSitesPanel() {
   text("Fuzz: " + nf(siteFuzz, 1, 2) + " (0 = none, 1 = strong jitter)",
        sliderX + sliderW + 10, fuzzY - 2);
 
-  // ----- Placement mode slider (third line) -----
+  // Placement mode slider
   int modeSliderX = 10;
   int modeSliderY = panelY + 25 + 44;
   int modeSliderW = sliderW;
@@ -148,7 +149,7 @@ void drawSitesPanel() {
   textAlign(LEFT, TOP);
   text("Placement: " + modeName, modeSliderX + modeSliderW + 10, modeSliderY - 2);
 
-  // ----- Generate button (fourth line) -----
+  // Generate button
   int genW = 100;
   int genH = 24;
   int genX = 10;
@@ -160,6 +161,53 @@ void drawSitesPanel() {
   fill(0);
   textAlign(CENTER, CENTER);
   text("Generate", genX + genW / 2, genY + genH / 2);
+}
+
+// ----- ZONES PANEL -----
+
+void drawZonesPanel() {
+  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int panelH = ZONES_PANEL_HEIGHT;
+
+  noStroke();
+  fill(245);
+  rect(0, panelY, width, panelH);
+
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Biomes (Zones)", 10, panelY + 5);
+
+  if (mapModel == null || mapModel.biomeTypes == null) return;
+  int n = mapModel.biomeTypes.size();
+  if (n == 0) return;
+
+  int swatchW = 60;
+  int swatchH = 18;
+  int marginX = 10;
+  int gapX = 8;
+
+  int rowY = panelY + 28;
+  int textY = rowY + swatchH + 2;
+
+  textAlign(CENTER, TOP);
+
+  for (int i = 0; i < n; i++) {
+    ZoneType zt = mapModel.biomeTypes.get(i);
+    int x = marginX + i * (swatchW + gapX);
+    int y = rowY;
+
+    stroke(120);
+    if (i == activeBiomeIndex) {
+      strokeWeight(2);
+    } else {
+      strokeWeight(1);
+    }
+    fill(zt.col);
+    rect(x, y, swatchW, swatchH, 4);
+
+    fill(0);
+    text(zt.name, x + swatchW * 0.5f, textY);
+  }
 }
 
 // ---------- UI helpers ----------
