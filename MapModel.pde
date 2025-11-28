@@ -1,3 +1,4 @@
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.ArrayDeque;
@@ -62,10 +63,10 @@ class MapModel {
     return new ArrayList<PVector>(snapNodes.values());
   }
 
-  ArrayList<PVector> findSnapPath(PVector from, PVector to) {
+  ArrayList<PVector> findSnapPath(PVector from, PVector to2) {
     ensureSnapGraph();
     String kFrom = keyFor(from.x, from.y);
-    String kTo = keyFor(to.x, to.y);
+    String kTo = keyFor(to2.x, to2.y);
     if (!snapNodes.containsKey(kFrom) || !snapNodes.containsKey(kTo)) return null;
     if (kFrom.equals(kTo)) {
       ArrayList<PVector> single = new ArrayList<PVector>();
