@@ -27,6 +27,7 @@ final int TOOL_BAR_HEIGHT = 26;
 final int SITES_PANEL_HEIGHT = 140;  // sliders + generate
 final int ZONES_PANEL_HEIGHT = 100;   // biome palette + paint/fill buttons
 final int PATH_PANEL_HEIGHT = 40;     // close/undo buttons
+final int ELEV_PANEL_HEIGHT = 120;
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -41,6 +42,11 @@ float siteFuzz = 0.0;       // 0..1
 // Zones (biomes) painting
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
 ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
+float seaLevel = 0.0f;
+float elevationBrushRadius = 0.08f;
+float elevationBrushStrength = 0.05f; // per stroke
+boolean elevationBrushRaise = true;
+float elevationNoiseScale = 4.0f;
 
 void settings() {
   size(1200, 800, P2D);
@@ -72,11 +78,15 @@ void draw() {
   viewport.applyTransform(this);
 
   mapModel.ensureVoronoiComputed();
-  boolean showBorders = !(currentTool == Tool.EDIT_PATHS);
+  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION);
   mapModel.drawCells(this, showBorders);
 
   // Paths are visible in all modes
-  mapModel.drawPaths(this);
+  if (currentTool == Tool.EDIT_ELEVATION) {
+    mapModel.drawPaths(this, color(120), 1.0f / viewport.zoom);
+  } else {
+    mapModel.drawPaths(this);
+  }
 
   // Sites only in Sites mode; paths use snapping dots instead
   if (currentTool == Tool.EDIT_SITES) {
@@ -92,7 +102,9 @@ void draw() {
     drawPathSnappingPoints();
   }
 
-  if (currentTool != Tool.EDIT_PATHS) {
+  if (currentTool == Tool.EDIT_ELEVATION) {
+    mapModel.drawElevationOverlay(this, seaLevel, true);
+  } else {
     mapModel.drawDebugWorldBounds(this);
   }
   popMatrix();
@@ -104,6 +116,8 @@ void draw() {
     drawSitesPanel();
   } else if (currentTool == Tool.EDIT_ZONES) {
     drawZonesPanel();
+  } else if (currentTool == Tool.EDIT_ELEVATION) {
+    drawElevationPanel();
   } else if (currentTool == Tool.EDIT_PATHS) {
     drawPathsPanel();
   }

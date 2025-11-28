@@ -2,6 +2,7 @@ class Cell {
   int siteIndex;
   ArrayList<PVector> vertices;
   int biomeId;  // index in mapModel.biomeTypes
+  float elevation = 0.0f;
 
   Cell(int siteIndex, ArrayList<PVector> vertices, int biomeId) {
     this.siteIndex = siteIndex;

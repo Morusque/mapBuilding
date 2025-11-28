@@ -368,6 +368,109 @@ void drawPathsPanel() {
   text("Undo (Del)",    btnX2 + btnW / 2, btnY + btnH / 2);
 }
 
+// ----- ELEVATION PANEL -----
+
+void drawElevationPanel() {
+  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int panelH = ELEV_PANEL_HEIGHT;
+
+  noStroke();
+  fill(232);
+  rect(0, panelY, width, panelH);
+
+  stroke(255);
+  line(0, panelY, width, panelY);
+  line(0, panelY, 0, panelY + panelH);
+  stroke(120);
+  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
+  line(width - 1, panelY, width - 1, panelY + panelH);
+
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Elevation", 10, panelY + 6);
+
+  int sliderX = 10;
+  int sliderW = 220;
+  int sliderH = 14;
+  int rowY = panelY + 24;
+
+  // Sea level slider (-0.5 .. 0.5)
+  stroke(160);
+  fill(230);
+  rect(sliderX, rowY, sliderW, sliderH, 4);
+  float seaNorm = constrain((seaLevel + 0.5f) / 1.0f, 0, 1);
+  float sx = sliderX + seaNorm * sliderW;
+  fill(40);
+  noStroke();
+  ellipse(sx, rowY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Water level: " + nf(seaLevel, 1, 2), sliderX + sliderW + 10, rowY - 2);
+
+  // Brush radius slider (0.01..0.2)
+  rowY += 22;
+  stroke(160);
+  fill(230);
+  rect(sliderX, rowY, sliderW, sliderH, 4);
+  float rNorm = constrain(map(elevationBrushRadius, 0.01f, 0.2f, 0, 1), 0, 1);
+  float rx = sliderX + rNorm * sliderW;
+  fill(40);
+  noStroke();
+  ellipse(rx, rowY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
+  fill(0);
+  text("Brush radius", sliderX + sliderW + 10, rowY - 2);
+
+  // Brush strength slider (0.005..0.2)
+  rowY += 22;
+  stroke(160);
+  fill(230);
+  rect(sliderX, rowY, sliderW, sliderH, 4);
+  float sNorm = constrain(map(elevationBrushStrength, 0.005f, 0.2f, 0, 1), 0, 1);
+  float stx = sliderX + sNorm * sliderW;
+  fill(40);
+  noStroke();
+  ellipse(stx, rowY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
+  fill(0);
+  text("Brush strength", sliderX + sliderW + 10, rowY - 2);
+
+  // Raise / Lower buttons
+  int btnW = 70;
+  int btnH = 22;
+  int btnY = rowY + 22;
+  int btnX1 = 10;
+  int btnX2 = btnX1 + btnW + 8;
+
+  drawBevelButton(btnX1, btnY, btnW, btnH, elevationBrushRaise);
+  drawBevelButton(btnX2, btnY, btnW, btnH, !elevationBrushRaise);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Raise", btnX1 + btnW / 2, btnY + btnH / 2);
+  text("Lower", btnX2 + btnW / 2, btnY + btnH / 2);
+
+  // Noise scale slider
+  int noiseY = btnY + btnH + 10;
+  stroke(160);
+  fill(230);
+  rect(sliderX, noiseY, sliderW, sliderH, 4);
+  float nNorm = constrain(map(elevationNoiseScale, 1.0f, 12.0f, 0, 1), 0, 1);
+  float nx = sliderX + nNorm * sliderW;
+  fill(40);
+  noStroke();
+  ellipse(nx, noiseY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
+  fill(0);
+  text("Noise scale", sliderX + sliderW + 10, noiseY - 2);
+
+  // Generate button
+  int genW = 120;
+  int genH = 22;
+  int genX = sliderX + sliderW + 90;
+  int genY = noiseY - 4;
+  drawBevelButton(genX, genY, genW, genH, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Perlin Generate", genX + genW / 2, genY + genH / 2);
+}
+
 // ---------- UI helpers ----------
 
 String placementModeLabel(PlacementMode m) {

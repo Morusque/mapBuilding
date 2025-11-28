@@ -56,6 +56,47 @@ class MapModel {
     }
   }
 
+  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours) {
+    if (cells == null) return;
+    app.pushStyle();
+    for (Cell c : cells) {
+      if (c.vertices == null || c.vertices.size() < 3) continue;
+      float h = c.elevation;
+      float shade = constrain((h + 0.5f), 0, 1); // center on 0
+      int col = app.color(shade * 255);
+      app.noStroke();
+      app.fill(col, 140);
+      app.beginShape();
+      for (PVector v : c.vertices) app.vertex(v.x, v.y);
+      app.endShape(CLOSE);
+
+      if (h < seaLevel) {
+        int water = app.color(80, 140, 255, 110);
+        app.fill(water);
+        app.beginShape();
+        for (PVector v : c.vertices) app.vertex(v.x, v.y);
+        app.endShape(CLOSE);
+      }
+    }
+
+    if (showContours) {
+      float step = 0.1f;
+      app.stroke(60, 60, 60, 140);
+      app.strokeWeight(1.0f / viewport.zoom);
+      app.noFill();
+      for (Cell c : cells) {
+        if (c.vertices == null || c.vertices.size() < 3) continue;
+        float band = round(c.elevation / step) * step;
+        if (abs(c.elevation - band) < step * 0.35f) {
+          app.beginShape();
+          for (PVector v : c.vertices) app.vertex(v.x, v.y);
+          app.endShape(CLOSE);
+        }
+      }
+    }
+    app.popStyle();
+  }
+
   // ---------- Snapping graph ----------
 
   ArrayList<PVector> getSnapPoints() {
@@ -191,12 +232,16 @@ class MapModel {
   }
 
   void drawPaths(PApplet app) {
+    drawPaths(app, app.color(60, 60, 200), 2.0f / viewport.zoom);
+  }
+
+  void drawPaths(PApplet app, int strokeCol, float strokeW) {
     if (paths.isEmpty()) return;
 
     app.pushStyle();
     app.noFill();
-    app.stroke(60, 60, 200);
-    app.strokeWeight(2.0f / viewport.zoom);
+    app.stroke(strokeCol);
+    app.strokeWeight(strokeW);
 
     for (Path p : paths) {
       p.draw(app);
@@ -514,6 +559,44 @@ class MapModel {
 
     markVoronoiDirty();
     snapDirty = true;
+  }
+
+  void applyElevationBrush(float cx, float cy, float radius, float delta) {
+    if (cells == null || cells.isEmpty()) return;
+    float r2 = radius * radius;
+    for (Cell c : cells) {
+      PVector cen = cellCentroid(c);
+      float dx = cen.x - cx;
+      float dy = cen.y - cy;
+      float d2 = dx * dx + dy * dy;
+      if (d2 > r2) continue;
+      float t = 1.0f - sqrt(d2 / r2);
+      c.elevation = constrain(c.elevation + delta * t, -1.0f, 1.0f);
+    }
+  }
+
+  void generateElevationNoise(float scale, float amplitude) {
+    if (cells == null) return;
+    for (Cell c : cells) {
+      PVector cen = cellCentroid(c);
+      float n = noise(cen.x * scale, cen.y * scale);
+      c.elevation = (n - 0.5f) * 2.0f * amplitude;
+    }
+  }
+
+  PVector cellCentroid(Cell c) {
+    if (c.vertices == null || c.vertices.isEmpty()) {
+      return new PVector(0, 0);
+    }
+    float cx = 0;
+    float cy = 0;
+    for (PVector v : c.vertices) {
+      cx += v.x;
+      cy += v.y;
+    }
+    cx /= c.vertices.size();
+    cy /= c.vertices.size();
+    return new PVector(cx, cy);
   }
 
   void applyFuzz(float fuzz) {

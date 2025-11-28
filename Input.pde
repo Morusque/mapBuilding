@@ -14,6 +14,13 @@ boolean isInZonesPanel(int mx, int my) {
   return (my >= y0 && my <= y1);
 }
 
+boolean isInElevationPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_ELEVATION) return false;
+  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int y1 = y0 + ELEV_PANEL_HEIGHT;
+  return (my >= y0 && my <= y1);
+}
+
 boolean isInPathsPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_PATHS) return false;
   int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
@@ -268,6 +275,11 @@ void mousePressed() {
     if (handleZonesPanelClick(mouseX, mouseY)) return;
   }
 
+  // Elevation panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ELEVATION) {
+    if (handleElevationPanelClick(mouseX, mouseY)) return;
+  }
+
   // Paths panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_PATHS) {
     if (handlePathsPanelClick(mouseX, mouseY)) return;
@@ -279,6 +291,8 @@ void mousePressed() {
     uiBottom += SITES_PANEL_HEIGHT;
   } else if (currentTool == Tool.EDIT_ZONES) {
     uiBottom += ZONES_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_ELEVATION) {
+    uiBottom += ELEV_PANEL_HEIGHT;
   } else if (currentTool == Tool.EDIT_PATHS) {
     uiBottom += PATH_PANEL_HEIGHT;
   }
@@ -304,6 +318,9 @@ void mousePressed() {
       } else {
         fillBiomeAt(worldPos.x, worldPos.y);
       }
+    } else if (currentTool == Tool.EDIT_ELEVATION) {
+      float dir = elevationBrushRaise ? 1 : -1;
+      mapModel.applyElevationBrush(worldPos.x, worldPos.y, elevationBrushRadius, elevationBrushStrength * dir);
     } else if (currentTool == Tool.EDIT_PATHS) {
       handlePathsMousePressed(worldPos.x, worldPos.y);
     }
@@ -361,6 +378,84 @@ boolean handlePathsPanelClick(int mx, int my) {
         currentPath = null;
       }
     }
+    return true;
+  }
+
+  return false;
+}
+
+// ----- Elevation panel click -----
+
+boolean handleElevationPanelClick(int mx, int my) {
+  if (!isInElevationPanel(mx, my)) return false;
+
+  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int sliderX = 10;
+  int sliderW = 220;
+  int sliderH = 14;
+  int rowY = panelY + 24;
+
+  // Sea level
+  if (mx >= sliderX && mx <= sliderX + sliderW &&
+      my >= rowY && my <= rowY + sliderH) {
+    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+    seaLevel = t * 1.0f - 0.5f;
+    return true;
+  }
+
+  // Brush radius
+  rowY += 22;
+  if (mx >= sliderX && mx <= sliderX + sliderW &&
+      my >= rowY && my <= rowY + sliderH) {
+    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+    elevationBrushRadius = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+    return true;
+  }
+
+  // Brush strength
+  rowY += 22;
+  if (mx >= sliderX && mx <= sliderX + sliderW &&
+      my >= rowY && my <= rowY + sliderH) {
+    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+    elevationBrushStrength = constrain(0.005f + t * (0.2f - 0.005f), 0.005f, 0.2f);
+    return true;
+  }
+
+  // Raise / Lower buttons
+  int btnW = 70;
+  int btnH = 22;
+  int btnY = rowY + 22;
+  int btnX1 = 10;
+  int btnX2 = btnX1 + btnW + 8;
+
+  if (mx >= btnX1 && mx <= btnX1 + btnW &&
+      my >= btnY && my <= btnY + btnH) {
+    elevationBrushRaise = true;
+    return true;
+  }
+  if (mx >= btnX2 && mx <= btnX2 + btnW &&
+      my >= btnY && my <= btnY + btnH) {
+    elevationBrushRaise = false;
+    return true;
+  }
+
+  // Noise scale slider
+  int noiseY = btnY + btnH + 10;
+  if (mx >= sliderX && mx <= sliderX + sliderW &&
+      my >= noiseY && my <= noiseY + sliderH) {
+    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+    elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
+    return true;
+  }
+
+  // Generate button
+  int genW = 120;
+  int genH = 22;
+  int genX = sliderX + sliderW + 90;
+  int genY = noiseY - 4;
+  if (mx >= genX && mx <= genX + genW &&
+      my >= genY && my <= genY + genH) {
+    mapModel.generateElevationNoise(elevationNoiseScale, 1.0f);
     return true;
   }
 
@@ -449,6 +544,41 @@ void mouseDragged() {
     return;
   }
 
+  // Elevation: sliders dragging
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ELEVATION && isInElevationPanel(mouseX, mouseY)) {
+    int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+    int sliderX = 10;
+    int sliderW = 220;
+    int sliderH = 14;
+    int rowY = panelY + 24;
+
+    if (mouseY >= rowY && mouseY <= rowY + sliderH) {
+      float t = constrain((mouseX - sliderX) / (float)sliderW, 0, 1);
+      seaLevel = t * 1.0f - 0.5f;
+      return;
+    }
+    rowY += 22;
+    if (mouseY >= rowY && mouseY <= rowY + sliderH) {
+      float t = constrain((mouseX - sliderX) / (float)sliderW, 0, 1);
+      elevationBrushRadius = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+      return;
+    }
+    rowY += 22;
+    if (mouseY >= rowY && mouseY <= rowY + sliderH) {
+      float t = constrain((mouseX - sliderX) / (float)sliderW, 0, 1);
+      elevationBrushStrength = constrain(0.005f + t * (0.2f - 0.005f), 0.005f, 0.2f);
+      return;
+    }
+    int btnH = 22;
+    int btnY = rowY + 22;
+    int noiseY = btnY + btnH + 10;
+    if (mouseY >= noiseY && mouseY <= noiseY + sliderH) {
+      float t = constrain((mouseX - sliderX) / (float)sliderW, 0, 1);
+      elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
+      return;
+    }
+  }
+
   // Zones: slider dragging (only for hue + paint while dragging)
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES && isInZonesPanel(mouseX, mouseY)) {
     int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
@@ -497,6 +627,8 @@ void mouseDragged() {
     bottom += SITES_PANEL_HEIGHT;
   } else if (currentTool == Tool.EDIT_ZONES) {
     bottom += ZONES_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_ELEVATION) {
+    bottom += ELEV_PANEL_HEIGHT;
   } else if (currentTool == Tool.EDIT_PATHS) {
     bottom += PATH_PANEL_HEIGHT;
   }
@@ -507,6 +639,10 @@ void mouseDragged() {
     draggingSite.x = worldPos.x;
     draggingSite.y = worldPos.y;
     mapModel.markVoronoiDirty();
+  } else if (mouseButton == LEFT && currentTool == Tool.EDIT_ELEVATION) {
+    PVector w = viewport.screenToWorld(mouseX, mouseY);
+    float dir = elevationBrushRaise ? 1 : -1;
+    mapModel.applyElevationBrush(w.x, w.y, elevationBrushRadius, elevationBrushStrength * dir);
   }
 }
 
