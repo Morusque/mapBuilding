@@ -111,7 +111,7 @@ boolean handleSitesPanelClick(int mx, int my) {
   return false;
 }
 
-// ----- Zones panel click (tool + biome selection) -----
+// ----- Zones panel click (tool + biome selection + add/remove + hue) -----
 
 boolean handleZonesPanelClick(int mx, int my) {
   if (!isInZonesPanel(mx, my)) return false;
@@ -140,6 +140,45 @@ boolean handleZonesPanelClick(int mx, int my) {
     return true;
   }
 
+  // Add / Remove biome type buttons
+  int addBtnW = 24;
+  int addBtnH = 20;
+  int addX = toolX2 + toolBtnW + 20;
+  int addY = toolY;
+
+  int remX = addX + addBtnW + 6;
+  int remY = toolY;
+
+  int nTypes = mapModel.biomeTypes.size();
+
+  // "+" button
+  if (mx >= addX && mx <= addX + addBtnW &&
+      my >= addY && my <= addY + addBtnH) {
+    mapModel.addBiomeType();
+    activeBiomeIndex = mapModel.biomeTypes.size() - 1;
+    return true;
+  }
+
+  // "-" button
+  boolean canRemove = (nTypes > 1 && activeBiomeIndex > 0);
+  if (canRemove &&
+      mx >= remX && mx <= remX + addBtnW &&
+      my >= remY && my <= remY + addBtnH) {
+
+    int removeIndex = activeBiomeIndex;
+    mapModel.removeBiomeType(removeIndex);
+
+    // Fix activeBiomeIndex after removal
+    int newCount = mapModel.biomeTypes.size();
+    if (newCount == 0) {
+      activeBiomeIndex = 0;
+    } else {
+      activeBiomeIndex = min(removeIndex - 1, newCount - 1);
+      if (activeBiomeIndex < 0) activeBiomeIndex = 0;
+    }
+    return true;
+  }
+
   // Palette swatches
   int n = mapModel.biomeTypes.size();
   if (n == 0) return false;
@@ -159,6 +198,27 @@ boolean handleZonesPanelClick(int mx, int my) {
 
     if (mx >= x && mx <= x2 && my >= y && my <= y2) {
       activeBiomeIndex = i;
+      return true;
+    }
+  }
+
+  // Hue slider
+  if (activeBiomeIndex >= 0 && activeBiomeIndex < n) {
+    int hueSliderX = 10;
+    int hueSliderW = 250;
+    int hueSliderH = 14;
+    int hueSliderY = rowY + swatchH + 20;
+
+    if (mx >= hueSliderX && mx <= hueSliderX + hueSliderW &&
+        my >= hueSliderY && my <= hueSliderY + hueSliderH) {
+
+      float t = (mx - hueSliderX) / (float)hueSliderW;
+      t = constrain(t, 0, 1);
+
+      ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+      active.hue01 = t;
+      active.updateColorFromHSB();
+
       return true;
     }
   }
@@ -288,7 +348,7 @@ void mouseDragged() {
       return;
     }
 
-    // Fuzz slider (0..1 mapped to 0..0.3)
+    // Fuzz slider (0..0.3)
     int fuzzY = panelY + 25 + 22;
     if (mouseY >= fuzzY && mouseY <= fuzzY + sliderH) {
       float t = (mouseX - sliderX) / (float)sliderW;
@@ -316,7 +376,37 @@ void mouseDragged() {
     return;
   }
 
-  // Zones: paint while dragging (only for Paint mode)
+  // Zones: slider dragging (only for hue + paint while dragging)
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES && isInZonesPanel(mouseX, mouseY)) {
+    int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+
+    int toolBtnW = 60;
+    int toolBtnH = 20;
+    int toolY  = panelY + 24;
+
+    int swatchH = 18;
+    int rowY = toolY + toolBtnH + 10;
+
+    int n = (mapModel.biomeTypes == null) ? 0 : mapModel.biomeTypes.size();
+
+    if (n > 0 && activeBiomeIndex >= 0 && activeBiomeIndex < n) {
+      int hueSliderX = 10;
+      int hueSliderW = 250;
+      int hueSliderH = 14;
+      int hueSliderY = rowY + swatchH + 20;
+
+      if (mouseY >= hueSliderY && mouseY <= hueSliderY + hueSliderH) {
+        float t = (mouseX - hueSliderX) / (float)hueSliderW;
+        t = constrain(t, 0, 1);
+        ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+        active.hue01 = t;
+        active.updateColorFromHSB();
+        return;
+      }
+    }
+  }
+
+  // Zones: paint while dragging (only for Paint mode, outside UI)
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
     int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + ZONES_PANEL_HEIGHT;
     if (mouseY >= uiBottom) {
@@ -360,14 +450,13 @@ void mouseWheel(MouseEvent event) {
 }
 
 void keyPressed() {
-  // Delete selected sites (any mode, but only affects Sites)
+  // Delete selected sites or last path point
   if (key == DELETE || key == BACKSPACE) {
     if (currentTool == Tool.EDIT_SITES) {
       mapModel.deleteSelectedSites();
       return;
     }
     if (currentTool == Tool.EDIT_PATHS && isDrawingPath && currentPath != null) {
-      // In Paths mode, BACKSPACE while drawing removes last point
       if (!currentPath.points.isEmpty()) {
         currentPath.points.remove(currentPath.points.size() - 1);
         if (currentPath.points.isEmpty()) {

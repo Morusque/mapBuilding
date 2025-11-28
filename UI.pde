@@ -74,7 +74,7 @@ void drawSitesPanel() {
   fill(235);
   rect(0, panelY, width, panelH);
 
-  // Panel bottom border to mark where the world starts
+  // Panel bottom border
   stroke(200);
   line(0, panelY + panelH - 0.5f, width, panelY + panelH - 0.5f);
 
@@ -86,7 +86,7 @@ void drawSitesPanel() {
   int sliderW = 250;
   int sliderH = 16;
 
-  // ---------- Density slider (continuous) ----------
+  // ---------- Density slider ----------
   int densityY = panelY + 25;
 
   stroke(160);
@@ -101,7 +101,7 @@ void drawSitesPanel() {
   rect(densityHandleX - handleW / 2, densityY - 2, handleW, sliderH + 4, 4);
 
   int minRes = 2;
-  int maxRes = 100; // matches MapModel.generateGridSites
+  int maxRes = 100;
   int res = max(2, (int)map(siteDensity, 0, 1, minRes, maxRes));
   int approxCount = res * res;
 
@@ -110,14 +110,13 @@ void drawSitesPanel() {
   text("Density: " + nf(siteDensity, 1, 2) + "  (~" + approxCount + " sites)",
        sliderX + sliderW + 10, densityY - 2);
 
-  // ---------- Fuzz slider (continuous, but mapped 0..1 -> 0..0.3) ----------
+  // ---------- Fuzz slider (0..0.3) ----------
   int fuzzY = panelY + 25 + 22;
 
   stroke(160);
   fill(230);
   rect(sliderX, fuzzY, sliderW, sliderH, 4);
 
-  // siteFuzz is in [0, 0.3], map back to [0, 1] for handle
   float fuzzNorm = (siteFuzz <= 0) ? 0 : constrain(siteFuzz / 0.3f, 0, 1);
   float fuzzHandleX = sliderX + fuzzNorm * sliderW;
 
@@ -148,7 +147,7 @@ void drawSitesPanel() {
     (modeSliderW / (float)(modeCount - 1)) :
     0;
 
-  // Draw tick marks for each discrete mode
+  // Tick marks
   stroke(120);
   for (int i = 0; i < modeCount; i++) {
     float tx = modeSliderX + i * stepW;
@@ -157,7 +156,7 @@ void drawSitesPanel() {
     line(tx, ty0, tx, ty1);
   }
 
-  // Handle at discrete position (circle)
+  // Handle (circle)
   float modeHandleX;
   if (placementModeIndex <= 0) {
     modeHandleX = modeSliderX;
@@ -244,6 +243,39 @@ void drawZonesPanel() {
   textAlign(CENTER, CENTER);
   text("Fill", toolX2 + toolBtnW * 0.5f, toolY + toolBtnH * 0.5f);
 
+  // Add / Remove biome type buttons
+  int addBtnW = 24;
+  int addBtnH = 20;
+  int addX = toolX2 + toolBtnW + 20;
+  int addY = toolY;
+
+  int remX = addX + addBtnW + 6;
+  int remY = toolY;
+
+  // "+" button
+  stroke(150);
+  fill(220);
+  rect(addX, addY, addBtnW, addBtnH, 4);
+  fill(0);
+  textAlign(CENTER, CENTER);
+  text("+", addX + addBtnW * 0.5f, addY + addBtnH * 0.5f);
+
+  // "-" button (disabled if index 0 or only one type)
+  boolean canRemove = (mapModel.biomeTypes != null &&
+                       mapModel.biomeTypes.size() > 1 &&
+                       activeBiomeIndex > 0);
+
+  stroke(150);
+  if (canRemove) {
+    fill(220);
+  } else {
+    fill(210);
+  }
+  rect(remX, remY, addBtnW, addBtnH, 4);
+  fill(0);
+  textAlign(CENTER, CENTER);
+  text("-", remX + addBtnW * 0.5f, remY + addBtnH * 0.5f);
+
   // Palette
   if (mapModel == null || mapModel.biomeTypes == null) return;
   int n = mapModel.biomeTypes.size();
@@ -275,6 +307,37 @@ void drawZonesPanel() {
 
     fill(0);
     text(zt.name, x + swatchW * 0.5f, textY);
+  }
+
+  // Hue slider for currently selected biome
+  if (activeBiomeIndex >= 0 && activeBiomeIndex < n) {
+    ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+
+    int hueSliderX = 10;
+    int hueSliderW = 250;
+    int hueSliderH = 14;
+    int hueSliderY = rowY + swatchH + 20;
+
+    // Track
+    stroke(160);
+    fill(230);
+    rect(hueSliderX, hueSliderY, hueSliderW, hueSliderH, 4);
+
+    // Handle position from active.hue01
+    float hNorm = constrain(active.hue01, 0, 1);
+    float handleX = hueSliderX + hNorm * hueSliderW;
+    float handleR = hueSliderH * 0.9f;
+    float handleY = hueSliderY + hueSliderH / 2.0f;
+
+    fill(40);
+    noStroke();
+    ellipse(handleX, handleY, handleR, handleR);
+
+    // Label
+    fill(0);
+    textAlign(LEFT, TOP);
+    text("Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2),
+         hueSliderX + hueSliderW + 10, hueSliderY - 2);
   }
 }
 

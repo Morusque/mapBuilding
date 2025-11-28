@@ -386,7 +386,7 @@ class MapModel {
 
   void generateGridSites(float density) {
     int minRes = 2;
-    int maxRes = 100; // denser than before
+    int maxRes = 100; // denser
 
     int res = (int)map(density, 0, 1, minRes, maxRes);
     res = max(2, res);
@@ -411,7 +411,7 @@ class MapModel {
 
   void generateHexSites(float density) {
     int minRes = 2;
-    int maxRes = 80; // denser than before
+    int maxRes = 80; // denser
 
     int res = (int)map(density, 0, 1, minRes, maxRes);
     res = max(2, res);
@@ -520,6 +520,47 @@ class MapModel {
       sites.add(new Site(p.x, p.y));
     }
   }
+
+  // ---------- Biome type management ----------
+
+  void addBiomeType() {
+    int n = biomeTypes.size();
+
+    // Base params if nothing to copy from
+    float baseHue = 0.33f;   // green-ish
+    float baseSat = 0.4f;
+    float baseBri = 1.0f;
+
+    if (n > 1) {
+      // Take previous type and rotate hue
+      ZoneType last = biomeTypes.get(n - 1);
+      baseHue = (last.hue01 + 0.15f) % 1.0f;
+      baseSat = last.sat01;
+      baseBri = last.bri01;
+    }
+
+    int newIndex = n; // will become "Type newIndex"
+    String name = "Type " + newIndex;
+    int col = hsb01ToRGB(baseHue, baseSat, baseBri);
+
+    biomeTypes.add(new ZoneType(name, col));
+  }
+
+  void removeBiomeType(int index) {
+    if (index <= 0) return; // don't remove "None"
+    if (index >= biomeTypes.size()) return;
+
+    biomeTypes.remove(index);
+
+    // Fix biome indices in cells: shift down
+    for (Cell c : cells) {
+      if (c.biomeId == index) {
+        c.biomeId = 0; // reset to None
+      } else if (c.biomeId > index) {
+        c.biomeId -= 1;
+      }
+    }
+  }
 }
 
 // ---------- ZoneType ----------
@@ -527,9 +568,54 @@ class MapModel {
 class ZoneType {
   String name;
   int col;
+  float hue01;
+  float sat01;
+  float bri01;
 
   ZoneType(String name, int col) {
     this.name = name;
-    this.col = col;
+    setFromColor(col);
   }
+
+  void setFromColor(int c) {
+    col = c;
+    float[] hsb = new float[3];
+    rgbToHSB01(c, hsb);
+    hue01 = hsb[0];
+    sat01 = hsb[1];
+    bri01 = hsb[2];
+  }
+
+  void updateColorFromHSB() {
+    col = hsb01ToRGB(hue01, sat01, bri01);
+  }
+}
+
+// ---------- Color helpers for HSB<->RGB in [0..1] ----------
+
+void rgbToHSB01(int c, float[] outHSB) {
+  // Use Processing's HSB colorMode temporarily
+  pushStyle();
+  colorMode(HSB, 1, 1, 1);
+  float h = hue(c);
+  float s = saturation(c);
+  float b = brightness(c);
+  popStyle();
+
+  outHSB[0] = h;
+  outHSB[1] = s;
+  outHSB[2] = b;
+}
+
+int hsb01ToRGB(float h, float s, float b) {
+  h = constrain(h, 0, 1);
+  s = constrain(s, 0, 1);
+  b = constrain(b, 0, 1);
+
+  pushStyle();
+  colorMode(HSB, 1, 1, 1);
+  int c = color(h, s, b);
+  popStyle();
+
+  return c;
 }

@@ -1,3 +1,4 @@
+
 import processing.event.MouseEvent;
 
 Viewport viewport;
@@ -23,7 +24,7 @@ Path currentPath = null;
 final int TOP_BAR_HEIGHT = 30;
 final int TOOL_BAR_HEIGHT = 26;
 final int SITES_PANEL_HEIGHT = 140;  // sliders + generate
-final int ZONES_PANEL_HEIGHT = 80;   // biome palette + paint/fill buttons
+final int ZONES_PANEL_HEIGHT = 100;   // biome palette + paint/fill buttons
 
 // Sites generation config
 PlacementMode[] placementModes = {
