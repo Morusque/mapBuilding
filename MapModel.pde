@@ -318,7 +318,8 @@ class MapModel {
 
   void generateGridSites(float density) {
     int minRes = 2;
-    int maxRes = 40;
+    int maxRes = 100; // was 40, now denser
+
     int res = (int)map(density, 0, 1, minRes, maxRes);
     res = max(2, res);
 
@@ -342,7 +343,8 @@ class MapModel {
 
   void generateHexSites(float density) {
     int minRes = 2;
-    int maxRes = 30;
+    int maxRes = 80; // was 30, now denser
+
     int res = (int)map(density, 0, 1, minRes, maxRes);
     res = max(2, res);
 
@@ -372,9 +374,9 @@ class MapModel {
     float h = maxY - minY;
 
     float maxR = 0.20f * min(w, h);
-    float minR = 0.01f * min(w, h);
+    float minR = 0.005f * min(w, h); // was 0.01, allows more points
     float r = lerp(maxR, minR, density);
-    if (r <= 0) r = 0.01f;
+    if (r <= 0) r = 0.005f * min(w, h);
 
     float cellSize = r / sqrt(2);
     int gridW = (int)ceil(w / cellSize);
@@ -397,7 +399,7 @@ class MapModel {
     }
 
     int k = 30;
-    int maxPoints = 3000;
+    int maxPoints = 4000; // was 3000, slightly higher
 
     while (!active.isEmpty() && points.size() < maxPoints) {
       int idx = active.get((int)random(active.size()));

@@ -85,7 +85,7 @@ void drawSitesPanel() {
   rect(densityHandleX - handleW / 2, densityY - 2, handleW, sliderH + 4, 4);
 
   int minRes = 2;
-  int maxRes = 40;
+  int maxRes = 100; // was 40, now matches MapModel.generateGridSites
   int res = max(2, (int)map(siteDensity, 0, 1, minRes, maxRes));
   int approxCount = res * res;
 
