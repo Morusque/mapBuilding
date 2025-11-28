@@ -69,12 +69,13 @@ boolean handleSitesPanelClick(int mx, int my) {
     return true;
   }
 
-  // Fuzz slider
+  // Fuzz slider (0..1 mapped to 0..0.3)
   int fuzzY = panelY + 25 + 22;
   if (mx >= sliderX && mx <= sliderX + sliderW &&
       my >= fuzzY && my <= fuzzY + sliderH) {
     float t = (mx - sliderX) / (float)sliderW;
-    siteFuzz = constrain(t, 0, 1);
+    t = constrain(t, 0, 1);
+    siteFuzz = t * 0.3f;
     return true;
   }
 
@@ -287,11 +288,12 @@ void mouseDragged() {
       return;
     }
 
-    // Fuzz slider
+    // Fuzz slider (0..1 mapped to 0..0.3)
     int fuzzY = panelY + 25 + 22;
     if (mouseY >= fuzzY && mouseY <= fuzzY + sliderH) {
       float t = (mouseX - sliderX) / (float)sliderW;
-      siteFuzz = constrain(t, 0, 1);
+      t = constrain(t, 0, 1);
+      siteFuzz = t * 0.3f;
       return;
     }
 

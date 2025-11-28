@@ -1,10 +1,16 @@
 // ---------- UI DRAWING ----------
 
 void drawTopBar() {
+  // Background
   noStroke();
-  fill(230);
+  fill(215); // darker than map background
   rect(0, 0, width, TOP_BAR_HEIGHT);
 
+  // Bottom border
+  stroke(180);
+  line(0, TOP_BAR_HEIGHT - 0.5f, width, TOP_BAR_HEIGHT - 0.5f);
+
+  // Text
   fill(0);
   textAlign(LEFT, CENTER);
   String info = "Tool: " + currentTool +
@@ -20,6 +26,15 @@ void drawToolButtons() {
   int margin = 10;
   int buttonW = 90;
 
+  // Background for tool bar
+  noStroke();
+  fill(225);
+  rect(0, barY, width, barH);
+
+  // Bottom border of tool bar
+  stroke(180);
+  line(0, barY + barH - 0.5f, width, barY + barH - 0.5f);
+
   String[] labels = { "Sites", "Zones", "Paths", "Struct", "Labels" };
   Tool[] tools = {
     Tool.EDIT_SITES,
@@ -28,10 +43,6 @@ void drawToolButtons() {
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS
   };
-
-  noStroke();
-  fill(240);
-  rect(0, barY, width, barH);
 
   for (int i = 0; i < labels.length; i++) {
     int x = margin + i * (buttonW + 5);
@@ -58,9 +69,14 @@ void drawSitesPanel() {
   int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
   int panelH = SITES_PANEL_HEIGHT;
 
+  // Panel background clearly distinct from map
   noStroke();
-  fill(245);
+  fill(235);
   rect(0, panelY, width, panelH);
+
+  // Panel bottom border to mark where the world starts
+  stroke(200);
+  line(0, panelY + panelH - 0.5f, width, panelY + panelH - 0.5f);
 
   fill(0);
   textAlign(LEFT, TOP);
@@ -70,7 +86,7 @@ void drawSitesPanel() {
   int sliderW = 250;
   int sliderH = 16;
 
-  // Density slider
+  // ---------- Density slider (continuous) ----------
   int densityY = panelY + 25;
 
   stroke(160);
@@ -85,7 +101,7 @@ void drawSitesPanel() {
   rect(densityHandleX - handleW / 2, densityY - 2, handleW, sliderH + 4, 4);
 
   int minRes = 2;
-  int maxRes = 100; // was 40, now matches MapModel.generateGridSites
+  int maxRes = 100; // matches MapModel.generateGridSites
   int res = max(2, (int)map(siteDensity, 0, 1, minRes, maxRes));
   int approxCount = res * res;
 
@@ -94,14 +110,16 @@ void drawSitesPanel() {
   text("Density: " + nf(siteDensity, 1, 2) + "  (~" + approxCount + " sites)",
        sliderX + sliderW + 10, densityY - 2);
 
-  // Fuzz slider
+  // ---------- Fuzz slider (continuous, but mapped 0..1 -> 0..0.3) ----------
   int fuzzY = panelY + 25 + 22;
 
   stroke(160);
   fill(230);
   rect(sliderX, fuzzY, sliderW, sliderH, 4);
 
-  float fuzzHandleX = sliderX + siteFuzz * sliderW;
+  // siteFuzz is in [0, 0.3], map back to [0, 1] for handle
+  float fuzzNorm = (siteFuzz <= 0) ? 0 : constrain(siteFuzz / 0.3f, 0, 1);
+  float fuzzHandleX = sliderX + fuzzNorm * sliderW;
 
   fill(80);
   noStroke();
@@ -109,17 +127,18 @@ void drawSitesPanel() {
 
   fill(0);
   textAlign(LEFT, TOP);
-  text("Fuzz: " + nf(siteFuzz, 1, 2) + " (0 = none, 1 = strong jitter)",
+  text("Fuzz: " + nf(siteFuzz, 1, 2) + " (0 = none, 0.3 = strong jitter)",
        sliderX + sliderW + 10, fuzzY - 2);
 
-  // Placement mode slider
+  // ---------- Placement mode slider (DISCRETE) ----------
   int modeSliderX = 10;
   int modeSliderY = panelY + 25 + 44;
   int modeSliderW = sliderW;
   int modeSliderH = 14;
 
+  // Track
   stroke(160);
-  fill(230);
+  fill(225);
   rect(modeSliderX, modeSliderY, modeSliderW, modeSliderH, 4);
 
   int modeCount = placementModes.length;
@@ -129,6 +148,16 @@ void drawSitesPanel() {
     (modeSliderW / (float)(modeCount - 1)) :
     0;
 
+  // Draw tick marks for each discrete mode
+  stroke(120);
+  for (int i = 0; i < modeCount; i++) {
+    float tx = modeSliderX + i * stepW;
+    float ty0 = modeSliderY;
+    float ty1 = modeSliderY + modeSliderH;
+    line(tx, ty0, tx, ty1);
+  }
+
+  // Handle at discrete position (circle)
   float modeHandleX;
   if (placementModeIndex <= 0) {
     modeHandleX = modeSliderX;
@@ -138,18 +167,20 @@ void drawSitesPanel() {
     modeHandleX = modeSliderX + placementModeIndex * stepW;
   }
 
-  float modeHandleW = 10;
-  fill(80);
-  noStroke();
-  rect(modeHandleX - modeHandleW / 2, modeSliderY - 2,
-       modeHandleW, modeSliderH + 4, 4);
+  float knobRadius = modeSliderH * 0.9f;
+  float knobY = modeSliderY + modeSliderH / 2.0f;
 
+  fill(40);
+  noStroke();
+  ellipse(modeHandleX, knobY, knobRadius, knobRadius);
+
+  // Mode name label
   String modeName = placementModeLabel(currentPlacementMode());
   fill(0);
   textAlign(LEFT, TOP);
   text("Placement: " + modeName, modeSliderX + modeSliderW + 10, modeSliderY - 2);
 
-  // Generate button
+  // ---------- Generate button ----------
   int genW = 100;
   int genH = 24;
   int genX = 10;
@@ -169,9 +200,14 @@ void drawZonesPanel() {
   int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
   int panelH = ZONES_PANEL_HEIGHT;
 
+  // Panel background distinct from map
   noStroke();
-  fill(245);
+  fill(235);
   rect(0, panelY, width, panelH);
+
+  // Panel bottom border
+  stroke(200);
+  line(0, panelY + panelH - 0.5f, width, panelY + panelH - 0.5f);
 
   fill(0);
   textAlign(LEFT, TOP);

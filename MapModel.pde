@@ -133,10 +133,19 @@ class MapModel {
   }
 
   void recomputeVoronoi() {
-    cells.clear();
-
     int n = sites.size();
-    if (n == 0) return;
+    if (n == 0) {
+      cells.clear();
+      return;
+    }
+
+    // Keep a copy of old cells so we can inherit biomes
+    ArrayList<Cell> oldCells = new ArrayList<Cell>();
+    for (Cell c : cells) {
+      oldCells.add(c);
+    }
+
+    cells.clear();
 
     int defaultBiome = 0;
 
@@ -160,7 +169,26 @@ class MapModel {
       }
 
       if (poly.size() >= 3) {
-        cells.add(new Cell(i, poly, defaultBiome));
+        // Compute centroid of the new polygon
+        float cx = 0;
+        float cy = 0;
+        int nv = poly.size();
+        for (int k = 0; k < nv; k++) {
+          PVector v = poly.get(k);
+          cx += v.x;
+          cy += v.y;
+        }
+        cx /= nv;
+        cy /= nv;
+
+        int biomeId;
+        if (oldCells.isEmpty()) {
+          biomeId = defaultBiome;
+        } else {
+          biomeId = sampleBiomeFromOldCells(oldCells, cx, cy, defaultBiome);
+        }
+
+        cells.add(new Cell(i, poly, biomeId));
       }
     }
   }
@@ -212,6 +240,16 @@ class MapModel {
     float x = lerp(p1.x, p2.x, t);
     float y = lerp(p1.y, p2.y, t);
     return new PVector(x, y);
+  }
+
+  // Sample biome from old cells at (x,y); fallback if none found
+  int sampleBiomeFromOldCells(ArrayList<Cell> oldCells, float x, float y, int fallbackBiome) {
+    for (Cell c : oldCells) {
+      if (pointInPolygon(x, y, c.vertices)) {
+        return c.biomeId;
+      }
+    }
+    return fallbackBiome;
   }
 
   // ---------- Zones / cells picking ----------
