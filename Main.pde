@@ -15,6 +15,10 @@ int lastMouseY;
 Site draggingSite = null;
 boolean isDraggingSite = false;
 
+// Path drawing state
+boolean isDrawingPath = false;
+Path currentPath = null;
+
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
 final int TOOL_BAR_HEIGHT = 26;
@@ -40,7 +44,7 @@ void settings() {
 }
 
 void setup() {
-  surface.setTitle("Map Editor – Sites + Zones");
+  surface.setTitle("Map Editor – Sites + Zones + Paths");
   viewport = new Viewport();
   mapModel = new MapModel();
   initBiomeTypes();
@@ -64,9 +68,17 @@ void draw() {
   mapModel.ensureVoronoiComputed();
   mapModel.drawCells(this);
 
-  // Only show sites in Sites or Paths modes
+  // Paths are visible in all modes
+  mapModel.drawPaths(this);
+
+  // Sites only in Sites or Paths modes
   if (currentTool == Tool.EDIT_SITES || currentTool == Tool.EDIT_PATHS) {
     mapModel.drawSites(this);
+  }
+
+  // Current path being drawn (preview)
+  if (isDrawingPath && currentPath != null && currentTool == Tool.EDIT_PATHS) {
+    currentPath.drawPreview(this);
   }
 
   mapModel.drawDebugWorldBounds(this);

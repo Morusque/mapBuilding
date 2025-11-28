@@ -228,6 +228,8 @@ void mousePressed() {
       } else {
         fillBiomeAt(worldPos.x, worldPos.y);
       }
+    } else if (currentTool == Tool.EDIT_PATHS) {
+      handlePathsMousePressed(worldPos.x, worldPos.y);
     }
   }
 }
@@ -248,6 +250,15 @@ void handleSitesMousePressed(float wx, float wy) {
     draggingSite = ns;
     isDraggingSite = true;
   }
+}
+
+void handlePathsMousePressed(float wx, float wy) {
+  if (!isDrawingPath || currentPath == null) {
+    // Start new path
+    currentPath = new Path();
+    isDrawingPath = true;
+  }
+  currentPath.addPoint(wx, wy);
 }
 
 void mouseDragged() {
@@ -347,7 +358,42 @@ void mouseWheel(MouseEvent event) {
 }
 
 void keyPressed() {
+  // Delete selected sites (any mode, but only affects Sites)
   if (key == DELETE || key == BACKSPACE) {
-    mapModel.deleteSelectedSites();
+    if (currentTool == Tool.EDIT_SITES) {
+      mapModel.deleteSelectedSites();
+      return;
+    }
+    if (currentTool == Tool.EDIT_PATHS && isDrawingPath && currentPath != null) {
+      // In Paths mode, BACKSPACE while drawing removes last point
+      if (!currentPath.points.isEmpty()) {
+        currentPath.points.remove(currentPath.points.size() - 1);
+        if (currentPath.points.isEmpty()) {
+          isDrawingPath = false;
+          currentPath = null;
+        }
+      }
+      return;
+    }
+  }
+
+  // Finish path with Enter / Return
+  if (currentTool == Tool.EDIT_PATHS &&
+      (key == ENTER || key == RETURN)) {
+    if (isDrawingPath && currentPath != null) {
+      mapModel.addFinishedPath(currentPath);
+      isDrawingPath = false;
+      currentPath = null;
+    }
+    return;
+  }
+
+  // Clear all paths with 'c' or 'C' in Paths mode
+  if (currentTool == Tool.EDIT_PATHS &&
+      (key == 'c' || key == 'C')) {
+    mapModel.clearAllPaths();
+    isDrawingPath = false;
+    currentPath = null;
+    return;
   }
 }

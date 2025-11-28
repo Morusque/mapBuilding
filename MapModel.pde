@@ -8,6 +8,9 @@ class MapModel {
   ArrayList<Site> sites = new ArrayList<Site>();
   ArrayList<Cell> cells = new ArrayList<Cell>();
 
+  // Paths (roads, rivers, etc.)
+  ArrayList<Path> paths = new ArrayList<Path>();
+
   // Biomes / zone types
   ArrayList<ZoneType> biomeTypes = new ArrayList<ZoneType>();
 
@@ -38,6 +41,33 @@ class MapModel {
     for (Cell c : cells) {
       c.draw(app);
     }
+  }
+
+  void drawPaths(PApplet app) {
+    if (paths.isEmpty()) return;
+
+    app.pushStyle();
+    app.noFill();
+    app.stroke(60, 60, 200);
+    app.strokeWeight(2.0f / viewport.zoom);
+
+    for (Path p : paths) {
+      p.draw(app);
+    }
+
+    app.popStyle();
+  }
+
+  // ---------- Paths management ----------
+
+  void addFinishedPath(Path p) {
+    if (p == null) return;
+    if (p.points.size() < 2) return; // ignore degenerate paths
+    paths.add(p);
+  }
+
+  void clearAllPaths() {
+    paths.clear();
   }
 
   // ---------- Sites management ----------
@@ -318,7 +348,7 @@ class MapModel {
 
   void generateGridSites(float density) {
     int minRes = 2;
-    int maxRes = 100; // was 40, now denser
+    int maxRes = 100; // denser than before
 
     int res = (int)map(density, 0, 1, minRes, maxRes);
     res = max(2, res);
@@ -343,7 +373,7 @@ class MapModel {
 
   void generateHexSites(float density) {
     int minRes = 2;
-    int maxRes = 80; // was 30, now denser
+    int maxRes = 80; // denser than before
 
     int res = (int)map(density, 0, 1, minRes, maxRes);
     res = max(2, res);
@@ -374,7 +404,7 @@ class MapModel {
     float h = maxY - minY;
 
     float maxR = 0.20f * min(w, h);
-    float minR = 0.005f * min(w, h); // was 0.01, allows more points
+    float minR = 0.005f * min(w, h); // allow more points
     float r = lerp(maxR, minR, density);
     if (r <= 0) r = 0.005f * min(w, h);
 
@@ -399,7 +429,7 @@ class MapModel {
     }
 
     int k = 30;
-    int maxPoints = 4000; // was 3000, slightly higher
+    int maxPoints = 4000;
 
     while (!active.isEmpty() && points.size() < maxPoints) {
       int idx = active.get((int)random(active.size()));
