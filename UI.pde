@@ -177,6 +177,38 @@ void drawZonesPanel() {
   textAlign(LEFT, TOP);
   text("Biomes (Zones)", 10, panelY + 5);
 
+  // Paint / Fill buttons
+  int toolBtnW = 60;
+  int toolBtnH = 20;
+  int toolX1 = 10;
+  int toolX2 = toolX1 + toolBtnW + 8;
+  int toolY  = panelY + 24;
+
+  // Paint button
+  stroke(150);
+  if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+    fill(200, 230, 255);
+  } else {
+    fill(225);
+  }
+  rect(toolX1, toolY, toolBtnW, toolBtnH, 4);
+  fill(0);
+  textAlign(CENTER, CENTER);
+  text("Paint", toolX1 + toolBtnW * 0.5f, toolY + toolBtnH * 0.5f);
+
+  // Fill button
+  stroke(150);
+  if (currentZonePaintMode == ZonePaintMode.ZONE_FILL) {
+    fill(200, 230, 255);
+  } else {
+    fill(225);
+  }
+  rect(toolX2, toolY, toolBtnW, toolBtnH, 4);
+  fill(0);
+  textAlign(CENTER, CENTER);
+  text("Fill", toolX2 + toolBtnW * 0.5f, toolY + toolBtnH * 0.5f);
+
+  // Palette
   if (mapModel == null || mapModel.biomeTypes == null) return;
   int n = mapModel.biomeTypes.size();
   if (n == 0) return;
@@ -186,7 +218,7 @@ void drawZonesPanel() {
   int marginX = 10;
   int gapX = 8;
 
-  int rowY = panelY + 28;
+  int rowY = toolY + toolBtnH + 10;
   int textY = rowY + swatchH + 2;
 
   textAlign(CENTER, TOP);

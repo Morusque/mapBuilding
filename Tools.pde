@@ -11,3 +11,8 @@ enum PlacementMode {
   POISSON,
   HEX
 }
+
+enum ZonePaintMode {
+  ZONE_PAINT,
+  ZONE_FILL
+}

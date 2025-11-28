@@ -110,7 +110,7 @@ boolean handleSitesPanelClick(int mx, int my) {
   return false;
 }
 
-// ----- Zones panel click (biome selection) -----
+// ----- Zones panel click (tool + biome selection) -----
 
 boolean handleZonesPanelClick(int mx, int my) {
   if (!isInZonesPanel(mx, my)) return false;
@@ -118,6 +118,28 @@ boolean handleZonesPanelClick(int mx, int my) {
 
   int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
 
+  // Tool buttons
+  int toolBtnW = 60;
+  int toolBtnH = 20;
+  int toolX1 = 10;
+  int toolX2 = toolX1 + toolBtnW + 8;
+  int toolY  = panelY + 24;
+
+  // Paint button
+  if (mx >= toolX1 && mx <= toolX1 + toolBtnW &&
+      my >= toolY && my <= toolY + toolBtnH) {
+    currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
+    return true;
+  }
+
+  // Fill button
+  if (mx >= toolX2 && mx <= toolX2 + toolBtnW &&
+      my >= toolY && my <= toolY + toolBtnH) {
+    currentZonePaintMode = ZonePaintMode.ZONE_FILL;
+    return true;
+  }
+
+  // Palette swatches
   int n = mapModel.biomeTypes.size();
   if (n == 0) return false;
 
@@ -126,7 +148,7 @@ boolean handleZonesPanelClick(int mx, int my) {
   int marginX = 10;
   int gapX = 8;
 
-  int rowY = panelY + 28;
+  int rowY = toolY + toolBtnH + 10;
 
   for (int i = 0; i < n; i++) {
     int x = marginX + i * (swatchW + gapX);
@@ -143,12 +165,19 @@ boolean handleZonesPanelClick(int mx, int my) {
   return false;
 }
 
-// ---------- Painting helper ----------
+// ---------- Painting helpers ----------
 
 void paintBiomeAt(float wx, float wy) {
   Cell c = mapModel.findCellContaining(wx, wy);
   if (c != null) {
     c.biomeId = activeBiomeIndex;
+  }
+}
+
+void fillBiomeAt(float wx, float wy) {
+  Cell c = mapModel.findCellContaining(wx, wy);
+  if (c != null) {
+    mapModel.floodFillBiomeFromCell(c, activeBiomeIndex);
   }
 }
 
@@ -194,7 +223,11 @@ void mousePressed() {
     if (currentTool == Tool.EDIT_SITES) {
       handleSitesMousePressed(worldPos.x, worldPos.y);
     } else if (currentTool == Tool.EDIT_ZONES) {
-      paintBiomeAt(worldPos.x, worldPos.y);
+      if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+        paintBiomeAt(worldPos.x, worldPos.y);
+      } else {
+        fillBiomeAt(worldPos.x, worldPos.y);
+      }
     }
   }
 }
@@ -270,12 +303,14 @@ void mouseDragged() {
     return;
   }
 
-  // Zones: paint while dragging
+  // Zones: paint while dragging (only for Paint mode)
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
     int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + ZONES_PANEL_HEIGHT;
     if (mouseY >= uiBottom) {
       PVector w = viewport.screenToWorld(mouseX, mouseY);
-      paintBiomeAt(w.x, w.y);
+      if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+        paintBiomeAt(w.x, w.y);
+      }
     }
     return;
   }

@@ -19,7 +19,7 @@ boolean isDraggingSite = false;
 final int TOP_BAR_HEIGHT = 30;
 final int TOOL_BAR_HEIGHT = 26;
 final int SITES_PANEL_HEIGHT = 140;  // sliders + generate
-final int ZONES_PANEL_HEIGHT = 80;   // biome palette
+final int ZONES_PANEL_HEIGHT = 80;   // biome palette + paint/fill buttons
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -32,7 +32,8 @@ float siteDensity = 0.5;    // 0..1
 float siteFuzz = 0.0;       // 0..1
 
 // Zones (biomes) painting
-int activeBiomeIndex = 1;   // 0 = "None", 1..N = types
+int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
+ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
 
 void settings() {
   size(1200, 800, P2D);

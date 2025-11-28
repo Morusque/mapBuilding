@@ -209,6 +209,72 @@ class MapModel {
     return inside;
   }
 
+  int indexOfCell(Cell c) {
+    for (int i = 0; i < cells.size(); i++) {
+      if (cells.get(i) == c) return i;
+    }
+    return -1;
+  }
+
+  // Flood-fill contiguous region of same biome as start cell
+  void floodFillBiomeFromCell(Cell start, int newBiomeId) {
+    if (start == null) return;
+    int startIndex = indexOfCell(start);
+    if (startIndex < 0) return;
+
+    int oldBiome = start.biomeId;
+    if (oldBiome == newBiomeId) return;
+
+    int n = cells.size();
+    if (n == 0) return;
+
+    boolean[] visited = new boolean[n];
+    int[] stack = new int[n];
+    int stackSize = 0;
+
+    stack[stackSize++] = startIndex;
+    visited[startIndex] = true;
+
+    float eps = 1e-4f;
+
+    while (stackSize > 0) {
+      int idx = stack[--stackSize];
+      Cell c = cells.get(idx);
+
+      if (c.biomeId != oldBiome) continue;
+      c.biomeId = newBiomeId;
+
+      for (int j = 0; j < n; j++) {
+        if (visited[j]) continue;
+        Cell other = cells.get(j);
+
+        if (!cellsAreNeighbors(c, other, eps)) continue;
+
+        visited[j] = true;
+        stack[stackSize++] = j;
+      }
+    }
+  }
+
+  boolean cellsAreNeighbors(Cell a, Cell b, float eps) {
+    if (a.vertices == null || b.vertices == null) return false;
+    int shared = 0;
+
+    for (int i = 0; i < a.vertices.size(); i++) {
+      PVector va = a.vertices.get(i);
+      for (int j = 0; j < b.vertices.size(); j++) {
+        PVector vb = b.vertices.get(j);
+        float dx = va.x - vb.x;
+        float dy = va.y - vb.y;
+        if (dx * dx + dy * dy <= eps * eps) {
+          shared++;
+          if (shared >= 2) return true;
+        }
+      }
+    }
+    return false;
+  }
+
   // ---------- Sites generation ----------
 
   void generateSites(PlacementMode mode, float density) {
