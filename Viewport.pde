@@ -1,7 +1,13 @@
 class Viewport {
-  float centerX = 0.5;
-  float centerY = 0.5;
-  float zoom = 800.0;
+  float centerX;
+  float centerY;
+  float zoom;
+
+  Viewport() {
+    centerX = 0.5f;
+    centerY = 0.5f;
+    zoom = 600.0f;  // 1x1 world fills a good part of the screen
+  }
 
   void applyTransform(PApplet app) {
     app.translate(app.width * 0.5f, app.height * 0.5f);
@@ -9,19 +15,23 @@ class Viewport {
     app.translate(-centerX, -centerY);
   }
 
-  void panScreen(float dx, float dy) {
-    float wx = -dx / zoom;
-    float wy = -dy / zoom;
-    centerX += wx;
-    centerY += wy;
+  void panScreen(float dxPixels, float dyPixels) {
+    centerX -= dxPixels / zoom;
+    centerY -= dyPixels / zoom;
   }
 
-  void zoomAt(float factor, float sx, float sy) {
-    PVector before = screenToWorld(sx, sy);
+  void zoomAt(float factor, float screenX, float screenY) {
+    float wxBefore = (screenX - width * 0.5f) / zoom + centerX;
+    float wyBefore = (screenY - height * 0.5f) / zoom + centerY;
+
     zoom *= factor;
-    PVector after = screenToWorld(sx, sy);
-    centerX += (before.x - after.x);
-    centerY += (before.y - after.y);
+    zoom = constrain(zoom, 50.0f, 5000.0f);
+
+    float wxAfter = (screenX - width * 0.5f) / zoom + centerX;
+    float wyAfter = (screenY - height * 0.5f) / zoom + centerY;
+
+    centerX += wxBefore - wxAfter;
+    centerY += wyBefore - wyAfter;
   }
 
   PVector screenToWorld(float sx, float sy) {
@@ -33,6 +43,6 @@ class Viewport {
   PVector worldToScreen(float wx, float wy) {
     float sx = (wx - centerX) * zoom + width * 0.5f;
     float sy = (wy - centerY) * zoom + height * 0.5f;
-    return new PVector(sx, wy);
+    return new PVector(sx, sy);
   }
 }

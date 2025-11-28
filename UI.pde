@@ -7,12 +7,11 @@ void drawTopBar() {
 
   fill(0);
   textAlign(LEFT, CENTER);
-  String toolName = currentTool.toString();
-  String info = "Tool: " + toolName +
+  String info = "Tool: " + currentTool +
                 "   Zoom: " + nf(viewport.zoom, 1, 2) +
                 "   Center: (" + nf(viewport.centerX, 1, 3) + ", " +
                                nf(viewport.centerY, 1, 3) + ")";
-  text(info, 10, TOP_BAR_HEIGHT / 2.0);
+  text(info, 10, TOP_BAR_HEIGHT / 2.0f);
 }
 
 void drawToolButtons() {
@@ -66,11 +65,11 @@ void drawSitesPanel() {
   textAlign(LEFT, TOP);
   text("Sites generation", 10, panelY + 5);
 
-  // ----- Density slider (first line) -----
   int sliderX = 10;
   int sliderW = 250;
   int sliderH = 16;
 
+  // ----- Density slider (first line) -----
   int densityY = panelY + 25;
 
   stroke(160);
@@ -84,11 +83,9 @@ void drawSitesPanel() {
   noStroke();
   rect(densityHandleX - handleW / 2, densityY - 2, handleW, sliderH + 4, 4);
 
-  // Density text + approximate count (grid-based estimate)
   int minRes = 2;
   int maxRes = 40;
-  int res = (int)map(siteDensity, 0, 1, minRes, maxRes);
-  res = max(2, res);
+  int res = max(2, (int)map(siteDensity, 0, 1, minRes, maxRes));
   int approxCount = res * res;
 
   fill(0);
@@ -111,12 +108,12 @@ void drawSitesPanel() {
 
   fill(0);
   textAlign(LEFT, TOP);
-  text("Fuzz: " + nf(siteFuzz, 1, 2) + "  (0 = none, 1 = strong jitter)",
+  text("Fuzz: " + nf(siteFuzz, 1, 2) + " (0 = none, 1 = strong jitter)",
        sliderX + sliderW + 10, fuzzY - 2);
 
   // ----- Placement mode slider (third line) -----
   int modeSliderX = 10;
-  int modeSliderY = panelY + 25 + 44; // a bit below fuzz
+  int modeSliderY = panelY + 25 + 44;
   int modeSliderW = sliderW;
   int modeSliderH = 14;
 
@@ -177,5 +174,6 @@ String placementModeLabel(PlacementMode m) {
 }
 
 PlacementMode currentPlacementMode() {
-  return placementModes[constrain(placementModeIndex, 0, placementModes.length - 1)];
+  int idx = constrain(placementModeIndex, 0, placementModes.length - 1);
+  return placementModes[idx];
 }

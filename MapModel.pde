@@ -1,11 +1,9 @@
-import java.util.ArrayList;
-
 class MapModel {
   // World bounds in world coordinates
-  float minX = 0.0;
-  float minY = 0.0;
-  float maxX = 1.0;
-  float maxY = 1.0;
+  float minX = 0.0f;
+  float minY = 0.0f;
+  float maxX = 1.0f;
+  float maxY = 1.0f;
 
   ArrayList<Site> sites = new ArrayList<Site>();
   ArrayList<Cell> cells = new ArrayList<Cell>();
@@ -13,6 +11,7 @@ class MapModel {
   boolean voronoiDirty = true;
 
   MapModel() {
+    // Nothing yet; world bounds are default 0..1
   }
 
   // ---------- Drawing ----------
@@ -45,11 +44,6 @@ class MapModel {
     sites.add(s);
     markVoronoiDirty();
     return s;
-  }
-
-  void deleteSite(Site s) {
-    sites.remove(s);
-    markVoronoiDirty();
   }
 
   void deleteSelectedSites() {
@@ -111,7 +105,7 @@ class MapModel {
     int n = sites.size();
     if (n == 0) return;
 
-    // For each site, start with the world bounding box and clip with bisectors
+    // For each site, start with the world bounding box and clip by bisectors
     for (int i = 0; i < n; i++) {
       Site si = sites.get(i);
 
@@ -126,7 +120,7 @@ class MapModel {
         Site sj = sites.get(j);
         poly = clipPolygonWithHalfPlane(poly, si, sj);
         if (poly.size() < 3) {
-          break; // cell disappeared, no need to continue
+          break;
         }
       }
 
@@ -157,55 +151,47 @@ class MapModel {
       boolean insideNext = fNext <= 0;
 
       if (insideCurrent && insideNext) {
-        // both inside: keep next
         out.add(next.copy());
       } else if (insideCurrent && !insideNext) {
-        // leaving half-plane: add intersection
         PVector inter = intersectSegmentWithLine(current, next, fCurrent, fNext);
         if (inter != null) out.add(inter);
       } else if (!insideCurrent && insideNext) {
-        // entering half-plane: add intersection and next
         PVector inter = intersectSegmentWithLine(current, next, fCurrent, fNext);
         if (inter != null) out.add(inter);
         out.add(next.copy());
       } else {
-        // both outside: add nothing
+        // both outside
       }
     }
 
     return out;
   }
 
-  // Segment (p1->p2), line defined implicitly by f(p) = 0, where
-  // f(p1) = f1, f(p2) = f2. We already have f1, f2 precomputed.
   PVector intersectSegmentWithLine(PVector p1, PVector p2, float f1, float f2) {
     float denom = f1 - f2;
     if (abs(denom) < 1e-6f) {
-      return null; // almost parallel to boundary, skip
+      return null;
     }
-    float t = f1 / (f1 - f2); // position from p1 to p2 where f(t) = 0
+    float t = f1 / (f1 - f2);
     t = constrain(t, 0.0f, 1.0f);
     float x = lerp(p1.x, p2.x, t);
     float y = lerp(p1.y, p2.y, t);
     return new PVector(x, y);
   }
 
+  // ---------- Sites generation ----------
+
   void generateSites(PlacementMode mode, float density) {
     sites.clear();
 
-    switch (mode) {
-    case GRID:
+    if (mode == PlacementMode.GRID) {
       generateGridSites(density);
-      break;
-    case POISSON:
-      generatePoissonSites(density);
-      break;
-    case HEX:
+    } else if (mode == PlacementMode.HEX) {
       generateHexSites(density);
-      break;
+    } else if (mode == PlacementMode.POISSON) {
+      generatePoissonSites(density);
     }
 
-    // Apply jitter according to global siteFuzz (0..1).
     applyFuzz(siteFuzz);
 
     clearSiteSelection();
@@ -224,8 +210,8 @@ class MapModel {
     float h = maxY - minY;
     float d = min(w, h);
 
-    // Max offset is a fraction of world size; adjust if you want more/less aggressive jitter
-    float maxOffset = fuzz * d / 10.0; // fuzz=1 → up to 10% of world size
+    // Max offset is fraction of world size; tweak if needed
+    float maxOffset = fuzz * d / 10.0f;
 
     for (Site s : sites) {
       float dx = random(-maxOffset, maxOffset);
@@ -260,9 +246,8 @@ class MapModel {
   }
 
   void generateHexSites(float density) {
-    // Resolution parameter
     int minRes = 2;
-    int maxRes = 30; // slightly smaller to avoid overkill
+    int maxRes = 30;
     int res = (int)map(density, 0, 1, minRes, maxRes);
     res = max(2, res);
 
@@ -272,7 +257,7 @@ class MapModel {
     int cols = res;
     float dx = w / cols;
 
-    float dy = dx * sqrt(3) / 2.0; // vertical spacing for hex grid
+    float dy = dx * sqrt(3) / 2.0f;
     int rows = max(1, (int)((h / dy) + 0.5f));
 
     for (int j = 0; j < rows; j++) {
@@ -291,7 +276,6 @@ class MapModel {
     float w = maxX - minX;
     float h = maxY - minY;
 
-    // Map density to radius: higher density => smaller radius
     float maxR = 0.20f * min(w, h);
     float minR = 0.01f * min(w, h);
     float r = lerp(maxR, minR, density);
@@ -306,7 +290,6 @@ class MapModel {
     ArrayList<PVector> points = new ArrayList<PVector>();
     ArrayList<Integer> active = new ArrayList<Integer>();
 
-    // First point
     float x0 = random(minX, maxX);
     float y0 = random(minY, maxY);
     points.add(new PVector(x0, y0));
@@ -318,8 +301,8 @@ class MapModel {
       grid[gy * gridW + gx] = 0;
     }
 
-    int k = 30; // attempts per active point
-    int maxPoints = 3000; // safety cap
+    int k = 30;
+    int maxPoints = 3000;
 
     while (!active.isEmpty() && points.size() < maxPoints) {
       int idx = active.get((int)random(active.size()));
@@ -328,18 +311,18 @@ class MapModel {
 
       for (int attempt = 0; attempt < k; attempt++) {
         float angle = random(TWO_PI);
-        float radius = r * (1 + random(1)); // between r and 2r
+        float radius = r * (1 + random(1));
         float nx = p.x + cos(angle) * radius;
         float ny = p.y + sin(angle) * radius;
 
         if (nx < minX || nx > maxX || ny < minY || ny > maxY) continue;
 
-        int ngx = (int)((nx - minX) / cellSize);
-        int ngy = (int)((ny - minY) / cellSize);
+        int ngx2 = (int)((nx - minX) / cellSize);
+        int ngy2 = (int)((ny - minY) / cellSize);
 
         boolean ok = true;
-        for (int yy = max(0, ngy - 2); yy <= min(gridH - 1, ngy + 2) && ok; yy++) {
-          for (int xx = max(0, ngx - 2); xx <= min(gridW - 1, ngx + 2) && ok; xx++) {
+        for (int yy = max(0, ngy2 - 2); yy <= min(gridH - 1, ngy2 + 2) && ok; yy++) {
+          for (int xx = max(0, ngx2 - 2); xx <= min(gridW - 1, ngx2 + 2) && ok; xx++) {
             int pi = grid[yy * gridW + xx];
             if (pi != -1) {
               PVector op = points.get(pi);
@@ -356,7 +339,7 @@ class MapModel {
           int newIndex = points.size();
           points.add(new PVector(nx, ny));
           active.add(newIndex);
-          grid[ngy * gridW + ngx] = newIndex;
+          grid[ngy2 * gridW + ngx2] = newIndex;
           found = true;
           break;
         }
@@ -367,8 +350,8 @@ class MapModel {
       }
     }
 
-    // Convert points to sites
-    for (PVector p : points) {
+    for (int i = 0; i < points.size(); i++) {
+      PVector p = points.get(i);
       sites.add(new Site(p.x, p.y));
     }
   }

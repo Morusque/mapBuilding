@@ -1,6 +1,4 @@
-
 enum Tool {
-  PAN,
   EDIT_SITES,
   EDIT_ZONES,
   EDIT_PATHS,

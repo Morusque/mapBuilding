@@ -103,6 +103,24 @@ boolean handleSitesPanelClick(int mx, int my) {
   return false;
 }
 
+void handleSitesMousePressed(float wx, float wy) {
+  float maxDistWorld = 10.0f / viewport.zoom; // ~10 px tolerance
+  Site s = mapModel.findSiteNear(wx, wy, maxDistWorld);
+
+  if (s != null) {
+    mapModel.clearSiteSelection();
+    mapModel.selectSite(s);
+    draggingSite = s;
+    isDraggingSite = true;
+  } else {
+    Site ns = mapModel.addSite(wx, wy);
+    mapModel.clearSiteSelection();
+    mapModel.selectSite(ns);
+    draggingSite = ns;
+    isDraggingSite = true;
+  }
+}
+
 // ---------- Mouse & keyboard callbacks ----------
 
 void mousePressed() {
@@ -138,24 +156,6 @@ void mousePressed() {
     if (currentTool == Tool.EDIT_SITES) {
       handleSitesMousePressed(worldPos.x, worldPos.y);
     }
-  }
-}
-
-void handleSitesMousePressed(float wx, float wy) {
-  float maxDistWorld = 10.0 / viewport.zoom; // ~10 px tolerance
-  Site s = mapModel.findSiteNear(wx, wy, maxDistWorld);
-
-  if (s != null) {
-    mapModel.clearSiteSelection();
-    mapModel.selectSite(s);
-    draggingSite = s;
-    isDraggingSite = true;
-  } else {
-    Site ns = mapModel.addSite(wx, wy);
-    mapModel.clearSiteSelection();
-    mapModel.selectSite(ns);
-    draggingSite = ns;
-    isDraggingSite = true;
   }
 }
 
@@ -237,7 +237,7 @@ void mouseReleased() {
 
 void mouseWheel(MouseEvent event) {
   float count = event.getCount();
-  float factor = pow(1.1, -count);
+  float factor = pow(1.1f, -count);
   viewport.zoomAt(factor, mouseX, mouseY);
 }
 

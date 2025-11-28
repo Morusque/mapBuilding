@@ -11,14 +11,13 @@ class Cell {
     if (vertices == null || vertices.size() < 3) return;
 
     app.pushStyle();
-
-    // Light fill, slightly tinted to see cell structure
-    app.fill(235);
+    app.fill(230);
     app.stroke(180);
     app.strokeWeight(1.0f / viewport.zoom);
 
     app.beginShape();
-    for (PVector v : vertices) {
+    for (int i = 0; i < vertices.size(); i++) {
+      PVector v = vertices.get(i);
       app.vertex(v.x, v.y);
     }
     app.endShape(CLOSE);
