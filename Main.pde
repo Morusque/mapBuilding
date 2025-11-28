@@ -1,5 +1,6 @@
 
 import processing.event.MouseEvent;
+import java.util.HashSet;
 
 Viewport viewport;
 MapModel mapModel;
@@ -25,6 +26,7 @@ final int TOP_BAR_HEIGHT = 30;
 final int TOOL_BAR_HEIGHT = 26;
 final int SITES_PANEL_HEIGHT = 140;  // sliders + generate
 final int ZONES_PANEL_HEIGHT = 100;   // biome palette + paint/fill buttons
+final int PATH_PANEL_HEIGHT = 40;     // close/undo buttons
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -45,10 +47,13 @@ void settings() {
 }
 
 void setup() {
-  surface.setTitle("Map Editor – Sites + Zones + Paths");
+    surface.setTitle("Map Editor - Sites + Zones + Paths");
   viewport = new Viewport();
   mapModel = new MapModel();
   initBiomeTypes();
+  mapModel.generateSites(currentPlacementMode(), siteDensity);
+  mapModel.ensureVoronoiComputed();
+  seedDefaultZones();
 }
 
 void initBiomeTypes() {
@@ -67,13 +72,14 @@ void draw() {
   viewport.applyTransform(this);
 
   mapModel.ensureVoronoiComputed();
-  mapModel.drawCells(this);
+  boolean showBorders = !(currentTool == Tool.EDIT_PATHS);
+  mapModel.drawCells(this, showBorders);
 
   // Paths are visible in all modes
   mapModel.drawPaths(this);
 
-  // Sites only in Sites or Paths modes
-  if (currentTool == Tool.EDIT_SITES || currentTool == Tool.EDIT_PATHS) {
+  // Sites only in Sites mode; paths use snapping dots instead
+  if (currentTool == Tool.EDIT_SITES) {
     mapModel.drawSites(this);
   }
 
@@ -82,7 +88,13 @@ void draw() {
     currentPath.drawPreview(this);
   }
 
-  mapModel.drawDebugWorldBounds(this);
+  if (currentTool == Tool.EDIT_PATHS) {
+    drawPathSnappingPoints();
+  }
+
+  if (currentTool != Tool.EDIT_PATHS) {
+    mapModel.drawDebugWorldBounds(this);
+  }
   popMatrix();
 
   // ----- UI overlay -----
@@ -92,5 +104,74 @@ void draw() {
     drawSitesPanel();
   } else if (currentTool == Tool.EDIT_ZONES) {
     drawZonesPanel();
+  } else if (currentTool == Tool.EDIT_PATHS) {
+    drawPathsPanel();
+  }
+}
+
+void drawPathSnappingPoints() {
+  ArrayList<PVector> snaps = mapModel.getSnapPoints();
+  if (snaps == null || snaps.isEmpty()) return;
+
+  float nearestScreenSq = Float.MAX_VALUE;
+  PVector nearest = null;
+  float px = mouseX;
+  float py = mouseY;
+
+  // Find nearest to mouse in screen space
+  for (PVector p : snaps) {
+    PVector s = viewport.worldToScreen(p.x, p.y);
+    float dx = s.x - px;
+    float dy = s.y - py;
+    float d2 = dx * dx + dy * dy;
+    if (d2 < nearestScreenSq) {
+      nearestScreenSq = d2;
+      nearest = p;
+    }
+  }
+
+  float baseR = 4.0f / viewport.zoom;
+
+  pushStyle();
+  noStroke();
+  fill(30, 30, 30, 90);
+  for (PVector p : snaps) {
+    ellipse(p.x, p.y, baseR, baseR);
+  }
+
+  if (nearest != null) {
+    float hr = 6.5f / viewport.zoom;
+    stroke(0);
+    strokeWeight(1.0f / viewport.zoom);
+    fill(255, 255, 0, 180);
+    ellipse(nearest.x, nearest.y, hr, hr);
+  }
+  popStyle();
+}
+
+PVector findNearestSnappingPoint(float wx, float wy, float maxScreenDist) {
+  ArrayList<PVector> snaps = mapModel.getSnapPoints();
+  if (snaps.isEmpty()) return null;
+
+  float bestSq = maxScreenDist * maxScreenDist;
+  PVector best = null;
+
+  for (PVector p : snaps) {
+    PVector s = viewport.worldToScreen(p.x, p.y);
+    float dx = s.x - mouseX;
+    float dy = s.y - mouseY;
+    float d2 = dx * dx + dy * dy;
+    if (d2 < bestSq) {
+      bestSq = d2;
+      best = p;
+    }
+  }
+  return best;
+}
+
+void seedDefaultZones() {
+  if (mapModel.cells == null || mapModel.cells.isEmpty()) return;
+  for (Cell c : mapModel.cells) {
+    c.biomeId = 0;
   }
 }

@@ -3,15 +3,19 @@
 void drawTopBar() {
   // Background
   noStroke();
-  fill(215); // darker than map background
+  fill(202);
   rect(0, 0, width, TOP_BAR_HEIGHT);
 
-  // Bottom border
-  stroke(180);
-  line(0, TOP_BAR_HEIGHT - 0.5f, width, TOP_BAR_HEIGHT - 0.5f);
+  // Bevel edges (Win95-ish)
+  stroke(255);
+  line(0, 0, width, 0);
+  line(0, 0, 0, TOP_BAR_HEIGHT);
+  stroke(96);
+  line(0, TOP_BAR_HEIGHT - 1, width, TOP_BAR_HEIGHT - 1);
+  line(width - 1, 0, width - 1, TOP_BAR_HEIGHT);
 
   // Text
-  fill(0);
+  fill(10);
   textAlign(LEFT, CENTER);
   String info = "Tool: " + currentTool +
                 "   Zoom: " + nf(viewport.zoom, 1, 2) +
@@ -28,17 +32,22 @@ void drawToolButtons() {
 
   // Background for tool bar
   noStroke();
-  fill(225);
+  fill(210);
   rect(0, barY, width, barH);
 
-  // Bottom border of tool bar
-  stroke(180);
-  line(0, barY + barH - 0.5f, width, barY + barH - 0.5f);
+  // Bevel borders
+  stroke(255);
+  line(0, barY, width, barY);
+  line(0, barY, 0, barY + barH);
+  stroke(100);
+  line(0, barY + barH - 1, width, barY + barH - 1);
+  line(width - 1, barY, width - 1, barY + barH);
 
-  String[] labels = { "Sites", "Zones", "Paths", "Struct", "Labels" };
+  String[] labels = { "Sites", "Zones", "Elevation", "Paths", "Struct", "Labels" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ZONES,
+    Tool.EDIT_ELEVATION,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS
@@ -49,15 +58,9 @@ void drawToolButtons() {
     int y = barY + 2;
 
     boolean active = (currentTool == tools[i]);
-    stroke(150);
-    if (active) {
-      fill(200, 220, 255);
-    } else {
-      fill(220);
-    }
-    rect(x, y, buttonW, barH - 4, 4);
+    drawBevelButton(x, y, buttonW, barH - 4, active);
 
-    fill(0);
+    fill(20);
     textAlign(CENTER, CENTER);
     text(labels[i], x + buttonW / 2, y + (barH - 4) / 2);
   }
@@ -71,12 +74,16 @@ void drawSitesPanel() {
 
   // Panel background clearly distinct from map
   noStroke();
-  fill(235);
+  fill(232);
   rect(0, panelY, width, panelH);
 
-  // Panel bottom border
-  stroke(200);
-  line(0, panelY + panelH - 0.5f, width, panelY + panelH - 0.5f);
+  // Panel bevel
+  stroke(255);
+  line(0, panelY, width, panelY);
+  line(0, panelY, 0, panelY + panelH);
+  stroke(120);
+  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
+  line(width - 1, panelY, width - 1, panelY + panelH);
 
   fill(0);
   textAlign(LEFT, TOP);
@@ -185,10 +192,8 @@ void drawSitesPanel() {
   int genX = 10;
   int genY = modeSliderY + 24;
 
-  stroke(150);
-  fill(220);
-  rect(genX, genY, genW, genH, 4);
-  fill(0);
+  drawBevelButton(genX, genY, genW, genH, false);
+  fill(10);
   textAlign(CENTER, CENTER);
   text("Generate", genX + genW / 2, genY + genH / 2);
 }
@@ -201,12 +206,16 @@ void drawZonesPanel() {
 
   // Panel background distinct from map
   noStroke();
-  fill(235);
+  fill(232);
   rect(0, panelY, width, panelH);
 
-  // Panel bottom border
-  stroke(200);
-  line(0, panelY + panelH - 0.5f, width, panelY + panelH - 0.5f);
+  // Panel bevel
+  stroke(255);
+  line(0, panelY, width, panelY);
+  line(0, panelY, 0, panelY + panelH);
+  stroke(120);
+  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
+  line(width - 1, panelY, width - 1, panelY + panelH);
 
   fill(0);
   textAlign(LEFT, TOP);
@@ -220,26 +229,16 @@ void drawZonesPanel() {
   int toolY  = panelY + 24;
 
   // Paint button
-  stroke(150);
-  if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
-    fill(200, 230, 255);
-  } else {
-    fill(225);
-  }
-  rect(toolX1, toolY, toolBtnW, toolBtnH, 4);
-  fill(0);
+  drawBevelButton(toolX1, toolY, toolBtnW, toolBtnH,
+                  currentZonePaintMode == ZonePaintMode.ZONE_PAINT);
+  fill(10);
   textAlign(CENTER, CENTER);
   text("Paint", toolX1 + toolBtnW * 0.5f, toolY + toolBtnH * 0.5f);
 
   // Fill button
-  stroke(150);
-  if (currentZonePaintMode == ZonePaintMode.ZONE_FILL) {
-    fill(200, 230, 255);
-  } else {
-    fill(225);
-  }
-  rect(toolX2, toolY, toolBtnW, toolBtnH, 4);
-  fill(0);
+  drawBevelButton(toolX2, toolY, toolBtnW, toolBtnH,
+                  currentZonePaintMode == ZonePaintMode.ZONE_FILL);
+  fill(10);
   textAlign(CENTER, CENTER);
   text("Fill", toolX2 + toolBtnW * 0.5f, toolY + toolBtnH * 0.5f);
 
@@ -253,10 +252,8 @@ void drawZonesPanel() {
   int remY = toolY;
 
   // "+" button
-  stroke(150);
-  fill(220);
-  rect(addX, addY, addBtnW, addBtnH, 4);
-  fill(0);
+  drawBevelButton(addX, addY, addBtnW, addBtnH, false);
+  fill(10);
   textAlign(CENTER, CENTER);
   text("+", addX + addBtnW * 0.5f, addY + addBtnH * 0.5f);
 
@@ -265,14 +262,8 @@ void drawZonesPanel() {
                        mapModel.biomeTypes.size() > 1 &&
                        activeBiomeIndex > 0);
 
-  stroke(150);
-  if (canRemove) {
-    fill(220);
-  } else {
-    fill(210);
-  }
-  rect(remX, remY, addBtnW, addBtnH, 4);
-  fill(0);
+  drawBevelButton(remX, remY, addBtnW, addBtnH, !canRemove);
+  fill(10);
   textAlign(CENTER, CENTER);
   text("-", remX + addBtnW * 0.5f, remY + addBtnH * 0.5f);
 
@@ -341,6 +332,42 @@ void drawZonesPanel() {
   }
 }
 
+// ----- PATHS PANEL -----
+
+void drawPathsPanel() {
+  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int panelH = PATH_PANEL_HEIGHT;
+
+  noStroke();
+  fill(232);
+  rect(0, panelY, width, panelH);
+
+  stroke(255);
+  line(0, panelY, width, panelY);
+  line(0, panelY, 0, panelY + panelH);
+  stroke(120);
+  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
+  line(width - 1, panelY, width - 1, panelY + panelH);
+
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Paths", 10, panelY + 4);
+
+  int btnW = 120;
+  int btnH = 22;
+  int btnY = panelY + 12;
+  int btnX1 = 120;
+  int btnX2 = btnX1 + btnW + 10;
+
+  drawBevelButton(btnX1, btnY, btnW, btnH, false);
+  drawBevelButton(btnX2, btnY, btnW, btnH, false);
+
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Close (Enter)", btnX1 + btnW / 2, btnY + btnH / 2);
+  text("Undo (Del)",    btnX2 + btnW / 2, btnY + btnH / 2);
+}
+
 // ---------- UI helpers ----------
 
 String placementModeLabel(PlacementMode m) {
@@ -355,4 +382,30 @@ String placementModeLabel(PlacementMode m) {
 PlacementMode currentPlacementMode() {
   int idx = constrain(placementModeIndex, 0, placementModes.length - 1);
   return placementModes[idx];
+}
+
+void drawBevelButton(int x, int y, int w, int h, boolean pressed) {
+  int face = pressed ? color(192) : color(224);
+  int hl = color(255);
+  int sh = color(96);
+
+  noStroke();
+  fill(face);
+  rect(x, y, w, h);
+
+  if (!pressed) {
+    stroke(hl);
+    line(x, y, x + w - 1, y);
+    line(x, y, x, y + h - 1);
+    stroke(sh);
+    line(x, y + h - 1, x + w - 1, y + h - 1);
+    line(x + w - 1, y, x + w - 1, y + h - 1);
+  } else {
+    stroke(sh);
+    line(x, y, x + w - 1, y);
+    line(x, y, x, y + h - 1);
+    stroke(hl);
+    line(x, y + h - 1, x + w - 1, y + h - 1);
+    line(x + w - 1, y, x + w - 1, y + h - 1);
+  }
 }

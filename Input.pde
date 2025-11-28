@@ -14,6 +14,13 @@ boolean isInZonesPanel(int mx, int my) {
   return (my >= y0 && my <= y1);
 }
 
+boolean isInPathsPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_PATHS) return false;
+  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int y1 = y0 + PATH_PANEL_HEIGHT;
+  return (my >= y0 && my <= y1);
+}
+
 boolean handleToolButtonClick(int mx, int my) {
   int barY = TOP_BAR_HEIGHT;
   int barH = TOOL_BAR_HEIGHT;
@@ -25,10 +32,11 @@ boolean handleToolButtonClick(int mx, int my) {
   int margin = 10;
   int buttonW = 90;
 
-  String[] labels = { "Sites", "Zones", "Paths", "Struct", "Labels" };
+  String[] labels = { "Sites", "Zones", "Elevation", "Paths", "Struct", "Labels" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ZONES,
+    Tool.EDIT_ELEVATION,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS
@@ -260,12 +268,19 @@ void mousePressed() {
     if (handleZonesPanelClick(mouseX, mouseY)) return;
   }
 
+  // Paths panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_PATHS) {
+    if (handlePathsPanelClick(mouseX, mouseY)) return;
+  }
+
   // Ignore world interaction if inside any top UI area
   int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
   if (currentTool == Tool.EDIT_SITES) {
     uiBottom += SITES_PANEL_HEIGHT;
   } else if (currentTool == Tool.EDIT_ZONES) {
     uiBottom += ZONES_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_PATHS) {
+    uiBottom += PATH_PANEL_HEIGHT;
   }
   if (mouseY < uiBottom) return;
 
@@ -313,13 +328,71 @@ void handleSitesMousePressed(float wx, float wy) {
   }
 }
 
+boolean handlePathsPanelClick(int mx, int my) {
+  if (!isInPathsPanel(mx, my)) return false;
+
+  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int btnW = 120;
+  int btnH = 22;
+  int btnY = panelY + 12;
+  int btnX1 = 120;
+  int btnX2 = btnX1 + btnW + 10;
+
+  // Close (Enter)
+  if (mx >= btnX1 && mx <= btnX1 + btnW &&
+      my >= btnY && my <= btnY + btnH) {
+    if (currentTool == Tool.EDIT_PATHS && isDrawingPath && currentPath != null) {
+      mapModel.addFinishedPath(currentPath);
+      isDrawingPath = false;
+      currentPath = null;
+    }
+    return true;
+  }
+
+  // Undo (Del)
+  if (mx >= btnX2 && mx <= btnX2 + btnW &&
+      my >= btnY && my <= btnY + btnH) {
+    if (currentTool == Tool.EDIT_PATHS && isDrawingPath && currentPath != null) {
+      if (!currentPath.points.isEmpty()) {
+        currentPath.points.remove(currentPath.points.size() - 1);
+      }
+      if (currentPath.points.isEmpty()) {
+        isDrawingPath = false;
+        currentPath = null;
+      }
+    }
+    return true;
+  }
+
+  return false;
+}
+
 void handlePathsMousePressed(float wx, float wy) {
   if (!isDrawingPath || currentPath == null) {
     // Start new path
     currentPath = new Path();
     isDrawingPath = true;
   }
-  currentPath.addPoint(wx, wy);
+  float maxSnapPx = 14;
+  PVector snapped = findNearestSnappingPoint(wx, wy, maxSnapPx);
+  if (snapped != null) {
+    if (currentPath.points.size() > 0) {
+      PVector last = currentPath.points.get(currentPath.points.size() - 1);
+      ArrayList<PVector> route = mapModel.findSnapPath(last, snapped);
+      if (route != null && route.size() > 1) {
+        for (int i = 1; i < route.size(); i++) {
+          PVector step = route.get(i);
+          currentPath.addPoint(step.x, step.y);
+        }
+      } else {
+        currentPath.addPoint(snapped.x, snapped.y);
+      }
+    } else {
+      currentPath.addPoint(snapped.x, snapped.y);
+    }
+  } else {
+    currentPath.addPoint(wx, wy);
+  }
 }
 
 void mouseDragged() {
@@ -424,6 +497,8 @@ void mouseDragged() {
     bottom += SITES_PANEL_HEIGHT;
   } else if (currentTool == Tool.EDIT_ZONES) {
     bottom += ZONES_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_PATHS) {
+    bottom += PATH_PANEL_HEIGHT;
   }
   if (mouseY < bottom) return;
 

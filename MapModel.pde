@@ -1,3 +1,7 @@
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.ArrayDeque;
+
 class MapModel {
   // World bounds in world coordinates
   float minX = 0.0f;
@@ -15,6 +19,10 @@ class MapModel {
   ArrayList<ZoneType> biomeTypes = new ArrayList<ZoneType>();
 
   boolean voronoiDirty = true;
+  boolean snapDirty = true;
+
+  HashMap<String, PVector> snapNodes = new HashMap<String, PVector>();
+  HashMap<String, ArrayList<String>> snapAdj = new HashMap<String, ArrayList<String>>();
 
   MapModel() {
     // biomeTypes will be filled from Main.initBiomeTypes()
@@ -38,9 +46,147 @@ class MapModel {
   }
 
   void drawCells(PApplet app) {
+    drawCells(app, true);
+  }
+
+  void drawCells(PApplet app, boolean showBorders) {
     for (Cell c : cells) {
-      c.draw(app);
+      c.draw(app, showBorders);
     }
+  }
+
+  // ---------- Snapping graph ----------
+
+  ArrayList<PVector> getSnapPoints() {
+    ensureSnapGraph();
+    return new ArrayList<PVector>(snapNodes.values());
+  }
+
+  ArrayList<PVector> findSnapPath(PVector from, PVector to) {
+    ensureSnapGraph();
+    String kFrom = keyFor(from.x, from.y);
+    String kTo = keyFor(to.x, to.y);
+    if (!snapNodes.containsKey(kFrom) || !snapNodes.containsKey(kTo)) return null;
+    if (kFrom.equals(kTo)) {
+      ArrayList<PVector> single = new ArrayList<PVector>();
+      single.add(snapNodes.get(kFrom));
+      return single;
+    }
+
+    HashSet<String> visited = new HashSet<String>();
+    HashMap<String, String> prev = new HashMap<String, String>();
+    ArrayDeque<String> q = new ArrayDeque<String>();
+    q.add(kFrom);
+    visited.add(kFrom);
+
+    while (!q.isEmpty()) {
+      String cur = q.poll();
+      ArrayList<String> neighbors = snapAdj.get(cur);
+      if (neighbors == null) continue;
+      for (String nb : neighbors) {
+        if (visited.contains(nb)) continue;
+        visited.add(nb);
+        prev.put(nb, cur);
+        if (nb.equals(kTo)) {
+          return reconstructPath(prev, kFrom, kTo);
+        }
+        q.add(nb);
+      }
+    }
+    return null;
+  }
+
+  void ensureSnapGraph() {
+    if (!snapDirty) return;
+    recomputeSnappingGraph();
+    snapDirty = false;
+  }
+
+  void recomputeSnappingGraph() {
+    snapNodes.clear();
+    snapAdj.clear();
+    if (sites == null || cells == null) return;
+
+    float eps = 1e-4f;
+    String[] centerKeys = new String[sites.size()];
+
+    // Add centers
+    for (int i = 0; i < sites.size(); i++) {
+      Site s = sites.get(i);
+      centerKeys[i] = ensureNode(s.x, s.y);
+    }
+
+    // Connect centers to vertices and polygon edges
+    for (Cell c : cells) {
+      if (c.vertices == null || c.vertices.size() == 0) continue;
+      String centerKey = (c.siteIndex >= 0 && c.siteIndex < centerKeys.length)
+        ? centerKeys[c.siteIndex]
+        : ensureNode(c.vertices.get(0).x, c.vertices.get(0).y);
+      int n = c.vertices.size();
+      if (n < 2) continue;
+      for (int i = 0; i < n; i++) {
+        PVector v = c.vertices.get(i);
+        PVector vn = c.vertices.get((i + 1) % n);
+
+        String vk = ensureNode(v.x, v.y);
+        String vnk = ensureNode(vn.x, vn.y);
+
+        connectNodes(centerKey, vk);
+        connectNodes(vk, vnk);
+      }
+    }
+
+    // Connect neighboring centers (cells sharing edge)
+    int cCount = cells.size();
+    for (int i = 0; i < cCount; i++) {
+      Cell a = cells.get(i);
+      for (int j = i + 1; j < cCount; j++) {
+        Cell b = cells.get(j);
+        if (cellsAreNeighbors(a, b, eps)) {
+          if (a.siteIndex >= 0 && a.siteIndex < centerKeys.length &&
+              b.siteIndex >= 0 && b.siteIndex < centerKeys.length) {
+            connectNodes(centerKeys[a.siteIndex], centerKeys[b.siteIndex]);
+          }
+        }
+      }
+    }
+  }
+
+  String ensureNode(float x, float y) {
+    String k = keyFor(x, y);
+    if (!snapNodes.containsKey(k)) {
+      snapNodes.put(k, new PVector(x, y));
+      snapAdj.put(k, new ArrayList<String>());
+    }
+    return k;
+  }
+
+  void connectNodes(String a, String b) {
+    if (a == null || b == null) return;
+    if (a.equals(b)) return;
+    ArrayList<String> la = snapAdj.get(a);
+    ArrayList<String> lb = snapAdj.get(b);
+    if (la == null || lb == null) return;
+    if (!la.contains(b)) la.add(b);
+    if (!lb.contains(a)) lb.add(a);
+  }
+
+  ArrayList<PVector> reconstructPath(HashMap<String, String> prev, String start, String goal) {
+    ArrayList<PVector> out = new ArrayList<PVector>();
+    String cur = goal;
+    while (cur != null) {
+      PVector p = snapNodes.get(cur);
+      if (p != null) out.add(0, p);
+      if (cur.equals(start)) break;
+      cur = prev.get(cur);
+    }
+    return out;
+  }
+
+  String keyFor(float x, float y) {
+    int xi = round(x * 10000.0f);
+    int yi = round(y * 10000.0f);
+    return xi + ":" + yi;
   }
 
   void drawPaths(PApplet app) {
@@ -123,12 +269,14 @@ class MapModel {
 
   void markVoronoiDirty() {
     voronoiDirty = true;
+    snapDirty = true;
   }
 
   void ensureVoronoiComputed() {
     if (voronoiDirty) {
       recomputeVoronoi();
       voronoiDirty = false;
+      snapDirty = true;
     }
   }
 
@@ -364,6 +512,7 @@ class MapModel {
     }
 
     markVoronoiDirty();
+    snapDirty = true;
   }
 
   void applyFuzz(float fuzz) {
@@ -420,17 +569,17 @@ class MapModel {
     float h = maxY - minY;
 
     int cols = res;
-    float dx = w / cols;
+    float dx = w / (cols - 1);
 
     float dy = dx * sqrt(3) / 2.0f;
-    int rows = max(1, (int)((h / dy) + 0.5f));
+    int rows = max(1, (int)ceil(h / dy) + 1);
 
     for (int j = 0; j < rows; j++) {
       float offset = (j % 2 == 0) ? 0.0f : dx * 0.5f;
-      for (int i = 0; i < cols; i++) {
-        float x = minX + (i + 0.5f) * dx + offset;
+      for (int i = -1; i <= cols; i++) {
+        float x = minX + i * dx + offset;
         if (x < minX || x > maxX) continue;
-        float y = minY + (j + 0.5f) * dy;
+        float y = minY + j * dy;
         if (y < minY || y > maxY) continue;
         sites.add(new Site(x, y));
       }
@@ -441,10 +590,10 @@ class MapModel {
     float w = maxX - minX;
     float h = maxY - minY;
 
-    float maxR = 0.20f * min(w, h);
-    float minR = 0.005f * min(w, h); // allow more points
-    float r = lerp(maxR, minR, density);
-    if (r <= 0) r = 0.005f * min(w, h);
+    float minDim = min(w, h);
+    float targetRes = map(density, 0, 1, 4, 110); // closer to grid/hex density
+    float baseSpacing = minDim / targetRes;
+    float r = baseSpacing * 0.5f;
 
     float cellSize = r / sqrt(2);
     int gridW = (int)ceil(w / cellSize);
@@ -467,7 +616,7 @@ class MapModel {
     }
 
     int k = 30;
-    int maxPoints = 4000;
+    int maxPoints = 8000;
 
     while (!active.isEmpty() && points.size() < maxPoints) {
       int idx = active.get((int)random(active.size()));

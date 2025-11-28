@@ -9,7 +9,7 @@ class Cell {
     this.biomeId = biomeId;
   }
 
-  void draw(PApplet app) {
+  void draw(PApplet app, boolean showBorders) {
     if (vertices == null || vertices.size() < 3) return;
 
     app.pushStyle();
@@ -22,8 +22,12 @@ class Cell {
     }
 
     app.fill(col);
-    app.stroke(180);
-    app.strokeWeight(1.0f / viewport.zoom);
+    if (showBorders) {
+      app.stroke(180);
+      app.strokeWeight(1.0f / viewport.zoom);
+    } else {
+      app.noStroke();
+    }
 
     app.beginShape();
     for (int i = 0; i < vertices.size(); i++) {
