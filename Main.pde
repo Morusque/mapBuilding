@@ -18,7 +18,7 @@ boolean isDraggingSite = false;
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
 final int TOOL_BAR_HEIGHT = 26;
-final int SITES_PANEL_HEIGHT = 110; // enough for sliders + generate button
+final int SITES_PANEL_HEIGHT = 140; // more room for 3 sliders + button
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -28,6 +28,7 @@ PlacementMode[] placementModes = {
 };
 int placementModeIndex = 0; // 0 = GRID
 float siteDensity = 0.5;    // 0..1
+float siteFuzz = 0.0;       // 0..1, 0 = no jitter
 
 void settings() {
   size(1200, 800, P2D);

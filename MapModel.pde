@@ -205,12 +205,34 @@ class MapModel {
       break;
     }
 
+    // Apply jitter according to global siteFuzz (0..1).
+    applyFuzz(siteFuzz);
+
     clearSiteSelection();
     if (!sites.isEmpty()) {
       sites.get(0).selected = true;
     }
 
     markVoronoiDirty();
+  }
+
+  void applyFuzz(float fuzz) {
+    if (fuzz <= 0) return;
+    if (sites.isEmpty()) return;
+
+    float w = maxX - minX;
+    float h = maxY - minY;
+    float d = min(w, h);
+
+    // Max offset is a fraction of world size; adjust if you want more/less aggressive jitter
+    float maxOffset = fuzz * d / 10.0; // fuzz=1 → up to 10% of world size
+
+    for (Site s : sites) {
+      float dx = random(-maxOffset, maxOffset);
+      float dy = random(-maxOffset, maxOffset);
+      s.x = constrain(s.x + dx, minX, maxX);
+      s.y = constrain(s.y + dy, minY, maxY);
+    }
   }
 
   void generateGridSites(float density) {

@@ -47,24 +47,34 @@ boolean handleSitesPanelClick(int mx, int my) {
 
   int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
 
-  // Density slider bounds
   int sliderX = 10;
-  int sliderY = panelY + 25;
   int sliderW = 250;
   int sliderH = 16;
 
-  // Density slider
+  // Density slider bounds
+  int densityY = panelY + 25;
+
   if (mx >= sliderX && mx <= sliderX + sliderW &&
-      my >= sliderY && my <= sliderY + sliderH) {
+      my >= densityY && my <= densityY + sliderH) {
     float t = (mx - sliderX) / (float)sliderW;
     siteDensity = constrain(t, 0, 1);
     return true;
   }
 
+  // Fuzz slider bounds
+  int fuzzY = panelY + 25 + 22;
+
+  if (mx >= sliderX && mx <= sliderX + sliderW &&
+      my >= fuzzY && my <= fuzzY + sliderH) {
+    float t = (mx - sliderX) / (float)sliderW;
+    siteFuzz = constrain(t, 0, 1);
+    return true;
+  }
+
   // Mode slider bounds
   int modeSliderX = 10;
-  int modeSliderY = panelY + 25 + 25;
-  int modeSliderW = 250;
+  int modeSliderY = panelY + 25 + 44;
+  int modeSliderW = sliderW;
   int modeSliderH = 14;
 
   if (mx >= modeSliderX && mx <= modeSliderX + modeSliderW &&
@@ -163,22 +173,30 @@ void mouseDragged() {
   if (mouseButton == LEFT && currentTool == Tool.EDIT_SITES && isInSitesPanel(mouseX, mouseY)) {
     int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
 
-    // Density slider
     int sliderX = 10;
-    int sliderY = panelY + 25;
     int sliderW = 250;
     int sliderH = 16;
 
-    if (mouseY >= sliderY && mouseY <= sliderY + sliderH) {
+    // Density slider
+    int densityY = panelY + 25;
+    if (mouseY >= densityY && mouseY <= densityY + sliderH) {
       float t = (mouseX - sliderX) / (float)sliderW;
       siteDensity = constrain(t, 0, 1);
       return;
     }
 
+    // Fuzz slider
+    int fuzzY = panelY + 25 + 22;
+    if (mouseY >= fuzzY && mouseY <= fuzzY + sliderH) {
+      float t = (mouseX - sliderX) / (float)sliderW;
+      siteFuzz = constrain(t, 0, 1);
+      return;
+    }
+
     // Mode slider
     int modeSliderX = 10;
-    int modeSliderY = panelY + 25 + 25;
-    int modeSliderW = 250;
+    int modeSliderY = panelY + 25 + 44;
+    int modeSliderW = sliderW;
     int modeSliderH = 14;
 
     if (mouseY >= modeSliderY && mouseY <= modeSliderY + modeSliderH) {

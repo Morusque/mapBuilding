@@ -66,24 +66,23 @@ void drawSitesPanel() {
   textAlign(LEFT, TOP);
   text("Sites generation", 10, panelY + 5);
 
-  // --- Density slider (first line) ---
+  // ----- Density slider (first line) -----
   int sliderX = 10;
-  int sliderY = panelY + 25;
   int sliderW = 250;
   int sliderH = 16;
 
-  // Track
+  int densityY = panelY + 25;
+
   stroke(160);
   fill(230);
-  rect(sliderX, sliderY, sliderW, sliderH, 4);
+  rect(sliderX, densityY, sliderW, sliderH, 4);
 
-  // Handle
-  float handleX = sliderX + siteDensity * sliderW;
+  float densityHandleX = sliderX + siteDensity * sliderW;
   float handleW = 8;
 
   fill(80);
   noStroke();
-  rect(handleX - handleW / 2, sliderY - 2, handleW, sliderH + 4, 4);
+  rect(densityHandleX - handleW / 2, densityY - 2, handleW, sliderH + 4, 4);
 
   // Density text + approximate count (grid-based estimate)
   int minRes = 2;
@@ -95,12 +94,30 @@ void drawSitesPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Density: " + nf(siteDensity, 1, 2) + "  (~" + approxCount + " sites)",
-       sliderX + sliderW + 10, sliderY - 2);
+       sliderX + sliderW + 10, densityY - 2);
 
-  // --- Placement mode slider (second line) ---
+  // ----- Fuzz slider (second line) -----
+  int fuzzY = panelY + 25 + 22;
+
+  stroke(160);
+  fill(230);
+  rect(sliderX, fuzzY, sliderW, sliderH, 4);
+
+  float fuzzHandleX = sliderX + siteFuzz * sliderW;
+
+  fill(80);
+  noStroke();
+  rect(fuzzHandleX - handleW / 2, fuzzY - 2, handleW, sliderH + 4, 4);
+
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Fuzz: " + nf(siteFuzz, 1, 2) + "  (0 = none, 1 = strong jitter)",
+       sliderX + sliderW + 10, fuzzY - 2);
+
+  // ----- Placement mode slider (third line) -----
   int modeSliderX = 10;
-  int modeSliderY = panelY + 25 + 25;
-  int modeSliderW = 250;
+  int modeSliderY = panelY + 25 + 44; // a bit below fuzz
+  int modeSliderW = sliderW;
   int modeSliderH = 14;
 
   stroke(160);
@@ -134,7 +151,7 @@ void drawSitesPanel() {
   textAlign(LEFT, TOP);
   text("Placement: " + modeName, modeSliderX + modeSliderW + 10, modeSliderY - 2);
 
-  // --- Generate button (third line) ---
+  // ----- Generate button (fourth line) -----
   int genW = 100;
   int genH = 24;
   int genX = 10;
