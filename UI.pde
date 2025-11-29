@@ -43,11 +43,11 @@ void drawToolButtons() {
   line(0, barY + barH - 1, width, barY + barH - 1);
   line(width - 1, barY, width - 1, barY + barH);
 
-  String[] labels = { "Sites", "Zones", "Elevation", "Paths", "Struct", "Labels" };
+  String[] labels = { "Sites", "Elevation", "Zones", "Paths", "Struct", "Labels" };
   Tool[] tools = {
     Tool.EDIT_SITES,
-    Tool.EDIT_ZONES,
     Tool.EDIT_ELEVATION,
+    Tool.EDIT_ZONES,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS
@@ -330,6 +330,23 @@ void drawZonesPanel() {
     text("Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2),
          hueSliderX + hueSliderW + 10, hueSliderY - 2);
   }
+
+  // Brush radius slider
+  int brushY = panelY + panelH - 28;
+  int brushX = 10;
+  int brushW = 200;
+  int brushH = 14;
+  stroke(160);
+  fill(230);
+  rect(brushX, brushY, brushW, brushH, 4);
+  float bNorm = constrain(map(zoneBrushRadius, 0.01f, 0.15f, 0, 1), 0, 1);
+  float bx = brushX + bNorm * brushW;
+  fill(40);
+  noStroke();
+  ellipse(bx, brushY + brushH / 2.0f, brushH * 0.9f, brushH * 0.9f);
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Brush radius", brushX + brushW + 10, brushY - 2);
 }
 
 // ----- PATHS PANEL -----
@@ -461,10 +478,10 @@ void drawElevationPanel() {
   text("Noise scale", sliderX + sliderW + 10, noiseY - 2);
 
   // Generate button
-  int genW = 120;
+  int genW = 140;
   int genH = 22;
-  int genX = sliderX + sliderW + 90;
-  int genY = noiseY - 4;
+  int genX = sliderX;
+  int genY = noiseY + sliderH + 6;
   drawBevelButton(genX, genY, genW, genH, false);
   fill(10);
   textAlign(CENTER, CENTER);

@@ -39,11 +39,11 @@ boolean handleToolButtonClick(int mx, int my) {
   int margin = 10;
   int buttonW = 90;
 
-  String[] labels = { "Sites", "Zones", "Elevation", "Paths", "Struct", "Labels" };
+  String[] labels = { "Sites", "Elevation", "Zones", "Paths", "Struct", "Labels" };
   Tool[] tools = {
     Tool.EDIT_SITES,
-    Tool.EDIT_ZONES,
     Tool.EDIT_ELEVATION,
+    Tool.EDIT_ZONES,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS
@@ -238,6 +238,18 @@ boolean handleZonesPanelClick(int mx, int my) {
     }
   }
 
+  // Brush radius slider
+  int brushY = (TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) + ZONES_PANEL_HEIGHT - 28;
+  int brushX = 10;
+  int brushW = 200;
+  int brushH = 14;
+  if (mx >= brushX && mx <= brushX + brushW &&
+      my >= brushY && my <= brushY + brushH) {
+    float t = constrain((mx - brushX) / (float)brushW, 0, 1);
+    zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
+    return true;
+  }
+
   return false;
 }
 
@@ -254,6 +266,20 @@ void fillBiomeAt(float wx, float wy) {
   Cell c = mapModel.findCellContaining(wx, wy);
   if (c != null) {
     mapModel.floodFillBiomeFromCell(c, activeBiomeIndex);
+  }
+}
+
+void paintBiomeBrush(float wx, float wy) {
+  if (mapModel.cells == null) return;
+  float r2 = zoneBrushRadius * zoneBrushRadius;
+  for (Cell c : mapModel.cells) {
+    PVector cen = mapModel.cellCentroid(c);
+    float dx = cen.x - wx;
+    float dy = cen.y - wy;
+    float d2 = dx * dx + dy * dy;
+    if (d2 <= r2) {
+      c.biomeId = activeBiomeIndex;
+    }
   }
 }
 
@@ -314,7 +340,7 @@ void mousePressed() {
       handleSitesMousePressed(worldPos.x, worldPos.y);
     } else if (currentTool == Tool.EDIT_ZONES) {
       if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
-        paintBiomeAt(worldPos.x, worldPos.y);
+        paintBiomeBrush(worldPos.x, worldPos.y);
       } else {
         fillBiomeAt(worldPos.x, worldPos.y);
       }
@@ -449,10 +475,10 @@ boolean handleElevationPanelClick(int mx, int my) {
   }
 
   // Generate button
-  int genW = 120;
+  int genW = 140;
   int genH = 22;
-  int genX = sliderX + sliderW + 90;
-  int genY = noiseY - 4;
+  int genX = sliderX;
+  int genY = noiseY + sliderH + 6;
   if (mx >= genX && mx <= genX + genW &&
       my >= genY && my <= genY + genH) {
     mapModel.generateElevationNoise(elevationNoiseScale, 1.0f);
@@ -607,6 +633,16 @@ void mouseDragged() {
         return;
       }
     }
+
+    int brushY = panelY + ZONES_PANEL_HEIGHT - 28;
+    int brushX = 10;
+    int brushW = 200;
+    int brushH = 14;
+    if (mouseY >= brushY && mouseY <= brushY + brushH) {
+      float t = constrain((mouseX - brushX) / (float)brushW, 0, 1);
+      zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
+      return;
+    }
   }
 
   // Zones: paint while dragging (only for Paint mode, outside UI)
@@ -615,7 +651,7 @@ void mouseDragged() {
     if (mouseY >= uiBottom) {
       PVector w = viewport.screenToWorld(mouseX, mouseY);
       if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
-        paintBiomeAt(w.x, w.y);
+        paintBiomeBrush(w.x, w.y);
       }
     }
     return;

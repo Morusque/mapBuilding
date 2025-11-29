@@ -342,6 +342,7 @@ class MapModel {
     cells.clear();
 
     int defaultBiome = 0;
+    float defaultElev = defaultElevation;
 
     // For each site, start with the world bounding box and clip by bisectors
     for (int i = 0; i < n; i++) {
@@ -382,7 +383,16 @@ class MapModel {
           biomeId = sampleBiomeFromOldCells(oldCells, cx, cy, defaultBiome);
         }
 
-        cells.add(new Cell(i, poly, biomeId));
+        float elev;
+        if (oldCells.isEmpty()) {
+          elev = defaultElev;
+        } else {
+          elev = sampleElevationFromOldCells(oldCells, cx, cy, defaultElev);
+        }
+
+        Cell newCell = new Cell(i, poly, biomeId);
+        newCell.elevation = elev;
+        cells.add(newCell);
       }
     }
   }
@@ -444,6 +454,15 @@ class MapModel {
       }
     }
     return fallbackBiome;
+  }
+
+  float sampleElevationFromOldCells(ArrayList<Cell> oldCells, float x, float y, float fallback) {
+    for (Cell c : oldCells) {
+      if (pointInPolygon(x, y, c.vertices)) {
+        return c.elevation;
+      }
+    }
+    return fallback;
   }
 
   // ---------- Zones / cells picking ----------

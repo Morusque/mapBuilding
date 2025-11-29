@@ -25,7 +25,7 @@ Path currentPath = null;
 final int TOP_BAR_HEIGHT = 30;
 final int TOOL_BAR_HEIGHT = 26;
 final int SITES_PANEL_HEIGHT = 140;  // sliders + generate
-final int ZONES_PANEL_HEIGHT = 100;   // biome palette + paint/fill buttons
+final int ZONES_PANEL_HEIGHT = 130;   // biome palette + paint/fill buttons + brush slider
 final int PATH_PANEL_HEIGHT = 40;     // close/undo buttons
 final int ELEV_PANEL_HEIGHT = 120;
 
@@ -42,11 +42,13 @@ float siteFuzz = 0.0;       // 0..1
 // Zones (biomes) painting
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
 ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
+float zoneBrushRadius = 0.04f;
 float seaLevel = 0.0f;
 float elevationBrushRadius = 0.08f;
 float elevationBrushStrength = 0.05f; // per stroke
 boolean elevationBrushRaise = true;
 float elevationNoiseScale = 4.0f;
+float defaultElevation = 0.05f;
 
 void settings() {
   size(1200, 800, P2D);
@@ -65,9 +67,9 @@ void setup() {
 void initBiomeTypes() {
   mapModel.biomeTypes.clear();
   mapModel.biomeTypes.add(new ZoneType("None",  color(235)));
-  mapModel.biomeTypes.add(new ZoneType("Type 1", color(210, 230, 255)));
-  mapModel.biomeTypes.add(new ZoneType("Type 2", color(220, 255, 220)));
-  mapModel.biomeTypes.add(new ZoneType("Type 3", color(255, 240, 210)));
+  mapModel.biomeTypes.add(new ZoneType("Type 1", color(230, 220, 200)));
+  mapModel.biomeTypes.add(new ZoneType("Type 2", color(210, 240, 210)));
+  mapModel.biomeTypes.add(new ZoneType("Type 3", color(245, 225, 190)));
 }
 
 void draw() {
@@ -114,10 +116,10 @@ void draw() {
   drawToolButtons();
   if (currentTool == Tool.EDIT_SITES) {
     drawSitesPanel();
-  } else if (currentTool == Tool.EDIT_ZONES) {
-    drawZonesPanel();
   } else if (currentTool == Tool.EDIT_ELEVATION) {
     drawElevationPanel();
+  } else if (currentTool == Tool.EDIT_ZONES) {
+    drawZonesPanel();
   } else if (currentTool == Tool.EDIT_PATHS) {
     drawPathsPanel();
   }
@@ -144,7 +146,7 @@ void drawPathSnappingPoints() {
     }
   }
 
-  float baseR = 4.0f / viewport.zoom;
+  float baseR = 3.0f / viewport.zoom;
 
   pushStyle();
   noStroke();
@@ -154,7 +156,7 @@ void drawPathSnappingPoints() {
   }
 
   if (nearest != null) {
-    float hr = 6.5f / viewport.zoom;
+    float hr = 5.0f / viewport.zoom;
     stroke(0);
     strokeWeight(1.0f / viewport.zoom);
     fill(255, 255, 0, 180);
@@ -187,5 +189,6 @@ void seedDefaultZones() {
   if (mapModel.cells == null || mapModel.cells.isEmpty()) return;
   for (Cell c : mapModel.cells) {
     c.biomeId = 0;
+    c.elevation = defaultElevation;
   }
 }
