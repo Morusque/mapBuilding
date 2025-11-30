@@ -799,6 +799,9 @@ class MapModel {
 
   void generateSites(PlacementMode mode, float density, boolean preserveCellData) {
     preservedCells = preserveCellData ? new ArrayList<Cell>(cells) : null;
+    if (!preserveCellData) {
+      cells.clear(); // drop old cells so properties are not inherited
+    }
     sites.clear();
 
     if (mode == PlacementMode.GRID) {

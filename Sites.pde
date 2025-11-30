@@ -12,7 +12,7 @@ class Site {
   void draw(PApplet app) {
     app.pushStyle();
 
-    // Selected site: larger, like before
+    // Selected site: larger
     if (selected) {
       float rPixels = 6.0f;
       float rWorld = rPixels / viewport.zoom;
