@@ -28,6 +28,8 @@ final int SITES_PANEL_HEIGHT = 140;  // sliders + generate
 final int ZONES_PANEL_HEIGHT = 150;   // biome palette + paint/fill buttons + brush slider
 final int PATH_PANEL_HEIGHT = 40;     // close/undo buttons
 final int ELEV_PANEL_HEIGHT = 150;
+final int LABEL_PANEL_HEIGHT = 60;
+final int RENDER_PANEL_HEIGHT = 120;
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -52,6 +54,23 @@ float elevationNoiseScale = 4.0f;
 float defaultElevation = 0.05f;
 float pathEraserRadius = 0.01f;
 boolean pathEraserMode = false;
+float pathStrokeWeightPx = 2.0f;
+
+// Render toggles
+boolean renderShowZones = true;
+boolean renderShowWater = true;
+boolean renderShowElevation = true;
+boolean renderShowPaths = true;
+boolean renderShowLabels = true;
+boolean renderShowStructures = true;
+
+// Zone renaming state
+int editingZoneNameIndex = -1;
+String zoneNameDraft = "";
+
+// Label editing state
+int editingLabelIndex = -1;
+String labelDraft = "Label";
 
 // Slider drag state
 final int SLIDER_NONE = 0;
@@ -64,6 +83,8 @@ final int SLIDER_ELEV_SEA = 6;
 final int SLIDER_ELEV_RADIUS = 7;
 final int SLIDER_ELEV_STRENGTH = 8;
 final int SLIDER_ELEV_NOISE = 9;
+final int SLIDER_PATH_ERASER = 10;
+final int SLIDER_PATH_WEIGHT = 11;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -96,14 +117,19 @@ void draw() {
   viewport.applyTransform(this);
 
   mapModel.ensureVoronoiComputed();
-  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION);
-  mapModel.drawCells(this, showBorders);
+  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES);
+  boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER && !renderShowZones);
+  if (drawCellsFlag) {
+    mapModel.drawCells(this, showBorders);
+  }
 
   // Paths are visible in all modes
   if (currentTool == Tool.EDIT_ELEVATION) {
     mapModel.drawPaths(this, color(120), 1.0f / viewport.zoom);
+  } else if (currentTool == Tool.EDIT_RENDER) {
+    if (renderShowPaths) mapModel.drawPaths(this, color(60, 60, 200), pathStrokeWeightPx / viewport.zoom);
   } else {
-    mapModel.drawPaths(this);
+    mapModel.drawPaths(this, color(60, 60, 200), pathStrokeWeightPx / viewport.zoom);
   }
 
   // Sites only in Sites mode; paths use snapping dots instead
@@ -121,13 +147,28 @@ void draw() {
   }
 
   // Structures and labels render in all modes
-  mapModel.drawStructures(this);
-  mapModel.drawLabels(this);
+  if (currentTool != Tool.EDIT_RENDER || renderShowStructures) {
+    mapModel.drawStructures(this);
+  }
+  if (currentTool != Tool.EDIT_RENDER || renderShowLabels) {
+    mapModel.drawLabels(this);
+  }
+
+  if (currentTool == Tool.EDIT_STRUCTURES) {
+    drawStructurePreview();
+  }
 
   if (currentTool == Tool.EDIT_ELEVATION) {
     mapModel.drawElevationOverlay(this, seaLevel, false);
+    drawElevationBrushPreview();
   } else if (currentTool == Tool.EDIT_ZONES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
+  } else if (currentTool == Tool.EDIT_PATHS && pathEraserMode) {
+    drawPathEraserPreview();
+  } else if (currentTool == Tool.EDIT_RENDER) {
+    if (renderShowElevation || renderShowWater) {
+      mapModel.drawElevationOverlay(this, seaLevel, false);
+    }
   } else {
     mapModel.drawDebugWorldBounds(this);
   }
@@ -144,6 +185,10 @@ void draw() {
     drawZonesPanel();
   } else if (currentTool == Tool.EDIT_PATHS) {
     drawPathsPanel();
+  } else if (currentTool == Tool.EDIT_LABELS) {
+    drawLabelsPanel();
+  } else if (currentTool == Tool.EDIT_RENDER) {
+    drawRenderPanel();
   }
 }
 
@@ -225,5 +270,49 @@ void drawZoneBrushPreview() {
   strokeWeight(1.0f / viewport.zoom);
   float r = zoneBrushRadius;
   ellipse(w.x, w.y, r * 2, r * 2);
+  popStyle();
+}
+
+void drawElevationBrushPreview() {
+  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + ELEV_PANEL_HEIGHT;
+  if (mouseY < uiBottom) return;
+  PVector w = viewport.screenToWorld(mouseX, mouseY);
+  pushStyle();
+  noFill();
+  stroke(40, 120);
+  strokeWeight(1.0f / viewport.zoom);
+  float r = elevationBrushRadius;
+  ellipse(w.x, w.y, r * 2, r * 2);
+  popStyle();
+}
+
+void drawPathEraserPreview() {
+  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + PATH_PANEL_HEIGHT;
+  if (mouseY < uiBottom) return;
+  PVector w = viewport.screenToWorld(mouseX, mouseY);
+  pushStyle();
+  noFill();
+  stroke(120, 40, 40, 150);
+  strokeWeight(1.0f / viewport.zoom);
+  float r = pathEraserRadius;
+  ellipse(w.x, w.y, r * 2, r * 2);
+  popStyle();
+}
+
+void drawStructurePreview() {
+  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  if (mouseY < uiBottom) return;
+  PVector w = viewport.screenToWorld(mouseX, mouseY);
+  Structure tmp = mapModel.computeSnappedStructure(w.x, w.y);
+  if (tmp == null) return;
+  pushStyle();
+  float r = tmp.size;
+  translate(tmp.x, tmp.y);
+  rotate(tmp.angle);
+  stroke(80, 140);
+  strokeWeight(1.0f / viewport.zoom);
+  fill(200, 200, 180, 120);
+  rectMode(CENTER);
+  rect(0, 0, r, r);
   popStyle();
 }

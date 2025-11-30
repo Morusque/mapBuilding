@@ -43,14 +43,15 @@ void drawToolButtons() {
   line(0, barY + barH - 1, width, barY + barH - 1);
   line(width - 1, barY, width - 1, barY + barH);
 
-  String[] labels = { "Sites", "Elevation", "Zones", "Paths", "Struct", "Labels" };
+  String[] labels = { "Sites", "Elevation", "Zones", "Paths", "Struct", "Labels", "Rendering" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
     Tool.EDIT_ZONES,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
-    Tool.EDIT_LABELS
+    Tool.EDIT_LABELS,
+    Tool.EDIT_RENDER
   };
 
   for (int i = 0; i < labels.length; i++) {
@@ -320,7 +321,21 @@ void drawZonesPanel() {
     rect(x, y, swatchW, swatchH, 4);
 
     fill(0);
-    text(zt.name, x + swatchW * 0.5f, textY);
+    String nameShown = (editingZoneNameIndex == i) ? zoneNameDraft : zt.name;
+    text(nameShown, x + swatchW * 0.5f, textY);
+
+    if (editingZoneNameIndex == i) {
+      int boxW = swatchW;
+      int boxH = 16;
+      int boxX = x;
+      int boxY = textY + 2;
+      stroke(60);
+      noFill();
+      rect(boxX, boxY, boxW, boxH);
+      fill(0);
+      textAlign(LEFT, CENTER);
+      text(zoneNameDraft, boxX + 4, boxY + boxH / 2);
+    }
   }
 
   // Hue slider for currently selected biome
@@ -409,6 +424,34 @@ void drawPathsPanel() {
   text("Close (Enter)", btnX1 + btnW / 2, btnY + btnH / 2);
   text("Undo (Del)",    btnX2 + btnW / 2, btnY + btnH / 2);
   text("Eraser",        btnX3 + btnW / 2, btnY + btnH / 2);
+
+  int sliderX = btnX3 + btnW + 20;
+  int sliderW = 200;
+  int sliderH = 14;
+  int sliderY = panelY + 14;
+  stroke(160);
+  fill(230);
+  rect(sliderX, sliderY, sliderW, sliderH, 4);
+  float eNorm = constrain(map(pathEraserRadius, 0.005f, 0.1f, 0, 1), 0, 1);
+  float ex = sliderX + eNorm * sliderW;
+  fill(40);
+  noStroke();
+  ellipse(ex, sliderY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Eraser radius", sliderX + sliderW + 10, sliderY - 2);
+
+  int weightY = sliderY + 20;
+  stroke(160);
+  fill(230);
+  rect(sliderX, weightY, sliderW, sliderH, 4);
+  float wNorm = constrain(map(pathStrokeWeightPx, 1.0f, 5.0f, 0, 1), 0, 1);
+  float wx = sliderX + wNorm * sliderW;
+  fill(40);
+  noStroke();
+  ellipse(wx, weightY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
+  fill(0);
+  text("Path weight (px)", sliderX + sliderW + 10, weightY - 2);
 }
 
 // ----- ELEVATION PANEL -----
@@ -490,33 +533,105 @@ void drawElevationPanel() {
   text("Raise", btnX1 + btnW / 2, btnY + btnH / 2);
   text("Lower", btnX2 + btnW / 2, btnY + btnH / 2);
 
-  // Noise scale slider
-  int noiseY = btnY + btnH + 10;
+  // Second column for noise controls
+  int col2X = sliderX + sliderW + 140;
+  int col2Y = panelY + 24;
+  int colSliderW = 220;
+
   stroke(160);
   fill(230);
-  rect(sliderX, noiseY, sliderW, sliderH, 4);
+  rect(col2X, col2Y, colSliderW, sliderH, 4);
   float nNorm = constrain(map(elevationNoiseScale, 1.0f, 12.0f, 0, 1), 0, 1);
-  float nx = sliderX + nNorm * sliderW;
+  float nx = col2X + nNorm * colSliderW;
   fill(40);
   noStroke();
-  ellipse(nx, noiseY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
+  ellipse(nx, col2Y + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
   fill(0);
-  text("Noise scale", sliderX + sliderW + 10, noiseY - 2);
+  textAlign(LEFT, TOP);
+  text("Noise scale", col2X + colSliderW + 10, col2Y - 2);
 
-  // Generate & Vary buttons
   int genW = 120;
   int genH = 22;
-  int genX = sliderX;
-  int genY = noiseY + sliderH + 8;
-  drawBevelButton(genX, genY, genW, genH, false);
+  int genY = col2Y + sliderH + 8;
+  drawBevelButton(col2X, genY, genW, genH, false);
   fill(10);
   textAlign(CENTER, CENTER);
-  text("Perlin Generate", genX + genW / 2, genY + genH / 2);
+  text("Perlin Generate", col2X + genW / 2, genY + genH / 2);
 
-  int varyX = genX + genW + 10;
+  int varyX = col2X + genW + 10;
   drawBevelButton(varyX, genY, genW, genH, false);
   fill(10);
   text("Vary", varyX + genW / 2, genY + genH / 2);
+}
+
+// ----- LABELS PANEL -----
+void drawLabelsPanel() {
+  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int panelH = LABEL_PANEL_HEIGHT;
+
+  noStroke();
+  fill(232);
+  rect(0, panelY, width, panelH);
+  stroke(255);
+  line(0, panelY, width, panelY);
+  line(0, panelY, 0, panelY + panelH);
+  stroke(120);
+  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
+  line(width - 1, panelY, width - 1, panelY + panelH);
+
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Labels", 10, panelY + 6);
+
+  int boxX = 10;
+  int boxY = panelY + 24;
+  int boxW = 260;
+  int boxH = 20;
+  stroke(80);
+  fill(245);
+  rect(boxX, boxY, boxW, boxH);
+  fill(0);
+  textAlign(LEFT, CENTER);
+  text(labelDraft, boxX + 6, boxY + boxH / 2);
+  textAlign(LEFT, TOP);
+  text("Type text then click map to place/continue editing", boxX + boxW + 10, boxY - 2);
+}
+
+// ----- RENDER PANEL -----
+void drawRenderPanel() {
+  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int panelH = RENDER_PANEL_HEIGHT;
+
+  noStroke();
+  fill(232);
+  rect(0, panelY, width, panelH);
+  stroke(255);
+  line(0, panelY, width, panelY);
+  line(0, panelY, 0, panelY + panelH);
+  stroke(120);
+  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
+  line(width - 1, panelY, width - 1, panelY + panelH);
+
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Rendering", 10, panelY + 6);
+
+  int chkX = 10;
+  int chkY = panelY + 12;
+  int chkSize = 14;
+  int spacing = 20;
+
+  drawCheckbox(chkX, chkY, chkSize, renderShowZones, "Zones");
+  chkY += spacing;
+  drawCheckbox(chkX, chkY, chkSize, renderShowWater, "Water");
+  chkY += spacing;
+  drawCheckbox(chkX, chkY, chkSize, renderShowElevation, "Elevation");
+  chkY += spacing;
+  drawCheckbox(chkX, chkY, chkSize, renderShowPaths, "Paths");
+  chkY += spacing;
+  drawCheckbox(chkX, chkY, chkSize, renderShowLabels, "Labels");
+  chkY += spacing;
+  drawCheckbox(chkX, chkY, chkSize, renderShowStructures, "Structures");
 }
 
 // ---------- UI helpers ----------
@@ -559,4 +674,17 @@ void drawBevelButton(int x, int y, int w, int h, boolean pressed) {
     line(x, y + h - 1, x + w - 1, y + h - 1);
     line(x + w - 1, y, x + w - 1, y + h - 1);
   }
+}
+
+void drawCheckbox(int x, int y, int size, boolean on, String label) {
+  stroke(80);
+  fill(on ? 200 : 245);
+  rect(x, y, size, size);
+  if (on) {
+    line(x + 3, y + size / 2, x + size / 2, y + size - 3);
+    line(x + size / 2, y + size - 3, x + size - 3, y + 3);
+  }
+  fill(0);
+  textAlign(LEFT, CENTER);
+  text(label, x + size + 6, y + size / 2);
 }

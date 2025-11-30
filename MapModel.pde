@@ -79,6 +79,29 @@ class MapModel {
     app.popStyle();
   }
 
+  Structure computeSnappedStructure(float wx, float wy) {
+    Structure s = new Structure(wx, wy);
+    float snapRange = max(0.04f, s.size * 2.0f);
+
+    PVector[] seg = nearestPathSegment(wx, wy, snapRange);
+    if (seg != null) {
+      PVector a = seg[0];
+      PVector b = seg[1];
+      PVector p = seg[2];
+      float dx = b.x - a.x;
+      float dy = b.y - a.y;
+      float ang = atan2(dy, dx);
+      float nx = -sin(ang);
+      float ny = cos(ang);
+      float offset = s.size * 0.6f;
+      s.x = p.x + nx * offset;
+      s.y = p.y + ny * offset;
+      s.angle = ang;
+      return s;
+    }
+    return s;
+  }
+
   void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours) {
     if (cells == null) return;
     app.pushStyle();
@@ -330,6 +353,39 @@ class MapModel {
         paths.remove(i);
       }
     }
+  }
+
+  PVector[] nearestPathSegment(float wx, float wy, float maxDist) {
+    if (paths == null || paths.isEmpty()) return null;
+    float best = maxDist;
+    PVector bestA = null, bestB = null, bestP = null;
+    for (Path p : paths) {
+      ArrayList<PVector> pts = p.points;
+      for (int i = 0; i < pts.size() - 1; i++) {
+        PVector a = pts.get(i);
+        PVector b = pts.get(i + 1);
+        PVector proj = closestPointOnSegment(wx, wy, a, b);
+        float d = dist(wx, wy, proj.x, proj.y);
+        if (d < best) {
+          best = d;
+          bestA = a;
+          bestB = b;
+          bestP = proj;
+        }
+      }
+    }
+    if (bestP == null) return null;
+    return new PVector[] { bestA, bestB, bestP };
+  }
+
+  PVector closestPointOnSegment(float px, float py, PVector a, PVector b) {
+    float ax = a.x, ay = a.y;
+    float bx = b.x, by = b.y;
+    float abx = bx - ax;
+    float aby = by - ay;
+    float t = ((px - ax) * abx + (py - ay) * aby) / (abx * abx + aby * aby + 1e-9f);
+    t = constrain(t, 0, 1);
+    return new PVector(ax + abx * t, ay + aby * t);
   }
 
   // ---------- Sites management ----------
@@ -949,6 +1005,8 @@ class Structure {
   float x;
   float y;
   int typeId = 0;
+  float angle = 0;
+  float size = 0.02f; // world units square side
 
   Structure(float x, float y) {
     this.x = x;
@@ -956,12 +1014,16 @@ class Structure {
   }
 
   void draw(PApplet app) {
-    float r = 6.0f / viewport.zoom;
+    float r = size;
+    app.pushMatrix();
+    app.translate(x, y);
+    app.rotate(angle);
     app.stroke(30);
     app.strokeWeight(1.0f / viewport.zoom);
     app.fill(200, 200, 180);
     app.rectMode(CENTER);
-    app.rect(x, y, r, r);
+    app.rect(0, 0, r, r);
+    app.popMatrix();
   }
 }
 

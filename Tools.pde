@@ -4,7 +4,8 @@ enum Tool {
   EDIT_ZONES,
   EDIT_PATHS,
   EDIT_STRUCTURES,
-  EDIT_LABELS
+  EDIT_LABELS,
+  EDIT_RENDER
 }
 
 enum PlacementMode {

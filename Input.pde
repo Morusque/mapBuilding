@@ -28,6 +28,20 @@ boolean isInPathsPanel(int mx, int my) {
   return (my >= y0 && my <= y1);
 }
 
+boolean isInLabelsPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_LABELS) return false;
+  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int y1 = y0 + LABEL_PANEL_HEIGHT;
+  return (my >= y0 && my <= y1);
+}
+
+boolean isInRenderPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_RENDER) return false;
+  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int y1 = y0 + RENDER_PANEL_HEIGHT;
+  return (my >= y0 && my <= y1);
+}
+
 boolean handleToolButtonClick(int mx, int my) {
   int barY = TOP_BAR_HEIGHT;
   int barH = TOOL_BAR_HEIGHT;
@@ -39,14 +53,15 @@ boolean handleToolButtonClick(int mx, int my) {
   int margin = 10;
   int buttonW = 90;
 
-  String[] labels = { "Sites", "Elevation", "Zones", "Paths", "Struct", "Labels" };
+  String[] labels = { "Sites", "Elevation", "Zones", "Paths", "Struct", "Labels", "Rendering" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
     Tool.EDIT_ZONES,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
-    Tool.EDIT_LABELS
+    Tool.EDIT_LABELS,
+    Tool.EDIT_RENDER
   };
 
   for (int i = 0; i < labels.length; i++) {
@@ -328,6 +343,16 @@ void mousePressed() {
     if (handlePathsPanelClick(mouseX, mouseY)) return;
   }
 
+  // Labels panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_LABELS) {
+    if (handleLabelsPanelClick(mouseX, mouseY)) return;
+  }
+
+  // Render panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_RENDER) {
+    if (handleRenderPanelClick(mouseX, mouseY)) return;
+  }
+
   // Ignore world interaction if inside any top UI area
   int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
   if (currentTool == Tool.EDIT_SITES) {
@@ -338,6 +363,10 @@ void mousePressed() {
     uiBottom += ELEV_PANEL_HEIGHT;
   } else if (currentTool == Tool.EDIT_PATHS) {
     uiBottom += PATH_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_LABELS) {
+    uiBottom += LABEL_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_RENDER) {
+    uiBottom += RENDER_PANEL_HEIGHT;
   }
   if (mouseY < uiBottom) return;
 
@@ -367,12 +396,13 @@ void mousePressed() {
     } else if (currentTool == Tool.EDIT_PATHS) {
       handlePathsMousePressed(worldPos.x, worldPos.y);
     } else if (currentTool == Tool.EDIT_STRUCTURES) {
-      mapModel.structures.add(new Structure(worldPos.x, worldPos.y));
+      Structure s = mapModel.computeSnappedStructure(worldPos.x, worldPos.y);
+      mapModel.structures.add(s);
     } else if (currentTool == Tool.EDIT_LABELS) {
-      String txt = javax.swing.JOptionPane.showInputDialog("Label text", "Label");
-      if (txt != null && txt.trim().length() > 0) {
-        mapModel.labels.add(new MapLabel(worldPos.x, worldPos.y, txt.trim()));
-      }
+      MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, labelDraft);
+      mapModel.labels.add(lbl);
+      editingLabelIndex = mapModel.labels.size() - 1;
+      labelDraft = lbl.text;
     }
   }
 }
@@ -441,6 +471,64 @@ boolean handlePathsPanelClick(int mx, int my) {
     return true;
   }
 
+  // Eraser radius slider
+  int sliderX = btnX3 + btnW + 20;
+  int sliderW = 200;
+  int sliderH = 14;
+  int sliderY = panelY + 14;
+  if (mx >= sliderX && mx <= sliderX + sliderW &&
+      my >= sliderY && my <= sliderY + sliderH) {
+    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+    pathEraserRadius = constrain(0.005f + t * (0.1f - 0.005f), 0.005f, 0.1f);
+    activeSlider = SLIDER_PATH_ERASER;
+    return true;
+  }
+
+  // Path weight slider
+  int weightY = sliderY + 20;
+  if (mx >= sliderX && mx <= sliderX + sliderW &&
+      my >= weightY && my <= weightY + sliderH) {
+    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+    pathStrokeWeightPx = constrain(1.0f + t * 4.0f, 1.0f, 5.0f);
+    activeSlider = SLIDER_PATH_WEIGHT;
+    return true;
+  }
+
+  return false;
+}
+
+boolean handleLabelsPanelClick(int mx, int my) {
+  if (!isInLabelsPanel(mx, my)) return false;
+  // Simple text box focus
+  editingLabelIndex = (mapModel.labels.size() > 0) ? mapModel.labels.size() - 1 : -1;
+  return true;
+}
+
+boolean handleRenderPanelClick(int mx, int my) {
+  if (!isInRenderPanel(mx, my)) return false;
+  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int chkX = 10;
+  int chkY = panelY + 12;
+  int chkSize = 14;
+  int spacing = 20;
+  // zones, water, elevation, paths, labels, structures
+  if (mx >= chkX && mx <= chkX + chkSize &&
+      my >= chkY && my <= chkY + chkSize) { renderShowZones = !renderShowZones; return true; }
+  chkY += spacing;
+  if (mx >= chkX && mx <= chkX + chkSize &&
+      my >= chkY && my <= chkY + chkSize) { renderShowWater = !renderShowWater; return true; }
+  chkY += spacing;
+  if (mx >= chkX && mx <= chkX + chkSize &&
+      my >= chkY && my <= chkY + chkSize) { renderShowElevation = !renderShowElevation; return true; }
+  chkY += spacing;
+  if (mx >= chkX && mx <= chkX + chkSize &&
+      my >= chkY && my <= chkY + chkSize) { renderShowPaths = !renderShowPaths; return true; }
+  chkY += spacing;
+  if (mx >= chkX && mx <= chkX + chkSize &&
+      my >= chkY && my <= chkY + chkSize) { renderShowLabels = !renderShowLabels; return true; }
+  chkY += spacing;
+  if (mx >= chkX && mx <= chkX + chkSize &&
+      my >= chkY && my <= chkY + chkSize) { renderShowStructures = !renderShowStructures; return true; }
   return false;
 }
 
@@ -503,10 +591,13 @@ boolean handleElevationPanelClick(int mx, int my) {
   }
 
   // Noise scale slider
-  int noiseY = btnY + btnH + 10;
-  if (mx >= sliderX && mx <= sliderX + sliderW &&
+  int col2X = sliderX + sliderW + 140;
+  int col2Y = panelY + 24;
+  int colSliderW = 220;
+  int noiseY = col2Y;
+  if (mx >= col2X && mx <= col2X + colSliderW &&
       my >= noiseY && my <= noiseY + sliderH) {
-    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+    float t = constrain((mx - col2X) / (float)colSliderW, 0, 1);
     elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
     activeSlider = SLIDER_ELEV_NOISE;
     return true;
@@ -515,7 +606,7 @@ boolean handleElevationPanelClick(int mx, int my) {
   // Generate button
   int genW = 120;
   int genH = 22;
-  int genX = sliderX;
+  int genX = col2X;
   int genY = noiseY + sliderH + 8;
   if (mx >= genX && mx <= genX + genW &&
       my >= genY && my <= genY + genH) {
@@ -653,9 +744,12 @@ void mouseDragged() {
     }
     int btnH = 22;
     int btnY = rowY + 22;
-    int noiseY = btnY + btnH + 10;
-    if (mouseY >= noiseY && mouseY <= noiseY + sliderH) {
-      float t = constrain((mouseX - sliderX) / (float)sliderW, 0, 1);
+    int col2X = sliderX + sliderW + 140;
+    int colSliderW = 220;
+    int noiseY = panelY + 24;
+    if (mouseY >= noiseY && mouseY <= noiseY + sliderH &&
+        mouseX >= col2X && mouseX <= col2X + colSliderW) {
+      float t = constrain((mouseX - col2X) / (float)colSliderW, 0, 1);
       elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
       return;
     }
@@ -725,6 +819,10 @@ void mouseDragged() {
     bottom += ELEV_PANEL_HEIGHT;
   } else if (currentTool == Tool.EDIT_PATHS) {
     bottom += PATH_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_LABELS) {
+    bottom += LABEL_PANEL_HEIGHT;
+  } else if (currentTool == Tool.EDIT_RENDER) {
+    bottom += RENDER_PANEL_HEIGHT;
   }
   if (mouseY < bottom) return;
 
@@ -842,6 +940,22 @@ void updateActiveSlider(int mx, int my) {
       elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
       break;
     }
+    case SLIDER_PATH_ERASER: {
+      int sliderX = 10 + 120 + 10 + 120 + 10 + 120 + 20;
+      int sliderW = 200;
+      float t = (mx - sliderX) / (float)sliderW;
+      t = constrain(t, 0, 1);
+      pathEraserRadius = constrain(0.005f + t * (0.1f - 0.005f), 0.005f, 0.1f);
+      break;
+    }
+    case SLIDER_PATH_WEIGHT: {
+      int sliderX = 10 + 120 + 10 + 120 + 10 + 120 + 20;
+      int sliderW = 200;
+      float t = (mx - sliderX) / (float)sliderW;
+      t = constrain(t, 0, 1);
+      pathStrokeWeightPx = constrain(1.0f + t * 4.0f, 1.0f, 5.0f);
+      break;
+    }
     default:
       break;
   }
@@ -854,6 +968,41 @@ void mouseWheel(MouseEvent event) {
 }
 
 void keyPressed() {
+  // Inline text editing for zones
+  if (editingZoneNameIndex >= 0) {
+    if (key == ENTER || key == RETURN) {
+      if (editingZoneNameIndex < mapModel.biomeTypes.size()) {
+        mapModel.biomeTypes.get(editingZoneNameIndex).name = zoneNameDraft;
+      }
+      editingZoneNameIndex = -1;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (zoneNameDraft.length() > 0) zoneNameDraft = zoneNameDraft.substring(0, zoneNameDraft.length() - 1);
+      return;
+    } else if (key >= 32) {
+      zoneNameDraft += key;
+      return;
+    }
+  }
+
+  // Inline text editing for labels
+  if (editingLabelIndex >= 0) {
+    if (key == ENTER || key == RETURN) {
+      if (editingLabelIndex < mapModel.labels.size()) {
+        mapModel.labels.get(editingLabelIndex).text = labelDraft;
+      }
+      editingLabelIndex = -1;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (labelDraft.length() > 0) labelDraft = labelDraft.substring(0, labelDraft.length() - 1);
+      if (editingLabelIndex < mapModel.labels.size()) mapModel.labels.get(editingLabelIndex).text = labelDraft;
+      return;
+    } else if (key >= 32) {
+      labelDraft += key;
+      if (editingLabelIndex < mapModel.labels.size()) mapModel.labels.get(editingLabelIndex).text = labelDraft;
+      return;
+    }
+  }
   // Delete selected sites or last path point
   if (key == DELETE || key == BACKSPACE) {
     if (currentTool == Tool.EDIT_SITES) {
