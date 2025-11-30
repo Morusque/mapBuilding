@@ -173,7 +173,7 @@ void draw() {
   if (currentTool == Tool.EDIT_ELEVATION) {
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true);
     drawElevationBrushPreview();
-  } else if (currentTool == Tool.EDIT_ZONES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+  } else if (currentTool == Tool.EDIT_BIOMES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
   } else if (currentTool == Tool.EDIT_PATHS && pathEraserMode) {
     drawPathEraserPreview();
@@ -194,8 +194,10 @@ void draw() {
     drawSitesPanel();
   } else if (currentTool == Tool.EDIT_ELEVATION) {
     drawElevationPanel();
-  } else if (currentTool == Tool.EDIT_ZONES) {
-    drawZonesPanel();
+  } else if (currentTool == Tool.EDIT_BIOMES) {
+    drawBiomesPanel();
+  } else if (currentTool == Tool.EDIT_ADMIN) {
+    drawAdminPanel();
   } else if (currentTool == Tool.EDIT_PATHS) {
     drawPathsPanel();
   } else if (currentTool == Tool.EDIT_LABELS) {
@@ -331,3 +333,4 @@ void drawStructurePreview() {
   popMatrix();
   popStyle();
 }
+

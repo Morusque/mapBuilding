@@ -1,0 +1,34 @@
+
+Elevation :
+There seems to be maximum and minimum values.
+When exeeding those, instead of clamping, here's what could happen:
+if exceeding from the top, all values should be normalized to remap everything between [level of water,old top] to [level of water,new top].
+if exceeding from the bottom, all values should be normalized to remap everything between [level of water,old bottom] to [level of water,new bottom].
+
+Zones :
+There should be a "generate" button that fills the whole map with random existing types for quick testing purposes.
+The logic should be simple, something like : define some starting points amoung the "None" zones with one of the non-None types, then iteratively extend those zones from neighbor to neighbor only on None zones (zones already defined at start should stay as is). Then when extention done, redo the operation until there are no moe "None" zones in the map.
+Please define hardcoded zone labels and colors for the first 20 potential zones or so. Still only display the first 4 by default.
+Colors distinct should be distinct especially near the beginning, more focus on yellow-dirt likes, should match with zone text label.
+Text should refer to land biomes such as dirt, sand, forest, rocks, snow, etc... More generic first more specific last.
+
+Zones :
+This one should be implemented at some point but not yet.
+
+Paths :
+Path weight will be path-specific, not global.
+Right side of screen should show a list of existing distinct paths along with data (number of segments, total length) and parameters (radius, type, name).
+
+Struct :
+there should be a slider for structure size (for the next structs to be placed).
+Structures should be able to be places either side of paths (closer to the mouse cursor), not just one side.
+There should be a hierarchy of things the structures should be allowed to snap to.
+Paths first, other structures next, then frontier between land and water, then there will be more of those but we'll get to it later.
+
+Labels :
+Label should be attributed to one or more elements on the map, or more arbitrarily placed.
+Display a list of editable labels to the right side same logic than for paths tab, we'll use it later to highlight associated elements and display logic.
+
+Rendering :
+Zones should only display zone colors, not water. Water is already handles by the water checkbox.
+Water should be darker overall, especially the lighter shades of it are currently too light.

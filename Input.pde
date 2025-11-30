@@ -7,8 +7,8 @@ boolean isInSitesPanel(int mx, int my) {
 }
 
 boolean isInZonesPanel(int mx, int my) {
-  if (currentTool != Tool.EDIT_ZONES) return false;
-  ZonesLayout layout = buildZonesLayout();
+  if (currentTool != Tool.EDIT_BIOMES) return false;
+  BiomesLayout layout = buildBiomesLayout();
   return layout.panel.contains(mx, my);
 }
 
@@ -52,11 +52,12 @@ boolean handleToolButtonClick(int mx, int my) {
   int margin = 10;
   int buttonW = 90;
 
-  String[] labels = { "Sites", "Elevation", "Zones", "Paths", "Struct", "Labels", "Rendering" };
+  String[] labels = { "Sites", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
-    Tool.EDIT_ZONES,
+    Tool.EDIT_BIOMES,
+    Tool.EDIT_ADMIN,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS,
@@ -134,7 +135,7 @@ boolean handleZonesPanelClick(int mx, int my) {
   if (!isInZonesPanel(mx, my)) return false;
   if (mapModel == null || mapModel.biomeTypes == null) return false;
 
-  ZonesLayout layout = buildZonesLayout();
+  BiomesLayout layout = buildBiomesLayout();
 
   // Paint button
   if (layout.paintBtn.contains(mx, my)) {
@@ -264,8 +265,8 @@ void mousePressed() {
     if (handleSitesPanelClick(mouseX, mouseY)) return;
   }
 
-  // Zones panel
-  if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
+  // Biomes panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_BIOMES) {
     if (handleZonesPanelClick(mouseX, mouseY)) return;
   }
 
@@ -307,7 +308,7 @@ void mousePressed() {
 
     if (currentTool == Tool.EDIT_SITES) {
       handleSitesMousePressed(worldPos.x, worldPos.y);
-    } else if (currentTool == Tool.EDIT_ZONES) {
+    } else if (currentTool == Tool.EDIT_BIOMES) {
       if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
         paintBiomeBrush(worldPos.x, worldPos.y);
       } else {
@@ -315,7 +316,7 @@ void mousePressed() {
       }
     } else if (currentTool == Tool.EDIT_ELEVATION) {
       float dir = elevationBrushRaise ? 1 : -1;
-      mapModel.applyElevationBrush(worldPos.x, worldPos.y, elevationBrushRadius, elevationBrushStrength * dir);
+      mapModel.applyElevationBrush(worldPos.x, worldPos.y, elevationBrushRadius, elevationBrushStrength * dir, seaLevel);
     } else if (currentTool == Tool.EDIT_PATHS) {
       handlePathsMousePressed(worldPos.x, worldPos.y);
     } else if (currentTool == Tool.EDIT_STRUCTURES) {
@@ -489,13 +490,13 @@ boolean handleElevationPanelClick(int mx, int my) {
 
   // Generate button
   if (layout.perlinBtn.contains(mx, my)) {
-    mapModel.generateElevationNoise(elevationNoiseScale, 1.0f);
+    mapModel.generateElevationNoise(elevationNoiseScale, 1.0f, seaLevel);
     return true;
   }
 
   // Vary button
   if (layout.varyBtn.contains(mx, my)) {
-    mapModel.addElevationVariation(elevationNoiseScale, 0.2f);
+    mapModel.addElevationVariation(elevationNoiseScale, 0.2f, seaLevel);
     return true;
   }
 
@@ -605,8 +606,8 @@ void mouseDragged() {
   }
 
   // Zones: slider dragging (only for hue + paint while dragging)
-  if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES && isInZonesPanel(mouseX, mouseY)) {
-    ZonesLayout layout = buildZonesLayout();
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_BIOMES && isInZonesPanel(mouseX, mouseY)) {
+    BiomesLayout layout = buildBiomesLayout();
     int n = (mapModel.biomeTypes == null) ? 0 : mapModel.biomeTypes.size();
 
     if (n > 0 && activeBiomeIndex >= 0 && activeBiomeIndex < n) {
@@ -630,7 +631,7 @@ void mouseDragged() {
   }
 
   // Zones: paint while dragging (only for Paint mode, outside UI)
-  if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_BIOMES) {
     IntRect panel = getActivePanelRect();
     boolean inPanel = (panel != null && panel.contains(mouseX, mouseY));
     if (!inPanel) {
@@ -653,7 +654,7 @@ void mouseDragged() {
   } else if (mouseButton == LEFT && currentTool == Tool.EDIT_ELEVATION) {
     PVector w = viewport.screenToWorld(mouseX, mouseY);
     float dir = elevationBrushRaise ? 1 : -1;
-    mapModel.applyElevationBrush(w.x, w.y, elevationBrushRadius, elevationBrushStrength * dir);
+    mapModel.applyElevationBrush(w.x, w.y, elevationBrushRadius, elevationBrushStrength * dir, seaLevel);
   } else if (mouseButton == LEFT && currentTool == Tool.EDIT_PATHS && pathEraserMode) {
     PVector w = viewport.screenToWorld(mouseX, mouseY);
     mapModel.removePathsNear(w.x, w.y, pathEraserRadius);
@@ -694,7 +695,7 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_ZONE_HUE: {
-      ZonesLayout l = buildZonesLayout();
+      BiomesLayout l = buildBiomesLayout();
       float t = (mx - l.hueSlider.x) / (float)l.hueSlider.w;
       t = constrain(t, 0, 1);
       if (mapModel.biomeTypes != null && activeBiomeIndex >= 0 && activeBiomeIndex < mapModel.biomeTypes.size()) {
@@ -705,7 +706,7 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_ZONE_BRUSH: {
-      ZonesLayout l = buildZonesLayout();
+      BiomesLayout l = buildBiomesLayout();
       float t = (mx - l.brushSlider.x) / (float)l.brushSlider.w;
       t = constrain(t, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
@@ -850,3 +851,6 @@ void keyPressed() {
     return;
   }
 }
+
+
+

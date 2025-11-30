@@ -181,10 +181,10 @@ class MapModel {
       if (drawWater && h < seaLevel) {
         float depth = seaLevel - h;
         float depthNorm = constrain(depth / 1.0f, 0, 1);
-        float shade = drawElevation ? lerp(1.0f, 0.35f, depthNorm) : 1.0f;
-        float baseR = 70;
-        float baseG = 140;
-        float baseB = 220;
+        float shade = drawElevation ? lerp(0.35f, 0.8f, 1.0f - depthNorm) : 0.7f;
+        float baseR = 40;
+        float baseG = 90;
+        float baseB = 150;
         int water = app.color(baseR * shade, baseG * shade, baseB * shade, 255);
         app.fill(water);
         app.beginShape();
@@ -823,8 +823,14 @@ class MapModel {
     snapDirty = true;
   }
 
-  void applyElevationBrush(float cx, float cy, float radius, float delta) {
+  void applyElevationBrush(float cx, float cy, float radius, float delta, float seaLevel) {
     if (cells == null || cells.isEmpty()) return;
+    float preMin = Float.MAX_VALUE;
+    float preMax = -Float.MAX_VALUE;
+    for (Cell c : cells) {
+      preMin = min(preMin, c.elevation);
+      preMax = max(preMax, c.elevation);
+    }
     float r2 = radius * radius;
     for (Cell c : cells) {
       PVector cen = cellCentroid(c);
@@ -833,27 +839,42 @@ class MapModel {
       float d2 = dx * dx + dy * dy;
       if (d2 > r2) continue;
       float t = 1.0f - sqrt(d2 / r2);
-      c.elevation = constrain(c.elevation + delta * t, -1.0f, 1.0f);
+      c.elevation = c.elevation + delta * t;
     }
+    normalizeElevationsIfOutOfBounds(seaLevel, preMin, preMax);
   }
 
-  void generateElevationNoise(float scale, float amplitude) {
+  void generateElevationNoise(float scale, float amplitude, float seaLevel) {
     if (cells == null) return;
+    float preMin = Float.MAX_VALUE;
+    float preMax = -Float.MAX_VALUE;
+    for (Cell c : cells) {
+      preMin = min(preMin, c.elevation);
+      preMax = max(preMax, c.elevation);
+    }
     for (Cell c : cells) {
       PVector cen = cellCentroid(c);
       float n = noise(cen.x * scale, cen.y * scale);
       c.elevation = (n - 0.5f) * 2.0f * amplitude;
     }
+    normalizeElevationsIfOutOfBounds(seaLevel, preMin, preMax);
   }
 
-  void addElevationVariation(float scale, float amplitude) {
+  void addElevationVariation(float scale, float amplitude, float seaLevel) {
     if (cells == null) return;
+    float preMin = Float.MAX_VALUE;
+    float preMax = -Float.MAX_VALUE;
+    for (Cell c : cells) {
+      preMin = min(preMin, c.elevation);
+      preMax = max(preMax, c.elevation);
+    }
     for (Cell c : cells) {
       PVector cen = cellCentroid(c);
       float n = noise(cen.x * scale, cen.y * scale);
       float delta = (n - 0.5f) * 2.0f * amplitude;
-      c.elevation = constrain(c.elevation + delta, -1.0f, 1.0f);
+      c.elevation = c.elevation + delta;
     }
+    normalizeElevationsIfOutOfBounds(seaLevel, preMin, preMax);
   }
 
   PVector cellCentroid(Cell c) {
@@ -869,6 +890,43 @@ class MapModel {
     cx /= c.vertices.size();
     cy /= c.vertices.size();
     return new PVector(cx, cy);
+  }
+
+  void normalizeElevationsIfOutOfBounds(float seaLevel, float oldMin, float oldMax) {
+    float newMin = Float.MAX_VALUE;
+    float newMax = -Float.MAX_VALUE;
+    for (Cell c : cells) {
+      newMin = min(newMin, c.elevation);
+      newMax = max(newMax, c.elevation);
+    }
+    if (newMax > 1.0f) {
+      float oldTop = max(oldMax, seaLevel + 1e-6f);
+      float newTop = newMax;
+      float rangeOld = oldTop - seaLevel;
+      float rangeNew = newTop - seaLevel;
+      if (rangeOld > 1e-6f) {
+        for (Cell c : cells) {
+          float v = c.elevation;
+          if (v >= seaLevel) {
+            c.elevation = seaLevel + (v - seaLevel) * (rangeNew / rangeOld);
+          }
+        }
+      }
+    }
+    if (newMin < -1.0f) {
+      float oldBot = min(oldMin, seaLevel - 1e-6f);
+      float newBot = newMin;
+      float rangeOld = seaLevel - oldBot;
+      float rangeNew = seaLevel - newBot;
+      if (rangeOld > 1e-6f) {
+        for (Cell c : cells) {
+          float v = c.elevation;
+          if (v <= seaLevel) {
+            c.elevation = seaLevel - (seaLevel - v) * (rangeNew / rangeOld);
+          }
+        }
+      }
+    }
   }
 
   void applyFuzz(float fuzz) {

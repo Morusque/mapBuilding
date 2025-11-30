@@ -69,11 +69,12 @@ void drawToolButtons() {
   line(0, barY + barH - 1, width, barY + barH - 1);
   line(width - 1, barY, width - 1, barY + barH);
 
-  String[] labels = { "Sites", "Elevation", "Zones", "Paths", "Struct", "Labels", "Rendering" };
+  String[] labels = { "Sites", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
-    Tool.EDIT_ZONES,
+    Tool.EDIT_BIOMES,
+    Tool.EDIT_ADMIN,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS,
@@ -251,9 +252,9 @@ void drawSitesPanel() {
   text("Keep properties", c.x + c.w + 6, g.y + g.h / 2);
 }
 
-// ----- ZONES PANEL -----
+// ----- Biomes PANEL -----
 
-class ZonesLayout {
+class BiomesLayout {
   IntRect panel;
   int titleY;
   IntRect paintBtn;
@@ -266,8 +267,8 @@ class ZonesLayout {
   IntRect brushSlider;
 }
 
-ZonesLayout buildZonesLayout() {
-  ZonesLayout l = new ZonesLayout();
+BiomesLayout buildBiomesLayout() {
+  BiomesLayout l = new BiomesLayout();
   l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
   int innerX = l.panel.x + PANEL_PADDING;
   int curY = l.panel.y + PANEL_PADDING;
@@ -316,14 +317,14 @@ ZonesLayout buildZonesLayout() {
   return l;
 }
 
-void drawZonesPanel() {
-  ZonesLayout layout = buildZonesLayout();
+void drawBiomesPanel() {
+  BiomesLayout layout = buildBiomesLayout();
   drawPanelBackground(layout.panel);
 
   int labelX = layout.panel.x + PANEL_PADDING;
   fill(0);
   textAlign(LEFT, TOP);
-  text("Biomes (Zones)", labelX, layout.titleY);
+  text("Biomes", labelX, layout.titleY);
 
   // Paint button
   drawBevelButton(layout.paintBtn.x, layout.paintBtn.y, layout.paintBtn.w, layout.paintBtn.h,
@@ -437,6 +438,23 @@ void drawZonesPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Brush radius", brush.x, brush.y - 4);
+}
+
+// ----- ADMIN (Zones) PANEL -----
+class AdminLayout {
+  IntRect panel;
+  int titleY;
+}
+
+AdminLayout buildAdminLayout() {
+  AdminLayout l = new AdminLayout();
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, PANEL_TITLE_H + 2 * PANEL_PADDING);
+  l.titleY = l.panel.y + PANEL_PADDING;
+  return l;
+}
+
+void drawAdminPanel() {
+  // TODO later something similar to the biome panel but with outlined zones instead of colored ones
 }
 
 // ----- PATHS PANEL -----
@@ -711,7 +729,7 @@ RenderLayout buildRenderLayout() {
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
   int sliderW = 200;
-  l.labels = new String[] { "Zones", "Water", "Elevation", "Paths", "Labels", "Structures" };
+  l.labels = new String[] { "Biomes", "Water", "Elevation", "Paths", "Labels", "Structures" };
   for (int i = 0; i < l.labels.length; i++) {
     l.checks.add(new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE));
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
@@ -738,7 +756,7 @@ void drawRenderPanel() {
   textAlign(LEFT, TOP);
   text("Rendering", labelX, layout.titleY);
 
-  drawCheckbox(layout.checks.get(0).x, layout.checks.get(0).y, layout.checks.get(0).w, renderShowZones, "Zones");
+  drawCheckbox(layout.checks.get(0).x, layout.checks.get(0).y, layout.checks.get(0).w, renderShowZones, "Biomes");
   drawCheckbox(layout.checks.get(1).x, layout.checks.get(1).y, layout.checks.get(1).w, renderShowWater, "Water");
   drawCheckbox(layout.checks.get(2).x, layout.checks.get(2).y, layout.checks.get(2).w, renderShowElevation, "Elevation");
 
@@ -844,10 +862,11 @@ IntRect getActivePanelRect() {
       ElevationLayout l = buildElevationLayout();
       return l.panel;
     }
-    case EDIT_ZONES: {
-      ZonesLayout l = buildZonesLayout();
+    case EDIT_BIOMES: {
+      BiomesLayout l = buildBiomesLayout();
       return l.panel;
     }
+    case EDIT_ADMIN: { AdminLayout l = buildAdminLayout(); return l.panel; }
     case EDIT_PATHS: {
       PathsLayout l = buildPathsLayout();
       return l.panel;
@@ -863,3 +882,7 @@ IntRect getActivePanelRect() {
   }
   return null;
 }
+
+
+
+
