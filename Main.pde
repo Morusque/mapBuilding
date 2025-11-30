@@ -42,9 +42,9 @@ PlacementMode[] placementModes = {
   PlacementMode.HEX
 };
 int placementModeIndex = 2; // 0=GRID, 1=POISSON, 2=HEX
-float siteDensity = 0.3;    // 0..1
+float siteDensity = 0.7;    // 0..1
 float siteFuzz = 0.0;       // 0..1
-boolean keepPropertiesOnGenerate = true;
+boolean keepPropertiesOnGenerate = false;
 
 // Zones (biomes) painting
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types

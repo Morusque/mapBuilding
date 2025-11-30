@@ -944,7 +944,7 @@ class MapModel {
     float h = maxY - minY;
 
     float minDim = min(w, h);
-    float targetRes = map(density, 0, 1, 4, 110); // closer to grid/hex density
+    float targetRes = map(density, 0, 1, 1, 70); // closer to grid/hex density
     float baseSpacing = minDim / targetRes;
     float r = baseSpacing * 0.5f;
 
