@@ -986,6 +986,13 @@ class MapModel {
     }
   }
 
+  void resetAllBiomesToNone() {
+    if (cells == null || cells.isEmpty()) return;
+    for (Cell c : cells) {
+      c.biomeId = 0;
+    }
+  }
+
   void ensureCellNeighborsComputed() {
     if (cellNeighbors == null || cellNeighbors.size() != cells.size()) {
       rebuildCellNeighbors();
@@ -1242,6 +1249,7 @@ ZonePreset[] ZONE_PRESETS = new ZonePreset[] {
   new ZonePreset("Tundra",      color(190, 200, 205)),
   new ZonePreset("Jungle",      color(80, 130, 85)),
   new ZonePreset("Volcanic",    color(105, 95, 90)),
+  new ZonePreset("Magma",       color(190, 70, 40)),
   new ZonePreset("Heath",       color(180, 160, 145)),
   new ZonePreset("Steppe",      color(190, 185, 140)),
   new ZonePreset("Delta",       color(170, 200, 175)),

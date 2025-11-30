@@ -155,6 +155,14 @@ boolean handleZonesPanelClick(int mx, int my) {
     return true;
   }
 
+  // Reset button
+  if (layout.resetBtn.contains(mx, my)) {
+    mapModel.resetAllBiomesToNone();
+    activeBiomeIndex = 0;
+    editingZoneNameIndex = -1;
+    return true;
+  }
+
   int nTypes = mapModel.biomeTypes.size();
 
   // "+" button

@@ -1,14 +1,11 @@
 
-Biomes :
-Add "magma" in the types.
-Add reset (to "None") button.
-
-Zones (admin) :
+Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
 Path weight will be path-specific, not global.
 Right side of screen should show a list of existing distinct paths along with data (number of segments, total length) and parameters (radius, type, name).
+Water should be visible here.
 
 Struct :
 there should be a slider for structure size (for the next structs to be placed).
@@ -23,3 +20,4 @@ Display a list of editable labels to the right side same logic than for paths ta
 Rendering :
 Zones should only display zone colors, not water. Water is already handles by the water checkbox.
 Water should be darker overall, especially the lighter shades of it are currently too light.
+Path and labels should be displayed on top of zones and water.
