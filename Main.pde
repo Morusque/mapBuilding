@@ -24,12 +24,16 @@ Path currentPath = null;
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
 final int TOOL_BAR_HEIGHT = 26;
-final int SITES_PANEL_HEIGHT = 140;  // sliders + generate
-final int ZONES_PANEL_HEIGHT = 150;   // biome palette + paint/fill buttons + brush slider
-final int PATH_PANEL_HEIGHT = 40;     // close/undo buttons
-final int ELEV_PANEL_HEIGHT = 150;
-final int LABEL_PANEL_HEIGHT = 60;
-final int RENDER_PANEL_HEIGHT = 120;
+final int PANEL_X = 0;
+final int PANEL_W = 320;
+final int PANEL_PADDING = 10;
+final int PANEL_ROW_GAP = 8;
+final int PANEL_SECTION_GAP = 12;
+final int PANEL_SLIDER_H = 16;
+final int PANEL_LABEL_H = 14;
+final int PANEL_BUTTON_H = 22;
+final int PANEL_CHECK_SIZE = 16;
+final int PANEL_TITLE_H = 18;
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -261,8 +265,8 @@ void seedDefaultZones() {
 }
 
 void drawZoneBrushPreview() {
-  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + ZONES_PANEL_HEIGHT;
-  if (mouseY < uiBottom) return;
+  IntRect panel = getActivePanelRect();
+  if (panel != null && panel.contains(mouseX, mouseY)) return;
   PVector w = viewport.screenToWorld(mouseX, mouseY);
   pushStyle();
   noFill();
@@ -274,8 +278,8 @@ void drawZoneBrushPreview() {
 }
 
 void drawElevationBrushPreview() {
-  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + ELEV_PANEL_HEIGHT;
-  if (mouseY < uiBottom) return;
+  IntRect panel = getActivePanelRect();
+  if (panel != null && panel.contains(mouseX, mouseY)) return;
   PVector w = viewport.screenToWorld(mouseX, mouseY);
   pushStyle();
   noFill();
@@ -287,8 +291,8 @@ void drawElevationBrushPreview() {
 }
 
 void drawPathEraserPreview() {
-  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + PATH_PANEL_HEIGHT;
-  if (mouseY < uiBottom) return;
+  IntRect panel = getActivePanelRect();
+  if (panel != null && panel.contains(mouseX, mouseY)) return;
   PVector w = viewport.screenToWorld(mouseX, mouseY);
   pushStyle();
   noFill();

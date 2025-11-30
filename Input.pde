@@ -2,44 +2,43 @@
 
 boolean isInSitesPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_SITES) return false;
-  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int y1 = y0 + SITES_PANEL_HEIGHT;
-  return (my >= y0 && my <= y1);
+  SitesLayout layout = buildSitesLayout();
+  return layout.panel.contains(mx, my);
 }
 
 boolean isInZonesPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_ZONES) return false;
-  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int y1 = y0 + ZONES_PANEL_HEIGHT;
-  return (my >= y0 && my <= y1);
+  ZonesLayout layout = buildZonesLayout();
+  return layout.panel.contains(mx, my);
 }
 
 boolean isInElevationPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_ELEVATION) return false;
-  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int y1 = y0 + ELEV_PANEL_HEIGHT;
-  return (my >= y0 && my <= y1);
+  ElevationLayout layout = buildElevationLayout();
+  return layout.panel.contains(mx, my);
 }
 
 boolean isInPathsPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_PATHS) return false;
-  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int y1 = y0 + PATH_PANEL_HEIGHT;
-  return (my >= y0 && my <= y1);
+  PathsLayout layout = buildPathsLayout();
+  return layout.panel.contains(mx, my);
 }
 
 boolean isInLabelsPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_LABELS) return false;
-  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int y1 = y0 + LABEL_PANEL_HEIGHT;
-  return (my >= y0 && my <= y1);
+  LabelsLayout layout = buildLabelsLayout();
+  return layout.panel.contains(mx, my);
 }
 
 boolean isInRenderPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_RENDER) return false;
-  int y0 = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int y1 = y0 + RENDER_PANEL_HEIGHT;
-  return (my >= y0 && my <= y1);
+  RenderLayout layout = buildRenderLayout();
+  return layout.panel.contains(mx, my);
+}
+
+boolean isInActivePanel(int mx, int my) {
+  IntRect panel = getActivePanelRect();
+  return (panel != null && panel.contains(mx, my));
 }
 
 boolean handleToolButtonClick(int mx, int my) {
@@ -83,28 +82,19 @@ boolean handleToolButtonClick(int mx, int my) {
 
 boolean handleSitesPanelClick(int mx, int my) {
   if (!isInSitesPanel(mx, my)) return false;
-
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-
-  int sliderX = 10;
-  int sliderW = 250;
-  int sliderH = 16;
+  SitesLayout layout = buildSitesLayout();
 
   // Density slider
-  int densityY = panelY + 25;
-  if (mx >= sliderX && mx <= sliderX + sliderW &&
-      my >= densityY && my <= densityY + sliderH) {
-    float t = (mx - sliderX) / (float)sliderW;
+  if (layout.densitySlider.contains(mx, my)) {
+    float t = (mx - layout.densitySlider.x) / (float)layout.densitySlider.w;
     siteDensity = constrain(t, 0, 1);
     activeSlider = SLIDER_SITES_DENSITY;
     return true;
   }
 
   // Fuzz slider (0..1 mapped to 0..0.3)
-  int fuzzY = panelY + 25 + 22;
-  if (mx >= sliderX && mx <= sliderX + sliderW &&
-      my >= fuzzY && my <= fuzzY + sliderH) {
-    float t = (mx - sliderX) / (float)sliderW;
+  if (layout.fuzzSlider.contains(mx, my)) {
+    float t = (mx - layout.fuzzSlider.x) / (float)layout.fuzzSlider.w;
     t = constrain(t, 0, 1);
     siteFuzz = t * 0.3f;
     activeSlider = SLIDER_SITES_FUZZ;
@@ -112,16 +102,10 @@ boolean handleSitesPanelClick(int mx, int my) {
   }
 
   // Mode slider
-  int modeSliderX = 10;
-  int modeSliderY = panelY + 25 + 44;
-  int modeSliderW = sliderW;
-  int modeSliderH = 14;
-
-  if (mx >= modeSliderX && mx <= modeSliderX + modeSliderW &&
-      my >= modeSliderY && my <= modeSliderY + modeSliderH) {
+  if (layout.modeSlider.contains(mx, my)) {
     int modeCount = placementModes.length;
     if (modeCount < 1) modeCount = 1;
-    float t = (mx - modeSliderX) / (float)modeSliderW;
+    float t = (mx - layout.modeSlider.x) / (float)layout.modeSlider.w;
     t = constrain(t, 0, 1);
     int idx = round(t * (modeCount - 1));
     placementModeIndex = constrain(idx, 0, placementModes.length - 1);
@@ -130,23 +114,13 @@ boolean handleSitesPanelClick(int mx, int my) {
   }
 
   // Generate button
-  int genW = 100;
-  int genH = 24;
-  int genX = 10;
-  int genY = modeSliderY + 24;
-
-  if (mx >= genX && mx <= genX + genW &&
-      my >= genY && my <= genY + genH) {
+  if (layout.generateBtn.contains(mx, my)) {
     mapModel.generateSites(currentPlacementMode(), siteDensity, keepPropertiesOnGenerate);
     return true;
   }
 
   // Keep properties toggle
-  int chkX = genX + genW + 16;
-  int chkY = genY + 4;
-  int chkSize = 16;
-  if (mx >= chkX && mx <= chkX + chkSize &&
-      my >= chkY && my <= chkY + chkSize) {
+  if (layout.keepCheckbox.contains(mx, my)) {
     keepPropertiesOnGenerate = !keepPropertiesOnGenerate;
     return true;
   }
@@ -160,45 +134,24 @@ boolean handleZonesPanelClick(int mx, int my) {
   if (!isInZonesPanel(mx, my)) return false;
   if (mapModel == null || mapModel.biomeTypes == null) return false;
 
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-
-  // Tool buttons
-  int toolBtnW = 60;
-  int toolBtnH = 20;
-  int toolX1 = 10;
-  int toolX2 = toolX1 + toolBtnW + 8;
-  int toolY  = panelY + 24;
+  ZonesLayout layout = buildZonesLayout();
 
   // Paint button
-  if (mx >= toolX1 && mx <= toolX1 + toolBtnW &&
-      my >= toolY && my <= toolY + toolBtnH) {
+  if (layout.paintBtn.contains(mx, my)) {
     currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
     return true;
   }
 
   // Fill button
-  if (mx >= toolX2 && mx <= toolX2 + toolBtnW &&
-      my >= toolY && my <= toolY + toolBtnH) {
+  if (layout.fillBtn.contains(mx, my)) {
     currentZonePaintMode = ZonePaintMode.ZONE_FILL;
     return true;
   }
 
-  // Add / Remove biome type buttons
-  int addBtnW = 24;
-  int addBtnH = 20;
-  int addX = toolX2 + toolBtnW + 20;
-  int addY = toolY;
-
-  int remX = addX + addBtnW + 6;
-  int remY = toolY;
-  int renX = remX + addBtnW + 10;
-  int renW = 60;
-
   int nTypes = mapModel.biomeTypes.size();
 
   // "+" button
-  if (mx >= addX && mx <= addX + addBtnW &&
-      my >= addY && my <= addY + addBtnH) {
+  if (layout.addBtn.contains(mx, my)) {
     mapModel.addBiomeType();
     activeBiomeIndex = mapModel.biomeTypes.size() - 1;
     return true;
@@ -206,9 +159,7 @@ boolean handleZonesPanelClick(int mx, int my) {
 
   // "-" button
   boolean canRemove = (nTypes > 1 && activeBiomeIndex > 0);
-  if (canRemove &&
-      mx >= remX && mx <= remX + addBtnW &&
-      my >= remY && my <= remY + addBtnH) {
+  if (canRemove && layout.removeBtn.contains(mx, my)) {
 
     int removeIndex = activeBiomeIndex;
     mapModel.removeBiomeType(removeIndex);
@@ -228,36 +179,26 @@ boolean handleZonesPanelClick(int mx, int my) {
   int n = mapModel.biomeTypes.size();
   if (n == 0) return false;
 
-  int swatchW = 60;
-  int swatchH = 18;
-  int marginX = 10;
-  int gapX = 8;
-
-  int rowY = toolY + toolBtnH + 10;
-  int hueSliderX = 10;
-  int hueSliderW = 250;
-  int hueSliderH = 14;
-
   for (int i = 0; i < n; i++) {
-    int x = marginX + i * (swatchW + gapX);
-    int y = rowY;
-    int x2 = x + swatchW;
-    int y2 = y + swatchH;
-
-    if (mx >= x && mx <= x2 && my >= y && my <= y2) {
+    IntRect sw = layout.swatches.get(i);
+    IntRect nameRect = layout.nameRects.get(i);
+    if (sw.contains(mx, my)) {
       activeBiomeIndex = i;
+      return true;
+    }
+    if (nameRect.contains(mx, my)) {
+      activeBiomeIndex = i;
+      editingZoneNameIndex = i;
+      zoneNameDraft = mapModel.biomeTypes.get(i).name;
       return true;
     }
   }
 
   // Hue slider
   if (activeBiomeIndex >= 0 && activeBiomeIndex < n) {
-    int hueSliderY = rowY + swatchH + 12;
+    if (layout.hueSlider.contains(mx, my)) {
 
-    if (mx >= hueSliderX && mx <= hueSliderX + hueSliderW &&
-        my >= hueSliderY && my <= hueSliderY + hueSliderH) {
-
-      float t = (mx - hueSliderX) / (float)hueSliderW;
+      float t = (mx - layout.hueSlider.x) / (float)layout.hueSlider.w;
       t = constrain(t, 0, 1);
 
       ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
@@ -270,13 +211,8 @@ boolean handleZonesPanelClick(int mx, int my) {
   }
 
   // Brush radius slider
-  int brushY = rowY + swatchH + 12;
-  int brushX = hueSliderX + hueSliderW + 30;
-  int brushW = 180;
-  int brushH = 14;
-  if (mx >= brushX && mx <= brushX + brushW &&
-      my >= brushY && my <= brushY + brushH) {
-    float t = constrain((mx - brushX) / (float)brushW, 0, 1);
+  if (layout.brushSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
     zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
     activeSlider = SLIDER_ZONE_BRUSH;
     return true;
@@ -354,21 +290,8 @@ void mousePressed() {
   }
 
   // Ignore world interaction if inside any top UI area
-  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  if (currentTool == Tool.EDIT_SITES) {
-    uiBottom += SITES_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_ZONES) {
-    uiBottom += ZONES_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_ELEVATION) {
-    uiBottom += ELEV_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_PATHS) {
-    uiBottom += PATH_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_LABELS) {
-    uiBottom += LABEL_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_RENDER) {
-    uiBottom += RENDER_PANEL_HEIGHT;
-  }
-  if (mouseY < uiBottom) return;
+  if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
+  if (isInActivePanel(mouseX, mouseY)) return;
 
   // Panning with right button (all modes)
   if (mouseButton == RIGHT) {
@@ -429,18 +352,10 @@ void handleSitesMousePressed(float wx, float wy) {
 
 boolean handlePathsPanelClick(int mx, int my) {
   if (!isInPathsPanel(mx, my)) return false;
-
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int btnW = 120;
-  int btnH = 22;
-  int btnY = panelY + 12;
-  int btnX1 = 10;
-  int btnX2 = btnX1 + btnW + 10;
-  int btnX3 = btnX2 + btnW + 10;
+  PathsLayout layout = buildPathsLayout();
 
   // Close (Enter)
-  if (mx >= btnX1 && mx <= btnX1 + btnW &&
-      my >= btnY && my <= btnY + btnH) {
+  if (layout.closeBtn.contains(mx, my)) {
     if (currentTool == Tool.EDIT_PATHS && isDrawingPath && currentPath != null) {
       mapModel.addFinishedPath(currentPath);
       isDrawingPath = false;
@@ -450,8 +365,7 @@ boolean handlePathsPanelClick(int mx, int my) {
   }
 
   // Undo (Del)
-  if (mx >= btnX2 && mx <= btnX2 + btnW &&
-      my >= btnY && my <= btnY + btnH) {
+  if (layout.undoBtn.contains(mx, my)) {
     if (currentTool == Tool.EDIT_PATHS && isDrawingPath && currentPath != null) {
       if (!currentPath.points.isEmpty()) {
         currentPath.points.remove(currentPath.points.size() - 1);
@@ -465,30 +379,22 @@ boolean handlePathsPanelClick(int mx, int my) {
   }
 
   // Eraser toggle
-  if (mx >= btnX3 && mx <= btnX3 + btnW &&
-      my >= btnY && my <= btnY + btnH) {
+  if (layout.eraserBtn.contains(mx, my)) {
     pathEraserMode = !pathEraserMode;
     return true;
   }
 
   // Eraser radius slider
-  int sliderX = btnX3 + btnW + 20;
-  int sliderW = 200;
-  int sliderH = 14;
-  int sliderY = panelY + 14;
-  if (mx >= sliderX && mx <= sliderX + sliderW &&
-      my >= sliderY && my <= sliderY + sliderH) {
-    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+  if (layout.eraserSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.eraserSlider.x) / (float)layout.eraserSlider.w, 0, 1);
     pathEraserRadius = constrain(0.005f + t * (0.1f - 0.005f), 0.005f, 0.1f);
     activeSlider = SLIDER_PATH_ERASER;
     return true;
   }
 
   // Path weight slider
-  int weightY = sliderY + 20;
-  if (mx >= sliderX && mx <= sliderX + sliderW &&
-      my >= weightY && my <= weightY + sliderH) {
-    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+  if (layout.weightSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.weightSlider.x) / (float)layout.weightSlider.w, 0, 1);
     pathStrokeWeightPx = constrain(1.0f + t * 4.0f, 1.0f, 5.0f);
     activeSlider = SLIDER_PATH_WEIGHT;
     return true;
@@ -506,29 +412,15 @@ boolean handleLabelsPanelClick(int mx, int my) {
 
 boolean handleRenderPanelClick(int mx, int my) {
   if (!isInRenderPanel(mx, my)) return false;
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int chkX = 10;
-  int chkY = panelY + 12;
-  int chkSize = 14;
-  int spacing = 20;
+  RenderLayout layout = buildRenderLayout();
+
   // zones, water, elevation, paths, labels, structures
-  if (mx >= chkX && mx <= chkX + chkSize &&
-      my >= chkY && my <= chkY + chkSize) { renderShowZones = !renderShowZones; return true; }
-  chkY += spacing;
-  if (mx >= chkX && mx <= chkX + chkSize &&
-      my >= chkY && my <= chkY + chkSize) { renderShowWater = !renderShowWater; return true; }
-  chkY += spacing;
-  if (mx >= chkX && mx <= chkX + chkSize &&
-      my >= chkY && my <= chkY + chkSize) { renderShowElevation = !renderShowElevation; return true; }
-  chkY += spacing;
-  if (mx >= chkX && mx <= chkX + chkSize &&
-      my >= chkY && my <= chkY + chkSize) { renderShowPaths = !renderShowPaths; return true; }
-  chkY += spacing;
-  if (mx >= chkX && mx <= chkX + chkSize &&
-      my >= chkY && my <= chkY + chkSize) { renderShowLabels = !renderShowLabels; return true; }
-  chkY += spacing;
-  if (mx >= chkX && mx <= chkX + chkSize &&
-      my >= chkY && my <= chkY + chkSize) { renderShowStructures = !renderShowStructures; return true; }
+  if (layout.checks.get(0).contains(mx, my)) { renderShowZones = !renderShowZones; return true; }
+  if (layout.checks.get(1).contains(mx, my)) { renderShowWater = !renderShowWater; return true; }
+  if (layout.checks.get(2).contains(mx, my)) { renderShowElevation = !renderShowElevation; return true; }
+  if (layout.checks.get(3).contains(mx, my)) { renderShowPaths = !renderShowPaths; return true; }
+  if (layout.checks.get(4).contains(mx, my)) { renderShowLabels = !renderShowLabels; return true; }
+  if (layout.checks.get(5).contains(mx, my)) { renderShowStructures = !renderShowStructures; return true; }
   return false;
 }
 
@@ -536,88 +428,58 @@ boolean handleRenderPanelClick(int mx, int my) {
 
 boolean handleElevationPanelClick(int mx, int my) {
   if (!isInElevationPanel(mx, my)) return false;
-
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int sliderX = 10;
-  int sliderW = 220;
-  int sliderH = 14;
-  int rowY = panelY + 24;
+  ElevationLayout layout = buildElevationLayout();
 
   // Sea level
-  if (mx >= sliderX && mx <= sliderX + sliderW &&
-      my >= rowY && my <= rowY + sliderH) {
-    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+  if (layout.seaSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.seaSlider.x) / (float)layout.seaSlider.w, 0, 1);
     seaLevel = t * 1.0f - 0.5f;
     activeSlider = SLIDER_ELEV_SEA;
     return true;
   }
 
   // Brush radius
-  rowY += 22;
-  if (mx >= sliderX && mx <= sliderX + sliderW &&
-      my >= rowY && my <= rowY + sliderH) {
-    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+  if (layout.radiusSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.radiusSlider.x) / (float)layout.radiusSlider.w, 0, 1);
     elevationBrushRadius = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
     activeSlider = SLIDER_ELEV_RADIUS;
     return true;
   }
 
   // Brush strength
-  rowY += 22;
-  if (mx >= sliderX && mx <= sliderX + sliderW &&
-      my >= rowY && my <= rowY + sliderH) {
-    float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
+  if (layout.strengthSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.strengthSlider.x) / (float)layout.strengthSlider.w, 0, 1);
     elevationBrushStrength = constrain(0.005f + t * (0.2f - 0.005f), 0.005f, 0.2f);
     activeSlider = SLIDER_ELEV_STRENGTH;
     return true;
   }
 
   // Raise / Lower buttons
-  int btnW = 70;
-  int btnH = 22;
-  int btnY = rowY + 22;
-  int btnX1 = 10;
-  int btnX2 = btnX1 + btnW + 8;
-
-  if (mx >= btnX1 && mx <= btnX1 + btnW &&
-      my >= btnY && my <= btnY + btnH) {
+  if (layout.raiseBtn.contains(mx, my)) {
     elevationBrushRaise = true;
     return true;
   }
-  if (mx >= btnX2 && mx <= btnX2 + btnW &&
-      my >= btnY && my <= btnY + btnH) {
+  if (layout.lowerBtn.contains(mx, my)) {
     elevationBrushRaise = false;
     return true;
   }
 
   // Noise scale slider
-  int col2X = sliderX + sliderW + 140;
-  int col2Y = panelY + 24;
-  int colSliderW = 220;
-  int noiseY = col2Y;
-  if (mx >= col2X && mx <= col2X + colSliderW &&
-      my >= noiseY && my <= noiseY + sliderH) {
-    float t = constrain((mx - col2X) / (float)colSliderW, 0, 1);
+  if (layout.noiseSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.noiseSlider.x) / (float)layout.noiseSlider.w, 0, 1);
     elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
     activeSlider = SLIDER_ELEV_NOISE;
     return true;
   }
 
   // Generate button
-  int genW = 120;
-  int genH = 22;
-  int genX = col2X;
-  int genY = noiseY + sliderH + 8;
-  if (mx >= genX && mx <= genX + genW &&
-      my >= genY && my <= genY + genH) {
+  if (layout.perlinBtn.contains(mx, my)) {
     mapModel.generateElevationNoise(elevationNoiseScale, 1.0f);
     return true;
   }
 
   // Vary button
-  int varyX = genX + genW + 10;
-  if (mx >= varyX && mx <= varyX + genW &&
-      my >= genY && my <= genY + genH) {
+  if (layout.varyBtn.contains(mx, my)) {
     mapModel.addElevationVariation(elevationNoiseScale, 0.2f);
     return true;
   }
@@ -675,39 +537,24 @@ void mouseDragged() {
 
   // Dragging sliders in Sites panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_SITES && isInSitesPanel(mouseX, mouseY)) {
-    int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-
-    int sliderX = 10;
-    int sliderW = 250;
-    int sliderH = 16;
-
-    // Density slider
-    int densityY = panelY + 25;
-    if (mouseY >= densityY && mouseY <= densityY + sliderH) {
-      float t = (mouseX - sliderX) / (float)sliderW;
+    SitesLayout layout = buildSitesLayout();
+    if (layout.densitySlider.contains(mouseX, mouseY)) {
+      float t = (mouseX - layout.densitySlider.x) / (float)layout.densitySlider.w;
       siteDensity = constrain(t, 0, 1);
       return;
     }
 
-    // Fuzz slider (0..0.3)
-    int fuzzY = panelY + 25 + 22;
-    if (mouseY >= fuzzY && mouseY <= fuzzY + sliderH) {
-      float t = (mouseX - sliderX) / (float)sliderW;
+    if (layout.fuzzSlider.contains(mouseX, mouseY)) {
+      float t = (mouseX - layout.fuzzSlider.x) / (float)layout.fuzzSlider.w;
       t = constrain(t, 0, 1);
       siteFuzz = t * 0.3f;
       return;
     }
 
-    // Mode slider
-    int modeSliderX = 10;
-    int modeSliderY = panelY + 25 + 44;
-    int modeSliderW = sliderW;
-    int modeSliderH = 14;
-
-    if (mouseY >= modeSliderY && mouseY <= modeSliderY + modeSliderH) {
+    if (layout.modeSlider.contains(mouseX, mouseY)) {
       int modeCount = placementModes.length;
       if (modeCount < 1) modeCount = 1;
-      float t = (mouseX - modeSliderX) / (float)modeSliderW;
+      float t = (mouseX - layout.modeSlider.x) / (float)layout.modeSlider.w;
       t = constrain(t, 0, 1);
       int idx = round(t * (modeCount - 1));
       placementModeIndex = constrain(idx, 0, placementModes.length - 1);
@@ -719,37 +566,24 @@ void mouseDragged() {
 
   // Elevation: sliders dragging
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ELEVATION && isInElevationPanel(mouseX, mouseY)) {
-    int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-    int sliderX = 10;
-    int sliderW = 220;
-    int sliderH = 14;
-    int rowY = panelY + 24;
-
-    if (mouseY >= rowY && mouseY <= rowY + sliderH) {
-      float t = constrain((mouseX - sliderX) / (float)sliderW, 0, 1);
+    ElevationLayout layout = buildElevationLayout();
+    if (layout.seaSlider.contains(mouseX, mouseY)) {
+      float t = constrain((mouseX - layout.seaSlider.x) / (float)layout.seaSlider.w, 0, 1);
       seaLevel = t * 1.0f - 0.5f;
       return;
     }
-    rowY += 22;
-    if (mouseY >= rowY && mouseY <= rowY + sliderH) {
-      float t = constrain((mouseX - sliderX) / (float)sliderW, 0, 1);
+    if (layout.radiusSlider.contains(mouseX, mouseY)) {
+      float t = constrain((mouseX - layout.radiusSlider.x) / (float)layout.radiusSlider.w, 0, 1);
       elevationBrushRadius = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
       return;
     }
-    rowY += 22;
-    if (mouseY >= rowY && mouseY <= rowY + sliderH) {
-      float t = constrain((mouseX - sliderX) / (float)sliderW, 0, 1);
+    if (layout.strengthSlider.contains(mouseX, mouseY)) {
+      float t = constrain((mouseX - layout.strengthSlider.x) / (float)layout.strengthSlider.w, 0, 1);
       elevationBrushStrength = constrain(0.005f + t * (0.2f - 0.005f), 0.005f, 0.2f);
       return;
     }
-    int btnH = 22;
-    int btnY = rowY + 22;
-    int col2X = sliderX + sliderW + 140;
-    int colSliderW = 220;
-    int noiseY = panelY + 24;
-    if (mouseY >= noiseY && mouseY <= noiseY + sliderH &&
-        mouseX >= col2X && mouseX <= col2X + colSliderW) {
-      float t = constrain((mouseX - col2X) / (float)colSliderW, 0, 1);
+    if (layout.noiseSlider.contains(mouseX, mouseY)) {
+      float t = constrain((mouseX - layout.noiseSlider.x) / (float)layout.noiseSlider.w, 0, 1);
       elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
       return;
     }
@@ -757,25 +591,12 @@ void mouseDragged() {
 
   // Zones: slider dragging (only for hue + paint while dragging)
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES && isInZonesPanel(mouseX, mouseY)) {
-    int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+    ZonesLayout layout = buildZonesLayout();
+    int n = (mapModel.biomeTypes == null) ? 0 : mapModel.biomeTypes.size();
 
-    int toolBtnW = 60;
-    int toolBtnH = 20;
-    int toolY  = panelY + 24;
-
-  int swatchH = 18;
-  int rowY = toolY + toolBtnH + 10;
-  int hueSliderX = 10;
-  int hueSliderW = 250;
-  int hueSliderH = 14;
-
-  int n = (mapModel.biomeTypes == null) ? 0 : mapModel.biomeTypes.size();
-
-  if (n > 0 && activeBiomeIndex >= 0 && activeBiomeIndex < n) {
-      int hueSliderY = rowY + swatchH + 12;
-
-      if (mouseY >= hueSliderY && mouseY <= hueSliderY + hueSliderH) {
-        float t = (mouseX - hueSliderX) / (float)hueSliderW;
+    if (n > 0 && activeBiomeIndex >= 0 && activeBiomeIndex < n) {
+      if (layout.hueSlider.contains(mouseX, mouseY)) {
+        float t = (mouseX - layout.hueSlider.x) / (float)layout.hueSlider.w;
         t = constrain(t, 0, 1);
         ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
         active.hue01 = t;
@@ -785,12 +606,8 @@ void mouseDragged() {
       }
     }
 
-    int brushY = rowY + swatchH + 12;
-    int brushX = 10 + 250 + 30;
-    int brushW = 180;
-    int brushH = 14;
-    if (mouseY >= brushY && mouseY <= brushY + brushH) {
-      float t = constrain((mouseX - brushX) / (float)brushW, 0, 1);
+    if (layout.brushSlider.contains(mouseX, mouseY)) {
+      float t = constrain((mouseX - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
       activeSlider = SLIDER_ZONE_BRUSH;
       return;
@@ -799,8 +616,9 @@ void mouseDragged() {
 
   // Zones: paint while dragging (only for Paint mode, outside UI)
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
-    int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + ZONES_PANEL_HEIGHT;
-    if (mouseY >= uiBottom) {
+    IntRect panel = getActivePanelRect();
+    boolean inPanel = (panel != null && panel.contains(mouseX, mouseY));
+    if (!inPanel) {
       PVector w = viewport.screenToWorld(mouseX, mouseY);
       if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
         paintBiomeBrush(w.x, w.y);
@@ -810,21 +628,7 @@ void mouseDragged() {
   }
 
   // Ignore world if dragging in UI
-  int bottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  if (currentTool == Tool.EDIT_SITES) {
-    bottom += SITES_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_ZONES) {
-    bottom += ZONES_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_ELEVATION) {
-    bottom += ELEV_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_PATHS) {
-    bottom += PATH_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_LABELS) {
-    bottom += LABEL_PANEL_HEIGHT;
-  } else if (currentTool == Tool.EDIT_RENDER) {
-    bottom += RENDER_PANEL_HEIGHT;
-  }
-  if (mouseY < bottom) return;
+  if (isInActivePanel(mouseX, mouseY)) return;
 
   if (mouseButton == LEFT && currentTool == Tool.EDIT_SITES && isDraggingSite && draggingSite != null) {
     PVector worldPos = viewport.screenToWorld(mouseX, mouseY);
@@ -851,46 +655,32 @@ void mouseReleased() {
 }
 
 void updateActiveSlider(int mx, int my) {
-  int panelY;
   switch (activeSlider) {
     case SLIDER_SITES_DENSITY: {
-      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-      int sliderX = 10;
-      int sliderW = 250;
-      float t = (mx - sliderX) / (float)sliderW;
+      SitesLayout l = buildSitesLayout();
+      float t = (mx - l.densitySlider.x) / (float)l.densitySlider.w;
       siteDensity = constrain(t, 0, 1);
       break;
     }
     case SLIDER_SITES_FUZZ: {
-      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-      int sliderX = 10;
-      int sliderW = 250;
-      int fuzzY = panelY + 25 + 22;
-      float t = (mx - sliderX) / (float)sliderW;
+      SitesLayout l = buildSitesLayout();
+      float t = (mx - l.fuzzSlider.x) / (float)l.fuzzSlider.w;
       t = constrain(t, 0, 1);
       siteFuzz = t * 0.3f;
       break;
     }
     case SLIDER_SITES_MODE: {
-      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-      int sliderX = 10;
-      int sliderW = 250;
+      SitesLayout l = buildSitesLayout();
       int modeCount = placementModes.length;
-      float t = (mx - sliderX) / (float)sliderW;
+      float t = (mx - l.modeSlider.x) / (float)l.modeSlider.w;
       t = constrain(t, 0, 1);
       int idx = round(t * max(1, modeCount - 1));
       placementModeIndex = constrain(idx, 0, placementModes.length - 1);
       break;
     }
     case SLIDER_ZONE_HUE: {
-      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-      int toolBtnH = 20;
-      int toolY = panelY + 24;
-      int swatchH = 18;
-      int rowY = toolY + toolBtnH + 10;
-      int hueSliderX = 10;
-      int hueSliderW = 250;
-      float t = (mx - hueSliderX) / (float)hueSliderW;
+      ZonesLayout l = buildZonesLayout();
+      float t = (mx - l.hueSlider.x) / (float)l.hueSlider.w;
       t = constrain(t, 0, 1);
       if (mapModel.biomeTypes != null && activeBiomeIndex >= 0 && activeBiomeIndex < mapModel.biomeTypes.size()) {
         ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
@@ -900,58 +690,50 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_ZONE_BRUSH: {
-      int brushX = 10 + 250 + 30;
-      int brushW = 180;
-      float t = (mx - brushX) / (float)brushW;
+      ZonesLayout l = buildZonesLayout();
+      float t = (mx - l.brushSlider.x) / (float)l.brushSlider.w;
       t = constrain(t, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
       break;
     }
     case SLIDER_ELEV_SEA: {
-      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-      int sliderX = 10;
-      int sliderW = 220;
-      float t = (mx - sliderX) / (float)sliderW;
+      ElevationLayout l = buildElevationLayout();
+      float t = (mx - l.seaSlider.x) / (float)l.seaSlider.w;
       t = constrain(t, 0, 1);
       seaLevel = t * 1.0f - 0.5f;
       break;
     }
     case SLIDER_ELEV_RADIUS: {
-      int sliderX = 10;
-      int sliderW = 220;
-      float t = (mx - sliderX) / (float)sliderW;
+      ElevationLayout l = buildElevationLayout();
+      float t = (mx - l.radiusSlider.x) / (float)l.radiusSlider.w;
       t = constrain(t, 0, 1);
       elevationBrushRadius = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
       break;
     }
     case SLIDER_ELEV_STRENGTH: {
-      int sliderX = 10;
-      int sliderW = 220;
-      float t = (mx - sliderX) / (float)sliderW;
+      ElevationLayout l = buildElevationLayout();
+      float t = (mx - l.strengthSlider.x) / (float)l.strengthSlider.w;
       t = constrain(t, 0, 1);
       elevationBrushStrength = constrain(0.005f + t * (0.2f - 0.005f), 0.005f, 0.2f);
       break;
     }
     case SLIDER_ELEV_NOISE: {
-      int sliderX = 10 + 220 + 140; // col2X
-      int sliderW = 220;
-      float t = (mx - sliderX) / (float)sliderW;
+      ElevationLayout l = buildElevationLayout();
+      float t = (mx - l.noiseSlider.x) / (float)l.noiseSlider.w;
       t = constrain(t, 0, 1);
       elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
       break;
     }
     case SLIDER_PATH_ERASER: {
-      int sliderX = 10 + 120 + 10 + 120 + 10 + 120 + 20;
-      int sliderW = 200;
-      float t = (mx - sliderX) / (float)sliderW;
+      PathsLayout l = buildPathsLayout();
+      float t = (mx - l.eraserSlider.x) / (float)l.eraserSlider.w;
       t = constrain(t, 0, 1);
       pathEraserRadius = constrain(0.005f + t * (0.1f - 0.005f), 0.005f, 0.1f);
       break;
     }
     case SLIDER_PATH_WEIGHT: {
-      int sliderX = 10 + 120 + 10 + 120 + 10 + 120 + 20;
-      int sliderW = 200;
-      float t = (mx - sliderX) / (float)sliderW;
+      PathsLayout l = buildPathsLayout();
+      float t = (mx - l.weightSlider.x) / (float)l.weightSlider.w;
       t = constrain(t, 0, 1);
       pathStrokeWeightPx = constrain(1.0f + t * 4.0f, 1.0f, 5.0f);
       break;

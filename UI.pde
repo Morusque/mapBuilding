@@ -1,5 +1,31 @@
 // ---------- UI DRAWING ----------
 
+int panelTop() {
+  return TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+}
+
+void drawPanelBackground(IntRect frame) {
+  noStroke();
+  fill(232);
+  rect(frame.x, frame.y, frame.w, frame.h);
+
+  // Bevel
+  stroke(255);
+  line(frame.x, frame.y, frame.x + frame.w, frame.y);
+  line(frame.x, frame.y, frame.x, frame.y + frame.h);
+  stroke(120);
+  line(frame.x, frame.y + frame.h - 1, frame.x + frame.w, frame.y + frame.h - 1);
+  line(frame.x + frame.w - 1, frame.y, frame.x + frame.w - 1, frame.y + frame.h);
+}
+
+// Shared small rect helper
+class IntRect {
+  int x, y, w, h;
+  IntRect() {}
+  IntRect(int x, int y, int w, int h) { this.x = x; this.y = y; this.w = w; this.h = h; }
+  boolean contains(int px, int py) { return px >= x && px <= x + w && py >= y && py <= y + h; }
+}
+
 void drawTopBar() {
   // Background
   noStroke();
@@ -69,44 +95,64 @@ void drawToolButtons() {
 
 // ----- SITES PANEL -----
 
+class SitesLayout {
+  IntRect panel;
+  int titleY;
+  IntRect densitySlider;
+  IntRect fuzzSlider;
+  IntRect modeSlider;
+  IntRect generateBtn;
+  IntRect keepCheckbox;
+}
+
+SitesLayout buildSitesLayout() {
+  SitesLayout l = new SitesLayout();
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
+  int innerX = l.panel.x + PANEL_PADDING;
+  int curY = l.panel.y + PANEL_PADDING;
+  l.titleY = curY;
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  int sliderW = 200;
+  l.densitySlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.fuzzSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.modeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.generateBtn = new IntRect(innerX, curY, 110, PANEL_BUTTON_H);
+  l.keepCheckbox = new IntRect(l.generateBtn.x + l.generateBtn.w + 12,
+                               curY + (PANEL_BUTTON_H - PANEL_CHECK_SIZE) / 2,
+                               PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+  curY += PANEL_BUTTON_H + PANEL_PADDING;
+  l.panel.h = curY - l.panel.y;
+  return l;
+}
+
 void drawSitesPanel() {
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int panelH = SITES_PANEL_HEIGHT;
+  SitesLayout layout = buildSitesLayout();
+  drawPanelBackground(layout.panel);
 
-  // Panel background clearly distinct from map
-  noStroke();
-  fill(232);
-  rect(0, panelY, width, panelH);
-
-  // Panel bevel
-  stroke(255);
-  line(0, panelY, width, panelY);
-  line(0, panelY, 0, panelY + panelH);
-  stroke(120);
-  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
-  line(width - 1, panelY, width - 1, panelY + panelH);
-
+  int labelX = layout.panel.x + PANEL_PADDING;
   fill(0);
   textAlign(LEFT, TOP);
-  text("Sites generation", 10, panelY + 5);
-
-  int sliderX = 10;
-  int sliderW = 250;
-  int sliderH = 16;
+  text("Sites generation", labelX, layout.titleY);
 
   // ---------- Density slider ----------
-  int densityY = panelY + 25;
-
+  IntRect d = layout.densitySlider;
   stroke(160);
   fill(230);
-  rect(sliderX, densityY, sliderW, sliderH, 4);
+  rect(d.x, d.y, d.w, d.h, 4);
 
-  float densityHandleX = sliderX + siteDensity * sliderW;
+  float densityHandleX = d.x + siteDensity * d.w;
   float handleW = 8;
 
   fill(80);
   noStroke();
-  rect(densityHandleX - handleW / 2, densityY - 2, handleW, sliderH + 4, 4);
+  rect(densityHandleX - handleW / 2, d.y - 2, handleW, d.h + 4, 4);
 
   int minRes = 2;
   int maxRes = 100;
@@ -114,68 +160,65 @@ void drawSitesPanel() {
   int approxCount = res * res;
 
   fill(0);
-  textAlign(LEFT, TOP);
+  textAlign(LEFT, BOTTOM);
   text("Density: " + nf(siteDensity, 1, 2) + "  (~" + approxCount + " sites)",
-       sliderX + sliderW + 10, densityY - 2);
+       d.x, d.y - 4);
 
   // ---------- Fuzz slider (0..0.3) ----------
-  int fuzzY = panelY + 25 + 22;
+  IntRect f = layout.fuzzSlider;
 
   stroke(160);
   fill(230);
-  rect(sliderX, fuzzY, sliderW, sliderH, 4);
+  rect(f.x, f.y, f.w, f.h, 4);
 
   float fuzzNorm = (siteFuzz <= 0) ? 0 : constrain(siteFuzz / 0.3f, 0, 1);
-  float fuzzHandleX = sliderX + fuzzNorm * sliderW;
+  float fuzzHandleX = f.x + fuzzNorm * f.w;
 
   fill(80);
   noStroke();
-  rect(fuzzHandleX - handleW / 2, fuzzY - 2, handleW, sliderH + 4, 4);
+  rect(fuzzHandleX - handleW / 2, f.y - 2, handleW, f.h + 4, 4);
 
   fill(0);
-  textAlign(LEFT, TOP);
+  textAlign(LEFT, BOTTOM);
   text("Fuzz: " + nf(siteFuzz, 1, 2) + " (0 = none, 0.3 = strong jitter)",
-       sliderX + sliderW + 10, fuzzY - 2);
+       f.x, f.y - 4);
 
   // ---------- Placement mode slider (DISCRETE) ----------
-  int modeSliderX = 10;
-  int modeSliderY = panelY + 25 + 44;
-  int modeSliderW = sliderW;
-  int modeSliderH = 14;
+  IntRect m = layout.modeSlider;
 
   // Track
   stroke(160);
   fill(225);
-  rect(modeSliderX, modeSliderY, modeSliderW, modeSliderH, 4);
+  rect(m.x, m.y, m.w, m.h, 4);
 
   int modeCount = placementModes.length;
   if (modeCount < 1) modeCount = 1;
 
   float stepW = (modeCount > 1) ?
-    (modeSliderW / (float)(modeCount - 1)) :
+    (m.w / (float)(modeCount - 1)) :
     0;
 
   // Tick marks
   stroke(120);
   for (int i = 0; i < modeCount; i++) {
-    float tx = modeSliderX + i * stepW;
-    float ty0 = modeSliderY;
-    float ty1 = modeSliderY + modeSliderH;
+    float tx = m.x + i * stepW;
+    float ty0 = m.y;
+    float ty1 = m.y + m.h;
     line(tx, ty0, tx, ty1);
   }
 
   // Handle (circle)
   float modeHandleX;
   if (placementModeIndex <= 0) {
-    modeHandleX = modeSliderX;
+    modeHandleX = m.x;
   } else if (placementModeIndex >= modeCount - 1) {
-    modeHandleX = modeSliderX + modeSliderW;
+    modeHandleX = m.x + m.w;
   } else {
-    modeHandleX = modeSliderX + placementModeIndex * stepW;
+    modeHandleX = m.x + placementModeIndex * stepW;
   }
 
-  float knobRadius = modeSliderH * 0.9f;
-  float knobY = modeSliderY + modeSliderH / 2.0f;
+  float knobRadius = m.h * 0.9f;
+  float knobY = m.y + m.h / 2.0f;
 
   fill(40);
   noStroke();
@@ -184,133 +227,146 @@ void drawSitesPanel() {
   // Mode name label
   String modeName = placementModeLabel(currentPlacementMode());
   fill(0);
-  textAlign(LEFT, TOP);
-  text("Placement: " + modeName, modeSliderX + modeSliderW + 10, modeSliderY - 2);
+  textAlign(LEFT, BOTTOM);
+  text("Placement: " + modeName, m.x, m.y - 4);
 
   // ---------- Generate button ----------
-  int genW = 100;
-  int genH = 24;
-  int genX = 10;
-  int genY = modeSliderY + 24;
-
-  drawBevelButton(genX, genY, genW, genH, false);
+  IntRect g = layout.generateBtn;
+  drawBevelButton(g.x, g.y, g.w, g.h, false);
   fill(10);
   textAlign(CENTER, CENTER);
-  text("Generate", genX + genW / 2, genY + genH / 2);
+  text("Generate", g.x + g.w / 2, g.y + g.h / 2);
 
   // Keep properties toggle
-  int chkX = genX + genW + 16;
-  int chkY = genY + 4;
-  int chkSize = 16;
+  IntRect c = layout.keepCheckbox;
   stroke(80);
   fill(keepPropertiesOnGenerate ? 200 : 240);
-  rect(chkX, chkY, chkSize, chkSize);
+  rect(c.x, c.y, c.w, c.h);
   if (keepPropertiesOnGenerate) {
-    line(chkX + 3, chkY + 8, chkX + 7, chkY + 12);
-    line(chkX + 7, chkY + 12, chkX + 13, chkY + 4);
+    line(c.x + 3, c.y + c.h / 2, c.x + c.w / 2, c.y + c.h - 3);
+    line(c.x + c.w / 2, c.y + c.h - 3, c.x + c.w - 3, c.y + 3);
   }
   fill(0);
   textAlign(LEFT, CENTER);
-  text("Keep properties", chkX + chkSize + 6, genY + genH / 2);
+  text("Keep properties", c.x + c.w + 6, g.y + g.h / 2);
 }
 
 // ----- ZONES PANEL -----
 
+class ZonesLayout {
+  IntRect panel;
+  int titleY;
+  IntRect paintBtn;
+  IntRect fillBtn;
+  IntRect addBtn;
+  IntRect removeBtn;
+  ArrayList<IntRect> swatches = new ArrayList<IntRect>();
+  ArrayList<IntRect> nameRects = new ArrayList<IntRect>();
+  IntRect hueSlider;
+  IntRect brushSlider;
+}
+
+ZonesLayout buildZonesLayout() {
+  ZonesLayout l = new ZonesLayout();
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
+  int innerX = l.panel.x + PANEL_PADDING;
+  int curY = l.panel.y + PANEL_PADDING;
+  l.titleY = curY;
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  l.paintBtn = new IntRect(innerX, curY, 70, PANEL_BUTTON_H);
+  l.fillBtn = new IntRect(l.paintBtn.x + l.paintBtn.w + 8, curY, 70, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+  l.addBtn = new IntRect(innerX, curY, 24, PANEL_BUTTON_H);
+  l.removeBtn = new IntRect(l.addBtn.x + l.addBtn.w + 6, curY, 24, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
+  // Palette
+  int swatchW = 60;
+  int swatchH = 18;
+  int nameH = 18;
+  int gapX = 8;
+  int maxPerRow = max(1, (PANEL_W - 2 * PANEL_PADDING + gapX) / (swatchW + gapX));
+  int rowY = curY;
+  int col = 0;
+  int paletteBottom = rowY;
+  if (mapModel != null && mapModel.biomeTypes != null) {
+    for (int i = 0; i < mapModel.biomeTypes.size(); i++) {
+      int x = innerX + col * (swatchW + gapX);
+      l.swatches.add(new IntRect(x, rowY, swatchW, swatchH));
+      l.nameRects.add(new IntRect(x, rowY + swatchH + 4, swatchW, nameH));
+      paletteBottom = max(paletteBottom, rowY + swatchH + 4 + nameH);
+      col++;
+      if (col >= maxPerRow) {
+        col = 0;
+        rowY += swatchH + nameH + PANEL_ROW_GAP;
+      }
+    }
+  }
+  curY = paletteBottom + PANEL_SECTION_GAP;
+
+  l.hueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.brushSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+
+  l.panel.h = curY - l.panel.y;
+  return l;
+}
+
 void drawZonesPanel() {
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int panelH = ZONES_PANEL_HEIGHT;
+  ZonesLayout layout = buildZonesLayout();
+  drawPanelBackground(layout.panel);
 
-  // Panel background distinct from map
-  noStroke();
-  fill(232);
-  rect(0, panelY, width, panelH);
-
-  // Panel bevel
-  stroke(255);
-  line(0, panelY, width, panelY);
-  line(0, panelY, 0, panelY + panelH);
-  stroke(120);
-  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
-  line(width - 1, panelY, width - 1, panelY + panelH);
-
+  int labelX = layout.panel.x + PANEL_PADDING;
   fill(0);
   textAlign(LEFT, TOP);
-  text("Biomes (Zones)", 10, panelY + 5);
-
-  // Paint / Fill buttons
-  int toolBtnW = 60;
-  int toolBtnH = 20;
-  int toolX1 = 10;
-  int toolX2 = toolX1 + toolBtnW + 8;
-  int toolY  = panelY + 24;
+  text("Biomes (Zones)", labelX, layout.titleY);
 
   // Paint button
-  drawBevelButton(toolX1, toolY, toolBtnW, toolBtnH,
+  drawBevelButton(layout.paintBtn.x, layout.paintBtn.y, layout.paintBtn.w, layout.paintBtn.h,
                   currentZonePaintMode == ZonePaintMode.ZONE_PAINT);
   fill(10);
   textAlign(CENTER, CENTER);
-  text("Paint", toolX1 + toolBtnW * 0.5f, toolY + toolBtnH * 0.5f);
+  text("Paint", layout.paintBtn.x + layout.paintBtn.w * 0.5f, layout.paintBtn.y + layout.paintBtn.h * 0.5f);
 
   // Fill button
-  drawBevelButton(toolX2, toolY, toolBtnW, toolBtnH,
+  drawBevelButton(layout.fillBtn.x, layout.fillBtn.y, layout.fillBtn.w, layout.fillBtn.h,
                   currentZonePaintMode == ZonePaintMode.ZONE_FILL);
   fill(10);
   textAlign(CENTER, CENTER);
-  text("Fill", toolX2 + toolBtnW * 0.5f, toolY + toolBtnH * 0.5f);
+  text("Fill", layout.fillBtn.x + layout.fillBtn.w * 0.5f, layout.fillBtn.y + layout.fillBtn.h * 0.5f);
 
   // Add / Remove biome type buttons
-  int addBtnW = 24;
-  int addBtnH = 20;
-  int addX = toolX2 + toolBtnW + 20;
-  int addY = toolY;
-
-  int remX = addX + addBtnW + 6;
-  int remY = toolY;
-  int renX = remX + addBtnW + 10;
-
   // "+" button
-  drawBevelButton(addX, addY, addBtnW, addBtnH, false);
+  drawBevelButton(layout.addBtn.x, layout.addBtn.y, layout.addBtn.w, layout.addBtn.h, false);
   fill(10);
   textAlign(CENTER, CENTER);
-  text("+", addX + addBtnW * 0.5f, addY + addBtnH * 0.5f);
+  text("+", layout.addBtn.x + layout.addBtn.w * 0.5f, layout.addBtn.y + layout.addBtn.h * 0.5f);
 
   // "-" button (disabled if index 0 or only one type)
   boolean canRemove = (mapModel.biomeTypes != null &&
                        mapModel.biomeTypes.size() > 1 &&
                        activeBiomeIndex > 0);
 
-  drawBevelButton(remX, remY, addBtnW, addBtnH, !canRemove);
+  drawBevelButton(layout.removeBtn.x, layout.removeBtn.y, layout.removeBtn.w, layout.removeBtn.h, !canRemove);
   fill(10);
   textAlign(CENTER, CENTER);
-  text("-", remX + addBtnW * 0.5f, remY + addBtnH * 0.5f);
-
-  // Rename button
-  int renW = 60;
-  int renH = addBtnH;
-  drawBevelButton(renX, remY, renW, renH, false);
-  fill(10);
-  text("Rename", renX + renW * 0.5f, remY + renH * 0.5f);
+  text("-", layout.removeBtn.x + layout.removeBtn.w * 0.5f, layout.removeBtn.y + layout.removeBtn.h * 0.5f);
 
   // Palette
   if (mapModel == null || mapModel.biomeTypes == null) return;
   int n = mapModel.biomeTypes.size();
   if (n == 0) return;
 
-  int swatchW = 60;
-  int swatchH = 18;
-  int marginX = 10;
-  int gapX = 8;
-
-  int rowY = toolY + toolBtnH + 10;
-  int textY = rowY + swatchH + 2;
-
   textAlign(CENTER, TOP);
 
   for (int i = 0; i < n; i++) {
     ZoneType zt = mapModel.biomeTypes.get(i);
-    int x = marginX + i * (swatchW + gapX);
-    int y = rowY;
-
+    IntRect sw = layout.swatches.get(i);
+    IntRect nameRect = layout.nameRects.get(i);
     stroke(120);
     if (i == activeBiomeIndex) {
       strokeWeight(2);
@@ -318,23 +374,25 @@ void drawZonesPanel() {
       strokeWeight(1);
     }
     fill(zt.col);
-    rect(x, y, swatchW, swatchH, 4);
+    rect(sw.x, sw.y, sw.w, sw.h, 4);
 
-    fill(0);
-    String nameShown = (editingZoneNameIndex == i) ? zoneNameDraft : zt.name;
-    text(nameShown, x + swatchW * 0.5f, textY);
-
-    if (editingZoneNameIndex == i) {
-      int boxW = swatchW;
-      int boxH = 16;
-      int boxX = x;
-      int boxY = textY + 2;
+    boolean editing = (editingZoneNameIndex == i);
+    if (editing) {
       stroke(60);
-      noFill();
-      rect(boxX, boxY, boxW, boxH);
+      fill(255);
+      rect(nameRect.x, nameRect.y, nameRect.w, nameRect.h);
       fill(0);
       textAlign(LEFT, CENTER);
-      text(zoneNameDraft, boxX + 4, boxY + boxH / 2);
+      String shown = zoneNameDraft;
+      text(shown, nameRect.x + 6, nameRect.y + nameRect.h / 2);
+      float caretX = nameRect.x + 6 + textWidth(shown);
+      stroke(0);
+      line(caretX, nameRect.y + 4, caretX, nameRect.y + nameRect.h - 4);
+    } else {
+      drawBevelButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, i == activeBiomeIndex);
+      fill(10);
+      textAlign(CENTER, CENTER);
+      text(zt.name, nameRect.x + nameRect.w * 0.5f, nameRect.y + nameRect.h * 0.5f);
     }
   }
 
@@ -342,21 +400,18 @@ void drawZonesPanel() {
   if (activeBiomeIndex >= 0 && activeBiomeIndex < n) {
     ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
 
-    int hueSliderX = 10;
-    int hueSliderW = 250;
-    int hueSliderH = 14;
-    int hueSliderY = rowY + swatchH + 12;
+    IntRect hue = layout.hueSlider;
 
     // Track
     stroke(160);
     fill(230);
-    rect(hueSliderX, hueSliderY, hueSliderW, hueSliderH, 4);
+    rect(hue.x, hue.y, hue.w, hue.h, 4);
 
     // Handle position from active.hue01
     float hNorm = constrain(active.hue01, 0, 1);
-    float handleX = hueSliderX + hNorm * hueSliderW;
-    float handleR = hueSliderH * 0.9f;
-    float handleY = hueSliderY + hueSliderH / 2.0f;
+    float handleX = hue.x + hNorm * hue.w;
+    float handleR = hue.h * 0.9f;
+    float handleY = hue.y + hue.h / 2.0f;
 
     fill(40);
     noStroke();
@@ -364,274 +419,321 @@ void drawZonesPanel() {
 
     // Label
     fill(0);
-    textAlign(LEFT, TOP);
+    textAlign(LEFT, BOTTOM);
     text("Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2),
-         hueSliderX + hueSliderW + 10, hueSliderY - 2);
+         hue.x, hue.y - 4);
   }
 
   // Brush radius slider
-  int brushY = rowY + swatchH + 12;
-  int brushX = 10 + 250 + 30;
-  int brushW = 180;
-  int brushH = 14;
+  IntRect brush = layout.brushSlider;
   stroke(160);
   fill(230);
-  rect(brushX, brushY, brushW, brushH, 4);
+  rect(brush.x, brush.y, brush.w, brush.h, 4);
   float bNorm = constrain(map(zoneBrushRadius, 0.01f, 0.15f, 0, 1), 0, 1);
-  float bx = brushX + bNorm * brushW;
+  float bx = brush.x + bNorm * brush.w;
   fill(40);
   noStroke();
-  ellipse(bx, brushY + brushH / 2.0f, brushH * 0.9f, brushH * 0.9f);
+  ellipse(bx, brush.y + brush.h / 2.0f, brush.h * 0.9f, brush.h * 0.9f);
   fill(0);
-  textAlign(LEFT, TOP);
-  text("Brush radius", brushX + brushW + 10, brushY - 2);
+  textAlign(LEFT, BOTTOM);
+  text("Brush radius", brush.x, brush.y - 4);
 }
 
 // ----- PATHS PANEL -----
 
-void drawPathsPanel() {
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int panelH = PATH_PANEL_HEIGHT;
+class PathsLayout {
+  IntRect panel;
+  int titleY;
+  IntRect closeBtn;
+  IntRect undoBtn;
+  IntRect eraserBtn;
+  IntRect eraserSlider;
+  IntRect weightSlider;
+}
 
-  noStroke();
-  fill(232);
-  rect(0, panelY, width, panelH);
-
-  stroke(255);
-  line(0, panelY, width, panelY);
-  line(0, panelY, 0, panelY + panelH);
-  stroke(120);
-  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
-  line(width - 1, panelY, width - 1, panelY + panelH);
-
-  fill(0);
-  textAlign(LEFT, TOP);
-  text("Paths", 10, panelY + 4);
+PathsLayout buildPathsLayout() {
+  PathsLayout l = new PathsLayout();
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
+  int innerX = l.panel.x + PANEL_PADDING;
+  int curY = l.panel.y + PANEL_PADDING;
+  l.titleY = curY;
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
   int btnW = 120;
-  int btnH = 22;
-  int btnY = panelY + 12;
-  int btnX1 = 10;
-  int btnX2 = btnX1 + btnW + 10;
-  int btnX3 = btnX2 + btnW + 10;
+  l.closeBtn = new IntRect(innerX, curY, btnW, PANEL_BUTTON_H);
+  l.undoBtn = new IntRect(l.closeBtn.x + btnW + 8, curY, btnW, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
 
-  drawBevelButton(btnX1, btnY, btnW, btnH, false);
-  drawBevelButton(btnX2, btnY, btnW, btnH, false);
-  drawBevelButton(btnX3, btnY, btnW, btnH, pathEraserMode);
+  l.eraserBtn = new IntRect(innerX, curY, btnW, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
+  l.eraserSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.weightSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+
+  l.panel.h = curY - l.panel.y;
+  return l;
+}
+
+void drawPathsPanel() {
+  PathsLayout layout = buildPathsLayout();
+  drawPanelBackground(layout.panel);
+
+  int labelX = layout.panel.x + PANEL_PADDING;
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Paths", labelX, layout.titleY);
+
+  drawBevelButton(layout.closeBtn.x, layout.closeBtn.y, layout.closeBtn.w, layout.closeBtn.h, false);
+  drawBevelButton(layout.undoBtn.x, layout.undoBtn.y, layout.undoBtn.w, layout.undoBtn.h, false);
+  drawBevelButton(layout.eraserBtn.x, layout.eraserBtn.y, layout.eraserBtn.w, layout.eraserBtn.h, pathEraserMode);
 
   fill(10);
   textAlign(CENTER, CENTER);
-  text("Close (Enter)", btnX1 + btnW / 2, btnY + btnH / 2);
-  text("Undo (Del)",    btnX2 + btnW / 2, btnY + btnH / 2);
-  text("Eraser",        btnX3 + btnW / 2, btnY + btnH / 2);
+  text("Close (Enter)", layout.closeBtn.x + layout.closeBtn.w / 2, layout.closeBtn.y + layout.closeBtn.h / 2);
+  text("Undo (Del)",    layout.undoBtn.x + layout.undoBtn.w / 2, layout.undoBtn.y + layout.undoBtn.h / 2);
+  text("Eraser",        layout.eraserBtn.x + layout.eraserBtn.w / 2, layout.eraserBtn.y + layout.eraserBtn.h / 2);
 
-  int sliderX = btnX3 + btnW + 20;
-  int sliderW = 200;
-  int sliderH = 14;
-  int sliderY = panelY + 14;
+  // Eraser radius
+  IntRect eraserSlider = layout.eraserSlider;
   stroke(160);
   fill(230);
-  rect(sliderX, sliderY, sliderW, sliderH, 4);
+  rect(eraserSlider.x, eraserSlider.y, eraserSlider.w, eraserSlider.h, 4);
   float eNorm = constrain(map(pathEraserRadius, 0.005f, 0.1f, 0, 1), 0, 1);
-  float ex = sliderX + eNorm * sliderW;
+  float ex = eraserSlider.x + eNorm * eraserSlider.w;
   fill(40);
   noStroke();
-  ellipse(ex, sliderY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
+  ellipse(ex, eraserSlider.y + eraserSlider.h / 2.0f, eraserSlider.h * 0.9f, eraserSlider.h * 0.9f);
   fill(0);
-  textAlign(LEFT, TOP);
-  text("Eraser radius", sliderX + sliderW + 10, sliderY - 2);
+  textAlign(LEFT, BOTTOM);
+  text("Eraser radius", eraserSlider.x, eraserSlider.y - 4);
 
-  int weightY = sliderY + 20;
+  // Path weight
+  IntRect weight = layout.weightSlider;
   stroke(160);
   fill(230);
-  rect(sliderX, weightY, sliderW, sliderH, 4);
+  rect(weight.x, weight.y, weight.w, weight.h, 4);
   float wNorm = constrain(map(pathStrokeWeightPx, 1.0f, 5.0f, 0, 1), 0, 1);
-  float wx = sliderX + wNorm * sliderW;
+  float wx = weight.x + wNorm * weight.w;
   fill(40);
   noStroke();
-  ellipse(wx, weightY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
+  ellipse(wx, weight.y + weight.h / 2.0f, weight.h * 0.9f, weight.h * 0.9f);
   fill(0);
-  text("Path weight (px)", sliderX + sliderW + 10, weightY - 2);
+  text("Path weight (px)", weight.x, weight.y - 4);
 }
 
 // ----- ELEVATION PANEL -----
 
-void drawElevationPanel() {
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int panelH = ELEV_PANEL_HEIGHT;
+class ElevationLayout {
+  IntRect panel;
+  int titleY;
+  IntRect seaSlider;
+  IntRect radiusSlider;
+  IntRect strengthSlider;
+  IntRect raiseBtn;
+  IntRect lowerBtn;
+  IntRect noiseSlider;
+  IntRect perlinBtn;
+  IntRect varyBtn;
+}
 
-  noStroke();
-  fill(232);
-  rect(0, panelY, width, panelH);
+ElevationLayout buildElevationLayout() {
+  ElevationLayout l = new ElevationLayout();
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
+  int innerX = l.panel.x + PANEL_PADDING;
+  int curY = l.panel.y + PANEL_PADDING;
+  l.titleY = curY;
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
-  stroke(255);
-  line(0, panelY, width, panelY);
-  line(0, panelY, 0, panelY + panelH);
-  stroke(120);
-  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
-  line(width - 1, panelY, width - 1, panelY + panelH);
+  int sliderW = 200;
+  l.seaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  fill(0);
-  textAlign(LEFT, TOP);
-  text("Elevation", 10, panelY + 6);
+  l.radiusSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  int sliderX = 10;
-  int sliderW = 220;
-  int sliderH = 14;
-  int rowY = panelY + 24;
+  l.strengthSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  // Sea level slider (-0.5 .. 0.5)
-  stroke(160);
-  fill(230);
-  rect(sliderX, rowY, sliderW, sliderH, 4);
-  float seaNorm = constrain((seaLevel + 0.5f) / 1.0f, 0, 1);
-  float sx = sliderX + seaNorm * sliderW;
-  fill(40);
-  noStroke();
-  ellipse(sx, rowY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
-  fill(0);
-  textAlign(LEFT, TOP);
-  text("Water level: " + nf(seaLevel, 1, 2), sliderX + sliderW + 10, rowY - 2);
+  l.raiseBtn = new IntRect(innerX, curY, 80, PANEL_BUTTON_H);
+  l.lowerBtn = new IntRect(l.raiseBtn.x + l.raiseBtn.w + 8, curY, 80, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
-  // Brush radius slider (0.01..0.2)
-  rowY += 22;
-  stroke(160);
-  fill(230);
-  rect(sliderX, rowY, sliderW, sliderH, 4);
-  float rNorm = constrain(map(elevationBrushRadius, 0.01f, 0.2f, 0, 1), 0, 1);
-  float rx = sliderX + rNorm * sliderW;
-  fill(40);
-  noStroke();
-  ellipse(rx, rowY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
-  fill(0);
-  text("Brush radius", sliderX + sliderW + 10, rowY - 2);
-
-  // Brush strength slider (0.005..0.2)
-  rowY += 22;
-  stroke(160);
-  fill(230);
-  rect(sliderX, rowY, sliderW, sliderH, 4);
-  float sNorm = constrain(map(elevationBrushStrength, 0.005f, 0.2f, 0, 1), 0, 1);
-  float stx = sliderX + sNorm * sliderW;
-  fill(40);
-  noStroke();
-  ellipse(stx, rowY + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
-  fill(0);
-  text("Brush strength", sliderX + sliderW + 10, rowY - 2);
-
-  // Raise / Lower buttons
-  int btnW = 70;
-  int btnH = 22;
-  int btnY = rowY + 22;
-  int btnX1 = 10;
-  int btnX2 = btnX1 + btnW + 8;
-
-  drawBevelButton(btnX1, btnY, btnW, btnH, elevationBrushRaise);
-  drawBevelButton(btnX2, btnY, btnW, btnH, !elevationBrushRaise);
-  fill(10);
-  textAlign(CENTER, CENTER);
-  text("Raise", btnX1 + btnW / 2, btnY + btnH / 2);
-  text("Lower", btnX2 + btnW / 2, btnY + btnH / 2);
-
-  // Second column for noise controls
-  int col2X = sliderX + sliderW + 140;
-  int col2Y = panelY + 24;
-  int colSliderW = 220;
-
-  stroke(160);
-  fill(230);
-  rect(col2X, col2Y, colSliderW, sliderH, 4);
-  float nNorm = constrain(map(elevationNoiseScale, 1.0f, 12.0f, 0, 1), 0, 1);
-  float nx = col2X + nNorm * colSliderW;
-  fill(40);
-  noStroke();
-  ellipse(nx, col2Y + sliderH / 2.0f, sliderH * 0.9f, sliderH * 0.9f);
-  fill(0);
-  textAlign(LEFT, TOP);
-  text("Noise scale", col2X + colSliderW + 10, col2Y - 2);
+  l.noiseSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
   int genW = 120;
-  int genH = 22;
-  int genY = col2Y + sliderH + 8;
-  drawBevelButton(col2X, genY, genW, genH, false);
+  l.perlinBtn = new IntRect(innerX, curY, genW, PANEL_BUTTON_H);
+  l.varyBtn = new IntRect(l.perlinBtn.x + genW + 8, curY, genW, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_PADDING;
+
+  l.panel.h = curY - l.panel.y;
+  return l;
+}
+
+void drawElevationPanel() {
+  ElevationLayout layout = buildElevationLayout();
+  drawPanelBackground(layout.panel);
+
+  int labelX = layout.panel.x + PANEL_PADDING;
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Elevation", labelX, layout.titleY);
+
+  // Sea level slider (-0.5 .. 0.5)
+  IntRect sea = layout.seaSlider;
+  stroke(160);
+  fill(230);
+  rect(sea.x, sea.y, sea.w, sea.h, 4);
+  float seaNorm = constrain((seaLevel + 0.5f) / 1.0f, 0, 1);
+  float sx = sea.x + seaNorm * sea.w;
+  fill(40);
+  noStroke();
+  ellipse(sx, sea.y + sea.h / 2.0f, sea.h * 0.9f, sea.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Water level: " + nf(seaLevel, 1, 2), sea.x, sea.y - 4);
+
+  // Brush radius slider (0.01..0.2)
+  IntRect rad = layout.radiusSlider;
+  stroke(160);
+  fill(230);
+  rect(rad.x, rad.y, rad.w, rad.h, 4);
+  float rNorm = constrain(map(elevationBrushRadius, 0.01f, 0.2f, 0, 1), 0, 1);
+  float rx = rad.x + rNorm * rad.w;
+  fill(40);
+  noStroke();
+  ellipse(rx, rad.y + rad.h / 2.0f, rad.h * 0.9f, rad.h * 0.9f);
+  fill(0);
+  text("Brush radius", rad.x, rad.y - 4);
+
+  // Brush strength slider (0.005..0.2)
+  IntRect str = layout.strengthSlider;
+  stroke(160);
+  fill(230);
+  rect(str.x, str.y, str.w, str.h, 4);
+  float sNorm = constrain(map(elevationBrushStrength, 0.005f, 0.2f, 0, 1), 0, 1);
+  float stx = str.x + sNorm * str.w;
+  fill(40);
+  noStroke();
+  ellipse(stx, str.y + str.h / 2.0f, str.h * 0.9f, str.h * 0.9f);
+  fill(0);
+  text("Brush strength", str.x, str.y - 4);
+
+  // Raise / Lower buttons
+  drawBevelButton(layout.raiseBtn.x, layout.raiseBtn.y, layout.raiseBtn.w, layout.raiseBtn.h, elevationBrushRaise);
+  drawBevelButton(layout.lowerBtn.x, layout.lowerBtn.y, layout.lowerBtn.w, layout.lowerBtn.h, !elevationBrushRaise);
   fill(10);
   textAlign(CENTER, CENTER);
-  text("Perlin Generate", col2X + genW / 2, genY + genH / 2);
+  text("Raise", layout.raiseBtn.x + layout.raiseBtn.w / 2, layout.raiseBtn.y + layout.raiseBtn.h / 2);
+  text("Lower", layout.lowerBtn.x + layout.lowerBtn.w / 2, layout.lowerBtn.y + layout.lowerBtn.h / 2);
 
-  int varyX = col2X + genW + 10;
-  drawBevelButton(varyX, genY, genW, genH, false);
+  // Noise controls stacked
+  IntRect noise = layout.noiseSlider;
+  stroke(160);
+  fill(230);
+  rect(noise.x, noise.y, noise.w, noise.h, 4);
+  float nNorm = constrain(map(elevationNoiseScale, 1.0f, 12.0f, 0, 1), 0, 1);
+  float nx = noise.x + nNorm * noise.w;
+  fill(40);
+  noStroke();
+  ellipse(nx, noise.y + noise.h / 2.0f, noise.h * 0.9f, noise.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Noise scale", noise.x, noise.y - 4);
+
+  drawBevelButton(layout.perlinBtn.x, layout.perlinBtn.y, layout.perlinBtn.w, layout.perlinBtn.h, false);
+  drawBevelButton(layout.varyBtn.x, layout.varyBtn.y, layout.varyBtn.w, layout.varyBtn.h, false);
   fill(10);
-  text("Vary", varyX + genW / 2, genY + genH / 2);
+  textAlign(CENTER, CENTER);
+  text("Perlin Generate", layout.perlinBtn.x + layout.perlinBtn.w / 2, layout.perlinBtn.y + layout.perlinBtn.h / 2);
+  text("Vary", layout.varyBtn.x + layout.varyBtn.w / 2, layout.varyBtn.y + layout.varyBtn.h / 2);
 }
 
 // ----- LABELS PANEL -----
+class LabelsLayout {
+  IntRect panel;
+  int titleY;
+  IntRect textBox;
+}
+
+LabelsLayout buildLabelsLayout() {
+  LabelsLayout l = new LabelsLayout();
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
+  int innerX = l.panel.x + PANEL_PADDING;
+  int curY = l.panel.y + PANEL_PADDING;
+  l.titleY = curY;
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  l.textBox = new IntRect(innerX, curY, PANEL_W - 2 * PANEL_PADDING - 20, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_PADDING;
+  l.panel.h = curY - l.panel.y;
+  return l;
+}
+
 void drawLabelsPanel() {
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int panelH = LABEL_PANEL_HEIGHT;
+  LabelsLayout layout = buildLabelsLayout();
+  drawPanelBackground(layout.panel);
 
-  noStroke();
-  fill(232);
-  rect(0, panelY, width, panelH);
-  stroke(255);
-  line(0, panelY, width, panelY);
-  line(0, panelY, 0, panelY + panelH);
-  stroke(120);
-  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
-  line(width - 1, panelY, width - 1, panelY + panelH);
-
+  int labelX = layout.panel.x + PANEL_PADDING;
   fill(0);
   textAlign(LEFT, TOP);
-  text("Labels", 10, panelY + 6);
+  text("Labels", labelX, layout.titleY);
 
-  int boxX = 10;
-  int boxY = panelY + 24;
-  int boxW = 260;
-  int boxH = 20;
   stroke(80);
   fill(245);
-  rect(boxX, boxY, boxW, boxH);
+  rect(layout.textBox.x, layout.textBox.y, layout.textBox.w, layout.textBox.h);
   fill(0);
   textAlign(LEFT, CENTER);
-  text(labelDraft, boxX + 6, boxY + boxH / 2);
+  text(labelDraft, layout.textBox.x + 6, layout.textBox.y + layout.textBox.h / 2);
   textAlign(LEFT, TOP);
-  text("Type text then click map to place/continue editing", boxX + boxW + 10, boxY - 2);
+  text("Type text then click map to place/continue editing", layout.textBox.x, layout.textBox.y - 18);
 }
 
 // ----- RENDER PANEL -----
+class RenderLayout {
+  IntRect panel;
+  int titleY;
+  ArrayList<IntRect> checks = new ArrayList<IntRect>();
+  String[] labels;
+}
+
+RenderLayout buildRenderLayout() {
+  RenderLayout l = new RenderLayout();
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
+  int innerX = l.panel.x + PANEL_PADDING;
+  int curY = l.panel.y + PANEL_PADDING;
+  l.titleY = curY;
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  l.labels = new String[] { "Zones", "Water", "Elevation", "Paths", "Labels", "Structures" };
+  for (int i = 0; i < l.labels.length; i++) {
+    l.checks.add(new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE));
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+  }
+
+  curY += PANEL_PADDING;
+  l.panel.h = curY - l.panel.y;
+  return l;
+}
+
 void drawRenderPanel() {
-  int panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
-  int panelH = RENDER_PANEL_HEIGHT;
+  RenderLayout layout = buildRenderLayout();
+  drawPanelBackground(layout.panel);
 
-  noStroke();
-  fill(232);
-  rect(0, panelY, width, panelH);
-  stroke(255);
-  line(0, panelY, width, panelY);
-  line(0, panelY, 0, panelY + panelH);
-  stroke(120);
-  line(0, panelY + panelH - 1, width, panelY + panelH - 1);
-  line(width - 1, panelY, width - 1, panelY + panelH);
-
+  int labelX = layout.panel.x + PANEL_PADDING;
   fill(0);
   textAlign(LEFT, TOP);
-  text("Rendering", 10, panelY + 6);
+  text("Rendering", labelX, layout.titleY);
 
-  int chkX = 10;
-  int chkY = panelY + 12;
-  int chkSize = 14;
-  int spacing = 20;
-
-  drawCheckbox(chkX, chkY, chkSize, renderShowZones, "Zones");
-  chkY += spacing;
-  drawCheckbox(chkX, chkY, chkSize, renderShowWater, "Water");
-  chkY += spacing;
-  drawCheckbox(chkX, chkY, chkSize, renderShowElevation, "Elevation");
-  chkY += spacing;
-  drawCheckbox(chkX, chkY, chkSize, renderShowPaths, "Paths");
-  chkY += spacing;
-  drawCheckbox(chkX, chkY, chkSize, renderShowLabels, "Labels");
-  chkY += spacing;
-  drawCheckbox(chkX, chkY, chkSize, renderShowStructures, "Structures");
+  drawCheckbox(layout.checks.get(0).x, layout.checks.get(0).y, layout.checks.get(0).w, renderShowZones, "Zones");
+  drawCheckbox(layout.checks.get(1).x, layout.checks.get(1).y, layout.checks.get(1).w, renderShowWater, "Water");
+  drawCheckbox(layout.checks.get(2).x, layout.checks.get(2).y, layout.checks.get(2).w, renderShowElevation, "Elevation");
+  drawCheckbox(layout.checks.get(3).x, layout.checks.get(3).y, layout.checks.get(3).w, renderShowPaths, "Paths");
+  drawCheckbox(layout.checks.get(4).x, layout.checks.get(4).y, layout.checks.get(4).w, renderShowLabels, "Labels");
+  drawCheckbox(layout.checks.get(5).x, layout.checks.get(5).y, layout.checks.get(5).w, renderShowStructures, "Structures");
 }
 
 // ---------- UI helpers ----------
@@ -687,4 +789,34 @@ void drawCheckbox(int x, int y, int size, boolean on, String label) {
   fill(0);
   textAlign(LEFT, CENTER);
   text(label, x + size + 6, y + size / 2);
+}
+
+IntRect getActivePanelRect() {
+  switch (currentTool) {
+    case EDIT_SITES: {
+      SitesLayout l = buildSitesLayout();
+      return l.panel;
+    }
+    case EDIT_ELEVATION: {
+      ElevationLayout l = buildElevationLayout();
+      return l.panel;
+    }
+    case EDIT_ZONES: {
+      ZonesLayout l = buildZonesLayout();
+      return l.panel;
+    }
+    case EDIT_PATHS: {
+      PathsLayout l = buildPathsLayout();
+      return l.panel;
+    }
+    case EDIT_LABELS: {
+      LabelsLayout l = buildLabelsLayout();
+      return l.panel;
+    }
+    case EDIT_RENDER: {
+      RenderLayout l = buildRenderLayout();
+      return l.panel;
+    }
+  }
+  return null;
 }
