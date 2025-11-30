@@ -307,7 +307,7 @@ void drawZonesPanel() {
     int hueSliderX = 10;
     int hueSliderW = 250;
     int hueSliderH = 14;
-    int hueSliderY = rowY + swatchH + 20;
+    int hueSliderY = rowY + swatchH + 12;
 
     // Track
     stroke(160);
@@ -332,9 +332,9 @@ void drawZonesPanel() {
   }
 
   // Brush radius slider
-  int brushY = panelY + panelH - 28;
-  int brushX = 10;
-  int brushW = 200;
+  int brushY = rowY + swatchH + 12;
+  int brushX = 10 + 250 + 30;
+  int brushW = 180;
   int brushH = 14;
   stroke(160);
   fill(230);
@@ -465,7 +465,7 @@ void drawElevationPanel() {
   text("Lower", btnX2 + btnW / 2, btnY + btnH / 2);
 
   // Noise scale slider
-  int noiseY = btnY + btnH + 10;
+  int noiseY = btnY + btnH + 6;
   stroke(160);
   fill(230);
   rect(sliderX, noiseY, sliderW, sliderH, 4);
@@ -480,8 +480,8 @@ void drawElevationPanel() {
   // Generate button
   int genW = 140;
   int genH = 22;
-  int genX = sliderX;
-  int genY = noiseY + sliderH + 6;
+  int genX = sliderX + sliderW + 20;
+  int genY = noiseY - 2;
   drawBevelButton(genX, genY, genW, genH, false);
   fill(10);
   textAlign(CENTER, CENTER);

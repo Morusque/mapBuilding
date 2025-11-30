@@ -2,6 +2,7 @@
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.ArrayDeque;
+import java.util.PriorityQueue;
 
 class MapModel {
   // World bounds in world coordinates
@@ -104,10 +105,10 @@ class MapModel {
     return new ArrayList<PVector>(snapNodes.values());
   }
 
-  ArrayList<PVector> findSnapPath(PVector from, PVector to2) {
+  ArrayList<PVector> findSnapPath(PVector from, PVector toP) {
     ensureSnapGraph();
     String kFrom = keyFor(from.x, from.y);
-    String kTo = keyFor(to2.x, to2.y);
+    String kTo = keyFor(toP.x, toP.y);
     if (!snapNodes.containsKey(kFrom) || !snapNodes.containsKey(kTo)) return null;
     if (kFrom.equals(kTo)) {
       ArrayList<PVector> single = new ArrayList<PVector>();
@@ -115,27 +116,39 @@ class MapModel {
       return single;
     }
 
-    HashSet<String> visited = new HashSet<String>();
+    HashMap<String, Float> dist = new HashMap<String, Float>();
     HashMap<String, String> prev = new HashMap<String, String>();
-    ArrayDeque<String> q = new ArrayDeque<String>();
-    q.add(kFrom);
-    visited.add(kFrom);
+    PriorityQueue<NodeDist> pq = new PriorityQueue<NodeDist>();
+    dist.put(kFrom, 0.0f);
+    pq.add(new NodeDist(kFrom, 0.0f));
 
-    while (!q.isEmpty()) {
-      String cur = q.poll();
-      ArrayList<String> neighbors = snapAdj.get(cur);
+    while (!pq.isEmpty()) {
+      NodeDist nd = pq.poll();
+      Float bestD = dist.get(nd.k);
+      if (bestD != null && nd.d > bestD + 1e-6f) continue;
+      if (nd.k.equals(kTo)) break;
+      ArrayList<String> neighbors = snapAdj.get(nd.k);
       if (neighbors == null) continue;
+      PVector p = snapNodes.get(nd.k);
+      if (p == null) continue;
       for (String nb : neighbors) {
-        if (visited.contains(nb)) continue;
-        visited.add(nb);
-        prev.put(nb, cur);
-        if (nb.equals(kTo)) {
-          return reconstructPath(prev, kFrom, kTo);
+        PVector np = snapNodes.get(nb);
+        if (np == null) continue;
+        float w = dist2D(p, np);
+        float ndist = nd.d + w;
+        Float curD = dist.get(nb);
+        if (curD == null || ndist < curD - 1e-6f) {
+          dist.put(nb, ndist);
+          prev.put(nb, nd.k);
+          pq.add(new NodeDist(nb, ndist));
         }
-        q.add(nb);
       }
     }
-    return null;
+
+    if (!prev.containsKey(kTo) && !kFrom.equals(kTo)) {
+      return null;
+    }
+    return reconstructPath(prev, kFrom, kTo);
   }
 
   void ensureSnapGraph() {
@@ -229,6 +242,21 @@ class MapModel {
     int xi = round(x * 10000.0f);
     int yi = round(y * 10000.0f);
     return xi + ":" + yi;
+  }
+
+  float dist2D(PVector a, PVector b) {
+    float dx = a.x - b.x;
+    float dy = a.y - b.y;
+    return sqrt(dx * dx + dy * dy);
+  }
+
+  class NodeDist implements Comparable<NodeDist> {
+    String k;
+    float d;
+    NodeDist(String k, float d) { this.k = k; this.d = d; }
+    public int compareTo(NodeDist other) {
+      return Float.compare(this.d, other.d);
+    }
   }
 
   void drawPaths(PApplet app) {

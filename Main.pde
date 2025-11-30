@@ -25,9 +25,9 @@ Path currentPath = null;
 final int TOP_BAR_HEIGHT = 30;
 final int TOOL_BAR_HEIGHT = 26;
 final int SITES_PANEL_HEIGHT = 140;  // sliders + generate
-final int ZONES_PANEL_HEIGHT = 130;   // biome palette + paint/fill buttons + brush slider
+final int ZONES_PANEL_HEIGHT = 150;   // biome palette + paint/fill buttons + brush slider
 final int PATH_PANEL_HEIGHT = 40;     // close/undo buttons
-final int ELEV_PANEL_HEIGHT = 120;
+final int ELEV_PANEL_HEIGHT = 150;
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -50,12 +50,25 @@ boolean elevationBrushRaise = true;
 float elevationNoiseScale = 4.0f;
 float defaultElevation = 0.05f;
 
+// Slider drag state
+final int SLIDER_NONE = 0;
+final int SLIDER_SITES_DENSITY = 1;
+final int SLIDER_SITES_FUZZ = 2;
+final int SLIDER_SITES_MODE = 3;
+final int SLIDER_ZONE_HUE = 4;
+final int SLIDER_ZONE_BRUSH = 5;
+final int SLIDER_ELEV_SEA = 6;
+final int SLIDER_ELEV_RADIUS = 7;
+final int SLIDER_ELEV_STRENGTH = 8;
+final int SLIDER_ELEV_NOISE = 9;
+int activeSlider = SLIDER_NONE;
+
 void settings() {
   size(1200, 800, P2D);
 }
 
 void setup() {
-    surface.setTitle("Map Editor - Sites + Zones + Paths");
+  surface.setTitle("Map Editor - Sites + Zones + Paths");
   viewport = new Viewport();
   mapModel = new MapModel();
   initBiomeTypes();

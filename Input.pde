@@ -81,6 +81,7 @@ boolean handleSitesPanelClick(int mx, int my) {
       my >= densityY && my <= densityY + sliderH) {
     float t = (mx - sliderX) / (float)sliderW;
     siteDensity = constrain(t, 0, 1);
+    activeSlider = SLIDER_SITES_DENSITY;
     return true;
   }
 
@@ -91,6 +92,7 @@ boolean handleSitesPanelClick(int mx, int my) {
     float t = (mx - sliderX) / (float)sliderW;
     t = constrain(t, 0, 1);
     siteFuzz = t * 0.3f;
+    activeSlider = SLIDER_SITES_FUZZ;
     return true;
   }
 
@@ -108,6 +110,7 @@ boolean handleSitesPanelClick(int mx, int my) {
     t = constrain(t, 0, 1);
     int idx = round(t * (modeCount - 1));
     placementModeIndex = constrain(idx, 0, placementModes.length - 1);
+    activeSlider = SLIDER_SITES_MODE;
     return true;
   }
 
@@ -204,6 +207,9 @@ boolean handleZonesPanelClick(int mx, int my) {
   int gapX = 8;
 
   int rowY = toolY + toolBtnH + 10;
+  int hueSliderX = 10;
+  int hueSliderW = 250;
+  int hueSliderH = 14;
 
   for (int i = 0; i < n; i++) {
     int x = marginX + i * (swatchW + gapX);
@@ -219,10 +225,7 @@ boolean handleZonesPanelClick(int mx, int my) {
 
   // Hue slider
   if (activeBiomeIndex >= 0 && activeBiomeIndex < n) {
-    int hueSliderX = 10;
-    int hueSliderW = 250;
-    int hueSliderH = 14;
-    int hueSliderY = rowY + swatchH + 20;
+    int hueSliderY = rowY + swatchH + 12;
 
     if (mx >= hueSliderX && mx <= hueSliderX + hueSliderW &&
         my >= hueSliderY && my <= hueSliderY + hueSliderH) {
@@ -233,20 +236,22 @@ boolean handleZonesPanelClick(int mx, int my) {
       ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
       active.hue01 = t;
       active.updateColorFromHSB();
+      activeSlider = SLIDER_ZONE_HUE;
 
       return true;
     }
   }
 
   // Brush radius slider
-  int brushY = (TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) + ZONES_PANEL_HEIGHT - 28;
-  int brushX = 10;
-  int brushW = 200;
+  int brushY = rowY + swatchH + 12;
+  int brushX = hueSliderX + hueSliderW + 30;
+  int brushW = 180;
   int brushH = 14;
   if (mx >= brushX && mx <= brushX + brushW &&
       my >= brushY && my <= brushY + brushH) {
     float t = constrain((mx - brushX) / (float)brushW, 0, 1);
     zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
+    activeSlider = SLIDER_ZONE_BRUSH;
     return true;
   }
 
@@ -426,6 +431,7 @@ boolean handleElevationPanelClick(int mx, int my) {
       my >= rowY && my <= rowY + sliderH) {
     float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
     seaLevel = t * 1.0f - 0.5f;
+    activeSlider = SLIDER_ELEV_SEA;
     return true;
   }
 
@@ -435,6 +441,7 @@ boolean handleElevationPanelClick(int mx, int my) {
       my >= rowY && my <= rowY + sliderH) {
     float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
     elevationBrushRadius = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+    activeSlider = SLIDER_ELEV_RADIUS;
     return true;
   }
 
@@ -444,6 +451,7 @@ boolean handleElevationPanelClick(int mx, int my) {
       my >= rowY && my <= rowY + sliderH) {
     float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
     elevationBrushStrength = constrain(0.005f + t * (0.2f - 0.005f), 0.005f, 0.2f);
+    activeSlider = SLIDER_ELEV_STRENGTH;
     return true;
   }
 
@@ -466,19 +474,20 @@ boolean handleElevationPanelClick(int mx, int my) {
   }
 
   // Noise scale slider
-  int noiseY = btnY + btnH + 10;
+  int noiseY = btnY + btnH + 6;
   if (mx >= sliderX && mx <= sliderX + sliderW &&
       my >= noiseY && my <= noiseY + sliderH) {
     float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
     elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
+    activeSlider = SLIDER_ELEV_NOISE;
     return true;
   }
 
   // Generate button
   int genW = 140;
   int genH = 22;
-  int genX = sliderX;
-  int genY = noiseY + sliderH + 6;
+  int genX = sliderX + sliderW + 20;
+  int genY = noiseY - 2;
   if (mx >= genX && mx <= genX + genW &&
       my >= genY && my <= genY + genH) {
     mapModel.generateElevationNoise(elevationNoiseScale, 1.0f);
@@ -523,6 +532,12 @@ void mouseDragged() {
     viewport.panScreen(dx, dy);
     lastMouseX = mouseX;
     lastMouseY = mouseY;
+    return;
+  }
+
+   // If a slider is active, keep updating that slider only
+  if (mouseButton == LEFT && activeSlider != SLIDER_NONE) {
+    updateActiveSlider(mouseX, mouseY);
     return;
   }
 
@@ -613,16 +628,16 @@ void mouseDragged() {
     int toolBtnH = 20;
     int toolY  = panelY + 24;
 
-    int swatchH = 18;
-    int rowY = toolY + toolBtnH + 10;
+  int swatchH = 18;
+  int rowY = toolY + toolBtnH + 10;
+  int hueSliderX = 10;
+  int hueSliderW = 250;
+  int hueSliderH = 14;
 
-    int n = (mapModel.biomeTypes == null) ? 0 : mapModel.biomeTypes.size();
+  int n = (mapModel.biomeTypes == null) ? 0 : mapModel.biomeTypes.size();
 
-    if (n > 0 && activeBiomeIndex >= 0 && activeBiomeIndex < n) {
-      int hueSliderX = 10;
-      int hueSliderW = 250;
-      int hueSliderH = 14;
-      int hueSliderY = rowY + swatchH + 20;
+  if (n > 0 && activeBiomeIndex >= 0 && activeBiomeIndex < n) {
+      int hueSliderY = rowY + swatchH + 12;
 
       if (mouseY >= hueSliderY && mouseY <= hueSliderY + hueSliderH) {
         float t = (mouseX - hueSliderX) / (float)hueSliderW;
@@ -634,9 +649,9 @@ void mouseDragged() {
       }
     }
 
-    int brushY = panelY + ZONES_PANEL_HEIGHT - 28;
-    int brushX = 10;
-    int brushW = 200;
+    int brushY = rowY + swatchH + 12;
+    int brushX = 10 + 250 + 30;
+    int brushW = 180;
     int brushH = 14;
     if (mouseY >= brushY && mouseY <= brushY + brushH) {
       float t = constrain((mouseX - brushX) / (float)brushW, 0, 1);
@@ -687,6 +702,102 @@ void mouseReleased() {
   if (mouseButton == LEFT) {
     isDraggingSite = false;
     draggingSite = null;
+    activeSlider = SLIDER_NONE;
+  }
+}
+
+void updateActiveSlider(int mx, int my) {
+  int panelY;
+  switch (activeSlider) {
+    case SLIDER_SITES_DENSITY: {
+      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+      int sliderX = 10;
+      int sliderW = 250;
+      float t = (mx - sliderX) / (float)sliderW;
+      siteDensity = constrain(t, 0, 1);
+      break;
+    }
+    case SLIDER_SITES_FUZZ: {
+      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+      int sliderX = 10;
+      int sliderW = 250;
+      int fuzzY = panelY + 25 + 22;
+      float t = (mx - sliderX) / (float)sliderW;
+      t = constrain(t, 0, 1);
+      siteFuzz = t * 0.3f;
+      break;
+    }
+    case SLIDER_SITES_MODE: {
+      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+      int sliderX = 10;
+      int sliderW = 250;
+      int modeCount = placementModes.length;
+      float t = (mx - sliderX) / (float)sliderW;
+      t = constrain(t, 0, 1);
+      int idx = round(t * max(1, modeCount - 1));
+      placementModeIndex = constrain(idx, 0, placementModes.length - 1);
+      break;
+    }
+    case SLIDER_ZONE_HUE: {
+      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+      int toolBtnH = 20;
+      int toolY = panelY + 24;
+      int swatchH = 18;
+      int rowY = toolY + toolBtnH + 10;
+      int hueSliderX = 10;
+      int hueSliderW = 250;
+      float t = (mx - hueSliderX) / (float)hueSliderW;
+      t = constrain(t, 0, 1);
+      if (mapModel.biomeTypes != null && activeBiomeIndex >= 0 && activeBiomeIndex < mapModel.biomeTypes.size()) {
+        ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+        active.hue01 = t;
+        active.updateColorFromHSB();
+      }
+      break;
+    }
+    case SLIDER_ZONE_BRUSH: {
+      int brushX = 10 + 250 + 30;
+      int brushW = 180;
+      float t = (mx - brushX) / (float)brushW;
+      t = constrain(t, 0, 1);
+      zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
+      break;
+    }
+    case SLIDER_ELEV_SEA: {
+      panelY = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+      int sliderX = 10;
+      int sliderW = 220;
+      float t = (mx - sliderX) / (float)sliderW;
+      t = constrain(t, 0, 1);
+      seaLevel = t * 1.0f - 0.5f;
+      break;
+    }
+    case SLIDER_ELEV_RADIUS: {
+      int sliderX = 10;
+      int sliderW = 220;
+      float t = (mx - sliderX) / (float)sliderW;
+      t = constrain(t, 0, 1);
+      elevationBrushRadius = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+      break;
+    }
+    case SLIDER_ELEV_STRENGTH: {
+      int sliderX = 10;
+      int sliderW = 220;
+      float t = (mx - sliderX) / (float)sliderW;
+      t = constrain(t, 0, 1);
+      elevationBrushStrength = constrain(0.005f + t * (0.2f - 0.005f), 0.005f, 0.2f);
+      break;
+    }
+    case SLIDER_ELEV_NOISE: {
+      int sliderX = 10;
+      int sliderW = 220;
+      float t = (mx - sliderX) / (float)sliderW;
+      t = constrain(t, 0, 1);
+      elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
+      break;
+    }
+    default:
+      break;
   }
 }
 
