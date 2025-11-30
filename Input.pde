@@ -122,7 +122,17 @@ boolean handleSitesPanelClick(int mx, int my) {
 
   if (mx >= genX && mx <= genX + genW &&
       my >= genY && my <= genY + genH) {
-    mapModel.generateSites(currentPlacementMode(), siteDensity);
+    mapModel.generateSites(currentPlacementMode(), siteDensity, keepPropertiesOnGenerate);
+    return true;
+  }
+
+  // Keep properties toggle
+  int chkX = genX + genW + 16;
+  int chkY = genY + 4;
+  int chkSize = 16;
+  if (mx >= chkX && mx <= chkX + chkSize &&
+      my >= chkY && my <= chkY + chkSize) {
+    keepPropertiesOnGenerate = !keepPropertiesOnGenerate;
     return true;
   }
 
@@ -166,6 +176,8 @@ boolean handleZonesPanelClick(int mx, int my) {
 
   int remX = addX + addBtnW + 6;
   int remY = toolY;
+  int renX = remX + addBtnW + 10;
+  int renW = 60;
 
   int nTypes = mapModel.biomeTypes.size();
 
@@ -354,11 +366,20 @@ void mousePressed() {
       mapModel.applyElevationBrush(worldPos.x, worldPos.y, elevationBrushRadius, elevationBrushStrength * dir);
     } else if (currentTool == Tool.EDIT_PATHS) {
       handlePathsMousePressed(worldPos.x, worldPos.y);
+    } else if (currentTool == Tool.EDIT_STRUCTURES) {
+      mapModel.structures.add(new Structure(worldPos.x, worldPos.y));
+    } else if (currentTool == Tool.EDIT_LABELS) {
+      String txt = javax.swing.JOptionPane.showInputDialog("Label text", "Label");
+      if (txt != null && txt.trim().length() > 0) {
+        mapModel.labels.add(new MapLabel(worldPos.x, worldPos.y, txt.trim()));
+      }
     }
   }
 }
 
 void handleSitesMousePressed(float wx, float wy) {
+  wx = constrain(wx, mapModel.minX, mapModel.maxX);
+  wy = constrain(wy, mapModel.minY, mapModel.maxY);
   float maxDistWorld = 10.0f / viewport.zoom; // ~10 px tolerance
   Site s = mapModel.findSiteNear(wx, wy, maxDistWorld);
 
@@ -383,8 +404,9 @@ boolean handlePathsPanelClick(int mx, int my) {
   int btnW = 120;
   int btnH = 22;
   int btnY = panelY + 12;
-  int btnX1 = 120;
+  int btnX1 = 10;
   int btnX2 = btnX1 + btnW + 10;
+  int btnX3 = btnX2 + btnW + 10;
 
   // Close (Enter)
   if (mx >= btnX1 && mx <= btnX1 + btnW &&
@@ -409,6 +431,13 @@ boolean handlePathsPanelClick(int mx, int my) {
         currentPath = null;
       }
     }
+    return true;
+  }
+
+  // Eraser toggle
+  if (mx >= btnX3 && mx <= btnX3 + btnW &&
+      my >= btnY && my <= btnY + btnH) {
+    pathEraserMode = !pathEraserMode;
     return true;
   }
 
@@ -474,7 +503,7 @@ boolean handleElevationPanelClick(int mx, int my) {
   }
 
   // Noise scale slider
-  int noiseY = btnY + btnH + 6;
+  int noiseY = btnY + btnH + 10;
   if (mx >= sliderX && mx <= sliderX + sliderW &&
       my >= noiseY && my <= noiseY + sliderH) {
     float t = constrain((mx - sliderX) / (float)sliderW, 0, 1);
@@ -484,13 +513,21 @@ boolean handleElevationPanelClick(int mx, int my) {
   }
 
   // Generate button
-  int genW = 140;
+  int genW = 120;
   int genH = 22;
-  int genX = sliderX + sliderW + 20;
-  int genY = noiseY - 2;
+  int genX = sliderX;
+  int genY = noiseY + sliderH + 8;
   if (mx >= genX && mx <= genX + genW &&
       my >= genY && my <= genY + genH) {
     mapModel.generateElevationNoise(elevationNoiseScale, 1.0f);
+    return true;
+  }
+
+  // Vary button
+  int varyX = genX + genW + 10;
+  if (mx >= varyX && mx <= varyX + genW &&
+      my >= genY && my <= genY + genH) {
+    mapModel.addElevationVariation(elevationNoiseScale, 0.2f);
     return true;
   }
 
@@ -498,6 +535,10 @@ boolean handleElevationPanelClick(int mx, int my) {
 }
 
 void handlePathsMousePressed(float wx, float wy) {
+  if (pathEraserMode) {
+    mapModel.removePathsNear(wx, wy, pathEraserRadius);
+    return;
+  }
   if (!isDrawingPath || currentPath == null) {
     // Start new path
     currentPath = new Path();
@@ -645,6 +686,7 @@ void mouseDragged() {
         ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
         active.hue01 = t;
         active.updateColorFromHSB();
+        activeSlider = SLIDER_ZONE_HUE;
         return;
       }
     }
@@ -656,6 +698,7 @@ void mouseDragged() {
     if (mouseY >= brushY && mouseY <= brushY + brushH) {
       float t = constrain((mouseX - brushX) / (float)brushW, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
+      activeSlider = SLIDER_ZONE_BRUSH;
       return;
     }
   }
@@ -687,13 +730,16 @@ void mouseDragged() {
 
   if (mouseButton == LEFT && currentTool == Tool.EDIT_SITES && isDraggingSite && draggingSite != null) {
     PVector worldPos = viewport.screenToWorld(mouseX, mouseY);
-    draggingSite.x = worldPos.x;
-    draggingSite.y = worldPos.y;
+    draggingSite.x = constrain(worldPos.x, mapModel.minX, mapModel.maxX);
+    draggingSite.y = constrain(worldPos.y, mapModel.minY, mapModel.maxY);
     mapModel.markVoronoiDirty();
   } else if (mouseButton == LEFT && currentTool == Tool.EDIT_ELEVATION) {
     PVector w = viewport.screenToWorld(mouseX, mouseY);
     float dir = elevationBrushRaise ? 1 : -1;
     mapModel.applyElevationBrush(w.x, w.y, elevationBrushRadius, elevationBrushStrength * dir);
+  } else if (mouseButton == LEFT && currentTool == Tool.EDIT_PATHS && pathEraserMode) {
+    PVector w = viewport.screenToWorld(mouseX, mouseY);
+    mapModel.removePathsNear(w.x, w.y, pathEraserRadius);
   }
 }
 

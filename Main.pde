@@ -38,6 +38,7 @@ PlacementMode[] placementModes = {
 int placementModeIndex = 2; // 0=GRID, 1=POISSON, 2=HEX
 float siteDensity = 0.3;    // 0..1
 float siteFuzz = 0.0;       // 0..1
+boolean keepPropertiesOnGenerate = true;
 
 // Zones (biomes) painting
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
@@ -49,6 +50,8 @@ float elevationBrushStrength = 0.05f; // per stroke
 boolean elevationBrushRaise = true;
 float elevationNoiseScale = 4.0f;
 float defaultElevation = 0.05f;
+float pathEraserRadius = 0.01f;
+boolean pathEraserMode = false;
 
 // Slider drag state
 final int SLIDER_NONE = 0;
@@ -117,8 +120,14 @@ void draw() {
     drawPathSnappingPoints();
   }
 
+  // Structures and labels render in all modes
+  mapModel.drawStructures(this);
+  mapModel.drawLabels(this);
+
   if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawElevationOverlay(this, seaLevel, true);
+    mapModel.drawElevationOverlay(this, seaLevel, false);
+  } else if (currentTool == Tool.EDIT_ZONES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+    drawZoneBrushPreview();
   } else {
     mapModel.drawDebugWorldBounds(this);
   }
@@ -204,4 +213,17 @@ void seedDefaultZones() {
     c.biomeId = 0;
     c.elevation = defaultElevation;
   }
+}
+
+void drawZoneBrushPreview() {
+  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT + ZONES_PANEL_HEIGHT;
+  if (mouseY < uiBottom) return;
+  PVector w = viewport.screenToWorld(mouseX, mouseY);
+  pushStyle();
+  noFill();
+  stroke(40, 120);
+  strokeWeight(1.0f / viewport.zoom);
+  float r = zoneBrushRadius;
+  ellipse(w.x, w.y, r * 2, r * 2);
+  popStyle();
 }

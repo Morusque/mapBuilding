@@ -20,8 +20,12 @@ class MapModel {
   // Biomes / zone types
   ArrayList<ZoneType> biomeTypes = new ArrayList<ZoneType>();
 
+  ArrayList<Structure> structures = new ArrayList<Structure>();
+  ArrayList<MapLabel> labels = new ArrayList<MapLabel>();
+
   boolean voronoiDirty = true;
   boolean snapDirty = true;
+  ArrayList<Cell> preservedCells = null;
 
   HashMap<String, PVector> snapNodes = new HashMap<String, PVector>();
   HashMap<String, ArrayList<String>> snapAdj = new HashMap<String, ArrayList<String>>();
@@ -55,6 +59,24 @@ class MapModel {
     for (Cell c : cells) {
       c.draw(app, showBorders);
     }
+  }
+
+  void drawStructures(PApplet app) {
+    if (structures == null) return;
+    app.pushStyle();
+    for (Structure s : structures) {
+      s.draw(app);
+    }
+    app.popStyle();
+  }
+
+  void drawLabels(PApplet app) {
+    if (labels == null) return;
+    app.pushStyle();
+    for (MapLabel l : labels) {
+      l.draw(app);
+    }
+    app.popStyle();
   }
 
   void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours) {
@@ -290,6 +312,26 @@ class MapModel {
     paths.clear();
   }
 
+  void removePathsNear(float wx, float wy, float radius) {
+    if (paths == null) return;
+    float r2 = radius * radius;
+    for (int i = paths.size() - 1; i >= 0; i--) {
+      Path p = paths.get(i);
+      boolean hit = false;
+      for (PVector v : p.points) {
+        float dx = v.x - wx;
+        float dy = v.y - wy;
+        if (dx * dx + dy * dy <= r2) {
+          hit = true;
+          break;
+        }
+      }
+      if (hit) {
+        paths.remove(i);
+      }
+    }
+  }
+
   // ---------- Sites management ----------
 
   Site addSite(float x, float y) {
@@ -358,16 +400,13 @@ class MapModel {
     int n = sites.size();
     if (n == 0) {
       cells.clear();
+      preservedCells = null;
       return;
     }
 
-    // Keep a copy of old cells so we can inherit biomes
-    ArrayList<Cell> oldCells = new ArrayList<Cell>();
-    for (Cell c : cells) {
-      oldCells.add(c);
-    }
-
+    ArrayList<Cell> oldCells = (preservedCells != null) ? preservedCells : new ArrayList<Cell>(cells);
     cells.clear();
+    preservedCells = null;
 
     int defaultBiome = 0;
     float defaultElev = defaultElevation;
@@ -404,19 +443,8 @@ class MapModel {
         cx /= nv;
         cy /= nv;
 
-        int biomeId;
-        if (oldCells.isEmpty()) {
-          biomeId = defaultBiome;
-        } else {
-          biomeId = sampleBiomeFromOldCells(oldCells, cx, cy, defaultBiome);
-        }
-
-        float elev;
-        if (oldCells.isEmpty()) {
-          elev = defaultElev;
-        } else {
-          elev = sampleElevationFromOldCells(oldCells, cx, cy, defaultElev);
-        }
+        int biomeId = oldCells.isEmpty() ? defaultBiome : sampleBiomeFromOldCells(oldCells, cx, cy, defaultBiome);
+        float elev = oldCells.isEmpty() ? defaultElev : sampleElevationFromOldCells(oldCells, cx, cy, defaultElev);
 
         Cell newCell = new Cell(i, poly, biomeId);
         newCell.elevation = elev;
@@ -587,6 +615,11 @@ class MapModel {
   // ---------- Sites generation ----------
 
   void generateSites(PlacementMode mode, float density) {
+    generateSites(mode, density, false);
+  }
+
+  void generateSites(PlacementMode mode, float density, boolean preserveCellData) {
+    preservedCells = preserveCellData ? new ArrayList<Cell>(cells) : null;
     sites.clear();
 
     if (mode == PlacementMode.GRID) {
@@ -628,6 +661,16 @@ class MapModel {
       PVector cen = cellCentroid(c);
       float n = noise(cen.x * scale, cen.y * scale);
       c.elevation = (n - 0.5f) * 2.0f * amplitude;
+    }
+  }
+
+  void addElevationVariation(float scale, float amplitude) {
+    if (cells == null) return;
+    for (Cell c : cells) {
+      PVector cen = cellCentroid(c);
+      float n = noise(cen.x * scale, cen.y * scale);
+      float delta = (n - 0.5f) * 2.0f * amplitude;
+      c.elevation = constrain(c.elevation + delta, -1.0f, 1.0f);
     }
   }
 
@@ -898,4 +941,49 @@ int hsb01ToRGB(float h, float s, float b) {
   popStyle();
 
   return c;
+}
+
+// ---------- Structures ----------
+
+class Structure {
+  float x;
+  float y;
+  int typeId = 0;
+
+  Structure(float x, float y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  void draw(PApplet app) {
+    float r = 6.0f / viewport.zoom;
+    app.stroke(30);
+    app.strokeWeight(1.0f / viewport.zoom);
+    app.fill(200, 200, 180);
+    app.rectMode(CENTER);
+    app.rect(x, y, r, r);
+  }
+}
+
+// ---------- Labels ----------
+
+class MapLabel {
+  float x;
+  float y;
+  String text;
+
+  MapLabel(float x, float y, String text) {
+    this.x = x;
+    this.y = y;
+    this.text = text;
+  }
+
+  void draw(PApplet app) {
+    app.pushStyle();
+    app.fill(0);
+    app.textAlign(CENTER, CENTER);
+    app.textSize(12 / viewport.zoom);
+    app.text(text, x, y);
+    app.popStyle();
+  }
 }

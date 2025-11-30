@@ -196,6 +196,21 @@ void drawSitesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Generate", genX + genW / 2, genY + genH / 2);
+
+  // Keep properties toggle
+  int chkX = genX + genW + 16;
+  int chkY = genY + 4;
+  int chkSize = 16;
+  stroke(80);
+  fill(keepPropertiesOnGenerate ? 200 : 240);
+  rect(chkX, chkY, chkSize, chkSize);
+  if (keepPropertiesOnGenerate) {
+    line(chkX + 3, chkY + 8, chkX + 7, chkY + 12);
+    line(chkX + 7, chkY + 12, chkX + 13, chkY + 4);
+  }
+  fill(0);
+  textAlign(LEFT, CENTER);
+  text("Keep properties", chkX + chkSize + 6, genY + genH / 2);
 }
 
 // ----- ZONES PANEL -----
@@ -250,6 +265,7 @@ void drawZonesPanel() {
 
   int remX = addX + addBtnW + 6;
   int remY = toolY;
+  int renX = remX + addBtnW + 10;
 
   // "+" button
   drawBevelButton(addX, addY, addBtnW, addBtnH, false);
@@ -266,6 +282,13 @@ void drawZonesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("-", remX + addBtnW * 0.5f, remY + addBtnH * 0.5f);
+
+  // Rename button
+  int renW = 60;
+  int renH = addBtnH;
+  drawBevelButton(renX, remY, renW, renH, false);
+  fill(10);
+  text("Rename", renX + renW * 0.5f, remY + renH * 0.5f);
 
   // Palette
   if (mapModel == null || mapModel.biomeTypes == null) return;
@@ -373,16 +396,19 @@ void drawPathsPanel() {
   int btnW = 120;
   int btnH = 22;
   int btnY = panelY + 12;
-  int btnX1 = 120;
+  int btnX1 = 10;
   int btnX2 = btnX1 + btnW + 10;
+  int btnX3 = btnX2 + btnW + 10;
 
   drawBevelButton(btnX1, btnY, btnW, btnH, false);
   drawBevelButton(btnX2, btnY, btnW, btnH, false);
+  drawBevelButton(btnX3, btnY, btnW, btnH, pathEraserMode);
 
   fill(10);
   textAlign(CENTER, CENTER);
   text("Close (Enter)", btnX1 + btnW / 2, btnY + btnH / 2);
   text("Undo (Del)",    btnX2 + btnW / 2, btnY + btnH / 2);
+  text("Eraser",        btnX3 + btnW / 2, btnY + btnH / 2);
 }
 
 // ----- ELEVATION PANEL -----
@@ -465,7 +491,7 @@ void drawElevationPanel() {
   text("Lower", btnX2 + btnW / 2, btnY + btnH / 2);
 
   // Noise scale slider
-  int noiseY = btnY + btnH + 6;
+  int noiseY = btnY + btnH + 10;
   stroke(160);
   fill(230);
   rect(sliderX, noiseY, sliderW, sliderH, 4);
@@ -477,15 +503,20 @@ void drawElevationPanel() {
   fill(0);
   text("Noise scale", sliderX + sliderW + 10, noiseY - 2);
 
-  // Generate button
-  int genW = 140;
+  // Generate & Vary buttons
+  int genW = 120;
   int genH = 22;
-  int genX = sliderX + sliderW + 20;
-  int genY = noiseY - 2;
+  int genX = sliderX;
+  int genY = noiseY + sliderH + 8;
   drawBevelButton(genX, genY, genW, genH, false);
   fill(10);
   textAlign(CENTER, CENTER);
   text("Perlin Generate", genX + genW / 2, genY + genH / 2);
+
+  int varyX = genX + genW + 10;
+  drawBevelButton(varyX, genY, genW, genH, false);
+  fill(10);
+  text("Vary", varyX + genW / 2, genY + genH / 2);
 }
 
 // ---------- UI helpers ----------
