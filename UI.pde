@@ -698,6 +698,8 @@ class RenderLayout {
   int titleY;
   ArrayList<IntRect> checks = new ArrayList<IntRect>();
   String[] labels;
+  IntRect lightAzimuthSlider;
+  IntRect lightAltitudeSlider;
 }
 
 RenderLayout buildRenderLayout() {
@@ -708,10 +710,18 @@ RenderLayout buildRenderLayout() {
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
+  int sliderW = 200;
   l.labels = new String[] { "Zones", "Water", "Elevation", "Paths", "Labels", "Structures" };
   for (int i = 0; i < l.labels.length; i++) {
     l.checks.add(new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE));
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+
+    if (i == 2) { // after "Elevation"
+      l.lightAzimuthSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+      curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+      l.lightAltitudeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+      curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+    }
   }
 
   curY += PANEL_PADDING;
@@ -731,6 +741,39 @@ void drawRenderPanel() {
   drawCheckbox(layout.checks.get(0).x, layout.checks.get(0).y, layout.checks.get(0).w, renderShowZones, "Zones");
   drawCheckbox(layout.checks.get(1).x, layout.checks.get(1).y, layout.checks.get(1).w, renderShowWater, "Water");
   drawCheckbox(layout.checks.get(2).x, layout.checks.get(2).y, layout.checks.get(2).w, renderShowElevation, "Elevation");
+
+  // Lighting sliders (render mode only)
+  if (layout.lightAzimuthSlider != null) {
+    IntRect az = layout.lightAzimuthSlider;
+    stroke(160);
+    fill(230);
+    rect(az.x, az.y, az.w, az.h, 4);
+    float tAz = constrain(renderLightAzimuthDeg / 360.0f, 0, 1);
+    float ax = az.x + tAz * az.w;
+    fill(40);
+    noStroke();
+    ellipse(ax, az.y + az.h / 2.0f, az.h * 0.9f, az.h * 0.9f);
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Light azimuth (" + nf(renderLightAzimuthDeg, 1, 0) + " deg)", az.x, az.y - 4);
+  }
+
+  if (layout.lightAltitudeSlider != null) {
+    IntRect alt = layout.lightAltitudeSlider;
+    stroke(160);
+    fill(230);
+    rect(alt.x, alt.y, alt.w, alt.h, 4);
+    float tAlt = constrain(map(renderLightAltitudeDeg, 5.0f, 80.0f, 0, 1), 0, 1);
+    float altHandleX = alt.x + tAlt * alt.w;
+    fill(40);
+    noStroke();
+    ellipse(altHandleX, alt.y + alt.h / 2.0f, alt.h * 0.9f, alt.h * 0.9f);
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Light altitude (" + nf(renderLightAltitudeDeg, 1, 0) + " deg)", alt.x, alt.y - 4);
+    textAlign(LEFT, TOP);
+  }
+
   drawCheckbox(layout.checks.get(3).x, layout.checks.get(3).y, layout.checks.get(3).w, renderShowPaths, "Paths");
   drawCheckbox(layout.checks.get(4).x, layout.checks.get(4).y, layout.checks.get(4).w, renderShowLabels, "Labels");
   drawCheckbox(layout.checks.get(5).x, layout.checks.get(5).y, layout.checks.get(5).w, renderShowStructures, "Structures");

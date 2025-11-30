@@ -20,6 +20,9 @@ class MapModel {
   // Biomes / zone types
   ArrayList<ZoneType> biomeTypes = new ArrayList<ZoneType>();
 
+  // Cell adjacency (rebuilt when Voronoi is recomputed)
+  ArrayList<ArrayList<Integer>> cellNeighbors = new ArrayList<ArrayList<Integer>>();
+
   ArrayList<Structure> structures = new ArrayList<Structure>();
   ArrayList<MapLabel> labels = new ArrayList<MapLabel>();
 
@@ -59,6 +62,41 @@ class MapModel {
     for (Cell c : cells) {
       c.draw(app, showBorders);
     }
+  }
+
+  // Rendering-mode cell draw: keep underwater cells plain blue (no biome tint)
+  void drawCellsRender(PApplet app, boolean showBorders, float seaLevel) {
+    if (cells == null) return;
+    app.pushStyle();
+    for (Cell c : cells) {
+      if (c.vertices == null || c.vertices.size() < 3) continue;
+      boolean underwater = c.elevation < seaLevel;
+      int col;
+      if (underwater) {
+        col = app.color(70, 140, 220);
+      } else {
+        col = color(230);
+        if (biomeTypes != null && c.biomeId >= 0 && c.biomeId < biomeTypes.size()) {
+          ZoneType zt = biomeTypes.get(c.biomeId);
+          col = zt.col;
+        }
+      }
+
+      app.fill(col);
+      if (showBorders) {
+        app.stroke(180);
+        app.strokeWeight(1.0f / viewport.zoom);
+      } else {
+        app.noStroke();
+      }
+
+      app.beginShape();
+      for (PVector v : c.vertices) {
+        app.vertex(v.x, v.y);
+      }
+      app.endShape(CLOSE);
+    }
+    app.popStyle();
   }
 
   void drawStructures(PApplet app) {
@@ -103,15 +141,37 @@ class MapModel {
   }
 
   void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater, boolean drawElevation) {
+    // Default: no lighting, just grayscale
+    drawElevationOverlay(app, seaLevel, showContours, drawWater, drawElevation, false, 135.0f, 45.0f);
+  }
+
+  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater, boolean drawElevation,
+                            boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg) {
     if (cells == null) return;
     app.pushStyle();
     app.noStroke();
-    for (Cell c : cells) {
+
+    PVector lightDir = null;
+    if (useLighting) {
+      float az = radians(lightAzimuthDeg);
+      float alt = radians(lightAltitudeDeg);
+      lightDir = new PVector(cos(alt) * cos(az), cos(alt) * sin(az), sin(alt));
+      lightDir.normalize();
+    }
+
+    int cellCount = cells.size();
+    for (int ci = 0; ci < cellCount; ci++) {
+      Cell c = cells.get(ci);
       if (c.vertices == null || c.vertices.size() < 3) continue;
       float h = c.elevation;
       if (drawElevation) {
         float shade = constrain((h + 0.5f), 0, 1); // center on 0
-        int col = app.color(shade * 255);
+        float light = 1.0f;
+        if (useLighting && lightDir != null) {
+          light = computeLightForCell(ci, lightDir);
+        }
+        float litShade = constrain(shade * light, 0, 1);
+        int col = app.color(litShade * 255);
         app.fill(col, 140);
         app.beginShape();
         for (PVector v : c.vertices) app.vertex(v.x, v.y);
@@ -119,7 +179,13 @@ class MapModel {
       }
 
       if (drawWater && h < seaLevel) {
-        int water = app.color(80, 140, 255, 110);
+        float depth = seaLevel - h;
+        float depthNorm = constrain(depth / 1.0f, 0, 1);
+        float shade = drawElevation ? lerp(1.0f, 0.35f, depthNorm) : 1.0f;
+        float baseR = 70;
+        float baseG = 140;
+        float baseB = 220;
+        int water = app.color(baseR * shade, baseG * shade, baseB * shade, 255);
         app.fill(water);
         app.beginShape();
         for (PVector v : c.vertices) app.vertex(v.x, v.y);
@@ -464,6 +530,7 @@ class MapModel {
 
     ArrayList<Cell> oldCells = (preservedCells != null) ? preservedCells : new ArrayList<Cell>(cells);
     cells.clear();
+    cellNeighbors.clear();
     preservedCells = null;
 
     int defaultBiome = 0;
@@ -509,6 +576,8 @@ class MapModel {
         cells.add(newCell);
       }
     }
+
+    rebuildCellNeighbors();
   }
 
   // Keep the half-plane of points closer to si than sj
@@ -668,6 +737,58 @@ class MapModel {
       }
     }
     return false;
+  }
+
+  void rebuildCellNeighbors() {
+    cellNeighbors.clear();
+    int n = cells.size();
+    for (int i = 0; i < n; i++) {
+      cellNeighbors.add(new ArrayList<Integer>());
+    }
+    float eps = 1e-4f;
+    for (int i = 0; i < n; i++) {
+      Cell a = cells.get(i);
+      for (int j = i + 1; j < n; j++) {
+        Cell b = cells.get(j);
+        if (cellsAreNeighbors(a, b, eps)) {
+          cellNeighbors.get(i).add(j);
+          cellNeighbors.get(j).add(i);
+        }
+      }
+    }
+  }
+
+  float computeLightForCell(int idx, PVector lightDir) {
+    if (idx < 0 || idx >= cells.size()) return 1.0f;
+    ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
+    if (nbs == null || nbs.isEmpty()) return 1.0f;
+
+    Cell c = cells.get(idx);
+    PVector cen = cellCentroid(c);
+
+    float gx = 0;
+    float gy = 0;
+    for (int nbIdx : nbs) {
+      if (nbIdx < 0 || nbIdx >= cells.size()) continue;
+      Cell nb = cells.get(nbIdx);
+      PVector ncen = cellCentroid(nb);
+      float dx = ncen.x - cen.x;
+      float dy = ncen.y - cen.y;
+      float dist = sqrt(dx * dx + dy * dy);
+      if (dist < 1e-6f) continue;
+      float dh = nb.elevation - c.elevation;
+      float w = 1.0f / dist;
+      gx += dh * (dx / dist) * w;
+      gy += dh * (dy / dist) * w;
+    }
+
+    PVector normal = new PVector(-gx, -gy, 1.0f);
+    if (normal.magSq() < 1e-8f) normal.set(0, 0, 1);
+    else normal.normalize();
+
+    float d = max(0, normal.x * lightDir.x + normal.y * lightDir.y + normal.z * lightDir.z);
+    float ambient = 0.35f;
+    return constrain(ambient + (1.0f - ambient) * d, 0, 1);
   }
 
   // ---------- Sites generation ----------

@@ -418,6 +418,21 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (layout.checks.get(0).contains(mx, my)) { renderShowZones = !renderShowZones; return true; }
   if (layout.checks.get(1).contains(mx, my)) { renderShowWater = !renderShowWater; return true; }
   if (layout.checks.get(2).contains(mx, my)) { renderShowElevation = !renderShowElevation; return true; }
+
+  // Lighting sliders under Elevation
+  if (layout.lightAzimuthSlider != null && layout.lightAzimuthSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.lightAzimuthSlider.x) / (float)layout.lightAzimuthSlider.w, 0, 1);
+    renderLightAzimuthDeg = constrain(t * 360.0f, 0, 360);
+    activeSlider = SLIDER_RENDER_LIGHT_AZIMUTH;
+    return true;
+  }
+  if (layout.lightAltitudeSlider != null && layout.lightAltitudeSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.lightAltitudeSlider.x) / (float)layout.lightAltitudeSlider.w, 0, 1);
+    renderLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
+    activeSlider = SLIDER_RENDER_LIGHT_ALTITUDE;
+    return true;
+  }
+
   if (layout.checks.get(3).contains(mx, my)) { renderShowPaths = !renderShowPaths; return true; }
   if (layout.checks.get(4).contains(mx, my)) { renderShowLabels = !renderShowLabels; return true; }
   if (layout.checks.get(5).contains(mx, my)) { renderShowStructures = !renderShowStructures; return true; }
@@ -736,6 +751,18 @@ void updateActiveSlider(int mx, int my) {
       float t = (mx - l.weightSlider.x) / (float)l.weightSlider.w;
       t = constrain(t, 0, 1);
       pathStrokeWeightPx = constrain(1.0f + t * 4.0f, 1.0f, 5.0f);
+      break;
+    }
+    case SLIDER_RENDER_LIGHT_AZIMUTH: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.lightAzimuthSlider.x) / (float)l.lightAzimuthSlider.w, 0, 1);
+      renderLightAzimuthDeg = constrain(t * 360.0f, 0, 360);
+      break;
+    }
+    case SLIDER_RENDER_LIGHT_ALTITUDE: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.lightAltitudeSlider.x) / (float)l.lightAltitudeSlider.w, 0, 1);
+      renderLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
       break;
     }
     default:

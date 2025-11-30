@@ -67,6 +67,8 @@ boolean renderShowElevation = true;
 boolean renderShowPaths = true;
 boolean renderShowLabels = true;
 boolean renderShowStructures = true;
+float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
+float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
 
 // Zone renaming state
 int editingZoneNameIndex = -1;
@@ -89,6 +91,8 @@ final int SLIDER_ELEV_STRENGTH = 8;
 final int SLIDER_ELEV_NOISE = 9;
 final int SLIDER_PATH_ERASER = 10;
 final int SLIDER_PATH_WEIGHT = 11;
+final int SLIDER_RENDER_LIGHT_AZIMUTH = 12;
+final int SLIDER_RENDER_LIGHT_ALTITUDE = 13;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -124,7 +128,11 @@ void draw() {
   boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES);
   boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER && !renderShowZones);
   if (drawCellsFlag) {
-    mapModel.drawCells(this, showBorders);
+    if (currentTool == Tool.EDIT_RENDER) {
+      mapModel.drawCellsRender(this, showBorders, seaLevel);
+    } else {
+      mapModel.drawCells(this, showBorders);
+    }
   }
 
   // Paths are visible in all modes
@@ -171,7 +179,8 @@ void draw() {
     drawPathEraserPreview();
   } else if (currentTool == Tool.EDIT_RENDER) {
     if (renderShowElevation || renderShowWater) {
-      mapModel.drawElevationOverlay(this, seaLevel, false, renderShowWater, renderShowElevation);
+      mapModel.drawElevationOverlay(this, seaLevel, false, renderShowWater, renderShowElevation,
+                                    true, renderLightAzimuthDeg, renderLightAltitudeDeg);
     }
   } else {
     mapModel.drawDebugWorldBounds(this);
