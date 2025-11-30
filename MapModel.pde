@@ -102,7 +102,7 @@ class MapModel {
     return s;
   }
 
-  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours) {
+  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater) {
     if (cells == null) return;
     app.pushStyle();
     for (Cell c : cells) {
@@ -116,7 +116,7 @@ class MapModel {
       for (PVector v : c.vertices) app.vertex(v.x, v.y);
       app.endShape(CLOSE);
 
-      if (h < seaLevel) {
+      if (drawWater && h < seaLevel) {
         int water = app.color(80, 140, 255, 110);
         app.fill(water);
         app.beginShape();

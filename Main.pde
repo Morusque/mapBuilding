@@ -159,7 +159,7 @@ void draw() {
   }
 
   if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawElevationOverlay(this, seaLevel, false);
+    mapModel.drawElevationOverlay(this, seaLevel, false, true);
     drawElevationBrushPreview();
   } else if (currentTool == Tool.EDIT_ZONES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
@@ -167,7 +167,7 @@ void draw() {
     drawPathEraserPreview();
   } else if (currentTool == Tool.EDIT_RENDER) {
     if (renderShowElevation || renderShowWater) {
-      mapModel.drawElevationOverlay(this, seaLevel, false);
+      mapModel.drawElevationOverlay(this, seaLevel, false, renderShowWater);
     }
   } else {
     mapModel.drawDebugWorldBounds(this);
@@ -306,6 +306,7 @@ void drawStructurePreview() {
   Structure tmp = mapModel.computeSnappedStructure(w.x, w.y);
   if (tmp == null) return;
   pushStyle();
+  pushMatrix();
   float r = tmp.size;
   translate(tmp.x, tmp.y);
   rotate(tmp.angle);
@@ -314,5 +315,6 @@ void drawStructurePreview() {
   fill(200, 200, 180, 120);
   rectMode(CENTER);
   rect(0, 0, r, r);
+  popMatrix();
   popStyle();
 }

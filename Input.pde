@@ -933,7 +933,7 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_ELEV_NOISE: {
-      int sliderX = 10;
+      int sliderX = 10 + 220 + 140; // col2X
       int sliderW = 220;
       float t = (mx - sliderX) / (float)sliderW;
       t = constrain(t, 0, 1);
