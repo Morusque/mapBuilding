@@ -163,7 +163,7 @@ void draw() {
   }
 
   if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawElevationOverlay(this, seaLevel, false, true);
+    mapModel.drawElevationOverlay(this, seaLevel, false, true, true);
     drawElevationBrushPreview();
   } else if (currentTool == Tool.EDIT_ZONES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
@@ -171,7 +171,7 @@ void draw() {
     drawPathEraserPreview();
   } else if (currentTool == Tool.EDIT_RENDER) {
     if (renderShowElevation || renderShowWater) {
-      mapModel.drawElevationOverlay(this, seaLevel, false, renderShowWater);
+      mapModel.drawElevationOverlay(this, seaLevel, false, renderShowWater, renderShowElevation);
     }
   } else {
     mapModel.drawDebugWorldBounds(this);

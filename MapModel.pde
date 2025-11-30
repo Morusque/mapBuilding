@@ -102,19 +102,21 @@ class MapModel {
     return s;
   }
 
-  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater) {
+  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater, boolean drawElevation) {
     if (cells == null) return;
     app.pushStyle();
+    app.noStroke();
     for (Cell c : cells) {
       if (c.vertices == null || c.vertices.size() < 3) continue;
       float h = c.elevation;
-      float shade = constrain((h + 0.5f), 0, 1); // center on 0
-      int col = app.color(shade * 255);
-      app.noStroke();
-      app.fill(col, 140);
-      app.beginShape();
-      for (PVector v : c.vertices) app.vertex(v.x, v.y);
-      app.endShape(CLOSE);
+      if (drawElevation) {
+        float shade = constrain((h + 0.5f), 0, 1); // center on 0
+        int col = app.color(shade * 255);
+        app.fill(col, 140);
+        app.beginShape();
+        for (PVector v : c.vertices) app.vertex(v.x, v.y);
+        app.endShape(CLOSE);
+      }
 
       if (drawWater && h < seaLevel) {
         int water = app.color(80, 140, 255, 110);
@@ -125,7 +127,7 @@ class MapModel {
       }
     }
 
-    if (showContours) {
+    if (showContours && drawElevation) {
       float step = 0.1f;
       app.stroke(60, 60, 60, 140);
       app.strokeWeight(1.0f / viewport.zoom);
