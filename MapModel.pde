@@ -891,7 +891,7 @@ class MapModel {
 
   void generateGridSites(float density) {
     int minRes = 2;
-    int maxRes = 100; // denser
+    int maxRes = 60; // capped for speed
 
     int res = (int)map(density, 0, 1, minRes, maxRes);
     res = max(2, res);
@@ -916,7 +916,7 @@ class MapModel {
 
   void generateHexSites(float density) {
     int minRes = 2;
-    int maxRes = 80; // denser
+    int maxRes = 40; // capped for speed
 
     int res = (int)map(density, 0, 1, minRes, maxRes);
     res = max(2, res);
@@ -947,7 +947,7 @@ class MapModel {
     float h = maxY - minY;
 
     float minDim = min(w, h);
-    float targetRes = map(density, 0, 1, 1, 70); // closer to grid/hex density
+    float targetRes = map(density, 0, 1, 1, 60); // cap to keep Voronoi faster
     float baseSpacing = minDim / targetRes;
     float r = baseSpacing * 0.5f;
 
@@ -971,8 +971,8 @@ class MapModel {
       grid[gy * gridW + gx] = 0;
     }
 
-    int k = 30;
-    int maxPoints = 8000;
+    int k = 25;
+    int maxPoints = 10000;
 
     while (!active.isEmpty() && points.size() < maxPoints) {
       int idx = active.get((int)random(active.size()));
