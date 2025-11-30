@@ -3,6 +3,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.ArrayDeque;
 import java.util.PriorityQueue;
+import java.util.Collections;
 
 class MapModel {
   // World bounds in world coordinates
@@ -930,6 +931,67 @@ class MapModel {
     }
   }
 
+  // Fill all "None" zones by seeding random types and expanding through neighbors.
+  // Existing non-None assignments remain and act as seeds for their own type.
+  void generateZonesFromSeeds() {
+    if (cells == null || cells.isEmpty()) return;
+    int typeCount = biomeTypes.size() - 1; // exclude "None"
+    if (typeCount <= 0) return;
+
+    ensureCellNeighborsComputed();
+
+    int n = cells.size();
+    ArrayDeque<Integer> queue = new ArrayDeque<Integer>();
+    ArrayList<Integer> noneIndices = new ArrayList<Integer>();
+
+    // Existing zones become seeds for their own type
+    for (int i = 0; i < n; i++) {
+      Cell c = cells.get(i);
+      if (c.biomeId > 0) {
+        queue.add(i);
+      } else {
+        noneIndices.add(i);
+      }
+    }
+
+    if (noneIndices.isEmpty()) return;
+
+    // Add random seeds inside "None" cells to diversify coverage
+    Collections.shuffle(noneIndices);
+    int seedCount = min(typeCount, noneIndices.size());
+    for (int i = 0; i < seedCount; i++) {
+      int idx = noneIndices.get(i);
+      Cell c = cells.get(idx);
+      int biomeId = 1 + (int)random(typeCount);
+      c.biomeId = biomeId;
+      queue.add(idx);
+    }
+
+    // Multi-source BFS to propagate seeds into remaining None cells
+    while (!queue.isEmpty()) {
+      int idx = queue.removeFirst();
+      if (idx < 0 || idx >= n) continue;
+      Cell c = cells.get(idx);
+      int biomeId = c.biomeId;
+      ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        Cell nc = cells.get(nb);
+        if (nc.biomeId == 0) {
+          nc.biomeId = biomeId;
+          queue.add(nb);
+        }
+      }
+    }
+  }
+
+  void ensureCellNeighborsComputed() {
+    if (cellNeighbors == null || cellNeighbors.size() != cells.size()) {
+      rebuildCellNeighbors();
+    }
+  }
+
   void applyFuzz(float fuzz) {
     if (fuzz <= 0) return;
     if (sites.isEmpty()) return;
@@ -1088,26 +1150,28 @@ class MapModel {
   // ---------- Biome type management ----------
 
   void addBiomeType() {
-    int n = biomeTypes.size();
+    int nonNoneCount = max(0, biomeTypes.size() - 1);
+    ZonePreset preset = (nonNoneCount < ZONE_PRESETS.length) ? ZONE_PRESETS[nonNoneCount] : null;
 
-    // Base params if nothing to copy from
-    float baseHue = 0.33f;   // green-ish
-    float baseSat = 0.4f;
-    float baseBri = 1.0f;
-
-    if (n > 1) {
-      // Take previous type and rotate hue
-      ZoneType last = biomeTypes.get(n - 1);
-      baseHue = (last.hue01 + 0.15f) % 1.0f;
-      baseSat = last.sat01;
-      baseBri = last.bri01;
+    if (preset != null) {
+      biomeTypes.add(new ZoneType(preset.name, preset.col));
+    } else {
+      // Fallback: rotate hue from last type
+      int n = biomeTypes.size();
+      float baseHue = 0.33f;
+      float baseSat = 0.4f;
+      float baseBri = 1.0f;
+      if (n > 1) {
+        ZoneType last = biomeTypes.get(n - 1);
+        baseHue = (last.hue01 + 0.15f) % 1.0f;
+        baseSat = last.sat01;
+        baseBri = last.bri01;
+      }
+      int newIndex = n;
+      String name = "Type " + newIndex;
+      int col = hsb01ToRGB(baseHue, baseSat, baseBri);
+      biomeTypes.add(new ZoneType(name, col));
     }
-
-    int newIndex = n; // will become "Type newIndex"
-    String name = "Type " + newIndex;
-    int col = hsb01ToRGB(baseHue, baseSat, baseBri);
-
-    biomeTypes.add(new ZoneType(name, col));
   }
 
   void removeBiomeType(int index) {
@@ -1154,6 +1218,38 @@ class ZoneType {
     col = hsb01ToRGB(hue01, sat01, bri01);
   }
 }
+
+class ZonePreset {
+  String name;
+  int col;
+  ZonePreset(String name, int col) {
+    this.name = name;
+    this.col = col;
+  }
+}
+
+ZonePreset[] ZONE_PRESETS = new ZonePreset[] {
+  new ZonePreset("Dirt",        color(210, 180, 140)),
+  new ZonePreset("Sand",        color(230, 214, 160)),
+  new ZonePreset("Grassland",   color(186, 206, 140)),
+  new ZonePreset("Forest",      color(110, 150, 95)),
+  new ZonePreset("Rock",        color(150, 150, 150)),
+  new ZonePreset("Snow",        color(235, 240, 245)),
+  new ZonePreset("Wetland",     color(165, 190, 155)),
+  new ZonePreset("Shrubland",   color(195, 205, 170)),
+  new ZonePreset("Clay Flats",  color(198, 176, 156)),
+  new ZonePreset("Savannah",    color(215, 196, 128)),
+  new ZonePreset("Tundra",      color(190, 200, 205)),
+  new ZonePreset("Jungle",      color(80, 130, 85)),
+  new ZonePreset("Volcanic",    color(105, 95, 90)),
+  new ZonePreset("Heath",       color(180, 160, 145)),
+  new ZonePreset("Steppe",      color(190, 185, 140)),
+  new ZonePreset("Delta",       color(170, 200, 175)),
+  new ZonePreset("Glacier",     color(220, 230, 240)),
+  new ZonePreset("Mesa",        color(205, 165, 120)),
+  new ZonePreset("Moor",        color(165, 155, 145)),
+  new ZonePreset("Scrub",       color(185, 175, 150))
+};
 
 // ---------- Color helpers for HSB<->RGB in [0..1] ----------
 

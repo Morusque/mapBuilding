@@ -1,12 +1,9 @@
 
-Zones :
-There should be a "generate" button that fills the whole map with random existing types for quick testing purposes.
-The logic should be simple, something like : define some starting points amoung the "None" zones with one of the non-None types, then iteratively extend those zones from neighbor to neighbor only on None zones (zones already defined at start should stay as is). Then when extention done, redo the operation until there are no moe "None" zones in the map.
-Please define hardcoded zone labels and colors for the first 20 potential zones or so. Still only display the first 4 by default.
-Colors distinct should be distinct especially near the beginning, more focus on yellow-dirt likes, should match with zone text label.
-Text should refer to land biomes such as dirt, sand, forest, rocks, snow, etc... More generic first more specific last.
+Biomes :
+Add "magma" in the types.
+Add reset (to "None") button.
 
-Zones :
+Zones (admin) :
 This one should be implemented at some point but not yet.
 
 Paths :

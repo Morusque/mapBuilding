@@ -259,6 +259,7 @@ class BiomesLayout {
   int titleY;
   IntRect paintBtn;
   IntRect fillBtn;
+  IntRect generateBtn;
   IntRect addBtn;
   IntRect removeBtn;
   ArrayList<IntRect> swatches = new ArrayList<IntRect>();
@@ -277,6 +278,7 @@ BiomesLayout buildBiomesLayout() {
 
   l.paintBtn = new IntRect(innerX, curY, 70, PANEL_BUTTON_H);
   l.fillBtn = new IntRect(l.paintBtn.x + l.paintBtn.w + 8, curY, 70, PANEL_BUTTON_H);
+  l.generateBtn = new IntRect(l.fillBtn.x + l.fillBtn.w + 8, curY, 90, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
 
   l.addBtn = new IntRect(innerX, curY, 24, PANEL_BUTTON_H);
@@ -339,6 +341,12 @@ void drawBiomesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Fill", layout.fillBtn.x + layout.fillBtn.w * 0.5f, layout.fillBtn.y + layout.fillBtn.h * 0.5f);
+
+  // Generate button (auto-fill None zones)
+  drawBevelButton(layout.generateBtn.x, layout.generateBtn.y, layout.generateBtn.w, layout.generateBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Generate", layout.generateBtn.x + layout.generateBtn.w * 0.5f, layout.generateBtn.y + layout.generateBtn.h * 0.5f);
 
   // Add / Remove biome type buttons
   // "+" button
@@ -882,7 +890,5 @@ IntRect getActivePanelRect() {
   }
   return null;
 }
-
-
 
 

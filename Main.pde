@@ -112,9 +112,13 @@ void setup() {
 void initBiomeTypes() {
   mapModel.biomeTypes.clear();
   mapModel.biomeTypes.add(new ZoneType("None",  color(235)));
-  mapModel.biomeTypes.add(new ZoneType("Type 1", color(230, 220, 200)));
-  mapModel.biomeTypes.add(new ZoneType("Type 2", color(210, 240, 210)));
-  mapModel.biomeTypes.add(new ZoneType("Type 3", color(245, 225, 190)));
+
+  // Seed with the first few presets for quick access; more can be added via "+".
+  int initialCount = 4;
+  for (int i = 0; i < initialCount && i < ZONE_PRESETS.length; i++) {
+    ZonePreset zp = ZONE_PRESETS[i];
+    mapModel.biomeTypes.add(new ZoneType(zp.name, zp.col));
+  }
 }
 
 void draw() {

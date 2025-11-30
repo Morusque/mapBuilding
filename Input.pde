@@ -149,6 +149,12 @@ boolean handleZonesPanelClick(int mx, int my) {
     return true;
   }
 
+  // Generate button
+  if (layout.generateBtn.contains(mx, my)) {
+    mapModel.generateZonesFromSeeds();
+    return true;
+  }
+
   int nTypes = mapModel.biomeTypes.size();
 
   // "+" button
