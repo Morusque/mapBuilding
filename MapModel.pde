@@ -899,30 +899,31 @@ class MapModel {
       newMin = min(newMin, c.elevation);
       newMax = max(newMax, c.elevation);
     }
-    if (newMax > 1.0f) {
-      float oldTop = max(oldMax, seaLevel + 1e-6f);
-      float newTop = newMax;
-      float rangeOld = oldTop - seaLevel;
-      float rangeNew = newTop - seaLevel;
-      if (rangeOld > 1e-6f) {
+    // Keep elevations within [-1, 1] by re-scaling only the side that exceeds,
+    // leaving the opposite side untouched relative to sea level.
+    float maxLimit = 1.0f;
+    float minLimit = -1.0f;
+
+    if (newMax > maxLimit) {
+      float fromRange = newMax - seaLevel;
+      float toRange = maxLimit - seaLevel;
+      if (fromRange > 1e-6f && toRange > 1e-6f) {
+        float scale = toRange / fromRange;
         for (Cell c : cells) {
-          float v = c.elevation;
-          if (v >= seaLevel) {
-            c.elevation = seaLevel + (v - seaLevel) * (rangeNew / rangeOld);
+          if (c.elevation > seaLevel) {
+            c.elevation = seaLevel + (c.elevation - seaLevel) * scale;
           }
         }
       }
     }
-    if (newMin < -1.0f) {
-      float oldBot = min(oldMin, seaLevel - 1e-6f);
-      float newBot = newMin;
-      float rangeOld = seaLevel - oldBot;
-      float rangeNew = seaLevel - newBot;
-      if (rangeOld > 1e-6f) {
+    if (newMin < minLimit) {
+      float fromRange = seaLevel - newMin;
+      float toRange = seaLevel - minLimit;
+      if (fromRange > 1e-6f && toRange > 1e-6f) {
+        float scale = toRange / fromRange;
         for (Cell c : cells) {
-          float v = c.elevation;
-          if (v <= seaLevel) {
-            c.elevation = seaLevel - (seaLevel - v) * (rangeNew / rangeOld);
+          if (c.elevation < seaLevel) {
+            c.elevation = seaLevel - (seaLevel - c.elevation) * scale;
           }
         }
       }

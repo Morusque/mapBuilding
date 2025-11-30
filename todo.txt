@@ -1,10 +1,4 @@
 
-Elevation :
-There seems to be maximum and minimum values.
-When exeeding those, instead of clamping, here's what could happen:
-if exceeding from the top, all values should be normalized to remap everything between [level of water,old top] to [level of water,new top].
-if exceeding from the bottom, all values should be normalized to remap everything between [level of water,old bottom] to [level of water,new bottom].
-
 Zones :
 There should be a "generate" button that fills the whole map with random existing types for quick testing purposes.
 The logic should be simple, something like : define some starting points amoung the "None" zones with one of the non-None types, then iteratively extend those zones from neighbor to neighbor only on None zones (zones already defined at start should stay as is). Then when extention done, redo the operation until there are no moe "None" zones in the map.
