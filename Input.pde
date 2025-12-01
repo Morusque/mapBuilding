@@ -100,7 +100,8 @@ boolean handleSitesPanelClick(int mx, int my) {
   // Density slider
   if (layout.densitySlider.contains(mx, my)) {
     float t = (mx - layout.densitySlider.x) / (float)layout.densitySlider.w;
-    siteDensity = constrain(t, 0, 1);
+    int newCount = round(t * MAX_SITE_COUNT);
+    siteTargetCount = constrain(newCount, 0, MAX_SITE_COUNT);
     activeSlider = SLIDER_SITES_DENSITY;
     return true;
   }
@@ -129,7 +130,7 @@ boolean handleSitesPanelClick(int mx, int my) {
   // Generate button
   if (layout.generateBtn.contains(mx, my)) {
     startLoading();
-    mapModel.generateSites(currentPlacementMode(), siteDensity * 2.0f, keepPropertiesOnGenerate);
+    mapModel.generateSites(currentPlacementMode(), siteTargetCount, keepPropertiesOnGenerate);
     stopLoading();
     return true;
   }
@@ -165,7 +166,15 @@ boolean handleZonesPanelClick(int mx, int my) {
 
   // Generate button
   if (layout.generateBtn.contains(mx, my)) {
-    mapModel.generateZonesFromSeeds();
+    boolean hasNone = mapModel.hasAnyNoneBiome();
+    if (hasNone) {
+      mapModel.generateZonesFromSeeds();
+    } else {
+      mapModel.resetAllBiomesToNone();
+      mapModel.generateZonesFromSeeds();
+      activeBiomeIndex = 0;
+      editingZoneNameIndex = -1;
+    }
     return true;
   }
 
@@ -736,7 +745,8 @@ void mouseDragged() {
     SitesLayout layout = buildSitesLayout();
     if (layout.densitySlider.contains(mouseX, mouseY)) {
       float t = (mouseX - layout.densitySlider.x) / (float)layout.densitySlider.w;
-      siteDensity = constrain(t, 0, 1);
+      int newCount = round(t * MAX_SITE_COUNT);
+      siteTargetCount = constrain(newCount, 0, MAX_SITE_COUNT);
       return;
     }
 
@@ -852,7 +862,8 @@ void updateActiveSlider(int mx, int my) {
     case SLIDER_SITES_DENSITY: {
       SitesLayout l = buildSitesLayout();
       float t = (mx - l.densitySlider.x) / (float)l.densitySlider.w;
-      siteDensity = constrain(t, 0, 1);
+      int newCount = round(t * MAX_SITE_COUNT);
+      siteTargetCount = constrain(newCount, 0, MAX_SITE_COUNT);
       break;
     }
     case SLIDER_SITES_FUZZ: {

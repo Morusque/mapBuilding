@@ -44,7 +44,9 @@ PlacementMode[] placementModes = {
   PlacementMode.HEX
 };
 int placementModeIndex = 2; // 0=GRID, 1=POISSON, 2=HEX
-float siteDensity = 0.5;    // 0..1 slider (maps to 0..2 actual density, midpoint=1.0)
+final int MAX_SITE_COUNT = 20000;
+final int DEFAULT_SITE_COUNT = 5000;
+int siteTargetCount = DEFAULT_SITE_COUNT; // slider maps 0..MAX_SITE_COUNT
 float siteFuzz = 0.07;      // 0..1
 boolean keepPropertiesOnGenerate = false;
 
@@ -70,7 +72,7 @@ boolean renderShowLabels = true;
 boolean renderShowStructures = true;
 float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
-float flattestSlopeBias = 10.0f; // slope penalty in PATHFIND mode (0..200, 0 = shortest)
+float flattestSlopeBias = 0.0f; // slope penalty in PATHFIND mode (0..200, 0 = shortest)
 boolean pathAvoidWater = false;
 
 // Zone renaming state
@@ -123,7 +125,7 @@ void setup() {
   mapModel = new MapModel();
   initBiomeTypes();
   initPathTypes();
-  mapModel.generateSites(currentPlacementMode(), siteDensity * 2.0f);
+  mapModel.generateSites(currentPlacementMode(), siteTargetCount);
   mapModel.ensureVoronoiComputed();
   seedDefaultZones();
 }
@@ -422,4 +424,3 @@ void drawStructurePreview() {
   popMatrix();
   popStyle();
 }
-

@@ -167,23 +167,17 @@ void drawSitesPanel() {
   fill(230);
   rect(d.x, d.y, d.w, d.h, 4);
 
-  float densityHandleX = d.x + siteDensity * d.w;
+  float density01 = constrain(siteTargetCount / (float)MAX_SITE_COUNT, 0, 1);
+  float densityHandleX = d.x + density01 * d.w;
   float handleW = 8;
 
   fill(80);
   noStroke();
   rect(densityHandleX - handleW / 2, d.y - 2, handleW, d.h + 4, 4);
 
-  int minRes = 2;
-  int maxRes = 100;
-  int res = max(2, (int)map(siteDensity * 2.0f, 0, 2, minRes, maxRes));
-  int approxCount = res * res;
-
   fill(0);
   textAlign(LEFT, BOTTOM);
-  float densityActual = siteDensity * 2.0f;
-  text("Density: " + nf(densityActual, 1, 2) + "  (~" + approxCount + " sites)",
-       d.x, d.y - 4);
+  text("Density: " + siteTargetCount + " sites", d.x, d.y - 4);
 
   // ---------- Fuzz slider (0..0.3) ----------
   IntRect f = layout.fuzzSlider;
@@ -297,12 +291,12 @@ BiomesLayout buildBiomesLayout() {
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
-  l.paintBtn = new IntRect(innerX, curY, 70, PANEL_BUTTON_H);
-  l.fillBtn = new IntRect(l.paintBtn.x + l.paintBtn.w + 8, curY, 70, PANEL_BUTTON_H);
-  l.generateBtn = new IntRect(l.fillBtn.x + l.fillBtn.w + 8, curY, 90, PANEL_BUTTON_H);
+  l.resetBtn = new IntRect(innerX, curY, 90, PANEL_BUTTON_H);
+  l.generateBtn = new IntRect(l.resetBtn.x + l.resetBtn.w + 8, curY, 90, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
 
-  l.resetBtn = new IntRect(innerX, curY, 90, PANEL_BUTTON_H);
+  l.paintBtn = new IntRect(innerX, curY, 70, PANEL_BUTTON_H);
+  l.fillBtn = new IntRect(l.paintBtn.x + l.paintBtn.w + 8, curY, 70, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   l.addBtn = new IntRect(innerX, curY, 24, PANEL_BUTTON_H);
@@ -352,6 +346,20 @@ void drawBiomesPanel() {
   textAlign(LEFT, TOP);
   text("Biomes", labelX, layout.titleY);
 
+  // Generate button (auto-fill None zones)
+  drawBevelButton(layout.generateBtn.x, layout.generateBtn.y, layout.generateBtn.w, layout.generateBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  boolean hasNone = mapModel != null && mapModel.hasAnyNoneBiome();
+  String genLabel = hasNone ? "Fill gaps" : "Regenerate";
+  text(genLabel, layout.generateBtn.x + layout.generateBtn.w * 0.5f, layout.generateBtn.y + layout.generateBtn.h * 0.5f);
+
+  // Reset to None button
+  drawBevelButton(layout.resetBtn.x, layout.resetBtn.y, layout.resetBtn.w, layout.resetBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Reset", layout.resetBtn.x + layout.resetBtn.w * 0.5f, layout.resetBtn.y + layout.resetBtn.h * 0.5f);
+
   // Paint button
   drawBevelButton(layout.paintBtn.x, layout.paintBtn.y, layout.paintBtn.w, layout.paintBtn.h,
                   currentZonePaintMode == ZonePaintMode.ZONE_PAINT);
@@ -365,18 +373,6 @@ void drawBiomesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Fill", layout.fillBtn.x + layout.fillBtn.w * 0.5f, layout.fillBtn.y + layout.fillBtn.h * 0.5f);
-
-  // Generate button (auto-fill None zones)
-  drawBevelButton(layout.generateBtn.x, layout.generateBtn.y, layout.generateBtn.w, layout.generateBtn.h, false);
-  fill(10);
-  textAlign(CENTER, CENTER);
-  text("Generate", layout.generateBtn.x + layout.generateBtn.w * 0.5f, layout.generateBtn.y + layout.generateBtn.h * 0.5f);
-
-  // Reset to None button
-  drawBevelButton(layout.resetBtn.x, layout.resetBtn.y, layout.resetBtn.w, layout.resetBtn.h, false);
-  fill(10);
-  textAlign(CENTER, CENTER);
-  text("Reset", layout.resetBtn.x + layout.resetBtn.w * 0.5f, layout.resetBtn.y + layout.resetBtn.h * 0.5f);
 
   // Add / Remove biome type buttons
   // "+" button
@@ -629,7 +625,7 @@ void drawPathsPanel() {
   stroke(160);
   fill(230);
   rect(fs.x, fs.y, fs.w, fs.h, 4);
-  float fNorm = constrain(map(flattestSlopeBias, 0.5f, 20.0f, 0, 1), 0, 1);
+  float fNorm = constrain(map(flattestSlopeBias, 0.0f, 200.0f, 0, 1), 0, 1);
   float fx = fs.x + fNorm * fs.w;
   fill(40);
   noStroke();

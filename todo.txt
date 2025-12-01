@@ -3,17 +3,20 @@ Loading bar :
 (later) loading bar is still useless for now, only appears briefly right before the end of the process, but that's not an urgent task.
 
 Sites :
-Density number should go from 0 to 20000 sites with default value being 10000, it should not display the normalized 0-1 or 0-2 value at all.
+The sites placement is so much slower than before and I'm not sure why, can we optimize this? (eg the voronoi pass could be computer only on demand when necessary?)
 (later) There could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 (later) Sites should probably be renamed to cells in the UI.
 
 Elevation :
 
+Biomes :
+
 Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
-Single segment paths still don't work, it should be pretty simple though: first click= starting coordinate, second click = ending coortinate, this is a new segment (right now it seems to be somehow registered but fails to display as an actual segment).
+The points on the frontier between two neighbor similar sites (meaning same biome, same water state) shot not appear and not be used.
+Single segment paths still don't work. This is a seeminlgy simple yet persistent error so we need to talk about this.
 Paths list : text height should be taken into account when displaying number of segments and length so not so overlap with anything.
 Paths list : some button fail to press possibly because of their current placement or UI state, might be fixed along with the point above.
 Flatest slope slider default value should be 0. Bug: mouse x mapping seems based on max value 20 while max value is 200 (correct value should be 200 in both cases).
@@ -42,3 +45,4 @@ Below the list are a list of parameters for the selected type including the labe
 General :
 Should we reorganize the number of .pde files potentially adding some to make it more consistent and easy to search?
 Read the initial intentions document, exctact missing features and idead, add them to this todo list as "(later)" items, then remove the doc.
+Define a precise lexicon and homogenize code and ui labels.

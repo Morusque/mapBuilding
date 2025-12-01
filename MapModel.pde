@@ -910,24 +910,30 @@ class MapModel {
 
   // ---------- Sites generation ----------
 
-  void generateSites(PlacementMode mode, float density) {
-    generateSites(mode, density, false);
+  void generateSites(PlacementMode mode, int targetCount) {
+    generateSites(mode, targetCount, false);
   }
 
-  void generateSites(PlacementMode mode, float density, boolean preserveCellData) {
-    density = constrain(density, 0, 2); // density slider maps to 0..2 with 1.0 at midpoint
+  void generateSites(PlacementMode mode, int targetCount, boolean preserveCellData) {
+    int clampedCount = constrain(targetCount, 0, MAX_SITE_COUNT);
     preservedCells = preserveCellData ? new ArrayList<Cell>(cells) : null;
     if (!preserveCellData) {
       cells.clear(); // drop old cells so properties are not inherited
     }
     sites.clear();
 
+    if (clampedCount <= 0) {
+      markVoronoiDirty();
+      snapDirty = true;
+      return;
+    }
+
     if (mode == PlacementMode.GRID) {
-      generateGridSites(density);
+      generateGridSites(clampedCount);
     } else if (mode == PlacementMode.HEX) {
-      generateHexSites(density);
+      generateHexSites(clampedCount);
     } else if (mode == PlacementMode.POISSON) {
-      generatePoissonSites(density);
+      generatePoissonSites(clampedCount);
     }
 
     applyFuzz(siteFuzz);
@@ -1087,7 +1093,8 @@ class MapModel {
 
     // Add random seeds inside "None" cells to diversify coverage
     Collections.shuffle(noneIndices);
-    int seedCount = min(typeCount, noneIndices.size());
+    int avgNumberOfSeedsPerBiomeType = 5;
+    int seedCount = min(typeCount*avgNumberOfSeedsPerBiomeType, noneIndices.size());
     for (int i = 0; i < seedCount; i++) {
       int idx = noneIndices.get(i);
       Cell c = cells.get(idx);
@@ -1122,6 +1129,14 @@ class MapModel {
     }
   }
 
+  boolean hasAnyNoneBiome() {
+    if (cells == null || cells.isEmpty()) return false;
+    for (Cell c : cells) {
+      if (c.biomeId == 0) return true;
+    }
+    return false;
+  }
+
   void ensureCellNeighborsComputed() {
     if (cellNeighbors == null || cellNeighbors.size() != cells.size()) {
       rebuildCellNeighbors();
@@ -1146,12 +1161,9 @@ class MapModel {
     }
   }
 
-  void generateGridSites(float density) {
-    int minRes = 2;
-    int maxRes = 60; // capped for speed
-
-    int res = (int)map(density, 0, 2, minRes, maxRes);
-    res = max(2, res);
+  void generateGridSites(int targetCount) {
+    if (targetCount <= 0) return;
+    int res = max(1, (int)ceil(sqrt(max(1, targetCount))));
 
     int cols = res;
     int rows = res;
@@ -1171,18 +1183,15 @@ class MapModel {
     }
   }
 
-  void generateHexSites(float density) {
-    int minRes = 2;
-    int maxRes = 80; // capped for speed
-
-    int res = (int)map(density, 0, 2, minRes, maxRes);
-    res = max(2, res);
+  void generateHexSites(int targetCount) {
+    if (targetCount <= 0) return;
+    int res = max(1, (int)ceil(sqrt(max(1, targetCount))));
 
     float w = maxX - minX;
     float h = maxY - minY;
 
     int cols = res;
-    float dx = w / (cols - 1);
+    float dx = (cols > 1) ? w / (cols - 1) : w;
 
     float dy = dx * sqrt(3) / 2.0f;
     int rows = max(1, (int)ceil(h / dy) + 1);
@@ -1199,12 +1208,13 @@ class MapModel {
     }
   }
 
-  void generatePoissonSites(float density) {
+  void generatePoissonSites(int targetCount) {
+    if (targetCount <= 0) return;
     float w = maxX - minX;
     float h = maxY - minY;
 
     float minDim = min(w, h);
-    float targetRes = map(density, 0, 2, 1, 60); // cap to keep Voronoi faster
+    float targetRes = max(1.0f, sqrt(targetCount));
     float baseSpacing = minDim / targetRes;
     float r = baseSpacing * 0.5f;
 
@@ -1229,7 +1239,7 @@ class MapModel {
     }
 
     int k = 25;
-    int maxPoints = 10000;
+    int maxPoints = max(1, min(targetCount, MAX_SITE_COUNT));
 
     while (!active.isEmpty() && points.size() < maxPoints) {
       int idx = active.get((int)random(active.size()));
