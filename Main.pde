@@ -50,6 +50,7 @@ boolean keepPropertiesOnGenerate = false;
 // Zones (biomes) painting
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
 ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
+int activePathTypeIndex = 0;
 float zoneBrushRadius = 0.04f;
 float seaLevel = 0.0f;
 float elevationBrushRadius = 0.08f;
@@ -59,7 +60,6 @@ float elevationNoiseScale = 4.0f;
 float defaultElevation = 0.05f;
 float pathEraserRadius = 0.01f;
 boolean pathEraserMode = false;
-float pathStrokeWeightPx = 2.0f;
 
 // Render toggles
 boolean renderShowZones = true;
@@ -79,6 +79,14 @@ String zoneNameDraft = "";
 int editingLabelIndex = -1;
 String labelDraft = "Label";
 
+// Path type editing state
+int editingPathTypeNameIndex = -1;
+String pathTypeNameDraft = "";
+
+// Path name editing state
+int editingPathNameIndex = -1;
+String pathNameDraft = "";
+
 // Slider drag state
 final int SLIDER_NONE = 0;
 final int SLIDER_SITES_DENSITY = 1;
@@ -91,9 +99,10 @@ final int SLIDER_ELEV_RADIUS = 7;
 final int SLIDER_ELEV_STRENGTH = 8;
 final int SLIDER_ELEV_NOISE = 9;
 final int SLIDER_PATH_ERASER = 10;
-final int SLIDER_PATH_WEIGHT = 11;
-final int SLIDER_RENDER_LIGHT_AZIMUTH = 12;
-final int SLIDER_RENDER_LIGHT_ALTITUDE = 13;
+final int SLIDER_PATH_TYPE_HUE = 11;
+final int SLIDER_PATH_TYPE_WEIGHT = 12;
+final int SLIDER_RENDER_LIGHT_AZIMUTH = 13;
+final int SLIDER_RENDER_LIGHT_ALTITUDE = 14;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -105,6 +114,7 @@ void setup() {
   viewport = new Viewport();
   mapModel = new MapModel();
   initBiomeTypes();
+  initPathTypes();
   mapModel.generateSites(currentPlacementMode(), siteDensity);
   mapModel.ensureVoronoiComputed();
   seedDefaultZones();
@@ -122,6 +132,15 @@ void initBiomeTypes() {
   }
 }
 
+void initPathTypes() {
+  mapModel.pathTypes.clear();
+  mapModel.pathTypes.add(new PathType("Road", color(80, 80, 80), 3.0f));
+  mapModel.pathTypes.add(new PathType("Street", color(110, 110, 110), 2.0f));
+  mapModel.pathTypes.add(new PathType("River", color(60, 90, 180), 3.0f));
+  mapModel.pathTypes.add(new PathType("Wall", color(90, 70, 50), 2.5f));
+  activePathTypeIndex = 0;
+}
+
 void draw() {
   background(245);
 
@@ -135,6 +154,9 @@ void draw() {
   if (drawCellsFlag) {
     if (currentTool == Tool.EDIT_RENDER) {
       mapModel.drawCellsRender(this, showBorders, seaLevel);
+    } else if (currentTool == Tool.EDIT_PATHS) {
+      mapModel.drawCellsRender(this, showBorders, seaLevel);
+      mapModel.drawElevationOverlay(this, seaLevel, false, true, true);
     } else {
       mapModel.drawCells(this, showBorders);
     }
@@ -156,7 +178,18 @@ void draw() {
 
   // Current path being drawn (preview)
   if (isDrawingPath && currentPath != null && currentTool == Tool.EDIT_PATHS) {
-    currentPath.drawPreview(this);
+    PathType pt = mapModel.getPathType(currentPath.typeId);
+    int col = (pt != null) ? pt.col : color(30, 30, 160);
+    float w = (pt != null) ? pt.weightPx : 2.0f;
+    currentPath.drawPreview(this, col, w);
+    // Segment to cursor preview
+    PVector worldPos = viewport.screenToWorld(mouseX, mouseY);
+    worldPos.x = constrain(worldPos.x, mapModel.minX, mapModel.maxX);
+    worldPos.y = constrain(worldPos.y, mapModel.minY, mapModel.maxY);
+    PVector last = currentPath.points.get(currentPath.points.size() - 1);
+    stroke(col);
+    strokeWeight(max(0.5f, w) / viewport.zoom);
+    line(last.x, last.y, worldPos.x, worldPos.y);
   }
 
   if (currentTool == Tool.EDIT_PATHS) {

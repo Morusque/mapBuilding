@@ -1,17 +1,19 @@
 
+Sites :
+There could be a loading bar for long operations.
+
 Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
-Water and elevation should be visible here on this mode.
-It should not be allowed to draw paths outside of the map.
-Closing the path should not be a step, the "Close (Enter)" button should not exist. The path should be closed by itself at every step (click). The next click then restarts a new list of segment, then the next one closes it etc.
-The currently added segment should be visible as a preview even before the "close" click.
-"Path weight (px)" slider should not exist. Instead, every path in the right list should have a selectable "type" attribute.
-Types should appear on the left menu, in the same way than biomes do, and have three editable attributes: label (eg "road", "street", "river", "wall"), color, weight.
-Specific Paths labels ("Path 1") should be editable.
-A path is made of a list of segments, those segments don't necessarily have to be conjoint.
-There should be a "new" button on the Path list, and a "delete" on each path item.
+For now the menu on the left should contain only :
+- "+/-" buttons : that adds/removes types based on a hardcoded list similar to Biomes (while currently deleted then respawned types fallback to TypeN labels).
+- Selectable types with editable label, hue and weight.
+For now the menu on the right should contain only :
+- The list of Path, clicking on it (for instance on a bullet button) makes it selected (with visual feedback), it contains editable label, selectable type and delete button.
+- bottom of the list is a "New Path" button that adds a path at the end.
+The map : clicking the map alternatively starts and ends (validates) a new segment that gets added to the currently selected Path in the list (and not "as" a ne path).Closing the path should not be a step, the "Close (Enter)" button should not exist. The path should be closed by itself at every step (click). The next click then restarts a new list of segment, then the next one closes it etc.
+The segment preview should take pathfinding into account.
 
 Struct :
 there should be a slider for structure size (for the next structs to be placed).
@@ -20,6 +22,7 @@ There should be a hierarchy of things the structures should be allowed to snap t
 Paths first, other structures next, then frontier between land and water, then there will be more of those but we'll get to it later.
 
 Labels :
+Sites outlines should not appear here.
 Label should be attributed to one or more elements on the map, or more arbitrarily placed.
 Display a list of editable labels to the right side same logic than for paths tab, we'll use it later to highlight associated elements and display logic.
 

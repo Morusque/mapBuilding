@@ -1,6 +1,5 @@
 class Path {
   ArrayList<PVector> points = new ArrayList<PVector>();
-  float strokeWeightPx = 2.0f;
   int typeId = 0;
   String name = "";
 
@@ -11,7 +10,6 @@ class Path {
   void draw(PApplet app) {
     if (points.size() < 2) return;
 
-    app.strokeWeight(max(0.5f, strokeWeightPx) / viewport.zoom);
     app.beginShape();
     for (int i = 0; i < points.size(); i++) {
       PVector p = points.get(i);
@@ -21,13 +19,13 @@ class Path {
   }
 
   // Used to preview the path being drawn (can have different styling if needed)
-  void drawPreview(PApplet app) {
+  void drawPreview(PApplet app, int strokeCol, float weightPx) {
     if (points.size() < 1) return;
 
     app.pushStyle();
     app.noFill();
-    app.stroke(30, 30, 160);
-    app.strokeWeight(max(0.5f, strokeWeightPx) / viewport.zoom);
+    app.stroke(strokeCol);
+    app.strokeWeight(max(0.5f, weightPx) / viewport.zoom);
 
     app.beginShape();
     for (int i = 0; i < points.size(); i++) {

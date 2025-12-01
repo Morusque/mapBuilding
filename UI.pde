@@ -480,16 +480,25 @@ void drawAdminPanel() {
 class PathsLayout {
   IntRect panel;
   int titleY;
-  IntRect closeBtn;
+  IntRect startBtn;
   IntRect undoBtn;
   IntRect eraserBtn;
   IntRect eraserSlider;
-  IntRect weightSlider;
+  IntRect typeAddBtn;
+  IntRect typeRemoveBtn;
+  ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
+  ArrayList<IntRect> typeNameRects = new ArrayList<IntRect>();
+  IntRect typeHueSlider;
+  IntRect typeWeightSlider;
 }
 
 class PathsListLayout {
   IntRect panel;
   int titleY;
+  IntRect newBtn;
+  ArrayList<IntRect> deleteBtns = new ArrayList<IntRect>();
+  ArrayList<IntRect> nameRects = new ArrayList<IntRect>();
+  ArrayList<IntRect> typeRects = new ArrayList<IntRect>();
 }
 
 PathsLayout buildPathsLayout() {
@@ -501,8 +510,8 @@ PathsLayout buildPathsLayout() {
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
   int btnW = 120;
-  l.closeBtn = new IntRect(innerX, curY, btnW, PANEL_BUTTON_H);
-  l.undoBtn = new IntRect(l.closeBtn.x + btnW + 8, curY, btnW, PANEL_BUTTON_H);
+  l.startBtn = new IntRect(innerX, curY, btnW, PANEL_BUTTON_H);
+  l.undoBtn = new IntRect(l.startBtn.x + btnW + 8, curY, btnW, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
 
   l.eraserBtn = new IntRect(innerX, curY, btnW, PANEL_BUTTON_H);
@@ -511,7 +520,38 @@ PathsLayout buildPathsLayout() {
   l.eraserSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  l.weightSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
+  // Path types controls
+  l.typeAddBtn = new IntRect(innerX, curY, 24, PANEL_BUTTON_H);
+  l.typeRemoveBtn = new IntRect(l.typeAddBtn.x + l.typeAddBtn.w + 6, curY, 24, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+  int swatchW = 60;
+  int swatchH = 18;
+  int nameH = 18;
+  int gapX = 8;
+  int maxPerRow = max(1, (PANEL_W - 2 * PANEL_PADDING + gapX) / (swatchW + gapX));
+  int rowY = curY;
+  int col = 0;
+  int paletteBottom = rowY;
+  if (mapModel != null && mapModel.pathTypes != null) {
+    for (int i = 0; i < mapModel.pathTypes.size(); i++) {
+      int x = innerX + col * (swatchW + gapX);
+      l.typeSwatches.add(new IntRect(x, rowY, swatchW, swatchH));
+      l.typeNameRects.add(new IntRect(x, rowY + swatchH + 4, swatchW, nameH));
+      paletteBottom = max(paletteBottom, rowY + swatchH + 4 + nameH);
+      col++;
+      if (col >= maxPerRow) {
+        col = 0;
+        rowY += swatchH + nameH + PANEL_ROW_GAP;
+      }
+    }
+  }
+  curY = paletteBottom + PANEL_SECTION_GAP;
+
+  l.typeHueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.typeWeightSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
 
   l.panel.h = curY - l.panel.y;
@@ -525,6 +565,7 @@ PathsListLayout buildPathsListLayout() {
   int y = panelTop();
   l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
   l.titleY = y + PANEL_PADDING;
+  l.newBtn = new IntRect(x + PANEL_PADDING, l.titleY + PANEL_TITLE_H + 4, 70, PANEL_BUTTON_H);
   return l;
 }
 
@@ -537,13 +578,13 @@ void drawPathsPanel() {
   textAlign(LEFT, TOP);
   text("Paths", labelX, layout.titleY);
 
-  drawBevelButton(layout.closeBtn.x, layout.closeBtn.y, layout.closeBtn.w, layout.closeBtn.h, false);
+  drawBevelButton(layout.startBtn.x, layout.startBtn.y, layout.startBtn.w, layout.startBtn.h, false);
   drawBevelButton(layout.undoBtn.x, layout.undoBtn.y, layout.undoBtn.w, layout.undoBtn.h, false);
   drawBevelButton(layout.eraserBtn.x, layout.eraserBtn.y, layout.eraserBtn.w, layout.eraserBtn.h, pathEraserMode);
 
   fill(10);
   textAlign(CENTER, CENTER);
-  text("Close (Enter)", layout.closeBtn.x + layout.closeBtn.w / 2, layout.closeBtn.y + layout.closeBtn.h / 2);
+  text("New path", layout.startBtn.x + layout.startBtn.w / 2, layout.startBtn.y + layout.startBtn.h / 2);
   text("Undo (Del)",    layout.undoBtn.x + layout.undoBtn.w / 2, layout.undoBtn.y + layout.undoBtn.h / 2);
   text("Eraser",        layout.eraserBtn.x + layout.eraserBtn.w / 2, layout.eraserBtn.y + layout.eraserBtn.h / 2);
 
@@ -561,18 +602,81 @@ void drawPathsPanel() {
   textAlign(LEFT, BOTTOM);
   text("Eraser radius", eraserSlider.x, eraserSlider.y - 4);
 
-  // Path weight
-  IntRect weight = layout.weightSlider;
-  stroke(160);
-  fill(230);
-  rect(weight.x, weight.y, weight.w, weight.h, 4);
-  float wNorm = constrain(map(pathStrokeWeightPx, 1.0f, 5.0f, 0, 1), 0, 1);
-  float wx = weight.x + wNorm * weight.w;
-  fill(40);
-  noStroke();
-  ellipse(wx, weight.y + weight.h / 2.0f, weight.h * 0.9f, weight.h * 0.9f);
-  fill(0);
-  text("Path weight (px)", weight.x, weight.y - 4);
+  // Path types add/remove
+  drawBevelButton(layout.typeAddBtn.x, layout.typeAddBtn.y, layout.typeAddBtn.w, layout.typeAddBtn.h, false);
+  drawBevelButton(layout.typeRemoveBtn.x, layout.typeRemoveBtn.y, layout.typeRemoveBtn.w, layout.typeRemoveBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("+", layout.typeAddBtn.x + layout.typeAddBtn.w / 2, layout.typeAddBtn.y + layout.typeAddBtn.h / 2);
+  text("-", layout.typeRemoveBtn.x + layout.typeRemoveBtn.w / 2, layout.typeRemoveBtn.y + layout.typeRemoveBtn.h / 2);
+
+  // Path type palette
+  if (mapModel == null || mapModel.pathTypes == null) return;
+  int n = mapModel.pathTypes.size();
+  if (n == 0) return;
+
+  textAlign(CENTER, TOP);
+  for (int i = 0; i < n; i++) {
+    PathType pt = mapModel.pathTypes.get(i);
+    IntRect sw = layout.typeSwatches.get(i);
+    IntRect nameRect = layout.typeNameRects.get(i);
+    stroke(120);
+    strokeWeight(i == activePathTypeIndex ? 2 : 1);
+    fill(pt.col);
+    rect(sw.x, sw.y, sw.w, sw.h, 4);
+
+    boolean editing = (editingPathTypeNameIndex == i);
+    if (editing) {
+      stroke(60);
+      fill(255);
+      rect(nameRect.x, nameRect.y, nameRect.w, nameRect.h);
+      fill(0);
+      textAlign(LEFT, CENTER);
+      String shown = pathTypeNameDraft;
+      text(shown, nameRect.x + 6, nameRect.y + nameRect.h / 2);
+      float caretX = nameRect.x + 6 + textWidth(shown);
+      stroke(0);
+      line(caretX, nameRect.y + 4, caretX, nameRect.y + nameRect.h - 4);
+    } else {
+      drawBevelButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, i == activePathTypeIndex);
+      fill(10);
+      textAlign(CENTER, CENTER);
+      text(pt.name, nameRect.x + nameRect.w * 0.5f, nameRect.y + nameRect.h * 0.5f);
+    }
+  }
+
+  // Color (hue) slider for active path type
+  if (activePathTypeIndex >= 0 && activePathTypeIndex < n) {
+    PathType active = mapModel.pathTypes.get(activePathTypeIndex);
+    IntRect hue = layout.typeHueSlider;
+    stroke(160);
+    fill(230);
+    rect(hue.x, hue.y, hue.w, hue.h, 4);
+    float hNorm = constrain(active.hue01, 0, 1);
+    float handleX = hue.x + hNorm * hue.w;
+    float handleR = hue.h * 0.9f;
+    float handleY = hue.y + hue.h / 2.0f;
+    fill(40);
+    noStroke();
+    ellipse(handleX, handleY, handleR, handleR);
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2),
+         hue.x, hue.y - 4);
+
+    // Weight slider per type
+    IntRect weight = layout.typeWeightSlider;
+    stroke(160);
+    fill(230);
+    rect(weight.x, weight.y, weight.w, weight.h, 4);
+    float wNorm = constrain(map(active.weightPx, 0.5f, 8.0f, 0, 1), 0, 1);
+    float wx = weight.x + wNorm * weight.w;
+    fill(40);
+    noStroke();
+    ellipse(wx, weight.y + weight.h / 2.0f, weight.h * 0.9f, weight.h * 0.9f);
+    fill(0);
+    text("Weight for \"" + active.name + "\" (px)", weight.x, weight.y - 4);
+  }
 }
 
 void drawPathsListPanel() {
@@ -584,7 +688,14 @@ void drawPathsListPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Paths list", labelX, curY);
-  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+  curY += PANEL_TITLE_H;
+
+  drawBevelButton(layout.newBtn.x, layout.newBtn.y, layout.newBtn.w, layout.newBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("New", layout.newBtn.x + layout.newBtn.w / 2, layout.newBtn.y + layout.newBtn.h / 2);
+
+  curY = layout.newBtn.y + layout.newBtn.h + PANEL_SECTION_GAP;
 
   if (mapModel.paths.isEmpty()) {
     fill(80);
@@ -594,24 +705,61 @@ void drawPathsListPanel() {
   }
 
   int rowH = 48;
+  layout.deleteBtns.clear();
+  layout.nameRects.clear();
+  layout.typeRects.clear();
   for (int i = 0; i < mapModel.paths.size(); i++) {
     Path p = mapModel.paths.get(i);
     if (curY + rowH > layout.panel.y + layout.panel.h - PANEL_PADDING) break;
 
     fill(20);
     textAlign(LEFT, TOP);
-    String title = "#" + (i + 1) + "  " + (p.name != null && p.name.length() > 0 ? p.name : "Path");
-    text(title, labelX, curY);
-    curY += PANEL_LABEL_H;
+    IntRect nameRect = new IntRect(labelX, curY, layout.panel.w - 2 * PANEL_PADDING - 40, PANEL_LABEL_H + 4);
+    layout.nameRects.add(nameRect);
+    boolean editing = (editingPathNameIndex == i);
+    if (editing) {
+      stroke(60);
+      fill(255);
+      rect(nameRect.x, nameRect.y, nameRect.w, nameRect.h);
+      fill(0);
+      textAlign(LEFT, CENTER);
+      String shown = pathNameDraft;
+      text(shown, nameRect.x + 6, nameRect.y + nameRect.h / 2);
+      float caretX = nameRect.x + 6 + textWidth(shown);
+      stroke(0);
+      line(caretX, nameRect.y + 4, caretX, nameRect.y + nameRect.h - 4);
+    } else {
+      drawBevelButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, false);
+      fill(10);
+      textAlign(LEFT, CENTER);
+      String title = "#" + (i + 1) + "  " + (p.name != null && p.name.length() > 0 ? p.name : "Path");
+      text(title, nameRect.x + 6, nameRect.y + nameRect.h / 2);
+    }
+
+    IntRect delRect = new IntRect(nameRect.x + nameRect.w + 6, nameRect.y, 30, nameRect.h);
+    layout.deleteBtns.add(delRect);
+    drawBevelButton(delRect.x, delRect.y, delRect.w, delRect.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("X", delRect.x + delRect.w / 2, delRect.y + delRect.h / 2);
+
+    curY += nameRect.h + 2;
 
     fill(40);
     String segs = "Segments: " + p.segmentCount();
     String len = "Length: " + nf(p.totalLength(), 1, 3);
-    String rad = "Radius: " + nf(p.strokeWeightPx, 1, 2) + " px";
-    String typ = "Type: " + ("Type " + (p.typeId + 1));
+    PathType pt = mapModel.getPathType(p.typeId);
+    String rad = "Radius: " + nf((pt != null ? pt.weightPx : 2.0f), 1, 2) + " px";
+    String typLabel = (pt != null ? pt.name : "Type");
     text(segs + "   " + len, labelX, curY);
     curY += PANEL_LABEL_H;
-    text(rad + "   " + typ, labelX, curY);
+    IntRect typeRect = new IntRect(labelX, curY, 120, PANEL_LABEL_H + 2);
+    layout.typeRects.add(typeRect);
+    drawBevelButton(typeRect.x, typeRect.y, typeRect.w, typeRect.h, false);
+    fill(10);
+    textAlign(LEFT, CENTER);
+    text("Type: " + typLabel, typeRect.x + 6, typeRect.y + typeRect.h / 2);
+    text(rad, typeRect.x + typeRect.w + 10, typeRect.y + typeRect.h / 2);
     curY += rowH - 2 * PANEL_LABEL_H;
   }
 }

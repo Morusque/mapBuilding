@@ -298,6 +298,7 @@ void mousePressed() {
   // Paths panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_PATHS) {
     if (handlePathsPanelClick(mouseX, mouseY)) return;
+    if (handlePathsListPanelClick(mouseX, mouseY)) return;
   }
 
   // Labels panel
@@ -376,13 +377,11 @@ boolean handlePathsPanelClick(int mx, int my) {
   if (!isInPathsPanel(mx, my)) return false;
   PathsLayout layout = buildPathsLayout();
 
-  // Close (Enter)
-  if (layout.closeBtn.contains(mx, my)) {
-    if (currentTool == Tool.EDIT_PATHS && isDrawingPath && currentPath != null) {
-      mapModel.addFinishedPath(currentPath);
-      isDrawingPath = false;
-      currentPath = null;
-    }
+  // New path button
+  if (layout.startBtn.contains(mx, my)) {
+    isDrawingPath = false;
+    currentPath = null;
+    // Start fresh path on next click
     return true;
   }
 
@@ -414,15 +413,62 @@ boolean handlePathsPanelClick(int mx, int my) {
     return true;
   }
 
-  // Path weight slider
-  if (layout.weightSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.weightSlider.x) / (float)layout.weightSlider.w, 0, 1);
-    pathStrokeWeightPx = constrain(1.0f + t * 4.0f, 1.0f, 5.0f);
-    if (isDrawingPath && currentPath != null) {
-      currentPath.strokeWeightPx = pathStrokeWeightPx;
-    }
-    activeSlider = SLIDER_PATH_WEIGHT;
+  // Add path type
+  if (layout.typeAddBtn.contains(mx, my)) {
+    int n = mapModel.pathTypes.size();
+    float baseHue = 0.1f * n % 1.0f;
+    PathType pt = new PathType("Type " + (n + 1), hsb01ToRGB(baseHue, 0.6f, 0.8f), 2.0f);
+    mapModel.addPathType(pt);
+    activePathTypeIndex = mapModel.pathTypes.size() - 1;
     return true;
+  }
+
+  // Remove path type
+  boolean canRemove = mapModel.pathTypes.size() > 1 && activePathTypeIndex > 0;
+  if (canRemove && layout.typeRemoveBtn.contains(mx, my)) {
+    mapModel.removePathType(activePathTypeIndex);
+    activePathTypeIndex = min(activePathTypeIndex, mapModel.pathTypes.size() - 1);
+    if (activePathTypeIndex < 0) activePathTypeIndex = 0;
+    return true;
+  }
+
+  int nTypes = mapModel.pathTypes.size();
+
+  // Swatches and names
+  for (int i = 0; i < nTypes; i++) {
+    IntRect sw = layout.typeSwatches.get(i);
+    IntRect nameRect = layout.typeNameRects.get(i);
+    if (sw.contains(mx, my)) {
+      activePathTypeIndex = i;
+      editingPathTypeNameIndex = -1;
+      return true;
+    }
+    if (nameRect.contains(mx, my)) {
+      activePathTypeIndex = i;
+      editingPathTypeNameIndex = i;
+      pathTypeNameDraft = mapModel.pathTypes.get(i).name;
+      return true;
+    }
+  }
+
+  // Hue slider
+  if (activePathTypeIndex >= 0 && activePathTypeIndex < nTypes) {
+    if (layout.typeHueSlider.contains(mx, my)) {
+      float t = (mx - layout.typeHueSlider.x) / (float)layout.typeHueSlider.w;
+      t = constrain(t, 0, 1);
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.hue01 = t;
+      pt.updateColorFromHSB();
+      activeSlider = SLIDER_PATH_TYPE_HUE;
+      return true;
+    }
+    if (layout.typeWeightSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.typeWeightSlider.x) / (float)layout.typeWeightSlider.w, 0, 1);
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.weightPx = constrain(0.5f + t * (8.0f - 0.5f), 0.5f, 8.0f);
+      activeSlider = SLIDER_PATH_TYPE_WEIGHT;
+      return true;
+    }
   }
 
   return false;
@@ -433,6 +479,56 @@ boolean handleLabelsPanelClick(int mx, int my) {
   // Simple text box focus
   editingLabelIndex = (mapModel.labels.size() > 0) ? mapModel.labels.size() - 1 : -1;
   return true;
+}
+
+boolean handlePathsListPanelClick(int mx, int my) {
+  if (!isInPathsListPanel(mx, my)) return false;
+  PathsListLayout layout = buildPathsListLayout();
+
+  // New path button starts a new drawing session
+  if (layout.newBtn.contains(mx, my)) {
+    isDrawingPath = false;
+    currentPath = null;
+    return true;
+  }
+
+  // Iterate current visible entries
+  int labelX = layout.panel.x + PANEL_PADDING;
+  int curY = layout.newBtn.y + layout.newBtn.h + PANEL_SECTION_GAP;
+  int rowH = 48;
+  layout.deleteBtns.clear();
+  layout.nameRects.clear();
+  layout.typeRects.clear();
+
+  for (int i = 0; i < mapModel.paths.size(); i++) {
+    Path p = mapModel.paths.get(i);
+    if (curY + rowH > layout.panel.y + layout.panel.h - PANEL_PADDING) break;
+
+    IntRect nameRect = new IntRect(labelX, curY, layout.panel.w - 2 * PANEL_PADDING - 40, PANEL_LABEL_H + 4);
+    IntRect delRect = new IntRect(nameRect.x + nameRect.w + 6, nameRect.y, 30, nameRect.h);
+    curY += nameRect.h + 2;
+    IntRect typeRect = new IntRect(labelX, curY, 120, PANEL_LABEL_H + 2);
+    curY += rowH - 2 * PANEL_LABEL_H;
+
+    if (nameRect.contains(mx, my)) {
+      editingPathNameIndex = i;
+      pathNameDraft = (p.name != null) ? p.name : "";
+      return true;
+    }
+    if (delRect.contains(mx, my)) {
+      mapModel.paths.remove(i);
+      if (editingPathNameIndex == i) editingPathNameIndex = -1;
+      return true;
+    }
+    if (typeRect.contains(mx, my)) {
+      if (!mapModel.pathTypes.isEmpty()) {
+        p.typeId = (p.typeId + 1) % mapModel.pathTypes.size();
+      }
+      return true;
+    }
+  }
+
+  return false;
 }
 
 boolean handleRenderPanelClick(int mx, int my) {
@@ -532,10 +628,12 @@ void handlePathsMousePressed(float wx, float wy) {
     mapModel.removePathsNear(wx, wy, pathEraserRadius);
     return;
   }
+  wx = constrain(wx, mapModel.minX, mapModel.maxX);
+  wy = constrain(wy, mapModel.minY, mapModel.maxY);
   if (!isDrawingPath || currentPath == null) {
     // Start new path
     currentPath = new Path();
-    currentPath.strokeWeightPx = pathStrokeWeightPx;
+    currentPath.typeId = activePathTypeIndex;
     isDrawingPath = true;
   }
   float maxSnapPx = 14;
@@ -557,6 +655,13 @@ void handlePathsMousePressed(float wx, float wy) {
     }
   } else {
     currentPath.addPoint(wx, wy);
+  }
+
+  // Auto-finish path after this step if at least a segment exists
+  if (currentPath.points.size() >= 2) {
+    mapModel.addFinishedPath(currentPath);
+    isDrawingPath = false;
+    currentPath = null;
   }
 }
 
@@ -772,11 +877,25 @@ void updateActiveSlider(int mx, int my) {
       pathEraserRadius = constrain(0.005f + t * (0.1f - 0.005f), 0.005f, 0.1f);
       break;
     }
-    case SLIDER_PATH_WEIGHT: {
+    case SLIDER_PATH_TYPE_HUE: {
       PathsLayout l = buildPathsLayout();
-      float t = (mx - l.weightSlider.x) / (float)l.weightSlider.w;
+      float t = (mx - l.typeHueSlider.x) / (float)l.typeHueSlider.w;
       t = constrain(t, 0, 1);
-      pathStrokeWeightPx = constrain(1.0f + t * 4.0f, 1.0f, 5.0f);
+      if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+        PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+        pt.hue01 = t;
+        pt.updateColorFromHSB();
+      }
+      break;
+    }
+    case SLIDER_PATH_TYPE_WEIGHT: {
+      PathsLayout l = buildPathsLayout();
+      float t = (mx - l.typeWeightSlider.x) / (float)l.typeWeightSlider.w;
+      t = constrain(t, 0, 1);
+      if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+        PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+        pt.weightPx = constrain(0.5f + t * (8.0f - 0.5f), 0.5f, 8.0f);
+      }
       break;
     }
     case SLIDER_RENDER_LIGHT_AZIMUTH: {
@@ -838,6 +957,40 @@ void keyPressed() {
       return;
     }
   }
+
+  // Inline text editing for path types
+  if (editingPathTypeNameIndex >= 0) {
+    if (key == ENTER || key == RETURN) {
+      if (editingPathTypeNameIndex < mapModel.pathTypes.size()) {
+        mapModel.pathTypes.get(editingPathTypeNameIndex).name = pathTypeNameDraft;
+      }
+      editingPathTypeNameIndex = -1;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (pathTypeNameDraft.length() > 0) pathTypeNameDraft = pathTypeNameDraft.substring(0, pathTypeNameDraft.length() - 1);
+      return;
+    } else if (key >= 32) {
+      pathTypeNameDraft += key;
+      return;
+    }
+  }
+
+  // Inline text editing for path names
+  if (editingPathNameIndex >= 0) {
+    if (key == ENTER || key == RETURN) {
+      if (editingPathNameIndex < mapModel.paths.size()) {
+        mapModel.paths.get(editingPathNameIndex).name = pathNameDraft;
+      }
+      editingPathNameIndex = -1;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (pathNameDraft.length() > 0) pathNameDraft = pathNameDraft.substring(0, pathNameDraft.length() - 1);
+      return;
+    } else if (key >= 32) {
+      pathNameDraft += key;
+      return;
+    }
+  }
   // Delete selected sites or last path point
   if (key == DELETE || key == BACKSPACE) {
     if (currentTool == Tool.EDIT_SITES) {
@@ -854,17 +1007,6 @@ void keyPressed() {
       }
       return;
     }
-  }
-
-  // Finish path with Enter / Return
-  if (currentTool == Tool.EDIT_PATHS &&
-      (key == ENTER || key == RETURN)) {
-    if (isDrawingPath && currentPath != null) {
-      mapModel.addFinishedPath(currentPath);
-      isDrawingPath = false;
-      currentPath = null;
-    }
-    return;
   }
 
   // Clear all paths with 'c' or 'C' in Paths mode

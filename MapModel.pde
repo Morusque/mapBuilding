@@ -17,6 +17,7 @@ class MapModel {
 
   // Paths (roads, rivers, etc.)
   ArrayList<Path> paths = new ArrayList<Path>();
+  ArrayList<PathType> pathTypes = new ArrayList<PathType>();
 
   // Biomes / zone types
   ArrayList<ZoneType> biomeTypes = new ArrayList<ZoneType>();
@@ -382,9 +383,13 @@ class MapModel {
 
     app.pushStyle();
     app.noFill();
-    app.stroke(strokeCol);
 
     for (Path p : paths) {
+      PathType pt = getPathType(p.typeId);
+      int col = (pt != null) ? pt.col : strokeCol;
+      float w = (pt != null) ? pt.weightPx : 2.0f;
+      app.stroke(col);
+      app.strokeWeight(max(0.5f, w) / viewport.zoom);
       p.draw(app);
     }
 
@@ -398,6 +403,9 @@ class MapModel {
     if (p.points.size() < 2) return; // ignore degenerate paths
     if (p.name == null || p.name.length() == 0) {
       p.name = "Path " + (paths.size() + 1);
+    }
+    if (p.typeId < 0 || p.typeId >= pathTypes.size()) {
+      p.typeId = 0;
     }
     paths.add(p);
   }
@@ -847,6 +855,12 @@ class MapModel {
     normalizeElevationsIfOutOfBounds(seaLevel, preMin, preMax);
   }
 
+  PathType getPathType(int idx) {
+    if (pathTypes == null) return null;
+    if (idx < 0 || idx >= pathTypes.size()) return null;
+    return pathTypes.get(idx);
+  }
+
   void generateElevationNoise(float scale, float amplitude, float seaLevel) {
     if (cells == null) return;
     float preMin = Float.MAX_VALUE;
@@ -1183,6 +1197,21 @@ class MapModel {
     }
   }
 
+  void addPathType(PathType pt) {
+    if (pt == null) return;
+    pathTypes.add(pt);
+  }
+
+  void removePathType(int idx) {
+    if (idx <= 0) return; // keep first as default
+    if (idx < 0 || idx >= pathTypes.size()) return;
+    pathTypes.remove(idx);
+    for (Path p : paths) {
+      if (p.typeId == idx) p.typeId = 0;
+      else if (p.typeId > idx) p.typeId -= 1;
+    }
+  }
+
   void removeBiomeType(int index) {
     if (index <= 0) return; // don't remove "None"
     if (index >= biomeTypes.size()) return;
@@ -1260,6 +1289,35 @@ ZonePreset[] ZONE_PRESETS = new ZonePreset[] {
   new ZonePreset("Moor",        color(165, 155, 145)),
   new ZonePreset("Scrub",       color(185, 175, 150))
 };
+
+// ---------- Path types ----------
+class PathType {
+  String name;
+  int col;
+  float hue01;
+  float sat01;
+  float bri01;
+  float weightPx;
+
+  PathType(String name, int col, float weightPx) {
+    this.name = name;
+    this.weightPx = weightPx;
+    setFromColor(col);
+  }
+
+  void setFromColor(int c) {
+    col = c;
+    float[] hsb = new float[3];
+    rgbToHSB01(c, hsb);
+    hue01 = hsb[0];
+    sat01 = hsb[1];
+    bri01 = hsb[2];
+  }
+
+  void updateColorFromHSB() {
+    col = hsb01ToRGB(hue01, sat01, bri01);
+  }
+}
 
 // ---------- Color helpers for HSB<->RGB in [0..1] ----------
 
