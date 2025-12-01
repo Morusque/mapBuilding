@@ -5,6 +5,7 @@ Loading bar :
 Sites :
 Density number should go from 0 to 20000 sites with default value being 10000, it should not display the normalized 0-1 or 0-2 value at all.
 (later) There could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
+(later) Sites should probably be renamed to cells in the UI.
 
 Elevation :
 
