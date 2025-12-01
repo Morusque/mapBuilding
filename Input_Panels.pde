@@ -384,6 +384,7 @@ void paintBiomeBrush(float wx, float wy) {
 }
 
 void paintAdminAt(float wx, float wy) {
+  if (mapModel.adminZones == null || activeAdminIndex < 0 || activeAdminIndex >= mapModel.adminZones.size()) return;
   Cell c = mapModel.findCellContaining(wx, wy);
   if (c != null) {
     int idx = mapModel.indexOfCell(c);
@@ -392,6 +393,7 @@ void paintAdminAt(float wx, float wy) {
 }
 
 void fillAdminAt(float wx, float wy) {
+  if (mapModel.adminZones == null || activeAdminIndex < 0 || activeAdminIndex >= mapModel.adminZones.size()) return;
   Cell c = mapModel.findCellContaining(wx, wy);
   if (c != null) {
     mapModel.floodFillAdminZone(c, activeAdminIndex);
@@ -399,6 +401,7 @@ void fillAdminAt(float wx, float wy) {
 }
 
 void paintAdminBrush(float wx, float wy) {
+  if (mapModel.adminZones == null || activeAdminIndex < 0 || activeAdminIndex >= mapModel.adminZones.size()) return;
   if (mapModel.cells == null) return;
   float r2 = zoneBrushRadius * zoneBrushRadius;
   for (Cell c : mapModel.cells) {
