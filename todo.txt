@@ -3,7 +3,7 @@ Loading bar :
 (later) loading bar is still useless for now, only appears briefly right before the end of the process, but that's not an urgent task.
 
 Sites :
-Best default value is something like density:1, fuzz:0.07, Placement:hexagonal. But density should probably be remapped so that the current 1.0 is the middle of the slider.
+density number should display number of sites only instead of 0.0-2.0 value. number of sites should go from 0 to 20000 with default value being 10000.
 
 Elevation :
 
@@ -11,10 +11,11 @@ Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
-"End" path mode still doesn't seem to work, it should just draw a straight line between two existing points. A segment that only connects one point to its closest neighbor shoud be visible (right now it does not appear probably due to some bug). I believe those two are actually the same problem: a path with onely one undivided segment doesn't work for some reason.
-Flattest slope bias could be pushed a lot further to allow for more convoluted routes.
-Left panel : there should be a checkbox option to ask the pathfinder to avoid water.
-Visual feedback to indicate the selected path on the map : the yellow halo is good but way way too big; it should be only a few pixels wide. Also it should only show on the "path" mode, not other modes.
+Single segment paths still don't work.
+Visual feedback to indicate the selected path is still way to big (like currently 200px wide instead of 5px) also width of it should not depend on level of zoom, it should be always about 5px.
+Flattest slope bias is still very subtle, what if it goes like 0-200 instead of 0.5-20 ?
+"shortest" and "flattest" modes could now be merge into one (where "shortest" would be handles by setting flattest slope bias to 0.0).
+Avoid water works, but sometimes still goes into water, it should totally avoid it if possible.
 
 Struct :
 There should be a slider for structure size (for the next structs to be placed).
@@ -24,7 +25,6 @@ There should be a hierarchy of things the structures should be allowed to snap t
 Labels :
 Label should be attributed to one or more elements on the map, or more arbitrarily placed.
 Display a list of editable labels to the right side same logic than for paths tab, we'll use it later to highlight associated elements and display logic.
-Water should be visible here.
 
 Rendering :
 Path and labels should be displayed on top of zones and water.

@@ -123,7 +123,7 @@ boolean handleSitesPanelClick(int mx, int my) {
   // Generate button
   if (layout.generateBtn.contains(mx, my)) {
     startLoading();
-    mapModel.generateSites(currentPlacementMode(), siteDensity, keepPropertiesOnGenerate);
+    mapModel.generateSites(currentPlacementMode(), siteDensity * 2.0f, keepPropertiesOnGenerate);
     stopLoading();
     return true;
   }
@@ -392,8 +392,13 @@ boolean handlePathsPanelClick(int mx, int my) {
 
   if (layout.flattestSlider.contains(mx, my)) {
     float t = constrain((mx - layout.flattestSlider.x) / (float)layout.flattestSlider.w, 0, 1);
-    flattestSlopeBias = constrain(0.5f + t * (8.0f - 0.5f), 0.5f, 8.0f);
+    flattestSlopeBias = constrain(0.5f + t * (20.0f - 0.5f), 0.5f, 20.0f);
     activeSlider = SLIDER_FLATTEST_BIAS;
+    return true;
+  }
+
+  if (layout.avoidWaterCheck.contains(mx, my)) {
+    pathAvoidWater = !pathAvoidWater;
     return true;
   }
 
@@ -632,7 +637,13 @@ boolean handleElevationPanelClick(int mx, int my) {
 }
 
 void handlePathsMousePressed(float wx, float wy) {
-  if (selectedPathIndex < 0 || selectedPathIndex >= mapModel.paths.size()) return;
+  if (selectedPathIndex < 0 || selectedPathIndex >= mapModel.paths.size()) {
+    if (!mapModel.paths.isEmpty()) {
+      selectedPathIndex = 0;
+    } else {
+      return;
+    }
+  }
   wx = constrain(wx, mapModel.minX, mapModel.maxX);
   wy = constrain(wy, mapModel.minY, mapModel.maxY);
 
@@ -908,7 +919,7 @@ void updateActiveSlider(int mx, int my) {
       PathsLayout l = buildPathsLayout();
       float t = (mx - l.flattestSlider.x) / (float)l.flattestSlider.w;
       t = constrain(t, 0, 1);
-      flattestSlopeBias = constrain(0.5f + t * (8.0f - 0.5f), 0.5f, 8.0f);
+      flattestSlopeBias = constrain(0.5f + t * (20.0f - 0.5f), 0.5f, 20.0f);
       break;
     }
     case SLIDER_RENDER_LIGHT_AZIMUTH: {

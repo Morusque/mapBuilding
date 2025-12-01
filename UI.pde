@@ -176,12 +176,13 @@ void drawSitesPanel() {
 
   int minRes = 2;
   int maxRes = 100;
-  int res = max(2, (int)map(siteDensity, 0, 1, minRes, maxRes));
+  int res = max(2, (int)map(siteDensity * 2.0f, 0, 2, minRes, maxRes));
   int approxCount = res * res;
 
   fill(0);
   textAlign(LEFT, BOTTOM);
-  text("Density: " + nf(siteDensity, 1, 2) + "  (~" + approxCount + " sites)",
+  float densityActual = siteDensity * 2.0f;
+  text("Density: " + nf(densityActual, 1, 2) + "  (~" + approxCount + " sites)",
        d.x, d.y - 4);
 
   // ---------- Fuzz slider (0..0.3) ----------
@@ -503,6 +504,7 @@ class PathsLayout {
   IntRect typeRemoveBtn;
   IntRect routeSlider;
   IntRect flattestSlider;
+  IntRect avoidWaterCheck;
   ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
   ArrayList<IntRect> typeNameRects = new ArrayList<IntRect>();
   IntRect typeHueSlider;
@@ -533,6 +535,9 @@ PathsLayout buildPathsLayout() {
 
   l.flattestSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.avoidWaterCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+  curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
 
   // Path types controls
   l.typeAddBtn = new IntRect(innerX, curY, 24, PANEL_BUTTON_H);
@@ -624,14 +629,18 @@ void drawPathsPanel() {
   stroke(160);
   fill(230);
   rect(fs.x, fs.y, fs.w, fs.h, 4);
-  float fNorm = constrain(map(flattestSlopeBias, 0.5f, 8.0f, 0, 1), 0, 1);
+  float fNorm = constrain(map(flattestSlopeBias, 0.0f, 200.0f, 0, 1), 0, 1);
   float fx = fs.x + fNorm * fs.w;
   fill(40);
   noStroke();
   ellipse(fx, fs.y + fs.h / 2.0f, fs.h * 0.9f, fs.h * 0.9f);
   fill(0);
   textAlign(LEFT, BOTTOM);
-  text("Flattest slope bias", fs.x, fs.y - 4);
+  text("Flattest slope bias (" + nf(flattestSlopeBias, 1, 2) + ")", fs.x, fs.y - 4);
+
+  // Avoid water checkbox
+  drawCheckbox(layout.avoidWaterCheck.x, layout.avoidWaterCheck.y,
+               layout.avoidWaterCheck.w, pathAvoidWater, "Avoid water");
 
   // Only type management on this panel
 

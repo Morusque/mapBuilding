@@ -20,6 +20,17 @@ class Path {
         app.vertex(p.x, p.y);
       }
       app.endShape();
+
+      // Tiny endpoint dots to keep short segments visible
+      float r = 2.0f / viewport.zoom;
+      app.pushStyle();
+      app.noStroke();
+      app.fill(app.g.strokeColor);
+      PVector a = seg.get(0);
+      PVector b = seg.get(seg.size() - 1);
+      app.ellipse(a.x, a.y, r, r);
+      app.ellipse(b.x, b.y, r, r);
+      app.popStyle();
     }
   }
 

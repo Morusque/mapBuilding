@@ -252,6 +252,16 @@ class MapModel {
         PVector np = snapNodes.get(nb);
         if (np == null) continue;
         float w = dist2D(p, np);
+        if (pathAvoidWater) {
+          float elevA = sampleElevationAt(p.x, p.y, seaLevel);
+          float elevB = sampleElevationAt(np.x, np.y, seaLevel);
+          boolean aw = elevA < seaLevel;
+          boolean bw = elevB < seaLevel;
+          if (aw || bw) {
+            float depth = (aw ? (seaLevel - elevA) : 0) + (bw ? (seaLevel - elevB) : 0);
+            w *= 1.0f + 5.0f * (1.0f + depth);
+          }
+        }
         if (favorFlat) {
           float elevA = sampleElevationAt(p.x, p.y, from.z);
           float elevB = sampleElevationAt(np.x, np.y, toP.z);
@@ -389,11 +399,7 @@ class MapModel {
     }
   }
 
-  void drawPaths(PApplet app) {
-    drawPaths(app, app.color(60, 60, 200));
-  }
-
-  void drawPaths(PApplet app, int strokeCol) {
+  void drawPaths(PApplet app, int strokeCol, boolean highlightSelected) {
     if (paths.isEmpty()) return;
 
     app.pushStyle();
@@ -410,7 +416,7 @@ class MapModel {
     }
 
     // Selected path highlight
-    if (selectedPathIndex >= 0 && selectedPathIndex < paths.size()) {
+    if (highlightSelected && selectedPathIndex >= 0 && selectedPathIndex < paths.size()) {
       Path sel = paths.get(selectedPathIndex);
       PathType pt = getPathType(sel.typeId);
       int col = (pt != null) ? pt.col : strokeCol;
@@ -418,7 +424,7 @@ class MapModel {
       float w = (pt != null) ? pt.weightPx : 2.0f;
       float hw = max(0.5f, w) / viewport.zoom;
       app.stroke(hi);
-      app.strokeWeight(hw + 1.5f);
+      app.strokeWeight(hw + 0.8f);
       sel.draw(app);
       app.stroke(col);
       app.strokeWeight(hw);
@@ -852,6 +858,7 @@ class MapModel {
   }
 
   void generateSites(PlacementMode mode, float density, boolean preserveCellData) {
+    density = constrain(density, 0, 2); // density slider maps to 0..2 with 1.0 at midpoint
     preservedCells = preserveCellData ? new ArrayList<Cell>(cells) : null;
     if (!preserveCellData) {
       cells.clear(); // drop old cells so properties are not inherited
@@ -1086,7 +1093,7 @@ class MapModel {
     int minRes = 2;
     int maxRes = 60; // capped for speed
 
-    int res = (int)map(density, 0, 1, minRes, maxRes);
+    int res = (int)map(density, 0, 2, minRes, maxRes);
     res = max(2, res);
 
     int cols = res;
@@ -1111,7 +1118,7 @@ class MapModel {
     int minRes = 2;
     int maxRes = 40; // capped for speed
 
-    int res = (int)map(density, 0, 1, minRes, maxRes);
+    int res = (int)map(density, 0, 2, minRes, maxRes);
     res = max(2, res);
 
     float w = maxX - minX;
@@ -1140,7 +1147,7 @@ class MapModel {
     float h = maxY - minY;
 
     float minDim = min(w, h);
-    float targetRes = map(density, 0, 1, 1, 60); // cap to keep Voronoi faster
+    float targetRes = map(density, 0, 2, 1, 60); // cap to keep Voronoi faster
     float baseSpacing = minDim / targetRes;
     float r = baseSpacing * 0.5f;
 

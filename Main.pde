@@ -43,8 +43,8 @@ PlacementMode[] placementModes = {
   PlacementMode.HEX
 };
 int placementModeIndex = 2; // 0=GRID, 1=POISSON, 2=HEX
-float siteDensity = 0.7;    // 0..1
-float siteFuzz = 0.0;       // 0..1
+float siteDensity = 0.5;    // 0..1 slider (maps to 0..2 actual density, midpoint=1.0)
+float siteFuzz = 0.07;      // 0..1
 boolean keepPropertiesOnGenerate = false;
 
 // Zones (biomes) painting
@@ -69,7 +69,8 @@ boolean renderShowLabels = true;
 boolean renderShowStructures = true;
 float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
-float flattestSlopeBias = 3.0f; // penalty multiplier for slope in flattest mode
+float flattestSlopeBias = 3.0f; // penalty multiplier for slope in flattest mode (0.5..20)
+boolean pathAvoidWater = false;
 
 // Zone renaming state
 int editingZoneNameIndex = -1;
@@ -120,7 +121,7 @@ void setup() {
   mapModel = new MapModel();
   initBiomeTypes();
   initPathTypes();
-  mapModel.generateSites(currentPlacementMode(), siteDensity);
+  mapModel.generateSites(currentPlacementMode(), siteDensity * 2.0f);
   mapModel.ensureVoronoiComputed();
   seedDefaultZones();
 }
@@ -171,18 +172,22 @@ void draw() {
     } else if (currentTool == Tool.EDIT_STRUCTURES) {
       mapModel.drawCellsRender(this, showBorders, seaLevel);
       mapModel.drawElevationOverlay(this, seaLevel, false, true, false);
+    } else if (currentTool == Tool.EDIT_LABELS) {
+      mapModel.drawCellsRender(this, showBorders, seaLevel);
+      mapModel.drawElevationOverlay(this, seaLevel, false, true, false);
     } else {
       mapModel.drawCells(this, showBorders);
     }
   }
 
   // Paths are visible in all modes
+  boolean highlightPaths = (currentTool == Tool.EDIT_PATHS);
   if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawPaths(this, color(120));
+    mapModel.drawPaths(this, color(120), highlightPaths);
   } else if (currentTool == Tool.EDIT_RENDER) {
-    if (renderShowPaths) mapModel.drawPaths(this, color(60, 60, 200));
+    if (renderShowPaths) mapModel.drawPaths(this, color(60, 60, 200), highlightPaths);
   } else {
-    mapModel.drawPaths(this, color(60, 60, 200));
+    mapModel.drawPaths(this, color(60, 60, 200), highlightPaths);
   }
 
   // Sites only in Sites mode; paths use snapping dots instead
