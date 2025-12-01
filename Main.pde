@@ -56,7 +56,7 @@ ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
 int activePathTypeIndex = 0;
 int pathRouteModeIndex = 1; // 0=ENDS,1=PATHFIND
 float zoneBrushRadius = 0.04f;
-float seaLevel = 0.0f;
+float seaLevel = -0.2f;
 float elevationBrushRadius = 0.08f;
 float elevationBrushStrength = 0.05f; // per stroke
 boolean elevationBrushRaise = true;
@@ -74,6 +74,7 @@ float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
 float flattestSlopeBias = 0.0f; // slope penalty in PATHFIND mode (0..200, 0 = shortest)
 boolean pathAvoidWater = false;
+int ELEV_STEPS_PATHS = 6;
 
 // Zone renaming state
 int editingZoneNameIndex = -1;
@@ -173,18 +174,18 @@ void draw() {
     }
     if (renderShowElevation || renderShowWater) {
       mapModel.drawElevationOverlay(this, seaLevel, false, renderShowWater, renderShowElevation,
-                                    true, renderLightAzimuthDeg, renderLightAltitudeDeg);
+                                    true, renderLightAzimuthDeg, renderLightAltitudeDeg, 0);
     }
   } else if (currentTool == Tool.EDIT_PATHS) {
     mapModel.drawCellsRender(this, showBorders, seaLevel);
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, true);
+    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, ELEV_STEPS_PATHS);
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
     mapModel.drawCellsRender(this, showBorders, seaLevel);
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, false);
+    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, ELEV_STEPS_PATHS);
     mapModel.drawStructureSnapGuides(this, seaLevel);
   } else if (currentTool == Tool.EDIT_LABELS) {
     mapModel.drawCellsRender(this, showBorders, seaLevel);
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, false);
+    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, ELEV_STEPS_PATHS);
   } else if (drawCellsFlag) {
     mapModel.drawCells(this, showBorders);
   }
@@ -269,7 +270,7 @@ void draw() {
   }
 
   if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, true);
+    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, 0);
     drawElevationBrushPreview();
   } else if (currentTool == Tool.EDIT_BIOMES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();

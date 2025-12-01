@@ -262,13 +262,13 @@ class MapModel {
     return s;
   }
 
-  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater, boolean drawElevation) {
+  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater, boolean drawElevation, int quantSteps) {
     // Default: no lighting, just grayscale
-    drawElevationOverlay(app, seaLevel, showContours, drawWater, drawElevation, false, 135.0f, 45.0f);
+    drawElevationOverlay(app, seaLevel, showContours, drawWater, drawElevation, false, 135.0f, 45.0f, quantSteps);
   }
 
   void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater, boolean drawElevation,
-                            boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg) {
+                            boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg, int quantSteps) {
     if (cells == null) return;
     app.pushStyle();
     app.noStroke();
@@ -293,6 +293,10 @@ class MapModel {
           light = computeLightForCell(ci, lightDir);
         }
         float litShade = constrain(shade * light, 0, 1);
+        if (quantSteps > 1) {
+          float levels = quantSteps - 1;
+          litShade = round(litShade * levels) / levels;
+        }
         int col = app.color(litShade * 255);
         app.fill(col, 140);
         app.beginShape();
@@ -304,6 +308,10 @@ class MapModel {
         float depth = seaLevel - h;
         float depthNorm = constrain(depth / 1.0f, 0, 1);
         float shade = drawElevation ? lerp(0.25f, 0.65f, 1.0f - depthNorm) : 0.55f;
+        if (quantSteps > 1) {
+          float levels = quantSteps - 1;
+          shade = round(shade * levels) / levels;
+        }
         float baseR = 30;
         float baseG = 70;
         float baseB = 120;
@@ -1695,10 +1703,6 @@ class Structure {
     app.fill(245, 245, 235, 180);
     app.rectMode(CENTER);
     app.rect(0, 0, r, r);
-    // draw a clearer snap/axis line across the structure
-    float axis = r * 0.6f;
-    app.stroke(60, 60, 40);
-    app.line(-axis, 0, axis, 0);
     app.popMatrix();
   }
 }
