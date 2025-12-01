@@ -77,6 +77,7 @@ float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
 float flattestSlopeBias = FLATTEST_BIAS_MIN; // slope penalty in PATHFIND mode (min..max, 0 = shortest)
 boolean pathAvoidWater = false;
 int ELEV_STEPS_PATHS = 6;
+boolean siteDirtyDuringDrag = false;
 
 // Zone renaming state
 int editingZoneNameIndex = -1;
@@ -380,7 +381,7 @@ void startLoading() {
 
 void stopLoading() {
   isLoading = false;
-  loadingHoldFrames = 8; // keep bar visible briefly
+  loadingHoldFrames = 30; // keep bar visible briefly
 }
 
 void drawZoneBrushPreview() {

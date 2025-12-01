@@ -13,7 +13,7 @@ Elevation :
 Biomes :
 
 Zones :
-This one should be implemented at some point but not yet.
+(later) This one should be implemented at some point but not yet. It should be similar to biomes except it represents administrative regions and should be dusplayed by outlines rather than color filling. Zone type is division type (country, region, city, etc).
 (later) Support multiple region layers (Biome, Admin, user-defined) with per-cell values and painting tools (brush/rect selection/eyedropper).
 
 Paths :
@@ -36,6 +36,7 @@ Struct :
 Labels :
 (later) Label should be attributed to one or more elements on the map, or more arbitrarily placed.
 Display a list of editable labels to the right side same logic than for paths tab, we'll use it later to highlight associated elements and display logic.
+(later) there should be a selectable "layer" to define what to currently add labels to (biomes, zones, structures, arbitrary locations)
 (later) Label types with default style; attach to cells/paths/structures/groups or free position; anchor controls; option to follow path curvature.
 
 Rendering :

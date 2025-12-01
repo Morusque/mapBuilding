@@ -170,7 +170,7 @@ void mouseDragged() {
     PVector worldPos = viewport.screenToWorld(mouseX, mouseY);
     draggingSite.x = constrain(worldPos.x, mapModel.minX, mapModel.maxX);
     draggingSite.y = constrain(worldPos.y, mapModel.minY, mapModel.maxY);
-    mapModel.markVoronoiDirty();
+    siteDirtyDuringDrag = true;
   } else if (mouseButton == LEFT && currentTool == Tool.EDIT_ELEVATION) {
     PVector w = viewport.screenToWorld(mouseX, mouseY);
     float dir = elevationBrushRaise ? 1 : -1;
@@ -183,6 +183,10 @@ void mouseReleased() {
   if (mouseButton == LEFT) {
     isDraggingSite = false;
     draggingSite = null;
+    if (siteDirtyDuringDrag) {
+      mapModel.markVoronoiDirty();
+      siteDirtyDuringDrag = false;
+    }
     activeSlider = SLIDER_NONE;
   }
 }
