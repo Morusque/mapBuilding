@@ -18,14 +18,12 @@ This one should be implemented at some point but not yet.
 
 Paths :
 (later) Single segment paths still don't work. This is a seeminlgy simple yet persistent error so we need to talk about this.
-Flatest slope slider default value should be 0. Bug: mouse x mapping seems based on max value 20 while max value is 200 (correct value should be 200 in both cases).
 (later) Adding/editing paths should default to snapping vertices to nearest cell center (or structure), with per-vertex snapping info stored.
 (later) Path editing tools: click to add/remove vertices, drag vertices, inline per-segment weight handles, label editing per path.
 (later) Path grouping: optional groupId for higher-level objects (road network, river system).
 (later) Add path labels and path type defaults (width/style) in legend UI.
 (later) rivers could have an option that make them start small and end bigger when reaching the sea (this needs connection analysis, pathfinding etc when using multiple segments, to compute segment proximity to sea).
 (later) fix ambiguity between paths (made of tracks), tracks (made of consecutive segments), segments (straight line from point A to point B)
-possible optimization : remove free snap points too close to each other, only consider points visible on the window.
 (later) whay does the path confirmation take so much time? it only needs to push the previewed path into the valid list...
 
 Struct :

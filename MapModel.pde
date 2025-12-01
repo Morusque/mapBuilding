@@ -361,7 +361,33 @@ class MapModel {
 
   ArrayList<PVector> getSnapPoints() {
     ensureSnapGraph();
-    return new ArrayList<PVector>(snapNodes.values());
+    ArrayList<PVector> result = new ArrayList<PVector>();
+    if (snapNodes.isEmpty()) return result;
+
+    // Only keep points near the current viewport and dedupe points that are closer
+    // than a small screen-space threshold to reduce overload when there are many sites.
+    float marginPx = 20.0f;
+    float tolPx = 4.0f;
+    float tolWorld = tolPx / viewport.zoom;
+    float halfW = (width * 0.5f) / viewport.zoom + marginPx / viewport.zoom;
+    float halfH = (height * 0.5f) / viewport.zoom + marginPx / viewport.zoom;
+    float minX = viewport.centerX - halfW;
+    float maxX = viewport.centerX + halfW;
+    float minY = viewport.centerY - halfH;
+    float maxY = viewport.centerY + halfH;
+
+    HashMap<String, PVector> dedup = new HashMap<String, PVector>();
+    for (PVector p : snapNodes.values()) {
+      if (p.x < minX || p.x > maxX || p.y < minY || p.y > maxY) continue;
+      int gx = floor(p.x / tolWorld);
+      int gy = floor(p.y / tolWorld);
+      String key = gx + "_" + gy;
+      if (!dedup.containsKey(key)) {
+        dedup.put(key, p);
+      }
+    }
+    result.addAll(dedup.values());
+    return result;
   }
 
   ArrayList<PVector> findSnapPath(PVector from, PVector toP) {

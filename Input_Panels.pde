@@ -413,7 +413,8 @@ boolean handlePathsPanelClick(int mx, int my) {
 
   if (layout.flattestSlider.contains(mx, my)) {
     float t = constrain((mx - layout.flattestSlider.x) / (float)layout.flattestSlider.w, 0, 1);
-    flattestSlopeBias = constrain(0.0f + t * (200.0f - 0.0f), 0.0f, 200.0f);
+    flattestSlopeBias = constrain(FLATTEST_BIAS_MIN + t * (FLATTEST_BIAS_MAX - FLATTEST_BIAS_MIN),
+                                  FLATTEST_BIAS_MIN, FLATTEST_BIAS_MAX);
     activeSlider = SLIDER_FLATTEST_BIAS;
     return true;
   }

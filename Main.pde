@@ -36,6 +36,8 @@ final int PANEL_BUTTON_H = 22;
 final int PANEL_CHECK_SIZE = 16;
 final int PANEL_TITLE_H = 18;
 final int RIGHT_PANEL_W = 260;
+final float FLATTEST_BIAS_MIN = 0.0f;
+final float FLATTEST_BIAS_MAX = 200.0f;
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -72,7 +74,7 @@ boolean renderShowLabels = true;
 boolean renderShowStructures = true;
 float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
-float flattestSlopeBias = 0.0f; // slope penalty in PATHFIND mode (0..200, 0 = shortest)
+float flattestSlopeBias = FLATTEST_BIAS_MIN; // slope penalty in PATHFIND mode (min..max, 0 = shortest)
 boolean pathAvoidWater = false;
 int ELEV_STEPS_PATHS = 6;
 

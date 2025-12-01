@@ -553,7 +553,7 @@ void drawPathsPanel() {
   stroke(160);
   fill(230);
   rect(fs.x, fs.y, fs.w, fs.h, 4);
-  float fNorm = constrain(map(flattestSlopeBias, 0.0f, 200.0f, 0, 1), 0, 1);
+  float fNorm = constrain(map(flattestSlopeBias, FLATTEST_BIAS_MIN, FLATTEST_BIAS_MAX, 0, 1), 0, 1);
   float fx = fs.x + fNorm * fs.w;
   fill(40);
   noStroke();

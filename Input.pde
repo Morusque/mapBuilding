@@ -283,7 +283,8 @@ void updateActiveSlider(int mx, int my) {
       PathsLayout l = buildPathsLayout();
       float t = (mx - l.flattestSlider.x) / (float)l.flattestSlider.w;
       t = constrain(t, 0, 1);
-      flattestSlopeBias = constrain(0.0f + t * (200.0f - 0.0f), 0.0f, 200.0f);
+      flattestSlopeBias = constrain(FLATTEST_BIAS_MIN + t * (FLATTEST_BIAS_MAX - FLATTEST_BIAS_MIN),
+                                    FLATTEST_BIAS_MIN, FLATTEST_BIAS_MAX);
       break;
     }
     case SLIDER_STRUCT_SIZE: {
