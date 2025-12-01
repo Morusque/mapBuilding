@@ -487,6 +487,11 @@ class PathsLayout {
   IntRect weightSlider;
 }
 
+class PathsListLayout {
+  IntRect panel;
+  int titleY;
+}
+
 PathsLayout buildPathsLayout() {
   PathsLayout l = new PathsLayout();
   l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
@@ -510,6 +515,16 @@ PathsLayout buildPathsLayout() {
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
 
   l.panel.h = curY - l.panel.y;
+  return l;
+}
+
+PathsListLayout buildPathsListLayout() {
+  PathsListLayout l = new PathsListLayout();
+  int w = RIGHT_PANEL_W;
+  int x = width - w - PANEL_PADDING;
+  int y = panelTop();
+  l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
+  l.titleY = y + PANEL_PADDING;
   return l;
 }
 
@@ -558,6 +573,47 @@ void drawPathsPanel() {
   ellipse(wx, weight.y + weight.h / 2.0f, weight.h * 0.9f, weight.h * 0.9f);
   fill(0);
   text("Path weight (px)", weight.x, weight.y - 4);
+}
+
+void drawPathsListPanel() {
+  PathsListLayout layout = buildPathsListLayout();
+  drawPanelBackground(layout.panel);
+
+  int labelX = layout.panel.x + PANEL_PADDING;
+  int curY = layout.titleY;
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Paths list", labelX, curY);
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  if (mapModel.paths.isEmpty()) {
+    fill(80);
+    textAlign(LEFT, TOP);
+    text("No paths yet.", labelX, curY);
+    return;
+  }
+
+  int rowH = 48;
+  for (int i = 0; i < mapModel.paths.size(); i++) {
+    Path p = mapModel.paths.get(i);
+    if (curY + rowH > layout.panel.y + layout.panel.h - PANEL_PADDING) break;
+
+    fill(20);
+    textAlign(LEFT, TOP);
+    String title = "#" + (i + 1) + "  " + (p.name != null && p.name.length() > 0 ? p.name : "Path");
+    text(title, labelX, curY);
+    curY += PANEL_LABEL_H;
+
+    fill(40);
+    String segs = "Segments: " + p.segmentCount();
+    String len = "Length: " + nf(p.totalLength(), 1, 3);
+    String rad = "Radius: " + nf(p.strokeWeightPx, 1, 2) + " px";
+    String typ = "Type: " + ("Type " + (p.typeId + 1));
+    text(segs + "   " + len, labelX, curY);
+    curY += PANEL_LABEL_H;
+    text(rad + "   " + typ, labelX, curY);
+    curY += rowH - 2 * PANEL_LABEL_H;
+  }
 }
 
 // ----- ELEVATION PANEL -----

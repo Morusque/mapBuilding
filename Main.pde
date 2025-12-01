@@ -34,6 +34,7 @@ final int PANEL_LABEL_H = 14;
 final int PANEL_BUTTON_H = 22;
 final int PANEL_CHECK_SIZE = 16;
 final int PANEL_TITLE_H = 18;
+final int RIGHT_PANEL_W = 260;
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -141,11 +142,11 @@ void draw() {
 
   // Paths are visible in all modes
   if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawPaths(this, color(120), 1.0f / viewport.zoom);
+    mapModel.drawPaths(this, color(120));
   } else if (currentTool == Tool.EDIT_RENDER) {
-    if (renderShowPaths) mapModel.drawPaths(this, color(60, 60, 200), pathStrokeWeightPx / viewport.zoom);
+    if (renderShowPaths) mapModel.drawPaths(this, color(60, 60, 200));
   } else {
-    mapModel.drawPaths(this, color(60, 60, 200), pathStrokeWeightPx / viewport.zoom);
+    mapModel.drawPaths(this, color(60, 60, 200));
   }
 
   // Sites only in Sites mode; paths use snapping dots instead
@@ -204,6 +205,7 @@ void draw() {
     drawAdminPanel();
   } else if (currentTool == Tool.EDIT_PATHS) {
     drawPathsPanel();
+    drawPathsListPanel();
   } else if (currentTool == Tool.EDIT_LABELS) {
     drawLabelsPanel();
   } else if (currentTool == Tool.EDIT_RENDER) {

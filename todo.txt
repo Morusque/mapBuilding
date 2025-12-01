@@ -3,9 +3,15 @@ Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
-Path weight will be path-specific, not global.
-Right side of screen should show a list of existing distinct paths along with data (number of segments, total length) and parameters (radius, type, name).
-Water should be visible here.
+Water and elevation should be visible here on this mode.
+It should not be allowed to draw paths outside of the map.
+Closing the path should not be a step, the "Close (Enter)" button should not exist. The path should be closed by itself at every step (click). The next click then restarts a new list of segment, then the next one closes it etc.
+The currently added segment should be visible as a preview even before the "close" click.
+"Path weight (px)" slider should not exist. Instead, every path in the right list should have a selectable "type" attribute.
+Types should appear on the left menu, in the same way than biomes do, and have three editable attributes: label (eg "road", "street", "river", "wall"), color, weight.
+Specific Paths labels ("Path 1") should be editable.
+A path is made of a list of segments, those segments don't necessarily have to be conjoint.
+There should be a "new" button on the Path list, and a "delete" on each path item.
 
 Struct :
 there should be a slider for structure size (for the next structs to be placed).

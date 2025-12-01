@@ -24,6 +24,12 @@ boolean isInPathsPanel(int mx, int my) {
   return layout.panel.contains(mx, my);
 }
 
+boolean isInPathsListPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_PATHS) return false;
+  PathsListLayout layout = buildPathsListLayout();
+  return layout.panel.contains(mx, my);
+}
+
 boolean isInLabelsPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_LABELS) return false;
   LabelsLayout layout = buildLabelsLayout();
@@ -307,6 +313,7 @@ void mousePressed() {
   // Ignore world interaction if inside any top UI area
   if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
   if (isInActivePanel(mouseX, mouseY)) return;
+  if (currentTool == Tool.EDIT_PATHS && isInPathsListPanel(mouseX, mouseY)) return;
 
   // Panning with right button (all modes)
   if (mouseButton == RIGHT) {
@@ -411,6 +418,9 @@ boolean handlePathsPanelClick(int mx, int my) {
   if (layout.weightSlider.contains(mx, my)) {
     float t = constrain((mx - layout.weightSlider.x) / (float)layout.weightSlider.w, 0, 1);
     pathStrokeWeightPx = constrain(1.0f + t * 4.0f, 1.0f, 5.0f);
+    if (isDrawingPath && currentPath != null) {
+      currentPath.strokeWeightPx = pathStrokeWeightPx;
+    }
     activeSlider = SLIDER_PATH_WEIGHT;
     return true;
   }
@@ -525,6 +535,7 @@ void handlePathsMousePressed(float wx, float wy) {
   if (!isDrawingPath || currentPath == null) {
     // Start new path
     currentPath = new Path();
+    currentPath.strokeWeightPx = pathStrokeWeightPx;
     isDrawingPath = true;
   }
   float maxSnapPx = 14;

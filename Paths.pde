@@ -1,5 +1,8 @@
 class Path {
   ArrayList<PVector> points = new ArrayList<PVector>();
+  float strokeWeightPx = 2.0f;
+  int typeId = 0;
+  String name = "";
 
   void addPoint(float x, float y) {
     points.add(new PVector(x, y));
@@ -8,6 +11,7 @@ class Path {
   void draw(PApplet app) {
     if (points.size() < 2) return;
 
+    app.strokeWeight(max(0.5f, strokeWeightPx) / viewport.zoom);
     app.beginShape();
     for (int i = 0; i < points.size(); i++) {
       PVector p = points.get(i);
@@ -23,7 +27,7 @@ class Path {
     app.pushStyle();
     app.noFill();
     app.stroke(30, 30, 160);
-    app.strokeWeight(2.0f / viewport.zoom);
+    app.strokeWeight(max(0.5f, strokeWeightPx) / viewport.zoom);
 
     app.beginShape();
     for (int i = 0; i < points.size(); i++) {
@@ -42,5 +46,21 @@ class Path {
     }
 
     app.popStyle();
+  }
+
+  int segmentCount() {
+    return max(0, points.size() - 1);
+  }
+
+  float totalLength() {
+    float len = 0;
+    for (int i = 0; i < points.size() - 1; i++) {
+      PVector a = points.get(i);
+      PVector b = points.get(i + 1);
+      float dx = b.x - a.x;
+      float dy = b.y - a.y;
+      len += sqrt(dx * dx + dy * dy);
+    }
+    return len;
   }
 }

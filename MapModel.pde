@@ -374,16 +374,15 @@ class MapModel {
   }
 
   void drawPaths(PApplet app) {
-    drawPaths(app, app.color(60, 60, 200), 2.0f / viewport.zoom);
+    drawPaths(app, app.color(60, 60, 200));
   }
 
-  void drawPaths(PApplet app, int strokeCol, float strokeW) {
+  void drawPaths(PApplet app, int strokeCol) {
     if (paths.isEmpty()) return;
 
     app.pushStyle();
     app.noFill();
     app.stroke(strokeCol);
-    app.strokeWeight(strokeW);
 
     for (Path p : paths) {
       p.draw(app);
@@ -397,6 +396,9 @@ class MapModel {
   void addFinishedPath(Path p) {
     if (p == null) return;
     if (p.points.size() < 2) return; // ignore degenerate paths
+    if (p.name == null || p.name.length() == 0) {
+      p.name = "Path " + (paths.size() + 1);
+    }
     paths.add(p);
   }
 
