@@ -996,6 +996,9 @@ class MapModel {
     float defaultElev;
     int defaultBiome = 0;
     boolean preserveData;
+    HashMap<Long, ArrayList<Integer>> bins = new HashMap<Long, ArrayList<Integer>>();
+    float binSize;
+    float invBin;
 
     VoronoiJob(MapModel model, ArrayList<Site> sites, ArrayList<Cell> oldCells, float defaultElev, boolean preserveData) {
       this.model = model;
@@ -1004,6 +1007,11 @@ class MapModel {
       this.n = this.sites.size();
       this.defaultElev = defaultElev;
       this.preserveData = preserveData;
+      float area = (model.maxX - model.minX) * (model.maxY - model.minY);
+      float avgSpacing = sqrt(max(1e-6f, area / max(1, n)));
+      binSize = max(1e-3f, avgSpacing * 1.5f);
+      invBin = 1.0f / binSize;
+      buildBins();
     }
 
     void step(int maxSites, int maxMillis) {
@@ -1026,9 +1034,15 @@ class MapModel {
       poly.add(new PVector(maxX, maxY));
       poly.add(new PVector(minX, maxY));
 
-      for (int j = 0; j < n; j++) {
-        if (i == j) continue;
-        Site sj = sites.get(j);
+      ArrayList<Integer> candidates = gatherCandidates(i);
+      if (candidates == null || candidates.isEmpty()) {
+        candidates = new ArrayList<Integer>();
+        for (int j = 0; j < n; j++) if (j != i) candidates.add(j);
+      }
+
+      for (int idxCandidate : candidates) {
+        if (idxCandidate == i) continue;
+        Site sj = sites.get(idxCandidate);
         poly = model.clipPolygonWithHalfPlane(poly, si, sj);
         if (poly.size() < 3) {
           break;
@@ -1067,6 +1081,51 @@ class MapModel {
     float progress() {
       if (n <= 0) return 1.0f;
       return constrain(idx / (float)n, 0, 1);
+    }
+
+    void buildBins() {
+      bins.clear();
+      for (int i = 0; i < n; i++) {
+        Site s = sites.get(i);
+        int gx = floor((s.x - minX) * invBin);
+        int gy = floor((s.y - minY) * invBin);
+        long key = (((long)gx) << 32) ^ (gy & 0xffffffffL);
+        ArrayList<Integer> bucket = bins.get(key);
+        if (bucket == null) {
+          bucket = new ArrayList<Integer>();
+          bins.put(key, bucket);
+        }
+        bucket.add(i);
+      }
+    }
+
+    ArrayList<Integer> gatherCandidates(int i) {
+      ArrayList<Integer> out = new ArrayList<Integer>();
+      Site s = sites.get(i);
+      int gx = floor((s.x - minX) * invBin);
+      int gy = floor((s.y - minY) * invBin);
+
+      // Expand rings until we have a reasonable set of neighbors or reach cap
+      int needed = 32;
+      int maxRing = 4;
+      for (int ring = 0; ring <= maxRing && out.size() < needed; ring++) {
+        for (int dx = -ring; dx <= ring; dx++) {
+          for (int dy = -ring; dy <= ring; dy++) {
+            if (abs(dx) != ring && abs(dy) != ring) continue; // only border of ring
+            long key = (((long)(gx + dx)) << 32) ^ ((gy + dy) & 0xffffffffL);
+            ArrayList<Integer> bucket = bins.get(key);
+            if (bucket == null) continue;
+            for (int idxSite : bucket) {
+              if (idxSite == i) continue;
+              out.add(idxSite);
+              if (out.size() >= needed) break;
+            }
+            if (out.size() >= needed) break;
+          }
+          if (out.size() >= needed) break;
+        }
+      }
+      return out;
     }
   }
 

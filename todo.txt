@@ -1,6 +1,8 @@
 
 Loading bar :
-Loading bar now tracks incremental Voronoi rebuild progress and stays visible while work runs.
+(done) Voronoi rebuild now uses spatial bins/nearest neighbors for a fast approximate pass; loading bar stays responsive.
+(done) Switching tabs or clicking while loading now shows a wait notice.
+(later) Try to optimize further.
 
 Sites :
 Site placement slowness was traced to neighbor/snap rebuilding; optimized those passes in MapModel to speed generation.
@@ -24,7 +26,8 @@ Paths :
 (later) Add path labels and path type defaults (width/style) in legend UI.
 (later) rivers could have an option that make them start small and end bigger when reaching the sea (this needs connection analysis, pathfinding etc when using multiple segments, to compute segment proximity to sea).
 (later) fix ambiguity between paths (made of tracks), tracks (made of consecutive segments), segments (straight line from point A to point B)
-(later) whay does the path confirmation take so much time? it only needs to push the previewed path into the valid list...
+(later) why does the path confirmation take so much time? it only needs to push the previewed path into the valid list...
+(later) needs optimization as well, doesn't need much precision.
 
 Struct :
 (later) snapping lines could be refined (eg frontier "normals" often appear in addition to frontier while they should not)
@@ -64,6 +67,6 @@ Generative modes :
 (later) Deterministic, opt-in generators (fill missing biomes by noise, auto minor roads near cities, small villages) that never overwrite user edits.
 
 General :
-Define a precise lexicon and homogenize code and ui labels.
-Refactor, optimize etc.
-Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
+(later) Define a precise lexicon and homogenize code and ui labels.
+(later) Refactor, optimize etc.
+(later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.

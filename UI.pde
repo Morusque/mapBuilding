@@ -49,6 +49,14 @@ void drawTopBar() {
                                nf(viewport.centerY, 1, 3) + ")";
   text(info, 10, TOP_BAR_HEIGHT / 2.0f);
 
+  // Notice (right side, above loading bar)
+  if (uiNoticeFrames > 0 && uiNotice != null && uiNotice.length() > 0) {
+    fill(180, 50, 50);
+    textAlign(RIGHT, CENTER);
+    text(uiNotice, width - 150, TOP_BAR_HEIGHT / 2.0f);
+    uiNoticeFrames--;
+  }
+
   // Loading bar (top-right, small)
   boolean showLoad = isLoading || loadingHoldFrames > 0;
   if (showLoad) {

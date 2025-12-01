@@ -57,6 +57,11 @@ boolean handleToolButtonClick(int mx, int my) {
   int barY = TOP_BAR_HEIGHT;
   int barH = TOOL_BAR_HEIGHT;
 
+  if (mapModel.isVoronoiBuilding()) {
+    showNotice("Please wait for generation to finish...");
+    return true;
+  }
+
   if (my < barY || my > barY + barH) {
     return false;
   }
@@ -290,6 +295,12 @@ void paintBiomeBrush(float wx, float wy) {
 // ---------- Mouse & keyboard callbacks ----------
 
 void mousePressed() {
+  // Block interactions while generation is running; show notice
+  if (mapModel.isVoronoiBuilding() && mouseButton == LEFT) {
+    showNotice("Please wait for generation to finish...");
+    return;
+  }
+
   // Tool buttons
   if (mouseButton == LEFT) {
     if (handleToolButtonClick(mouseX, mouseY)) return;

@@ -49,7 +49,7 @@ int placementModeIndex = 2; // 0=GRID, 1=POISSON, 2=HEX
 final int MAX_SITE_COUNT = 20000;
 final int DEFAULT_SITE_COUNT = 5000;
 int siteTargetCount = DEFAULT_SITE_COUNT; // slider maps 0..MAX_SITE_COUNT
-float siteFuzz = 0.05;      // 0..1
+float siteFuzz = 0.03;      // 0..1
 boolean keepPropertiesOnGenerate = false;
 
 // Zones (biomes) painting
@@ -100,6 +100,9 @@ boolean isLoading = false;
 float loadingPhase = 0;
 int loadingHoldFrames = 0;
 float loadingPct = 0;
+String uiNotice = "";
+int uiNoticeFrames = 0;
+final int NOTICE_DURATION_FRAMES = 150;
 
 // Slider drag state
 final int SLIDER_NONE = 0;
@@ -395,6 +398,11 @@ void stopLoading() {
   isLoading = false;
   loadingHoldFrames = 30; // keep bar visible briefly
   loadingPct = 1.0f;
+}
+
+void showNotice(String msg) {
+  uiNotice = msg;
+  uiNoticeFrames = NOTICE_DURATION_FRAMES;
 }
 
 void drawZoneBrushPreview() {
