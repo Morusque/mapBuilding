@@ -113,10 +113,12 @@ class MapModel {
     app.popStyle();
   }
 
-  Structure computeSnappedStructure(float wx, float wy) {
+  Structure computeSnappedStructure(float wx, float wy, float size) {
     Structure s = new Structure(wx, wy);
+    s.size = size;
     float snapRange = max(0.04f, s.size * 2.0f);
 
+    // Snap priority: paths > other structures > land/water frontier
     PVector[] seg = nearestPathSegment(wx, wy, snapRange);
     if (seg != null) {
       PVector a = seg[0];
@@ -128,11 +130,57 @@ class MapModel {
       float nx = -sin(ang);
       float ny = cos(ang);
       float offset = s.size * 0.6f;
+      // Flip side based on cursor side of the segment
+      float side = (wx - p.x) * nx + (wy - p.y) * ny;
+      if (side < 0) offset = -offset;
       s.x = p.x + nx * offset;
       s.y = p.y + ny * offset;
       s.angle = ang;
       return s;
     }
+
+    // Next: snap to other structures
+    Structure closest = null;
+    float bestD2 = snapRange * snapRange;
+    for (Structure o : structures) {
+      float dx = o.x - wx;
+      float dy = o.y - wy;
+      float d2 = dx * dx + dy * dy;
+      if (d2 < bestD2) {
+        bestD2 = d2;
+        closest = o;
+      }
+    }
+    if (closest != null) {
+      s.x = closest.x;
+      s.y = closest.y;
+      s.angle = closest.angle;
+      return s;
+    }
+
+    // Finally: snap to coastline (land/water frontier) by stepping toward seaLevel contour
+    Cell c = findCellContaining(wx, wy);
+    if (c != null && !c.vertices.isEmpty()) {
+      float targetElev = seaLevel;
+      float bestEdgeD = Float.MAX_VALUE;
+      PVector bestPoint = null;
+      int n = c.vertices.size();
+      for (int i = 0; i < n; i++) {
+        PVector va = c.vertices.get(i);
+        PVector vb = c.vertices.get((i + 1) % n);
+        PVector proj = closestPointOnSegment(wx, wy, va, vb);
+        float d = dist(wx, wy, proj.x, proj.y);
+        if (d < bestEdgeD) {
+          bestEdgeD = d;
+          bestPoint = proj;
+        }
+      }
+      if (bestPoint != null && bestEdgeD <= snapRange) {
+        s.x = bestPoint.x;
+        s.y = bestPoint.y;
+      }
+    }
+
     return s;
   }
 
@@ -258,8 +306,8 @@ class MapModel {
           boolean aw = elevA < seaLevel;
           boolean bw = elevB < seaLevel;
           if (aw || bw) {
-            float depth = (aw ? (seaLevel - elevA) : 0) + (bw ? (seaLevel - elevB) : 0);
-            w *= 1.0f + 5.0f * (1.0f + depth);
+            // Make water extremely undesirable; only used if no land path exists
+            w *= 1e6f;
           }
         }
         if (favorFlat) {
@@ -422,11 +470,8 @@ class MapModel {
       int col = (pt != null) ? pt.col : strokeCol;
       int hi = app.color(255, 230, 80, 180);
       float w = (pt != null) ? pt.weightPx : 2.0f;
-      float hw = max(0.5f, w) / viewport.zoom;
+      float hw = 5.0f / viewport.zoom; // constant ~5px
       app.stroke(hi);
-      app.strokeWeight(hw + 0.8f);
-      sel.draw(app);
-      app.stroke(col);
       app.strokeWeight(hw);
       sel.draw(app);
     }
@@ -1116,7 +1161,7 @@ class MapModel {
 
   void generateHexSites(float density) {
     int minRes = 2;
-    int maxRes = 40; // capped for speed
+    int maxRes = 80; // capped for speed
 
     int res = (int)map(density, 0, 2, minRes, maxRes);
     res = max(2, res);

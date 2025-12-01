@@ -629,7 +629,7 @@ void drawPathsPanel() {
   stroke(160);
   fill(230);
   rect(fs.x, fs.y, fs.w, fs.h, 4);
-  float fNorm = constrain(map(flattestSlopeBias, 0.0f, 200.0f, 0, 1), 0, 1);
+  float fNorm = constrain(map(flattestSlopeBias, 0.5f, 20.0f, 0, 1), 0, 1);
   float fx = fs.x + fNorm * fs.w;
   fill(40);
   noStroke();
@@ -977,6 +977,52 @@ void drawLabelsPanel() {
   text("Type text then click map to place/continue editing", layout.textBox.x, layout.textBox.y - 18);
 }
 
+// ----- STRUCTURES PANEL -----
+class StructuresLayout {
+  IntRect panel;
+  int titleY;
+  IntRect sizeSlider;
+}
+
+StructuresLayout buildStructuresLayout() {
+  StructuresLayout l = new StructuresLayout();
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
+  int innerX = l.panel.x + PANEL_PADDING;
+  int curY = l.panel.y + PANEL_PADDING;
+  l.titleY = curY;
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  l.sizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+
+  l.panel.h = curY - l.panel.y;
+  return l;
+}
+
+void drawStructuresPanelUI() {
+  StructuresLayout layout = buildStructuresLayout();
+  drawPanelBackground(layout.panel);
+
+  int labelX = layout.panel.x + PANEL_PADDING;
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Structures", labelX, layout.titleY);
+
+  // Size slider
+  IntRect sz = layout.sizeSlider;
+  stroke(160);
+  fill(230);
+  rect(sz.x, sz.y, sz.w, sz.h, 4);
+  float sNorm = constrain(map(structureSize, 0.01f, 0.2f, 0, 1), 0, 1);
+  float sx = sz.x + sNorm * sz.w;
+  fill(40);
+  noStroke();
+  ellipse(sx, sz.y + sz.h / 2.0f, sz.h * 0.9f, sz.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Size", sz.x, sz.y - 4);
+}
+
 // ----- RENDER PANEL -----
 class RenderLayout {
   IntRect panel;
@@ -1081,13 +1127,12 @@ PlacementMode currentPlacementMode() {
 }
 
 PathRouteMode currentPathRouteMode() {
-  int idx = constrain(pathRouteModeIndex, 0, 2);
+  int idx = constrain(pathRouteModeIndex, 0, 1);
   switch (idx) {
     case 0: return PathRouteMode.ENDS;
-    case 1: return PathRouteMode.SHORTEST;
-    case 2: return PathRouteMode.FLATTEST;
+    case 1: return PathRouteMode.PATHFIND;
   }
-  return PathRouteMode.SHORTEST;
+  return PathRouteMode.PATHFIND;
 }
 
 void drawBevelButton(int x, int y, int w, int h, boolean pressed) {
@@ -1144,6 +1189,10 @@ IntRect getActivePanelRect() {
       return l.panel;
     }
     case EDIT_ADMIN: { AdminLayout l = buildAdminLayout(); return l.panel; }
+    case EDIT_STRUCTURES: {
+      StructuresLayout l = buildStructuresLayout();
+      return l.panel;
+    }
     case EDIT_PATHS: {
       PathsLayout l = buildPathsLayout();
       return l.panel;

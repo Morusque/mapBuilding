@@ -20,6 +20,7 @@ boolean isDraggingSite = false;
 
 int selectedPathIndex = -1;
 PVector pendingPathStart = null;
+float structureSize = 0.02f; // world units
 
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
@@ -51,7 +52,7 @@ boolean keepPropertiesOnGenerate = false;
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
 ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
 int activePathTypeIndex = 0;
-int pathRouteModeIndex = 1; // 0=ENDS,1=SHORTEST,2=FLATTEST
+int pathRouteModeIndex = 1; // 0=ENDS,1=PATHFIND
 float zoneBrushRadius = 0.04f;
 float seaLevel = 0.0f;
 float elevationBrushRadius = 0.08f;
@@ -69,7 +70,7 @@ boolean renderShowLabels = true;
 boolean renderShowStructures = true;
 float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
-float flattestSlopeBias = 3.0f; // penalty multiplier for slope in flattest mode (0.5..20)
+float flattestSlopeBias = 10.0f; // slope penalty in PATHFIND mode (0..200, 0 = shortest)
 boolean pathAvoidWater = false;
 
 // Zone renaming state
@@ -109,6 +110,7 @@ final int SLIDER_PATH_TYPE_WEIGHT = 11;
 final int SLIDER_FLATTEST_BIAS = 12;
 final int SLIDER_RENDER_LIGHT_AZIMUTH = 13;
 final int SLIDER_RENDER_LIGHT_ALTITUDE = 14;
+final int SLIDER_STRUCT_SIZE = 15;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -210,11 +212,7 @@ void draw() {
       route = new ArrayList<PVector>();
       route.add(pendingPathStart);
       route.add(target);
-    } else if (mode == PathRouteMode.SHORTEST) {
-      if (snapped != null) {
-        route = mapModel.findSnapPath(pendingPathStart, target);
-      }
-    } else if (mode == PathRouteMode.FLATTEST) {
+    } else if (mode == PathRouteMode.PATHFIND) {
       if (snapped != null) {
         route = mapModel.findSnapPathFlattest(pendingPathStart, target);
       }
@@ -289,6 +287,8 @@ void draw() {
     drawBiomesPanel();
   } else if (currentTool == Tool.EDIT_ADMIN) {
     drawAdminPanel();
+  } else if (currentTool == Tool.EDIT_STRUCTURES) {
+    drawStructuresPanelUI();
   } else if (currentTool == Tool.EDIT_PATHS) {
     drawPathsPanel();
     drawPathsListPanel();
@@ -408,7 +408,7 @@ void drawStructurePreview() {
   int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
   if (mouseY < uiBottom) return;
   PVector w = viewport.screenToWorld(mouseX, mouseY);
-  Structure tmp = mapModel.computeSnappedStructure(w.x, w.y);
+  Structure tmp = mapModel.computeSnappedStructure(w.x, w.y, structureSize);
   if (tmp == null) return;
   pushStyle();
   pushMatrix();

@@ -30,6 +30,12 @@ boolean isInPathsListPanel(int mx, int my) {
   return layout.panel.contains(mx, my);
 }
 
+boolean isInStructuresPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_STRUCTURES) return false;
+  StructuresLayout layout = buildStructuresLayout();
+  return layout.panel.contains(mx, my);
+}
+
 boolean isInLabelsPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_LABELS) return false;
   LabelsLayout layout = buildLabelsLayout();
@@ -301,6 +307,12 @@ void mousePressed() {
   if (mouseButton == LEFT && currentTool == Tool.EDIT_PATHS) {
     if (handlePathsPanelClick(mouseX, mouseY)) return;
     if (handlePathsListPanelClick(mouseX, mouseY)) return;
+    if (isInPathsListPanel(mouseX, mouseY)) return;
+  }
+
+  // Structures panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_STRUCTURES) {
+    if (handleStructuresPanelClick(mouseX, mouseY)) return;
   }
 
   // Labels panel
@@ -344,7 +356,7 @@ void mousePressed() {
     } else if (currentTool == Tool.EDIT_PATHS) {
       handlePathsMousePressed(worldPos.x, worldPos.y);
     } else if (currentTool == Tool.EDIT_STRUCTURES) {
-      Structure s = mapModel.computeSnappedStructure(worldPos.x, worldPos.y);
+      Structure s = mapModel.computeSnappedStructure(worldPos.x, worldPos.y, structureSize);
       mapModel.structures.add(s);
     } else if (currentTool == Tool.EDIT_LABELS) {
       MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, labelDraft);
@@ -381,7 +393,7 @@ boolean handlePathsPanelClick(int mx, int my) {
 
   // Add path type
   if (layout.routeSlider.contains(mx, my)) {
-    String[] modes = { "Ends", "Shortest", "Flattest" };
+    String[] modes = { "Ends", "Pathfind" };
     int modeCount = modes.length;
     float t = constrain((mx - layout.routeSlider.x) / (float)layout.routeSlider.w, 0, 1);
     int idx = round(t * (modeCount - 1));
@@ -392,7 +404,7 @@ boolean handlePathsPanelClick(int mx, int my) {
 
   if (layout.flattestSlider.contains(mx, my)) {
     float t = constrain((mx - layout.flattestSlider.x) / (float)layout.flattestSlider.w, 0, 1);
-    flattestSlopeBias = constrain(0.5f + t * (20.0f - 0.5f), 0.5f, 20.0f);
+    flattestSlopeBias = constrain(0.0f + t * (200.0f - 0.0f), 0.0f, 200.0f);
     activeSlider = SLIDER_FLATTEST_BIAS;
     return true;
   }
@@ -542,6 +554,18 @@ boolean handlePathsListPanelClick(int mx, int my) {
   return false;
 }
 
+boolean handleStructuresPanelClick(int mx, int my) {
+  if (!isInStructuresPanel(mx, my)) return false;
+  StructuresLayout layout = buildStructuresLayout();
+  if (layout.sizeSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.sizeSlider.x) / (float)layout.sizeSlider.w, 0, 1);
+    structureSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+    activeSlider = SLIDER_STRUCT_SIZE;
+    return true;
+  }
+  return false;
+}
+
 boolean handleRenderPanelClick(int mx, int my) {
   if (!isInRenderPanel(mx, my)) return false;
   RenderLayout layout = buildRenderLayout();
@@ -669,10 +693,7 @@ void handlePathsMousePressed(float wx, float wy) {
       route = new ArrayList<PVector>();
       route.add(pendingPathStart.copy());
       route.add(target.copy());
-    } else if (mode == PathRouteMode.SHORTEST) {
-      ArrayList<PVector> rp = mapModel.findSnapPath(pendingPathStart, target);
-      if (rp != null && rp.size() > 1) route = rp;
-    } else if (mode == PathRouteMode.FLATTEST) {
+    } else if (mode == PathRouteMode.PATHFIND) {
       ArrayList<PVector> rp = mapModel.findSnapPathFlattest(pendingPathStart, target);
       if (rp != null && rp.size() > 1) route = rp;
     }
@@ -919,7 +940,14 @@ void updateActiveSlider(int mx, int my) {
       PathsLayout l = buildPathsLayout();
       float t = (mx - l.flattestSlider.x) / (float)l.flattestSlider.w;
       t = constrain(t, 0, 1);
-      flattestSlopeBias = constrain(0.5f + t * (20.0f - 0.5f), 0.5f, 20.0f);
+      flattestSlopeBias = constrain(0.0f + t * (200.0f - 0.0f), 0.0f, 200.0f);
+      break;
+    }
+    case SLIDER_STRUCT_SIZE: {
+      StructuresLayout l = buildStructuresLayout();
+      float t = (mx - l.sizeSlider.x) / (float)l.sizeSlider.w;
+      t = constrain(t, 0, 1);
+      structureSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
       break;
     }
     case SLIDER_RENDER_LIGHT_AZIMUTH: {
@@ -978,6 +1006,16 @@ void keyPressed() {
     } else if (key >= 32) {
       labelDraft += key;
       if (editingLabelIndex < mapModel.labels.size()) mapModel.labels.get(editingLabelIndex).text = labelDraft;
+      return;
+    }
+  }
+
+  // Structures: sliders dragging
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_STRUCTURES && isInStructuresPanel(mouseX, mouseY)) {
+    StructuresLayout layout = buildStructuresLayout();
+    if (layout.sizeSlider.contains(mouseX, mouseY)) {
+      float t = constrain((mouseX - layout.sizeSlider.x) / (float)layout.sizeSlider.w, 0, 1);
+      structureSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
       return;
     }
   }
