@@ -14,8 +14,7 @@ Elevation :
 Biomes :
 
 Zones :
-(later) This one should be implemented at some point but not yet. It should be similar to biomes except it represents administrative regions and should be dusplayed by outlines rather than color filling. Zone type is division type (country, region, city, etc).
-(later) Support multiple region layers (Biome, Admin, user-defined) with per-cell values and painting tools (brush/rect selection/eyedropper).
+(later) a first-pass has been done but we need to redo this in a lot more specific way
 
 Paths :
 (later) Single segment paths still don't work. This is a seeminlgy simple yet persistent error so we need to talk about this.
@@ -31,7 +30,7 @@ Paths :
 Struct :
 (later) snapping lines could be refined (eg frontier "normals" often appear in addition to frontier while they should not)
 (later) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.
-(later) strure should be removable, grouppable, and displayed as a list.
+(later) structres should be removable, grouppable, and displayed as a list.
 (later) Placement should snap to nearest path/structure and allow rotation/resize handles; support group min-zoom-to-expand (city/forest clusters).
 (later) snapping magnetism should probably be zoom-invarient (so that if we need more precision we can zoom and the snap is relatively smaller)
 
@@ -68,3 +67,4 @@ General :
 (later) Define a precise lexicon and homogenize code and ui labels.
 (later) Refactor, optimize etc.
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
+(later) MapModel .pde file is very long, could it be subdivided? (might be hard since single class)

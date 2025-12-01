@@ -21,6 +21,7 @@ class MapModel {
 
   // Biomes / zone types
   ArrayList<ZoneType> biomeTypes = new ArrayList<ZoneType>();
+  ArrayList<AdminZone> adminZones = new ArrayList<AdminZone>();
 
   // Cell adjacency (rebuilt when Voronoi is recomputed)
   ArrayList<ArrayList<Integer>> cellNeighbors = new ArrayList<ArrayList<Integer>>();
@@ -40,6 +41,34 @@ class MapModel {
 
   MapModel() {
     // biomeTypes will be filled from Main.initBiomeTypes()
+  }
+
+  class AdminZone {
+    String name;
+    int col;
+    float hue01 = 0.0f;
+    float sat01 = 0.5f;
+    float bri01 = 0.9f;
+    ArrayList<Integer> cells = new ArrayList<Integer>(); // indices into cells array
+
+    AdminZone(String name, int col) {
+      this.name = name;
+      this.col = col;
+      float[] hsb = rgbToHSB(col);
+      hue01 = hsb[0];
+      sat01 = hsb[1];
+      bri01 = hsb[2];
+    }
+
+    void updateColorFromHSB() {
+      col = hsb01ToRGB(hue01, sat01, bri01);
+    }
+  }
+
+  float[] rgbToHSB(int c) {
+    float[] hsb = new float[3];
+    rgbToHSB01(c, hsb);
+    return hsb;
   }
 
   // ---------- Drawing ----------
@@ -114,6 +143,78 @@ class MapModel {
       l.draw(app);
     }
     app.popStyle();
+  }
+
+  void drawAdminOutlines(PApplet app) {
+    if (cells == null || adminZones == null) return;
+    app.pushStyle();
+    app.noFill();
+    ensureCellNeighborsComputed();
+    float eps2 = 1e-8f;
+    int typeCount = adminZones.size();
+
+    for (int z = 0; z < adminZones.size(); z++) {
+      AdminZone zone = adminZones.get(z);
+      if (zone == null || zone.cells.isEmpty()) continue;
+      int col = (z >= 0 && z < typeCount) ? zone.col : color(0);
+      HashSet<String> drawn = new HashSet<String>();
+
+      for (int ci : zone.cells) {
+        if (ci < 0 || ci >= cells.size()) continue;
+        Cell c = cells.get(ci);
+        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+        for (int e = 0; e < c.vertices.size(); e++) {
+          PVector a = c.vertices.get(e);
+          PVector b = c.vertices.get((e + 1) % c.vertices.size());
+          String k = undirectedEdgeKey(a, b);
+          if (drawn.contains(k)) continue;
+
+          boolean sharedWithZone = false;
+          ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
+          if (nbs != null) {
+            for (int nbIdx : nbs) {
+              if (!zone.cells.contains(nbIdx)) continue;
+              Cell nb = cells.get(nbIdx);
+              if (nb == null || nb.vertices == null) continue;
+              int nv = nb.vertices.size();
+              for (int j = 0; j < nv; j++) {
+                PVector na = nb.vertices.get(j);
+                PVector nbp = nb.vertices.get((j + 1) % nv);
+                boolean match = distSq(a, na) < eps2 && distSq(b, nbp) < eps2;
+                boolean matchRev = distSq(a, nbp) < eps2 && distSq(b, na) < eps2;
+                if (match || matchRev) {
+                  sharedWithZone = true;
+                  break;
+                }
+              }
+              if (sharedWithZone) break;
+            }
+          }
+
+          if (!sharedWithZone) {
+            app.stroke(col);
+            app.strokeWeight(2.0f / viewport.zoom);
+            app.line(a.x, a.y, b.x, b.y);
+          }
+
+          drawn.add(k);
+        }
+      }
+    }
+
+    app.popStyle();
+  }
+
+  String undirectedEdgeKey(PVector a, PVector b) {
+    int ax = round(a.x * 10000);
+    int ay = round(a.y * 10000);
+    int bx = round(b.x * 10000);
+    int by = round(b.y * 10000);
+    if (ax < bx || (ax == bx && ay <= by)) {
+      return ax + "," + ay + "-" + bx + "," + by;
+    } else {
+      return bx + "," + by + "-" + ax + "," + ay;
+    }
   }
 
   void drawStructureSnapGuides(PApplet app, float seaLevel) {
@@ -976,6 +1077,10 @@ class MapModel {
     return fallbackBiome;
   }
 
+  int sampleAdminFromOldCells(ArrayList<Cell> oldCells, float x, float y, int fallbackAdmin) {
+    return fallbackAdmin;
+  }
+
   float sampleElevationFromOldCells(ArrayList<Cell> oldCells, float x, float y, float fallback) {
     for (Cell c : oldCells) {
       if (pointInPolygon(x, y, c.vertices)) {
@@ -1201,6 +1306,49 @@ class MapModel {
     }
   }
 
+  void addCellToAdminZone(int cellIdx, int zoneIdx) {
+    if (adminZones == null || zoneIdx < 0 || zoneIdx >= adminZones.size()) return;
+    if (cellIdx < 0 || cellIdx >= cells.size()) return;
+    AdminZone az = adminZones.get(zoneIdx);
+    if (az == null) return;
+    if (!az.cells.contains(cellIdx)) {
+      az.cells.add(cellIdx);
+    }
+  }
+
+  boolean cellInAdminZone(int cellIdx, int zoneIdx) {
+    if (adminZones == null || zoneIdx < 0 || zoneIdx >= adminZones.size()) return false;
+    AdminZone az = adminZones.get(zoneIdx);
+    if (az == null) return false;
+    return az.cells.contains(cellIdx);
+  }
+
+  void floodFillAdminZone(Cell start, int zoneIdx) {
+    if (start == null) return;
+    int startIndex = indexOfCell(start);
+    if (startIndex < 0) return;
+    int n = cells.size();
+    if (n == 0) return;
+    ensureCellNeighborsComputed();
+    boolean[] visited = new boolean[n];
+    int[] stack = new int[n];
+    int stackSize = 0;
+    stack[stackSize++] = startIndex;
+    visited[startIndex] = true;
+    while (stackSize > 0) {
+      int idx = stack[--stackSize];
+      addCellToAdminZone(idx, zoneIdx);
+      ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        if (visited[nb]) continue;
+        visited[nb] = true;
+        stack[stackSize++] = nb;
+      }
+    }
+  }
+
   boolean cellsAreNeighbors(Cell a, Cell b, float eps) {
     if (a.vertices == null || b.vertices == null) return false;
     int shared = 0;
@@ -1361,6 +1509,11 @@ class MapModel {
     int clampedCount = constrain(targetCount, 0, MAX_SITE_COUNT);
     preservedCells = preserveCellData ? new ArrayList<Cell>(cells) : null;
     sites.clear();
+    if (!preserveCellData && adminZones != null) {
+      for (AdminZone az : adminZones) {
+        if (az != null) az.cells.clear();
+      }
+    }
 
     if (clampedCount <= 0) {
       markVoronoiDirty();
@@ -1577,6 +1730,21 @@ class MapModel {
     return false;
   }
 
+  void resetAllAdminsToNone() {
+    if (adminZones == null) return;
+    for (AdminZone az : adminZones) {
+      if (az != null) az.cells.clear();
+    }
+  }
+
+  boolean hasAnyNoneAdmin() {
+    if (adminZones == null || adminZones.isEmpty()) return true;
+    for (AdminZone az : adminZones) {
+      if (az != null && az.cells.isEmpty()) return true;
+    }
+    return false;
+  }
+
   void ensureCellNeighborsComputed() {
     if (cellNeighbors == null || cellNeighbors.size() != cells.size()) {
       rebuildCellNeighbors();
@@ -1760,6 +1928,13 @@ class MapModel {
     }
   }
 
+  void addAdminType() {
+    int idx = adminZones.size();
+    ZonePreset preset = (idx < ZONE_PRESETS.length) ? ZONE_PRESETS[idx] : null;
+    int col = (preset != null) ? preset.col : hsb01ToRGB(0.1f * (idx + 1), 0.5f, 0.95f);
+    adminZones.add(new AdminZone("Zone" + idx, col));
+  }
+
   void addPathType(PathType pt) {
     if (pt == null) return;
     pathTypes.add(pt);
@@ -1789,6 +1964,11 @@ class MapModel {
         c.biomeId -= 1;
       }
     }
+  }
+
+  void removeAdminType(int index) {
+    if (index < 0 || index >= adminZones.size()) return;
+    adminZones.remove(index);
   }
 }
 

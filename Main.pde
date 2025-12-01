@@ -54,6 +54,7 @@ boolean keepPropertiesOnGenerate = false;
 
 // Zones (biomes) painting
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
+int activeAdminIndex = 1;                 // 0 = "None", 1..N = types
 ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
 int activePathTypeIndex = 0;
 int pathRouteModeIndex = 1; // 0=ENDS,1=PATHFIND
@@ -82,6 +83,8 @@ boolean siteDirtyDuringDrag = false;
 // Zone renaming state
 int editingZoneNameIndex = -1;
 String zoneNameDraft = "";
+int editingAdminNameIndex = -1;
+String adminNameDraft = "";
 
 // Label editing state
 int editingLabelIndex = -1;
@@ -121,6 +124,8 @@ final int SLIDER_FLATTEST_BIAS = 12;
 final int SLIDER_RENDER_LIGHT_AZIMUTH = 13;
 final int SLIDER_RENDER_LIGHT_ALTITUDE = 14;
 final int SLIDER_STRUCT_SIZE = 15;
+final int SLIDER_ADMIN_HUE = 16;
+final int SLIDER_ADMIN_BRUSH = 17;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -132,6 +137,7 @@ void setup() {
   viewport = new Viewport();
   mapModel = new MapModel();
   initBiomeTypes();
+  initAdminTypes();
   initPathTypes();
   mapModel.generateSites(currentPlacementMode(), siteTargetCount);
   mapModel.ensureVoronoiComputed();
@@ -148,6 +154,16 @@ void initBiomeTypes() {
     ZonePreset zp = ZONE_PRESETS[i];
     mapModel.biomeTypes.add(new ZoneType(zp.name, zp.col));
   }
+}
+
+void initAdminTypes() {
+  mapModel.adminZones.clear();
+  int initialCount = 2;
+  for (int i = 0; i < initialCount && i < ZONE_PRESETS.length; i++) {
+    ZonePreset zp = ZONE_PRESETS[i];
+    mapModel.adminZones.add(mapModel.new AdminZone("Zone" + (i + 1), zp.col));
+  }
+  activeAdminIndex = mapModel.adminZones.isEmpty() ? -1 : 0;
 }
 
 void initPathTypes() {
@@ -205,6 +221,10 @@ void draw() {
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, ELEV_STEPS_PATHS);
   } else if (drawCellsFlag) {
     mapModel.drawCells(this, showBorders);
+  }
+
+  if (currentTool == Tool.EDIT_ADMIN) {
+    mapModel.drawAdminOutlines(this);
   }
 
   // Paths are visible in all modes
@@ -290,6 +310,8 @@ void draw() {
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, 0);
     drawElevationBrushPreview();
   } else if (currentTool == Tool.EDIT_BIOMES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+    drawZoneBrushPreview();
+  } else if (currentTool == Tool.EDIT_ADMIN && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
   } else {
     mapModel.drawDebugWorldBounds(this);

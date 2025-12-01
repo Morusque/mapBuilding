@@ -12,6 +12,12 @@ boolean isInZonesPanel(int mx, int my) {
   return layout.panel.contains(mx, my);
 }
 
+boolean isInAdminPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_ADMIN) return false;
+  AdminLayout layout = buildAdminLayout();
+  return layout.panel.contains(mx, my);
+}
+
 boolean isInElevationPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_ELEVATION) return false;
   ElevationLayout layout = buildElevationLayout();
@@ -262,6 +268,91 @@ boolean handleZonesPanelClick(int mx, int my) {
   return false;
 }
 
+// ----- Admin panel click -----
+boolean handleAdminPanelClick(int mx, int my) {
+  if (!isInAdminPanel(mx, my)) return false;
+  if (mapModel == null || mapModel.adminZones == null) return false;
+
+  AdminLayout layout = buildAdminLayout();
+
+  if (layout.paintBtn.contains(mx, my)) {
+    currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
+    return true;
+  }
+  if (layout.fillBtn.contains(mx, my)) {
+    currentZonePaintMode = ZonePaintMode.ZONE_FILL;
+    return true;
+  }
+
+  if (layout.generateBtn.contains(mx, my)) {
+    // Fill all "None" admin cells with the currently selected admin type (or first non-None)
+    int target = (activeAdminIndex >= 0) ? activeAdminIndex : 0;
+    if (target >= 0 && target < mapModel.adminZones.size() && mapModel.cells != null) {
+      for (Cell c : mapModel.cells) {
+        int idx = mapModel.indexOfCell(c);
+        mapModel.addCellToAdminZone(idx, target);
+      }
+    }
+    return true;
+  }
+
+  if (layout.resetBtn.contains(mx, my)) {
+    mapModel.resetAllAdminsToNone();
+    activeAdminIndex = 0;
+    editingAdminNameIndex = -1;
+    return true;
+  }
+
+  int nTypes = mapModel.adminZones.size();
+
+  if (layout.addBtn.contains(mx, my)) {
+    mapModel.addAdminType();
+    activeAdminIndex = mapModel.adminZones.size() - 1;
+    return true;
+  }
+
+  boolean canRemove = nTypes > 1 && activeAdminIndex > 0;
+  if (canRemove && layout.removeBtn.contains(mx, my)) {
+    mapModel.removeAdminType(activeAdminIndex);
+    activeAdminIndex = constrain(activeAdminIndex - 1, 0, mapModel.adminZones.size() - 1);
+    editingAdminNameIndex = -1;
+    return true;
+  }
+
+  for (int i = 0; i < nTypes; i++) {
+    IntRect sw = layout.swatches.get(i);
+    if (sw.contains(mx, my)) {
+      activeAdminIndex = i;
+      return true;
+    }
+  }
+
+  if (layout.nameField.contains(mx, my) && activeAdminIndex >= 0 && activeAdminIndex < nTypes) {
+    editingAdminNameIndex = activeAdminIndex;
+    adminNameDraft = mapModel.adminZones.get(activeAdminIndex).name;
+    return true;
+  }
+
+  if (layout.hueSlider.contains(mx, my) && activeAdminIndex >= 0 && activeAdminIndex < nTypes) {
+    float t = (mx - layout.hueSlider.x) / (float)layout.hueSlider.w;
+    t = constrain(t, 0, 1);
+    MapModel.AdminZone zt = mapModel.adminZones.get(activeAdminIndex);
+    zt.hue01 = t;
+    zt.updateColorFromHSB();
+    activeSlider = SLIDER_ADMIN_HUE;
+    return true;
+  }
+
+  if (layout.brushSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
+    zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
+    activeSlider = SLIDER_ADMIN_BRUSH;
+    return true;
+  }
+
+  return false;
+}
+
 // ---------- Painting helpers ----------
 
 void paintBiomeAt(float wx, float wy) {
@@ -292,6 +383,36 @@ void paintBiomeBrush(float wx, float wy) {
   }
 }
 
+void paintAdminAt(float wx, float wy) {
+  Cell c = mapModel.findCellContaining(wx, wy);
+  if (c != null) {
+    int idx = mapModel.indexOfCell(c);
+    mapModel.addCellToAdminZone(idx, activeAdminIndex);
+  }
+}
+
+void fillAdminAt(float wx, float wy) {
+  Cell c = mapModel.findCellContaining(wx, wy);
+  if (c != null) {
+    mapModel.floodFillAdminZone(c, activeAdminIndex);
+  }
+}
+
+void paintAdminBrush(float wx, float wy) {
+  if (mapModel.cells == null) return;
+  float r2 = zoneBrushRadius * zoneBrushRadius;
+  for (Cell c : mapModel.cells) {
+    PVector cen = mapModel.cellCentroid(c);
+    float dx = cen.x - wx;
+    float dy = cen.y - wy;
+    float d2 = dx * dx + dy * dy;
+    if (d2 <= r2) {
+      int idx = mapModel.indexOfCell(c);
+      mapModel.addCellToAdminZone(idx, activeAdminIndex);
+    }
+  }
+}
+
 // ---------- Mouse & keyboard callbacks ----------
 
 void mousePressed() {
@@ -314,6 +435,11 @@ void mousePressed() {
   // Biomes panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_BIOMES) {
     if (handleZonesPanelClick(mouseX, mouseY)) return;
+  }
+
+  // Admin panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ADMIN) {
+    if (handleAdminPanelClick(mouseX, mouseY)) return;
   }
 
   // Elevation panel
@@ -367,6 +493,12 @@ void mousePressed() {
         paintBiomeBrush(worldPos.x, worldPos.y);
       } else {
         fillBiomeAt(worldPos.x, worldPos.y);
+      }
+    } else if (currentTool == Tool.EDIT_ADMIN) {
+      if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+        paintAdminBrush(worldPos.x, worldPos.y);
+      } else {
+        fillAdminAt(worldPos.x, worldPos.y);
       }
     } else if (currentTool == Tool.EDIT_ELEVATION) {
       float dir = elevationBrushRaise ? 1 : -1;

@@ -163,6 +163,42 @@ void mouseDragged() {
     return;
   }
 
+  // Admin: slider dragging
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ADMIN && isInAdminPanel(mouseX, mouseY)) {
+    AdminLayout layout = buildAdminLayout();
+    int n = (mapModel.adminZones == null) ? 0 : mapModel.adminZones.size();
+    if (n > 0 && activeAdminIndex >= 0 && activeAdminIndex < n) {
+      if (layout.hueSlider.contains(mouseX, mouseY)) {
+        float t = (mouseX - layout.hueSlider.x) / (float)layout.hueSlider.w;
+        t = constrain(t, 0, 1);
+        MapModel.AdminZone active = mapModel.adminZones.get(activeAdminIndex);
+        active.hue01 = t;
+        active.updateColorFromHSB();
+        activeSlider = SLIDER_ADMIN_HUE;
+        return;
+      }
+    }
+    if (layout.brushSlider.contains(mouseX, mouseY)) {
+      float t = constrain((mouseX - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
+      zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
+      activeSlider = SLIDER_ADMIN_BRUSH;
+      return;
+    }
+  }
+
+  // Admin: paint while dragging
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ADMIN) {
+    IntRect panel = getActivePanelRect();
+    boolean inPanel = (panel != null && panel.contains(mouseX, mouseY));
+    if (!inPanel) {
+      PVector w = viewport.screenToWorld(mouseX, mouseY);
+      if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+        paintAdminBrush(w.x, w.y);
+      }
+    }
+    return;
+  }
+
   // Ignore world if dragging in UI
   if (isInActivePanel(mouseX, mouseY)) return;
 
@@ -283,6 +319,23 @@ void updateActiveSlider(int mx, int my) {
       }
       break;
     }
+    case SLIDER_ADMIN_HUE: {
+      AdminLayout l = buildAdminLayout();
+      float t = (mx - l.hueSlider.x) / (float)l.hueSlider.w;
+      t = constrain(t, 0, 1);
+      if (mapModel.adminZones != null && activeAdminIndex >= 0 && activeAdminIndex < mapModel.adminZones.size()) {
+        MapModel.AdminZone active = mapModel.adminZones.get(activeAdminIndex);
+        active.hue01 = t;
+        active.updateColorFromHSB();
+      }
+      break;
+    }
+    case SLIDER_ADMIN_BRUSH: {
+      AdminLayout l = buildAdminLayout();
+      float t = constrain((mx - l.brushSlider.x) / (float)l.brushSlider.w, 0, 1);
+      zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
+      break;
+    }
     case SLIDER_FLATTEST_BIAS: {
       PathsLayout l = buildPathsLayout();
       float t = (mx - l.flattestSlider.x) / (float)l.flattestSlider.w;
@@ -335,6 +388,23 @@ void keyPressed() {
       return;
     } else if (key >= 32) {
       zoneNameDraft += key;
+      return;
+    }
+  }
+
+  // Inline text editing for admin zones
+  if (editingAdminNameIndex >= 0) {
+    if (key == ENTER || key == RETURN) {
+      if (editingAdminNameIndex < mapModel.adminZones.size()) {
+        mapModel.adminZones.get(editingAdminNameIndex).name = adminNameDraft;
+      }
+      editingAdminNameIndex = -1;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (adminNameDraft.length() > 0) adminNameDraft = adminNameDraft.substring(0, adminNameDraft.length() - 1);
+      return;
+    } else if (key >= 32) {
+      adminNameDraft += key;
       return;
     }
   }

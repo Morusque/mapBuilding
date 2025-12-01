@@ -367,17 +367,214 @@ void drawBiomesPanel() {
 class AdminLayout {
   IntRect panel;
   int titleY;
+  IntRect paintBtn;
+  IntRect fillBtn;
+  IntRect generateBtn;
+  IntRect resetBtn;
+  IntRect addBtn;
+  IntRect removeBtn;
+  ArrayList<IntRect> swatches = new ArrayList<IntRect>();
+  IntRect nameField;
+  IntRect hueSlider;
+  IntRect brushSlider;
+  IntRect listPanel;
 }
 
 AdminLayout buildAdminLayout() {
   AdminLayout l = new AdminLayout();
-  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, PANEL_TITLE_H + 2 * PANEL_PADDING);
-  l.titleY = l.panel.y + PANEL_PADDING;
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
+  int innerX = l.panel.x + PANEL_PADDING;
+  int curY = l.panel.y + PANEL_PADDING;
+  l.titleY = curY;
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  l.resetBtn = new IntRect(innerX, curY, 90, PANEL_BUTTON_H);
+  l.generateBtn = new IntRect(l.resetBtn.x + l.resetBtn.w + 8, curY, 110, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+  l.paintBtn = new IntRect(innerX, curY, 70, PANEL_BUTTON_H);
+  l.fillBtn = new IntRect(l.paintBtn.x + l.paintBtn.w + 8, curY, 70, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
+  l.addBtn = new IntRect(innerX, curY, 24, PANEL_BUTTON_H);
+  l.removeBtn = new IntRect(l.addBtn.x + l.addBtn.w + 6, curY, 24, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
+  int swatchW = 70;
+  int swatchH = 22;
+  int gapX = 8;
+  int maxPerRow = max(1, (PANEL_W - 2 * PANEL_PADDING + gapX) / (swatchW + gapX));
+  int rowY = curY;
+  int col = 0;
+  int paletteBottom = rowY;
+  if (mapModel != null && mapModel.adminZones != null) {
+    for (int i = 0; i < mapModel.adminZones.size(); i++) {
+      int x = innerX + col * (swatchW + gapX);
+      l.swatches.add(new IntRect(x, rowY, swatchW, swatchH));
+      paletteBottom = max(paletteBottom, rowY + swatchH);
+      col++;
+      if (col >= maxPerRow) {
+        col = 0;
+        rowY += swatchH + PANEL_ROW_GAP;
+      }
+    }
+  }
+  curY = paletteBottom + PANEL_ROW_GAP;
+
+  l.nameField = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
+  l.hueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.brushSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+
+  // Right-side list panel reserved space
+  l.listPanel = new IntRect(width - RIGHT_PANEL_W - PANEL_PADDING, panelTop(), RIGHT_PANEL_W, height - panelTop() - PANEL_PADDING);
+
+  l.panel.h = curY - l.panel.y;
   return l;
 }
 
 void drawAdminPanel() {
-  // TODO later something similar to the biome panel but with outlined zones instead of colored ones
+  AdminLayout layout = buildAdminLayout();
+  drawPanelBackground(layout.panel);
+
+  int labelX = layout.panel.x + PANEL_PADDING;
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Zones (Admin)", labelX, layout.titleY);
+
+  // Reset and generate (simple fill)
+  drawBevelButton(layout.resetBtn.x, layout.resetBtn.y, layout.resetBtn.w, layout.resetBtn.h, false);
+  drawBevelButton(layout.generateBtn.x, layout.generateBtn.y, layout.generateBtn.w, layout.generateBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Reset", layout.resetBtn.x + layout.resetBtn.w * 0.5f, layout.resetBtn.y + layout.resetBtn.h * 0.5f);
+  text("Fill gaps", layout.generateBtn.x + layout.generateBtn.w * 0.5f, layout.generateBtn.y + layout.generateBtn.h * 0.5f);
+
+  // Paint / Fill buttons
+  drawBevelButton(layout.paintBtn.x, layout.paintBtn.y, layout.paintBtn.w, layout.paintBtn.h,
+                  currentZonePaintMode == ZonePaintMode.ZONE_PAINT);
+  drawBevelButton(layout.fillBtn.x, layout.fillBtn.y, layout.fillBtn.w, layout.fillBtn.h,
+                  currentZonePaintMode == ZonePaintMode.ZONE_FILL);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Paint", layout.paintBtn.x + layout.paintBtn.w * 0.5f, layout.paintBtn.y + layout.paintBtn.h * 0.5f);
+  text("Fill", layout.fillBtn.x + layout.fillBtn.w * 0.5f, layout.fillBtn.y + layout.fillBtn.h * 0.5f);
+
+  // Add / Remove buttons
+  drawBevelButton(layout.addBtn.x, layout.addBtn.y, layout.addBtn.w, layout.addBtn.h, false);
+  drawBevelButton(layout.removeBtn.x, layout.removeBtn.y, layout.removeBtn.w, layout.removeBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("+", layout.addBtn.x + layout.addBtn.w * 0.5f, layout.addBtn.y + layout.addBtn.h * 0.5f);
+  text("-", layout.removeBtn.x + layout.removeBtn.w * 0.5f, layout.removeBtn.y + layout.removeBtn.h * 0.5f);
+
+  // Palette
+  if (mapModel == null || mapModel.adminZones == null) return;
+  int n = mapModel.adminZones.size();
+  if (n == 0) return;
+
+  for (int i = 0; i < n; i++) {
+    pushStyle();
+    MapModel.AdminZone zt = mapModel.adminZones.get(i);
+    IntRect sw = layout.swatches.get(i);
+    stroke(i == activeAdminIndex ? 0 : 120);
+    strokeWeight(i == activeAdminIndex ? 2 : 1);
+    fill(zt.col);
+    rect(sw.x, sw.y, sw.w, sw.h, 4);
+    fill(20);
+    textAlign(CENTER, CENTER);
+    text(zt.name, sw.x + sw.w * 0.5f, sw.y + sw.h * 0.5f);
+    popStyle();
+  }
+
+  // Editable name field for selected admin type
+  if (activeAdminIndex >= 0 && activeAdminIndex < n) {
+    IntRect nf = layout.nameField;
+    MapModel.AdminZone active = mapModel.adminZones.get(activeAdminIndex);
+    boolean editing = (editingAdminNameIndex == activeAdminIndex);
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Name", nf.x, nf.y - 4);
+    stroke(80);
+    fill(255);
+    rect(nf.x, nf.y, nf.w, nf.h);
+    fill(0);
+    textAlign(LEFT, CENTER);
+    String shown = editing ? adminNameDraft : active.name;
+    text(shown, nf.x + 6, nf.y + nf.h / 2);
+    if (editing) {
+      float caretX = nf.x + 6 + textWidth(adminNameDraft);
+      stroke(0);
+      line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
+    }
+  }
+
+  // Hue slider
+  if (activeAdminIndex >= 0 && activeAdminIndex < n) {
+    MapModel.AdminZone active = mapModel.adminZones.get(activeAdminIndex);
+    IntRect hue = layout.hueSlider;
+    stroke(160);
+    fill(230);
+    rect(hue.x, hue.y, hue.w, hue.h, 4);
+    float hNorm = constrain(active.hue01, 0, 1);
+    float handleX = hue.x + hNorm * hue.w;
+    float handleR = hue.h * 0.9f;
+    float handleY = hue.y + hue.h / 2.0f;
+    fill(40);
+    noStroke();
+    ellipse(handleX, handleY, handleR, handleR);
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Hue: " + nf(active.hue01, 1, 2), hue.x, hue.y - 4);
+  }
+
+  // Brush radius slider
+  IntRect brush = layout.brushSlider;
+  stroke(160);
+  fill(230);
+  rect(brush.x, brush.y, brush.w, brush.h, 4);
+  float bNorm = constrain(map(zoneBrushRadius, 0.01f, 0.15f, 0, 1), 0, 1);
+  float bx = brush.x + bNorm * brush.w;
+  fill(40);
+  noStroke();
+  ellipse(bx, brush.y + brush.h / 2.0f, brush.h * 0.9f, brush.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Brush radius", brush.x, brush.y - 4);
+
+  // Right-side list of zones
+  IntRect lp = layout.listPanel;
+  pushStyle();
+  stroke(120);
+  fill(240);
+  rect(lp.x, lp.y, lp.w, lp.h);
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Zones", lp.x + PANEL_PADDING, lp.y + PANEL_PADDING);
+  int y = lp.y + PANEL_PADDING + PANEL_TITLE_H;
+  if (mapModel.adminZones != null) {
+    for (int i = 0; i < mapModel.adminZones.size(); i++) {
+      MapModel.AdminZone az = mapModel.adminZones.get(i);
+      if (az == null) continue;
+      boolean active = (i == activeAdminIndex);
+      int itemH = 24;
+      int ix = lp.x + PANEL_PADDING;
+      int iw = lp.w - 2 * PANEL_PADDING;
+      fill(active ? 210 : 230);
+      stroke(160);
+      rect(ix, y, iw, itemH);
+      fill(10);
+      textAlign(LEFT, CENTER);
+      text(az.name + " (" + az.cells.size() + ")", ix + 6, y + itemH / 2);
+      y += itemH + 6;
+      if (y > lp.y + lp.h - itemH) break;
+    }
+  }
+  popStyle();
 }
 
 // ----- PATHS PANEL -----
