@@ -26,12 +26,14 @@ Flatest slope slider default value should be 0. Bug: mouse x mapping seems based
 (later) rivers could have an option that make them start small and end bigger when reaching the sea (this needs connection analysis, pathfinding etc when using multiple segments, to compute segment proximity to sea).
 (later) fix ambiguity between paths (made of tracks), tracks (made of consecutive segments), segments (straight line from point A to point B)
 possible optimization : remove free snap points too close to each other, only consider points visible on the window.
+(later) whay does the path confirmation take so much time? it only needs to push the previewed path into the valid list...
 
 Struct :
 (later) snapping lines could be refined (eg frontier "normals" often appear in addition to frontier while they should not)
 (later) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.
 (later) strure should be removable, grouppable, and displayed as a list.
 (later) Placement should snap to nearest path/structure and allow rotation/resize handles; support group min-zoom-to-expand (city/forest clusters).
+(later) snapping magnetism should probably be zoom-invarient (so that if we need more precision we can zoom and the snap is relatively smaller)
 
 Labels :
 (later) Label should be attributed to one or more elements on the map, or more arbitrarily placed.
@@ -63,7 +65,6 @@ Generative modes :
 (later) Deterministic, opt-in generators (fill missing biomes by noise, auto minor roads near cities, small villages) that never overwrite user edits.
 
 General :
-Should we reorganize the number of .pde files potentially adding some to make it more consistent and easy to search?
 Read the initial intentions document, exctact missing features and idead, add them to this todo list as "(later)" items, then remove the doc.
 Define a precise lexicon and homogenize code and ui labels.
 Refactor, optimize etc.
