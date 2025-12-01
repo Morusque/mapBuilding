@@ -139,22 +139,27 @@ class MapModel {
       return s;
     }
 
-    // Next: snap to other structures
+    // Next: snap to other structures (edge-to-edge)
     Structure closest = null;
     float bestD2 = snapRange * snapRange;
     for (Structure o : structures) {
       float dx = o.x - wx;
       float dy = o.y - wy;
       float d2 = dx * dx + dy * dy;
+      float minGap = (o.size + s.size) * 0.6f;
       if (d2 < bestD2) {
         bestD2 = d2;
         closest = o;
       }
     }
     if (closest != null) {
-      s.x = closest.x;
-      s.y = closest.y;
-      s.angle = closest.angle;
+      float ang = atan2(closest.y - wy, closest.x - wx);
+      float dist = sqrt(bestD2);
+      float gap = (closest.size + s.size) * 0.6f;
+      float reach = max(0, dist - gap);
+      s.x = wx + cos(ang) * reach;
+      s.y = wy + sin(ang) * reach;
+      s.angle = ang;
       return s;
     }
 

@@ -737,7 +737,7 @@ void drawPathsListPanel() {
     textAlign(LEFT, TOP);
     text("No paths yet.", labelX, curY);
   } else {
-    int rowH = 44;
+    int rowH = 56;
     layout.deleteBtns.clear();
     layout.nameRects.clear();
     layout.typeRects.clear();
@@ -798,8 +798,16 @@ void drawPathsListPanel() {
       fill(10);
       textAlign(LEFT, CENTER);
       text("Type: " + typLabel, typeRect.x + 6, typeRect.y + typeRect.h / 2);
+      curY += PANEL_LABEL_H;
 
-      curY += rowH - 2 * PANEL_LABEL_H;
+      // Stats line
+      int segs = p.segmentCount();
+      float len = p.totalLength();
+      fill(40);
+      textAlign(LEFT, CENTER);
+      text("Segments: " + segs + "   Len: " + nf(len, 1, 3), labelX + selectSize + 6, curY);
+
+      curY += rowH - 3 * PANEL_LABEL_H;
     }
   }
 
