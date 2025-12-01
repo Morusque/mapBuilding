@@ -129,9 +129,7 @@ boolean handleSitesPanelClick(int mx, int my) {
 
   // Generate button
   if (layout.generateBtn.contains(mx, my)) {
-    startLoading();
     mapModel.generateSites(currentPlacementMode(), siteTargetCount, keepPropertiesOnGenerate);
-    stopLoading();
     return true;
   }
 

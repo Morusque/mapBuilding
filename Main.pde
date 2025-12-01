@@ -99,6 +99,7 @@ String pathNameDraft = "";
 boolean isLoading = false;
 float loadingPhase = 0;
 int loadingHoldFrames = 0;
+float loadingPct = 0;
 
 // Slider drag state
 final int SLIDER_NONE = 0;
@@ -164,11 +165,21 @@ void initPathTypes() {
 void draw() {
   background(245);
 
+  // Drive incremental Voronoi rebuilds; loading state follows the job
+  mapModel.ensureVoronoiComputed();
+  boolean building = mapModel.isVoronoiBuilding();
+  if (building) {
+    if (!isLoading) startLoading();
+    loadingPct = mapModel.getVoronoiProgress();
+  } else {
+    if (isLoading) stopLoading();
+    loadingPct = 1.0f;
+  }
+
   // ----- World rendering -----
   pushMatrix();
   viewport.applyTransform(this);
 
-  mapModel.ensureVoronoiComputed();
   boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS);
   boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER && !renderShowZones);
   if (currentTool == Tool.EDIT_RENDER) {
@@ -377,11 +388,13 @@ void startLoading() {
   isLoading = true;
   loadingPhase = 0;
   loadingHoldFrames = 0;
+  loadingPct = 0;
 }
 
 void stopLoading() {
   isLoading = false;
   loadingHoldFrames = 30; // keep bar visible briefly
+  loadingPct = 1.0f;
 }
 
 void drawZoneBrushPreview() {

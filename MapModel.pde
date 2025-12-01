@@ -31,6 +31,9 @@ class MapModel {
   boolean voronoiDirty = true;
   boolean snapDirty = true;
   ArrayList<Cell> preservedCells = null;
+  VoronoiJob voronoiJob = null;
+  float voronoiProgress = 0.0f;
+  final int VORONOI_BATCH = 120; // sites per frame chunk
 
   HashMap<String, PVector> snapNodes = new HashMap<String, PVector>();
   HashMap<String, ArrayList<String>> snapAdj = new HashMap<String, ArrayList<String>>();
@@ -501,17 +504,20 @@ class MapModel {
       }
     }
 
-    // Connect neighboring centers (cells sharing edge)
+    // Connect neighboring centers (cells sharing edge) using the precomputed neighbor list
+    ensureCellNeighborsComputed();
     int cCount = cells.size();
     for (int i = 0; i < cCount; i++) {
+      ArrayList<Integer> nbs = (i < cellNeighbors.size()) ? cellNeighbors.get(i) : null;
+      if (nbs == null) continue;
       Cell a = cells.get(i);
-      for (int j = i + 1; j < cCount; j++) {
-        Cell b = cells.get(j);
-        if (cellsAreNeighbors(a, b, eps)) {
-          if (a.siteIndex >= 0 && a.siteIndex < centerKeys.length &&
-              b.siteIndex >= 0 && b.siteIndex < centerKeys.length) {
-            connectNodes(centerKeys[a.siteIndex], centerKeys[b.siteIndex]);
-          }
+      for (int nb : nbs) {
+        if (nb <= i) continue;
+        Cell b = cells.get(nb);
+        if (a != null && b != null &&
+            a.siteIndex >= 0 && a.siteIndex < centerKeys.length &&
+            b.siteIndex >= 0 && b.siteIndex < centerKeys.length) {
+          connectNodes(centerKeys[a.siteIndex], centerKeys[b.siteIndex]);
         }
       }
     }
@@ -856,74 +862,59 @@ class MapModel {
   void markVoronoiDirty() {
     voronoiDirty = true;
     snapDirty = true;
+    voronoiJob = null; // cancel in-flight job
   }
 
   void ensureVoronoiComputed() {
-    if (voronoiDirty) {
-      recomputeVoronoi();
+    // Kick off incremental job if needed
+    if (voronoiDirty && voronoiJob == null) {
+      startVoronoiJob();
+    }
+
+    // Advance current job in small batches
+    if (voronoiJob != null) {
+      stepVoronoiJob(VORONOI_BATCH, 10);
+    }
+  }
+
+  void startVoronoiJob() {
+    if (sites == null || sites.isEmpty()) {
+      cells.clear();
+      cellNeighbors.clear();
+      preservedCells = null;
       voronoiDirty = false;
+      voronoiJob = null;
+      voronoiProgress = 0;
+      return;
+    }
+    ArrayList<Cell> oldCells = (preservedCells != null) ? preservedCells : new ArrayList<Cell>();
+    voronoiJob = new VoronoiJob(this, sites, oldCells, defaultElevation, preservedCells != null);
+    voronoiProgress = 0;
+  }
+
+  void stepVoronoiJob(int maxSites, int maxMillis) {
+    if (voronoiJob == null) return;
+    voronoiJob.step(maxSites, maxMillis);
+    voronoiProgress = voronoiJob.progress();
+    if (voronoiJob.isDone()) {
+      // Swap in the freshly built data
+      cells = voronoiJob.outCells;
+      preservedCells = null;
+      voronoiDirty = false;
+      voronoiJob = null;
+      voronoiProgress = 1.0f;
+      rebuildCellNeighbors();
       snapDirty = true;
     }
   }
 
-  void recomputeVoronoi() {
-    int n = sites.size();
-    if (n == 0) {
-      cells.clear();
-      preservedCells = null;
-      return;
-    }
+  boolean isVoronoiBuilding() {
+    return voronoiJob != null;
+  }
 
-    ArrayList<Cell> oldCells = (preservedCells != null) ? preservedCells : new ArrayList<Cell>(cells);
-    cells.clear();
-    cellNeighbors.clear();
-    preservedCells = null;
-
-    int defaultBiome = 0;
-    float defaultElev = defaultElevation;
-
-    // For each site, start with the world bounding box and clip by bisectors
-    for (int i = 0; i < n; i++) {
-      Site si = sites.get(i);
-
-      ArrayList<PVector> poly = new ArrayList<PVector>();
-      poly.add(new PVector(minX, minY));
-      poly.add(new PVector(maxX, minY));
-      poly.add(new PVector(maxX, maxY));
-      poly.add(new PVector(minX, maxY));
-
-      for (int j = 0; j < n; j++) {
-        if (i == j) continue;
-        Site sj = sites.get(j);
-        poly = clipPolygonWithHalfPlane(poly, si, sj);
-        if (poly.size() < 3) {
-          break;
-        }
-      }
-
-      if (poly.size() >= 3) {
-        // Compute centroid of the new polygon
-        float cx = 0;
-        float cy = 0;
-        int nv = poly.size();
-        for (int k = 0; k < nv; k++) {
-          PVector v = poly.get(k);
-          cx += v.x;
-          cy += v.y;
-        }
-        cx /= nv;
-        cy /= nv;
-
-        int biomeId = oldCells.isEmpty() ? defaultBiome : sampleBiomeFromOldCells(oldCells, cx, cy, defaultBiome);
-        float elev = oldCells.isEmpty() ? defaultElev : sampleElevationFromOldCells(oldCells, cx, cy, defaultElev);
-
-        Cell newCell = new Cell(i, poly, biomeId);
-        newCell.elevation = elev;
-        cells.add(newCell);
-      }
-    }
-
-    rebuildCellNeighbors();
+  float getVoronoiProgress() {
+    if (voronoiJob != null) return voronoiJob.progress();
+    return voronoiDirty ? 0.0f : 1.0f;
   }
 
   // Keep the half-plane of points closer to si than sj
@@ -992,6 +983,91 @@ class MapModel {
       }
     }
     return fallback;
+  }
+
+  // Incremental Voronoi builder to keep UI responsive during generation.
+  class VoronoiJob {
+    MapModel model;
+    ArrayList<Site> sites;
+    ArrayList<Cell> oldCells;
+    ArrayList<Cell> outCells = new ArrayList<Cell>();
+    int idx = 0;
+    int n;
+    float defaultElev;
+    int defaultBiome = 0;
+    boolean preserveData;
+
+    VoronoiJob(MapModel model, ArrayList<Site> sites, ArrayList<Cell> oldCells, float defaultElev, boolean preserveData) {
+      this.model = model;
+      this.sites = new ArrayList<Site>(sites);
+      this.oldCells = (oldCells != null) ? oldCells : new ArrayList<Cell>();
+      this.n = this.sites.size();
+      this.defaultElev = defaultElev;
+      this.preserveData = preserveData;
+    }
+
+    void step(int maxSites, int maxMillis) {
+      if (idx >= n) return;
+      int processed = 0;
+      long end = millis() + max(0, maxMillis);
+      while (idx < n && processed < maxSites) {
+        if (maxMillis > 0 && millis() > end) break;
+        buildCell(idx);
+        idx++;
+        processed++;
+      }
+    }
+
+    void buildCell(int i) {
+      Site si = sites.get(i);
+      ArrayList<PVector> poly = new ArrayList<PVector>();
+      poly.add(new PVector(minX, minY));
+      poly.add(new PVector(maxX, minY));
+      poly.add(new PVector(maxX, maxY));
+      poly.add(new PVector(minX, maxY));
+
+      for (int j = 0; j < n; j++) {
+        if (i == j) continue;
+        Site sj = sites.get(j);
+        poly = model.clipPolygonWithHalfPlane(poly, si, sj);
+        if (poly.size() < 3) {
+          break;
+        }
+      }
+
+      if (poly.size() < 3) return;
+
+      float cx = 0;
+      float cy = 0;
+      int nv = poly.size();
+      for (int k = 0; k < nv; k++) {
+        PVector v = poly.get(k);
+        cx += v.x;
+        cy += v.y;
+      }
+      cx /= nv;
+      cy /= nv;
+
+      int biomeId = (preserveData && !oldCells.isEmpty())
+        ? model.sampleBiomeFromOldCells(oldCells, cx, cy, defaultBiome)
+        : defaultBiome;
+      float elev = (preserveData && !oldCells.isEmpty())
+        ? model.sampleElevationFromOldCells(oldCells, cx, cy, defaultElev)
+        : defaultElev;
+
+      Cell newCell = new Cell(i, poly, biomeId);
+      newCell.elevation = elev;
+      outCells.add(newCell);
+    }
+
+    boolean isDone() {
+      return idx >= n;
+    }
+
+    float progress() {
+      if (n <= 0) return 1.0f;
+      return constrain(idx / (float)n, 0, 1);
+    }
   }
 
   // ---------- Zones / cells picking ----------
@@ -1091,16 +1167,95 @@ class MapModel {
     for (int i = 0; i < n; i++) {
       cellNeighbors.add(new ArrayList<Integer>());
     }
+
+    if (n == 0) return;
+
+    // Spatial binning to avoid O(n^2) all-pairs comparisons when many sites are present.
+    float worldW = maxX - minX;
+    float worldH = maxY - minY;
+    float avgCellSize = sqrt((worldW * worldH) / max(1, n));
+    float binSize = max(avgCellSize, 1e-3f);
+    float invBin = 1.0f / binSize;
     float eps = 1e-4f;
+
+    float[] minXs = new float[n];
+    float[] minYs = new float[n];
+    float[] maxXs = new float[n];
+    float[] maxYs = new float[n];
+
+    HashMap<Long, ArrayList<Integer>> bins = new HashMap<Long, ArrayList<Integer>>();
+
     for (int i = 0; i < n; i++) {
-      Cell a = cells.get(i);
-      for (int j = i + 1; j < n; j++) {
-        Cell b = cells.get(j);
-        if (cellsAreNeighbors(a, b, eps)) {
-          cellNeighbors.get(i).add(j);
-          cellNeighbors.get(j).add(i);
+      Cell c = cells.get(i);
+      if (c == null || c.vertices == null || c.vertices.size() < 2) continue;
+      float minx = Float.MAX_VALUE;
+      float miny = Float.MAX_VALUE;
+      float maxx = -Float.MAX_VALUE;
+      float maxy = -Float.MAX_VALUE;
+      for (PVector v : c.vertices) {
+        minx = min(minx, v.x);
+        miny = min(miny, v.y);
+        maxx = max(maxx, v.x);
+        maxy = max(maxy, v.y);
+      }
+      minXs[i] = minx;
+      minYs[i] = miny;
+      maxXs[i] = maxx;
+      maxYs[i] = maxy;
+
+      int gx0 = (int)floor((minx - minX) * invBin);
+      int gx1 = (int)floor((maxx - minX) * invBin);
+      int gy0 = (int)floor((miny - minY) * invBin);
+      int gy1 = (int)floor((maxy - minY) * invBin);
+      for (int gx = gx0; gx <= gx1; gx++) {
+        for (int gy = gy0; gy <= gy1; gy++) {
+          long key = (((long)gx) << 32) ^ (gy & 0xffffffffL);
+          ArrayList<Integer> bucket = bins.get(key);
+          if (bucket == null) {
+            bucket = new ArrayList<Integer>();
+            bins.put(key, bucket);
+          }
+          bucket.add(i);
         }
       }
+    }
+
+    int[] seen = new int[n];
+    int stamp = 1;
+
+    for (int i = 0; i < n; i++) {
+      Cell a = cells.get(i);
+      if (a == null || a.vertices == null || a.vertices.size() < 2) continue;
+
+      int gx0 = (int)floor((minXs[i] - minX) * invBin) - 1;
+      int gx1 = (int)floor((maxXs[i] - minX) * invBin) + 1;
+      int gy0 = (int)floor((minYs[i] - minY) * invBin) - 1;
+      int gy1 = (int)floor((maxYs[i] - minY) * invBin) + 1;
+
+      for (int gx = gx0; gx <= gx1; gx++) {
+        for (int gy = gy0; gy <= gy1; gy++) {
+          long key = (((long)gx) << 32) ^ (gy & 0xffffffffL);
+          ArrayList<Integer> bucket = bins.get(key);
+          if (bucket == null) continue;
+          for (int idx : bucket) {
+            if (idx <= i) continue;
+            if (seen[idx] == stamp) continue;
+            seen[idx] = stamp;
+            // Quick AABB rejection before the expensive vertex test
+            if (maxXs[i] + eps < minXs[idx] || minXs[i] - eps > maxXs[idx] ||
+                maxYs[i] + eps < minYs[idx] || minYs[i] - eps > maxYs[idx]) {
+              continue;
+            }
+            Cell b = cells.get(idx);
+            if (b == null) continue;
+            if (cellsAreNeighbors(a, b, eps)) {
+              cellNeighbors.get(i).add(idx);
+              cellNeighbors.get(idx).add(i);
+            }
+          }
+        }
+      }
+      stamp++;
     }
   }
 
@@ -1146,9 +1301,6 @@ class MapModel {
   void generateSites(PlacementMode mode, int targetCount, boolean preserveCellData) {
     int clampedCount = constrain(targetCount, 0, MAX_SITE_COUNT);
     preservedCells = preserveCellData ? new ArrayList<Cell>(cells) : null;
-    if (!preserveCellData) {
-      cells.clear(); // drop old cells so properties are not inherited
-    }
     sites.clear();
 
     if (clampedCount <= 0) {

@@ -62,7 +62,11 @@ void drawTopBar() {
     fill(235);
     rect(x, y, barW, barH, 3);
     noStroke();
-    float pct = (sin(loadingPhase) * 0.5f + 0.5f); // 0..1 animated
+    float pct = constrain(loadingPct, 0, 1);
+    // Keep a tiny animated pulse to show activity even if progress stalls briefly.
+    if (isLoading) {
+      pct = max(pct, (sin(loadingPhase) * 0.05f + 0.05f));
+    }
     float w = barW * pct;
     fill(60, 140, 220);
     rect(x + 1, y + 1, w - 2, barH - 2, 2);

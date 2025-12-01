@@ -1,9 +1,9 @@
 
 Loading bar :
-(later) loading bar is still useless for now, only appears briefly right before the end of the process, but that's not an urgent task.
+Loading bar now tracks incremental Voronoi rebuild progress and stays visible while work runs.
 
 Sites :
-The sites placement is so much slower than before and I'm not sure why, can we optimize this? (eg the voronoi pass could be computer only on demand when necessary?)
+Site placement slowness was traced to neighbor/snap rebuilding; optimized those passes in MapModel to speed generation.
 (later) There could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 (later) Offer quick placement presets: pure random, even/poisson-ish grid, or manual only.
 (later) Sites should probably be renamed to cells in the UI.
@@ -64,7 +64,6 @@ Generative modes :
 (later) Deterministic, opt-in generators (fill missing biomes by noise, auto minor roads near cities, small villages) that never overwrite user edits.
 
 General :
-Read the initial intentions document, exctact missing features and idead, add them to this todo list as "(later)" items, then remove the doc.
 Define a precise lexicon and homogenize code and ui labels.
 Refactor, optimize etc.
 Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
