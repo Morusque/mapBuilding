@@ -498,6 +498,7 @@ boolean handleLabelsPanelClick(int mx, int my) {
 boolean handlePathsListPanelClick(int mx, int my) {
   if (!isInPathsListPanel(mx, my)) return false;
   PathsListLayout layout = buildPathsListLayout();
+  populatePathsListRows(layout);
 
   // New path button
   if (layout.newBtn.contains(mx, my)) {
@@ -512,28 +513,13 @@ boolean handlePathsListPanelClick(int mx, int my) {
     return true;
   }
 
-  int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
-  int rowH = 44;
-  int maxY = layout.newBtn.y - PANEL_SECTION_GAP;
-
-  for (int i = 0; i < mapModel.paths.size(); i++) {
-    if (curY + rowH > maxY) break;
+  for (int i = 0; i < layout.rows.size(); i++) {
+    PathRowLayout row = layout.rows.get(i);
     Path p = mapModel.paths.get(i);
 
-    int selectSize = 16;
-    IntRect selectRect = new IntRect(labelX, curY, selectSize, selectSize);
-    IntRect nameRect = new IntRect(selectRect.x + selectRect.w + 6, curY,
-                                   layout.panel.w - 2 * PANEL_PADDING - selectRect.w - 6 - 40,
-                                   PANEL_LABEL_H + 4);
-    IntRect delRect = new IntRect(nameRect.x + nameRect.w + 6, nameRect.y, 30, nameRect.h);
-    curY += nameRect.h + 2;
-    IntRect typeRect = new IntRect(labelX + selectSize + 6, curY, 140, PANEL_LABEL_H + 2);
-    curY += rowH - 2 * PANEL_LABEL_H;
-
-    if (selectRect.contains(mx, my) || nameRect.contains(mx, my)) {
+    if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
       selectedPathIndex = i;
-      editingPathNameIndex = nameRect.contains(mx, my) ? i : -1;
+      editingPathNameIndex = row.nameRect.contains(mx, my) ? i : -1;
       if (editingPathNameIndex == i) {
         pathNameDraft = (p.name != null) ? p.name : "";
       } else {
@@ -541,7 +527,7 @@ boolean handlePathsListPanelClick(int mx, int my) {
       }
       return true;
     }
-    if (delRect.contains(mx, my)) {
+    if (row.delRect.contains(mx, my)) {
       mapModel.paths.remove(i);
       if (selectedPathIndex == i) {
         selectedPathIndex = -1;
@@ -552,7 +538,7 @@ boolean handlePathsListPanelClick(int mx, int my) {
       if (editingPathNameIndex == i) editingPathNameIndex = -1;
       return true;
     }
-    if (typeRect.contains(mx, my)) {
+    if (row.typeRect.contains(mx, my)) {
       if (!mapModel.pathTypes.isEmpty()) {
         p.typeId = (p.typeId + 1) % mapModel.pathTypes.size();
       }

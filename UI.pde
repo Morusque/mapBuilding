@@ -511,10 +511,16 @@ class PathsListLayout {
   IntRect panel;
   int titleY;
   IntRect newBtn;
-  ArrayList<IntRect> deleteBtns = new ArrayList<IntRect>();
-  ArrayList<IntRect> nameRects = new ArrayList<IntRect>();
-  ArrayList<IntRect> typeRects = new ArrayList<IntRect>();
-  ArrayList<IntRect> selectRects = new ArrayList<IntRect>();
+  ArrayList<PathRowLayout> rows = new ArrayList<PathRowLayout>();
+}
+
+class PathRowLayout {
+  IntRect selectRect;
+  IntRect nameRect;
+  IntRect delRect;
+  IntRect typeRect;
+  int statsY;
+  int statsH;
 }
 
 PathsLayout buildPathsLayout() {
@@ -583,6 +589,43 @@ PathsListLayout buildPathsListLayout() {
   int newBtnY = l.panel.y + l.panel.h - PANEL_PADDING - PANEL_BUTTON_H;
   l.newBtn = new IntRect(x + PANEL_PADDING, newBtnY, 90, PANEL_BUTTON_H);
   return l;
+}
+
+void populatePathsListRows(PathsListLayout layout) {
+  layout.rows.clear();
+  int labelX = layout.panel.x + PANEL_PADDING;
+  int curY = layout.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  int maxY = layout.newBtn.y - PANEL_SECTION_GAP;
+
+  int textH = ceil(textAscent() + textDescent());
+  int nameH = max(PANEL_LABEL_H + 6, textH + 8);
+  int typeH = max(PANEL_LABEL_H + 2, textH + 6);
+  int statsH = max(PANEL_LABEL_H, textH);
+  int rowGap = 10;
+
+  for (int i = 0; i < mapModel.paths.size(); i++) {
+    int rowTotal = nameH + 6 + typeH + 4 + statsH + rowGap;
+    if (curY + rowTotal > maxY) break;
+
+    int selectSize = max(16, nameH - 2);
+    PathRowLayout row = new PathRowLayout();
+    row.selectRect = new IntRect(labelX, curY, selectSize, selectSize);
+    row.nameRect = new IntRect(row.selectRect.x + row.selectRect.w + 6, curY,
+                               layout.panel.w - 2 * PANEL_PADDING - row.selectRect.w - 6 - 40,
+                               nameH);
+    row.delRect = new IntRect(row.nameRect.x + row.nameRect.w + 6, curY, 30, nameH);
+
+    curY += nameH + 6;
+
+    row.typeRect = new IntRect(labelX + selectSize + 6, curY, 160, typeH);
+    curY += typeH + 4;
+
+    row.statsY = curY;
+    row.statsH = statsH;
+    curY += statsH + rowGap;
+
+    layout.rows.add(row);
+  }
 }
 
 void drawPathsPanel() {
@@ -719,6 +762,7 @@ void drawPathsPanel() {
 
 void drawPathsListPanel() {
   PathsListLayout layout = buildPathsListLayout();
+  populatePathsListRows(layout);
   drawPanelBackground(layout.panel);
 
   int labelX = layout.panel.x + PANEL_PADDING;
@@ -733,77 +777,54 @@ void drawPathsListPanel() {
     textAlign(LEFT, TOP);
     text("No paths yet.", labelX, curY);
   } else {
-    int rowH = 62;
-    layout.deleteBtns.clear();
-    layout.nameRects.clear();
-    layout.typeRects.clear();
-    layout.selectRects.clear();
-
-    int maxY = layout.newBtn.y - PANEL_SECTION_GAP;
-    for (int i = 0; i < mapModel.paths.size(); i++) {
+    for (int i = 0; i < layout.rows.size(); i++) {
       Path p = mapModel.paths.get(i);
-      if (curY + rowH > maxY) break;
+      PathRowLayout row = layout.rows.get(i);
 
-      int selectSize = 16;
-      IntRect selectRect = new IntRect(labelX, curY, selectSize, selectSize);
-      layout.selectRects.add(selectRect);
       boolean selected = (selectedPathIndex == i);
-      drawBevelButton(selectRect.x, selectRect.y, selectRect.w, selectRect.h, selected);
+      drawBevelButton(row.selectRect.x, row.selectRect.y, row.selectRect.w, row.selectRect.h, selected);
       fill(10);
       textAlign(CENTER, CENTER);
-      text(selected ? "*" : "", selectRect.x + selectRect.w / 2, selectRect.y + selectRect.h / 2 - 1);
+      text(selected ? "*" : "", row.selectRect.x + row.selectRect.w / 2, row.selectRect.y + row.selectRect.h / 2 - 1);
 
-      IntRect nameRect = new IntRect(selectRect.x + selectRect.w + 6, curY,
-                                     layout.panel.w - 2 * PANEL_PADDING - selectRect.w - 6 - 40,
-                                     PANEL_LABEL_H + 4);
-      layout.nameRects.add(nameRect);
       boolean editing = (editingPathNameIndex == i);
       if (editing) {
         stroke(60);
         fill(255);
-        rect(nameRect.x, nameRect.y, nameRect.w, nameRect.h);
+        rect(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h);
         fill(0);
         textAlign(LEFT, CENTER);
         String shown = pathNameDraft;
-        text(shown, nameRect.x + 6, nameRect.y + nameRect.h / 2);
-        float caretX = nameRect.x + 6 + textWidth(shown);
+        text(shown, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
+        float caretX = row.nameRect.x + 6 + textWidth(shown);
         stroke(0);
-        line(caretX, nameRect.y + 4, caretX, nameRect.y + nameRect.h - 4);
+        line(caretX, row.nameRect.y + 4, caretX, row.nameRect.y + row.nameRect.h - 4);
       } else {
-        drawBevelButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, selected);
+        drawBevelButton(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, selected);
         fill(10);
         textAlign(LEFT, CENTER);
         String title = (p.name != null && p.name.length() > 0 ? p.name : "Path");
-        text("#" + (i + 1) + " " + title, nameRect.x + 6, nameRect.y + nameRect.h / 2);
+        text("#" + (i + 1) + " " + title, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
       }
 
-      IntRect delRect = new IntRect(nameRect.x + nameRect.w + 6, nameRect.y, 30, nameRect.h);
-      layout.deleteBtns.add(delRect);
-      drawBevelButton(delRect.x, delRect.y, delRect.w, delRect.h, false);
+      drawBevelButton(row.delRect.x, row.delRect.y, row.delRect.w, row.delRect.h, false);
       fill(10);
       textAlign(CENTER, CENTER);
-      text("X", delRect.x + delRect.w / 2, delRect.y + delRect.h / 2);
-
-      curY += nameRect.h + 6;
+      text("X", row.delRect.x + row.delRect.w / 2, row.delRect.y + row.delRect.h / 2);
 
       PathType pt = mapModel.getPathType(p.typeId);
       String typLabel = (pt != null ? pt.name : "Type");
-      IntRect typeRect = new IntRect(labelX + selectSize + 6, curY, 140, PANEL_LABEL_H + 2);
-      layout.typeRects.add(typeRect);
-      drawBevelButton(typeRect.x, typeRect.y, typeRect.w, typeRect.h, false);
+      drawBevelButton(row.typeRect.x, row.typeRect.y, row.typeRect.w, row.typeRect.h, false);
       fill(10);
       textAlign(LEFT, CENTER);
-      text("Type: " + typLabel, typeRect.x + 6, typeRect.y + typeRect.h / 2);
-      curY += PANEL_LABEL_H;
+      text("Type: " + typLabel, row.typeRect.x + 6, row.typeRect.y + row.typeRect.h / 2);
 
-      // Stats line
       int segs = p.segmentCount();
       float len = p.totalLength();
       fill(40);
       textAlign(LEFT, CENTER);
-      text("Segments: " + segs + "   Len: " + nf(len, 1, 3), labelX + selectSize + 6, curY);
-
-      curY += rowH - (nameRect.h + typeRect.h + PANEL_LABEL_H + 6);
+      text("Segments: " + segs + "   Len: " + nf(len, 1, 3),
+           labelX + row.selectRect.w + 6, row.statsY + row.statsH / 2);
     }
   }
 
