@@ -1,26 +1,31 @@
 class Path {
-  ArrayList<PVector> points = new ArrayList<PVector>();
+  ArrayList<ArrayList<PVector>> segments = new ArrayList<ArrayList<PVector>>();
   int typeId = 0;
   String name = "";
 
-  void addPoint(float x, float y) {
-    points.add(new PVector(x, y));
+  void addSegment(ArrayList<PVector> pts) {
+    if (pts == null || pts.size() < 2) return;
+    ArrayList<PVector> copy = new ArrayList<PVector>();
+    for (PVector v : pts) copy.add(v.copy());
+    segments.add(copy);
   }
 
   void draw(PApplet app) {
-    if (points.size() < 2) return;
+    if (segments.isEmpty()) return;
 
-    app.beginShape();
-    for (int i = 0; i < points.size(); i++) {
-      PVector p = points.get(i);
-      app.vertex(p.x, p.y);
+    for (ArrayList<PVector> seg : segments) {
+      if (seg == null || seg.size() < 2) continue;
+      app.beginShape();
+      for (PVector p : seg) {
+        app.vertex(p.x, p.y);
+      }
+      app.endShape();
     }
-    app.endShape();
   }
 
-  // Used to preview the path being drawn (can have different styling if needed)
-  void drawPreview(PApplet app, int strokeCol, float weightPx) {
-    if (points.size() < 1) return;
+  // Used to preview a segment being drawn (can have different styling if needed)
+  void drawPreview(PApplet app, ArrayList<PVector> seg, int strokeCol, float weightPx) {
+    if (seg == null || seg.size() < 2) return;
 
     app.pushStyle();
     app.noFill();
@@ -28,36 +33,29 @@ class Path {
     app.strokeWeight(max(0.5f, weightPx) / viewport.zoom);
 
     app.beginShape();
-    for (int i = 0; i < points.size(); i++) {
-      PVector p = points.get(i);
+    for (PVector p : seg) {
       app.vertex(p.x, p.y);
     }
     app.endShape();
-
-    // Optionally draw nodes as small dots
-    for (int i = 0; i < points.size(); i++) {
-      PVector p = points.get(i);
-      float rWorld = 3.0f / viewport.zoom;
-      app.fill(30, 30, 160);
-      app.noStroke();
-      app.ellipse(p.x, p.y, rWorld, rWorld);
-    }
 
     app.popStyle();
   }
 
   int segmentCount() {
-    return max(0, points.size() - 1);
+    return segments.size();
   }
 
   float totalLength() {
     float len = 0;
-    for (int i = 0; i < points.size() - 1; i++) {
-      PVector a = points.get(i);
-      PVector b = points.get(i + 1);
-      float dx = b.x - a.x;
-      float dy = b.y - a.y;
-      len += sqrt(dx * dx + dy * dy);
+    for (ArrayList<PVector> seg : segments) {
+      if (seg == null) continue;
+      for (int i = 0; i < seg.size() - 1; i++) {
+        PVector a = seg.get(i);
+        PVector b = seg.get(i + 1);
+        float dx = b.x - a.x;
+        float dy = b.y - a.y;
+        len += sqrt(dx * dx + dy * dy);
+      }
     }
     return len;
   }

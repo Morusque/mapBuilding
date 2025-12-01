@@ -72,16 +72,10 @@ class MapModel {
     app.pushStyle();
     for (Cell c : cells) {
       if (c.vertices == null || c.vertices.size() < 3) continue;
-      boolean underwater = c.elevation < seaLevel;
-      int col;
-      if (underwater) {
-        col = app.color(70, 140, 220);
-      } else {
-        col = color(230);
-        if (biomeTypes != null && c.biomeId >= 0 && c.biomeId < biomeTypes.size()) {
-          ZoneType zt = biomeTypes.get(c.biomeId);
-          col = zt.col;
-        }
+      int col = color(230);
+      if (biomeTypes != null && c.biomeId >= 0 && c.biomeId < biomeTypes.size()) {
+        ZoneType zt = biomeTypes.get(c.biomeId);
+        col = zt.col;
       }
 
       app.fill(col);
@@ -183,10 +177,10 @@ class MapModel {
       if (drawWater && h < seaLevel) {
         float depth = seaLevel - h;
         float depthNorm = constrain(depth / 1.0f, 0, 1);
-        float shade = drawElevation ? lerp(0.35f, 0.8f, 1.0f - depthNorm) : 0.7f;
-        float baseR = 40;
-        float baseG = 90;
-        float baseB = 150;
+        float shade = drawElevation ? lerp(0.25f, 0.65f, 1.0f - depthNorm) : 0.55f;
+        float baseR = 30;
+        float baseG = 70;
+        float baseB = 120;
         int water = app.color(baseR * shade, baseG * shade, baseB * shade, 255);
         app.fill(water);
         app.beginShape();
@@ -221,6 +215,14 @@ class MapModel {
   }
 
   ArrayList<PVector> findSnapPath(PVector from, PVector toP) {
+    return findSnapPathWeighted(from, toP, false);
+  }
+
+  ArrayList<PVector> findSnapPathFlattest(PVector from, PVector toP) {
+    return findSnapPathWeighted(from, toP, true);
+  }
+
+  ArrayList<PVector> findSnapPathWeighted(PVector from, PVector toP, boolean favorFlat) {
     ensureSnapGraph();
     String kFrom = keyFor(from.x, from.y);
     String kTo = keyFor(toP.x, toP.y);
@@ -250,6 +252,13 @@ class MapModel {
         PVector np = snapNodes.get(nb);
         if (np == null) continue;
         float w = dist2D(p, np);
+        if (favorFlat) {
+          float elevA = sampleElevationAt(p.x, p.y, from.z);
+          float elevB = sampleElevationAt(np.x, np.y, toP.z);
+          float dh = abs(elevB - elevA);
+          // Penalize steep changes; keep distance as base
+          w *= (1.0f + dh * 3.0f);
+        }
         float ndist = nd.d + w;
         Float curD = dist.get(nb);
         if (curD == null || ndist < curD - 1e-6f) {
@@ -359,6 +368,12 @@ class MapModel {
     return xi + ":" + yi;
   }
 
+  float sampleElevationAt(float x, float y, float fallback) {
+    Cell c = findCellContaining(x, y);
+    if (c != null) return c.elevation;
+    return fallback;
+  }
+
   float dist2D(PVector a, PVector b) {
     float dx = a.x - b.x;
     float dy = a.y - b.y;
@@ -400,7 +415,7 @@ class MapModel {
 
   void addFinishedPath(Path p) {
     if (p == null) return;
-    if (p.points.size() < 2) return; // ignore degenerate paths
+    if (p.segments.isEmpty()) return; // ignore degenerate paths
     if (p.name == null || p.name.length() == 0) {
       p.name = "Path " + (paths.size() + 1);
     }
@@ -416,24 +431,7 @@ class MapModel {
 
   void appendSegmentToPath(Path p, ArrayList<PVector> pts) {
     if (p == null || pts == null || pts.size() < 2) return;
-    if (p.points.isEmpty()) {
-      for (PVector v : pts) p.addPoint(v.x, v.y);
-      return;
-    }
-    PVector last = p.points.get(p.points.size() - 1);
-    int startIdx = 0;
-    if (!pts.isEmpty()) {
-      PVector first = pts.get(0);
-      float dx = last.x - first.x;
-      float dy = last.y - first.y;
-      if (dx * dx + dy * dy < 1e-10f) {
-        startIdx = 1; // avoid duplicate
-      }
-    }
-    for (int i = startIdx; i < pts.size(); i++) {
-      PVector v = pts.get(i);
-      p.addPoint(v.x, v.y);
-    }
+    p.addSegment(pts);
   }
 
   void removePathsNear(float wx, float wy, float radius) {
@@ -442,13 +440,17 @@ class MapModel {
     for (int i = paths.size() - 1; i >= 0; i--) {
       Path p = paths.get(i);
       boolean hit = false;
-      for (PVector v : p.points) {
-        float dx = v.x - wx;
-        float dy = v.y - wy;
-        if (dx * dx + dy * dy <= r2) {
-          hit = true;
-          break;
+      for (ArrayList<PVector> seg : p.segments) {
+        if (seg == null) continue;
+        for (PVector v : seg) {
+          float dx = v.x - wx;
+          float dy = v.y - wy;
+          if (dx * dx + dy * dy <= r2) {
+            hit = true;
+            break;
+          }
         }
+        if (hit) break;
       }
       if (hit) {
         paths.remove(i);
@@ -461,17 +463,19 @@ class MapModel {
     float best = maxDist;
     PVector bestA = null, bestB = null, bestP = null;
     for (Path p : paths) {
-      ArrayList<PVector> pts = p.points;
-      for (int i = 0; i < pts.size() - 1; i++) {
-        PVector a = pts.get(i);
-        PVector b = pts.get(i + 1);
-        PVector proj = closestPointOnSegment(wx, wy, a, b);
-        float d = dist(wx, wy, proj.x, proj.y);
-        if (d < best) {
-          best = d;
-          bestA = a;
-          bestB = b;
-          bestP = proj;
+      for (ArrayList<PVector> seg : p.segments) {
+        if (seg == null) continue;
+        for (int i = 0; i < seg.size() - 1; i++) {
+          PVector a = seg.get(i);
+          PVector b = seg.get(i + 1);
+          PVector proj = closestPointOnSegment(wx, wy, a, b);
+          float d = dist(wx, wy, proj.x, proj.y);
+          if (d < best) {
+            best = d;
+            bestA = a;
+            bestB = b;
+            bestP = proj;
+          }
         }
       }
     }

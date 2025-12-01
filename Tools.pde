@@ -19,3 +19,9 @@ enum ZonePaintMode {
   ZONE_PAINT,
   ZONE_FILL
 }
+
+enum PathRouteMode {
+  ENDS,
+  SHORTEST,
+  FLATTEST
+}

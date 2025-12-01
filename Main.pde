@@ -51,6 +51,7 @@ boolean keepPropertiesOnGenerate = false;
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
 ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
 int activePathTypeIndex = 0;
+int pathRouteModeIndex = 1; // 0=ENDS,1=SHORTEST,2=FLATTEST
 float zoneBrushRadius = 0.04f;
 float seaLevel = 0.0f;
 float elevationBrushRadius = 0.08f;
@@ -152,7 +153,7 @@ void draw() {
   viewport.applyTransform(this);
 
   mapModel.ensureVoronoiComputed();
-  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES);
+  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS);
   boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER && !renderShowZones);
   if (drawCellsFlag) {
     if (currentTool == Tool.EDIT_RENDER) {
@@ -189,8 +190,19 @@ void draw() {
     PVector target = (snapped != null) ? snapped : worldPos;
 
     ArrayList<PVector> route = null;
-    if (snapped != null) {
-      route = mapModel.findSnapPath(pendingPathStart, target);
+    PathRouteMode mode = currentPathRouteMode();
+    if (mode == PathRouteMode.ENDS) {
+      route = new ArrayList<PVector>();
+      route.add(pendingPathStart);
+      route.add(target);
+    } else if (mode == PathRouteMode.SHORTEST) {
+      if (snapped != null) {
+        route = mapModel.findSnapPath(pendingPathStart, target);
+      }
+    } else if (mode == PathRouteMode.FLATTEST) {
+      if (snapped != null) {
+        route = mapModel.findSnapPathFlattest(pendingPathStart, target);
+      }
     }
     if (route == null || route.size() < 2) {
       route = new ArrayList<PVector>();

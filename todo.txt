@@ -2,12 +2,16 @@
 Sites :
 There could be a loading bar for long operations.
 
+Elevation :
+Pergil generate and vary should change seed at each use.
+
 Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
-Segments within a path are allowed to be disjoint, so when clicking four times (eg A[1,1]B[1,2]C[2,1]D[2,2]) that should create two segments (between A and B, then C and D) for the same path but not connect B and C. That means paths are made of segments with starts and ends, not just a list of points.
 There should be an option on the left menu that defines current placement and pathfinding type. "ends" should only snap segment start and end but not subdivide into smaller segments, "shortest" would be what how currently works, "flattest" would minimize slopes (eg when climbing a mountain it would do several diagonals like most real world roads instead of climbing straight).
+A segment that only connects one point to its closest neighbor shoud be visible (right now it does not appear probably due to some bug).
+There should be a visual feedback to indicate the selected path on the map (suggest something).
 
 Struct :
 there should be a slider for structure size (for the next structs to be placed).
@@ -24,3 +28,7 @@ Rendering :
 Zones should only display zone colors, not water. Water is already handles by the water checkbox.
 Water should be darker overall, especially the lighter shades of it are currently too light.
 Path and labels should be displayed on top of zones and water.
+
+Editable types : (for anywhere applicable: paths, biomes, etc)
+The way it works should be : a list of colors with overlay label text. this list has a visual feedback showing which is selected. 
+Below the list are a list of parameters for the selected type including the label for selected type; label feels like a text input area and is rewritable.

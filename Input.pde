@@ -378,6 +378,17 @@ boolean handlePathsPanelClick(int mx, int my) {
   PathsLayout layout = buildPathsLayout();
 
   // Add path type
+  if (layout.routeSlider.contains(mx, my)) {
+    String[] modes = { "Ends", "Shortest", "Flattest" };
+    int modeCount = modes.length;
+    float t = constrain((mx - layout.routeSlider.x) / (float)layout.routeSlider.w, 0, 1);
+    int idx = round(t * (modeCount - 1));
+    pathRouteModeIndex = constrain(idx, 0, modeCount - 1);
+    activeSlider = SLIDER_NONE;
+    return true;
+  }
+
+  // Add path type
   if (layout.typeAddBtn.contains(mx, my)) {
     int n = mapModel.pathTypes.size();
     if (n < PATH_TYPE_PRESETS.length) {
@@ -625,20 +636,28 @@ void handlePathsMousePressed(float wx, float wy) {
 
   Path targetPath = mapModel.paths.get(selectedPathIndex);
   ArrayList<PVector> route = null;
-  if (snapped != null && pendingPathStart != null) {
-    ArrayList<PVector> rp = mapModel.findSnapPath(pendingPathStart, target);
-    if (rp != null && rp.size() > 1) {
-      route = rp;
+  if (pendingPathStart != null) {
+    PathRouteMode mode = currentPathRouteMode();
+    if (mode == PathRouteMode.ENDS) {
+      route = new ArrayList<PVector>();
+      route.add(pendingPathStart.copy());
+      route.add(target.copy());
+    } else if (mode == PathRouteMode.SHORTEST) {
+      ArrayList<PVector> rp = mapModel.findSnapPath(pendingPathStart, target);
+      if (rp != null && rp.size() > 1) route = rp;
+    } else if (mode == PathRouteMode.FLATTEST) {
+      ArrayList<PVector> rp = mapModel.findSnapPathFlattest(pendingPathStart, target);
+      if (rp != null && rp.size() > 1) route = rp;
     }
-  }
-  if (route == null) {
-    route = new ArrayList<PVector>();
-    route.add(pendingPathStart.copy());
-    route.add(target.copy());
+    if (route == null) {
+      route = new ArrayList<PVector>();
+      route.add(pendingPathStart.copy());
+      route.add(target.copy());
+    }
   }
 
   if (targetPath != null) {
-    if (targetPath.points.isEmpty()) {
+    if (targetPath.segments.isEmpty()) {
       targetPath.typeId = activePathTypeIndex;
     }
     mapModel.appendSegmentToPath(targetPath, route);

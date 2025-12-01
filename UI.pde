@@ -482,6 +482,7 @@ class PathsLayout {
   int titleY;
   IntRect typeAddBtn;
   IntRect typeRemoveBtn;
+  IntRect routeSlider;
   ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
   ArrayList<IntRect> typeNameRects = new ArrayList<IntRect>();
   IntRect typeHueSlider;
@@ -505,6 +506,10 @@ PathsLayout buildPathsLayout() {
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  int sliderW = 200;
+  l.routeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   // Path types controls
   l.typeAddBtn = new IntRect(innerX, curY, 24, PANEL_BUTTON_H);
@@ -565,6 +570,32 @@ void drawPathsPanel() {
   textAlign(LEFT, TOP);
   text("Paths", labelX, layout.titleY);
 
+  // Route mode slider (discrete)
+  IntRect rs = layout.routeSlider;
+  stroke(160);
+  fill(225);
+  rect(rs.x, rs.y, rs.w, rs.h, 4);
+  String[] modes = { "Ends", "Shortest", "Flattest" };
+  int modeCount = modes.length;
+  float stepW = (modeCount > 1) ? (rs.w / (float)(modeCount - 1)) : 0;
+  stroke(120);
+  for (int i = 0; i < modeCount; i++) {
+    float tx = rs.x + i * stepW;
+    line(tx, rs.y, tx, rs.y + rs.h);
+  }
+  float handleX;
+  if (pathRouteModeIndex <= 0) handleX = rs.x;
+  else if (pathRouteModeIndex >= modeCount - 1) handleX = rs.x + rs.w;
+  else handleX = rs.x + pathRouteModeIndex * stepW;
+  float knobR = rs.h * 0.9f;
+  float knobY = rs.y + rs.h / 2.0f;
+  fill(40);
+  noStroke();
+  ellipse(handleX, knobY, knobR, knobR);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Route mode: " + modes[pathRouteModeIndex], rs.x, rs.y - 4);
+
   // Only type management on this panel
 
   // Path types add/remove
@@ -618,7 +649,7 @@ void drawPathsPanel() {
     fill(230);
     rect(hue.x, hue.y, hue.w, hue.h, 4);
     float hNorm = constrain(active.hue01, 0, 1);
-    float handleX = hue.x + hNorm * hue.w;
+    handleX = hue.x + hNorm * hue.w;
     float handleR = hue.h * 0.9f;
     float handleY = hue.y + hue.h / 2.0f;
     fill(40);
@@ -1001,6 +1032,16 @@ String placementModeLabel(PlacementMode m) {
 PlacementMode currentPlacementMode() {
   int idx = constrain(placementModeIndex, 0, placementModes.length - 1);
   return placementModes[idx];
+}
+
+PathRouteMode currentPathRouteMode() {
+  int idx = constrain(pathRouteModeIndex, 0, 2);
+  switch (idx) {
+    case 0: return PathRouteMode.ENDS;
+    case 1: return PathRouteMode.SHORTEST;
+    case 2: return PathRouteMode.FLATTEST;
+  }
+  return PathRouteMode.SHORTEST;
 }
 
 void drawBevelButton(int x, int y, int w, int h, boolean pressed) {
