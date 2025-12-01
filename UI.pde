@@ -48,6 +48,25 @@ void drawTopBar() {
                 "   Center: (" + nf(viewport.centerX, 1, 3) + ", " +
                                nf(viewport.centerY, 1, 3) + ")";
   text(info, 10, TOP_BAR_HEIGHT / 2.0f);
+
+  // Loading bar (top-right, small)
+  boolean showLoad = isLoading || loadingHoldFrames > 0;
+  if (showLoad) {
+    if (isLoading) loadingPhase += 0.02f;
+    else loadingHoldFrames = max(0, loadingHoldFrames - 1);
+    float barW = 120;
+    float barH = 10;
+    float x = width - barW - 12;
+    float y = (TOP_BAR_HEIGHT - barH) / 2.0f;
+    stroke(80);
+    fill(235);
+    rect(x, y, barW, barH, 3);
+    noStroke();
+    float pct = (sin(loadingPhase) * 0.5f + 0.5f); // 0..1 animated
+    float w = barW * pct;
+    fill(60, 140, 220);
+    rect(x + 1, y + 1, w - 2, barH - 2, 2);
+  }
 }
 
 void drawToolButtons() {
@@ -483,6 +502,7 @@ class PathsLayout {
   IntRect typeAddBtn;
   IntRect typeRemoveBtn;
   IntRect routeSlider;
+  IntRect flattestSlider;
   ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
   ArrayList<IntRect> typeNameRects = new ArrayList<IntRect>();
   IntRect typeHueSlider;
@@ -509,6 +529,9 @@ PathsLayout buildPathsLayout() {
 
   int sliderW = 200;
   l.routeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.flattestSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   // Path types controls
@@ -595,6 +618,20 @@ void drawPathsPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Route mode: " + modes[pathRouteModeIndex], rs.x, rs.y - 4);
+
+  // Flattest bias slider (only relevant for Flattest mode)
+  IntRect fs = layout.flattestSlider;
+  stroke(160);
+  fill(230);
+  rect(fs.x, fs.y, fs.w, fs.h, 4);
+  float fNorm = constrain(map(flattestSlopeBias, 0.5f, 8.0f, 0, 1), 0, 1);
+  float fx = fs.x + fNorm * fs.w;
+  fill(40);
+  noStroke();
+  ellipse(fx, fs.y + fs.h / 2.0f, fs.h * 0.9f, fs.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Flattest slope bias", fs.x, fs.y - 4);
 
   // Only type management on this panel
 

@@ -257,7 +257,7 @@ class MapModel {
           float elevB = sampleElevationAt(np.x, np.y, toP.z);
           float dh = abs(elevB - elevA);
           // Penalize steep changes; keep distance as base
-          w *= (1.0f + dh * 3.0f);
+          w *= (1.0f + dh * flattestSlopeBias);
         }
         float ndist = nd.d + w;
         Float curD = dist.get(nb);
@@ -399,13 +399,30 @@ class MapModel {
     app.pushStyle();
     app.noFill();
 
-    for (Path p : paths) {
+    for (int i = 0; i < paths.size(); i++) {
+      Path p = paths.get(i);
       PathType pt = getPathType(p.typeId);
       int col = (pt != null) ? pt.col : strokeCol;
       float w = (pt != null) ? pt.weightPx : 2.0f;
       app.stroke(col);
       app.strokeWeight(max(0.5f, w) / viewport.zoom);
       p.draw(app);
+    }
+
+    // Selected path highlight
+    if (selectedPathIndex >= 0 && selectedPathIndex < paths.size()) {
+      Path sel = paths.get(selectedPathIndex);
+      PathType pt = getPathType(sel.typeId);
+      int col = (pt != null) ? pt.col : strokeCol;
+      int hi = app.color(255, 230, 80, 180);
+      float w = (pt != null) ? pt.weightPx : 2.0f;
+      float hw = max(0.5f, w) / viewport.zoom;
+      app.stroke(hi);
+      app.strokeWeight(hw + 1.5f);
+      sel.draw(app);
+      app.stroke(col);
+      app.strokeWeight(hw);
+      sel.draw(app);
     }
 
     app.popStyle();

@@ -1,33 +1,35 @@
 
+Loading bar :
+(later) loading bar is still useless for now, only appears briefly right before the end of the process, but that's not an urgent task.
+
 Sites :
-There could be a loading bar for long operations.
+Best default value is something like density:1, fuzz:0.07, Placement:hexagonal. But density should probably be remapped so that the current 1.0 is the middle of the slider.
 
 Elevation :
-Pergil generate and vary should change seed at each use.
 
 Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
-There should be an option on the left menu that defines current placement and pathfinding type. "ends" should only snap segment start and end but not subdivide into smaller segments, "shortest" would be what how currently works, "flattest" would minimize slopes (eg when climbing a mountain it would do several diagonals like most real world roads instead of climbing straight).
-A segment that only connects one point to its closest neighbor shoud be visible (right now it does not appear probably due to some bug).
-There should be a visual feedback to indicate the selected path on the map (suggest something).
+"End" path mode still doesn't seem to work, it should just draw a straight line between two existing points. A segment that only connects one point to its closest neighbor shoud be visible (right now it does not appear probably due to some bug). I believe those two are actually the same problem: a path with onely one undivided segment doesn't work for some reason.
+Flattest slope bias could be pushed a lot further to allow for more convoluted routes.
+Left panel : there should be a checkbox option to ask the pathfinder to avoid water.
+Visual feedback to indicate the selected path on the map : the yellow halo is good but way way too big; it should be only a few pixels wide. Also it should only show on the "path" mode, not other modes.
 
 Struct :
-there should be a slider for structure size (for the next structs to be placed).
+There should be a slider for structure size (for the next structs to be placed).
 Structures should be able to be places either side of paths (closer to the mouse cursor), not just one side.
-There should be a hierarchy of things the structures should be allowed to snap to.
-Paths first, other structures next, then frontier between land and water, then there will be more of those but we'll get to it later.
+There should be a hierarchy of things the structures should be allowed to snap to : paths first, other structures next, then frontier between land and water, then there will be more of those but we'll get to it later.
 
 Labels :
-Sites outlines should not appear here.
 Label should be attributed to one or more elements on the map, or more arbitrarily placed.
 Display a list of editable labels to the right side same logic than for paths tab, we'll use it later to highlight associated elements and display logic.
+Water should be visible here.
 
 Rendering :
-Zones should only display zone colors, not water. Water is already handles by the water checkbox.
-Water should be darker overall, especially the lighter shades of it are currently too light.
 Path and labels should be displayed on top of zones and water.
+(later) rendering should have a black an white option.
+(later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
 
 Editable types : (for anywhere applicable: paths, biomes, etc)
 The way it works should be : a list of colors with overlay label text. this list has a visual feedback showing which is selected. 

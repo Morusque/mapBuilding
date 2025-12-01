@@ -69,6 +69,7 @@ boolean renderShowLabels = true;
 boolean renderShowStructures = true;
 float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
+float flattestSlopeBias = 3.0f; // penalty multiplier for slope in flattest mode
 
 // Zone renaming state
 int editingZoneNameIndex = -1;
@@ -86,6 +87,11 @@ String pathTypeNameDraft = "";
 int editingPathNameIndex = -1;
 String pathNameDraft = "";
 
+// Loading indicator
+boolean isLoading = false;
+float loadingPhase = 0;
+int loadingHoldFrames = 0;
+
 // Slider drag state
 final int SLIDER_NONE = 0;
 final int SLIDER_SITES_DENSITY = 1;
@@ -99,8 +105,9 @@ final int SLIDER_ELEV_STRENGTH = 8;
 final int SLIDER_ELEV_NOISE = 9;
 final int SLIDER_PATH_TYPE_HUE = 10;
 final int SLIDER_PATH_TYPE_WEIGHT = 11;
-final int SLIDER_RENDER_LIGHT_AZIMUTH = 12;
-final int SLIDER_RENDER_LIGHT_ALTITUDE = 13;
+final int SLIDER_FLATTEST_BIAS = 12;
+final int SLIDER_RENDER_LIGHT_AZIMUTH = 13;
+final int SLIDER_RENDER_LIGHT_ALTITUDE = 14;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -161,6 +168,9 @@ void draw() {
     } else if (currentTool == Tool.EDIT_PATHS) {
       mapModel.drawCellsRender(this, showBorders, seaLevel);
       mapModel.drawElevationOverlay(this, seaLevel, false, true, true);
+    } else if (currentTool == Tool.EDIT_STRUCTURES) {
+      mapModel.drawCellsRender(this, showBorders, seaLevel);
+      mapModel.drawElevationOverlay(this, seaLevel, false, true, false);
     } else {
       mapModel.drawCells(this, showBorders);
     }
@@ -350,6 +360,17 @@ void seedDefaultZones() {
     c.biomeId = 0;
     c.elevation = defaultElevation;
   }
+}
+
+void startLoading() {
+  isLoading = true;
+  loadingPhase = 0;
+  loadingHoldFrames = 0;
+}
+
+void stopLoading() {
+  isLoading = false;
+  loadingHoldFrames = 8; // keep bar visible briefly
 }
 
 void drawZoneBrushPreview() {

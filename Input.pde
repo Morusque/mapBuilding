@@ -122,7 +122,9 @@ boolean handleSitesPanelClick(int mx, int my) {
 
   // Generate button
   if (layout.generateBtn.contains(mx, my)) {
+    startLoading();
     mapModel.generateSites(currentPlacementMode(), siteDensity, keepPropertiesOnGenerate);
+    stopLoading();
     return true;
   }
 
@@ -388,6 +390,13 @@ boolean handlePathsPanelClick(int mx, int my) {
     return true;
   }
 
+  if (layout.flattestSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.flattestSlider.x) / (float)layout.flattestSlider.w, 0, 1);
+    flattestSlopeBias = constrain(0.5f + t * (8.0f - 0.5f), 0.5f, 8.0f);
+    activeSlider = SLIDER_FLATTEST_BIAS;
+    return true;
+  }
+
   // Add path type
   if (layout.typeAddBtn.contains(mx, my)) {
     int n = mapModel.pathTypes.size();
@@ -607,12 +616,14 @@ boolean handleElevationPanelClick(int mx, int my) {
 
   // Generate button
   if (layout.perlinBtn.contains(mx, my)) {
+    noiseSeed((int)random(Integer.MAX_VALUE));
     mapModel.generateElevationNoise(elevationNoiseScale, 1.0f, seaLevel);
     return true;
   }
 
   // Vary button
   if (layout.varyBtn.contains(mx, my)) {
+    noiseSeed((int)random(Integer.MAX_VALUE));
     mapModel.addElevationVariation(elevationNoiseScale, 0.2f, seaLevel);
     return true;
   }
@@ -631,6 +642,11 @@ void handlePathsMousePressed(float wx, float wy) {
 
   if (pendingPathStart == null) {
     pendingPathStart = target;
+    return;
+  }
+
+  // Ignore zero-length
+  if (dist(pendingPathStart.x, pendingPathStart.y, target.x, target.y) < 1e-6f) {
     return;
   }
 
@@ -886,6 +902,13 @@ void updateActiveSlider(int mx, int my) {
         PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
         pt.weightPx = constrain(0.5f + t * (8.0f - 0.5f), 0.5f, 8.0f);
       }
+      break;
+    }
+    case SLIDER_FLATTEST_BIAS: {
+      PathsLayout l = buildPathsLayout();
+      float t = (mx - l.flattestSlider.x) / (float)l.flattestSlider.w;
+      t = constrain(t, 0, 1);
+      flattestSlopeBias = constrain(0.5f + t * (8.0f - 0.5f), 0.5f, 8.0f);
       break;
     }
     case SLIDER_RENDER_LIGHT_AZIMUTH: {
