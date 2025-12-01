@@ -4,6 +4,7 @@ Loading bar :
 
 Sites :
 Density number should go from 0 to 20000 sites with default value being 10000, it should not display the normalized 0-1 or 0-2 value at all.
+(later) There could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 
 Elevation :
 
@@ -11,11 +12,14 @@ Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
-Single segment paths still don't work. "Ends" mode seems to only register single coordinate, not start and end.
-Route mode slider can now skip the third option that has been merges to the second one.
+Single segment paths still don't work, it should be pretty simple though: first click= starting coordinate, second click = ending coortinate, this is a new segment and should register and display.
+Paths in the list of paths should display their number of segments and total length.
+(later) rivers could have an option that make them start small and end bigger when reaching the sea (this needs connection analysis, pathfinding etc when using multiple segments, to compute segment proximity to sea).
 
 Struct :
-Structure angle should follow normals even when snapping to coastlines or frontiers.
+Structure snapping to any frontier should be similar to when snapping to paths: snaps to either side with a small margin like how a house is placed to a road, not right in the middle of it.
+Structure should also snap to other structures outlines.
+(later) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.
 
 Labels :
 Label should be attributed to one or more elements on the map, or more arbitrarily placed.
@@ -23,8 +27,12 @@ Display a list of editable labels to the right side same logic than for paths ta
 
 Rendering :
 Path, structures and labels should be displayed on top of zones and water (and in this order).
+When checking "water" but not "biomes", water should still display.
 (later) rendering should have a black an white option.
+(later) water should have a "contour lines" option (based on proximity from coastline).
+(later) elevation should have a "contour lines" option (based on elevation landmarks).
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
+(later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons.
 
 Editable types : (for anywhere applicable: paths, biomes, etc)
 The way it works should be : a list of colors with overlay label text. this list has a visual feedback showing which is selected. 

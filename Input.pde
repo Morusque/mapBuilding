@@ -661,12 +661,14 @@ boolean handleElevationPanelClick(int mx, int my) {
 }
 
 void handlePathsMousePressed(float wx, float wy) {
-  if (selectedPathIndex < 0 || selectedPathIndex >= mapModel.paths.size()) {
-    if (!mapModel.paths.isEmpty()) {
-      selectedPathIndex = 0;
-    } else {
-      return;
-    }
+  if (mapModel.paths.isEmpty()) {
+    Path np = new Path();
+    np.typeId = activePathTypeIndex;
+    np.name = "Path " + (mapModel.paths.size() + 1);
+    mapModel.paths.add(np);
+    selectedPathIndex = 0;
+  } else if (selectedPathIndex < 0 || selectedPathIndex >= mapModel.paths.size()) {
+    selectedPathIndex = 0;
   }
   wx = constrain(wx, mapModel.minX, mapModel.maxX);
   wy = constrain(wy, mapModel.minY, mapModel.maxY);

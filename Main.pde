@@ -168,6 +168,10 @@ void draw() {
   if (drawCellsFlag) {
     if (currentTool == Tool.EDIT_RENDER) {
       mapModel.drawCellsRender(this, showBorders, seaLevel);
+      if (renderShowElevation || renderShowWater) {
+        mapModel.drawElevationOverlay(this, seaLevel, false, renderShowWater, renderShowElevation,
+                                      true, renderLightAzimuthDeg, renderLightAltitudeDeg);
+      }
     } else if (currentTool == Tool.EDIT_PATHS) {
       mapModel.drawCellsRender(this, showBorders, seaLevel);
       mapModel.drawElevationOverlay(this, seaLevel, false, true, true);
@@ -266,11 +270,6 @@ void draw() {
     drawElevationBrushPreview();
   } else if (currentTool == Tool.EDIT_BIOMES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
-  } else if (currentTool == Tool.EDIT_RENDER) {
-    if (renderShowElevation || renderShowWater) {
-      mapModel.drawElevationOverlay(this, seaLevel, false, renderShowWater, renderShowElevation,
-                                    true, renderLightAzimuthDeg, renderLightAltitudeDeg);
-    }
   } else {
     mapModel.drawDebugWorldBounds(this);
   }

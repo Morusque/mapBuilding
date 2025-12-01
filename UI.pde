@@ -603,7 +603,7 @@ void drawPathsPanel() {
   stroke(160);
   fill(225);
   rect(rs.x, rs.y, rs.w, rs.h, 4);
-  String[] modes = { "Ends", "Shortest", "Flattest" };
+  String[] modes = { "Ends", "Pathfind" };
   int modeCount = modes.length;
   float stepW = (modeCount > 1) ? (rs.w / (float)(modeCount - 1)) : 0;
   stroke(120);

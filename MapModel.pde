@@ -178,6 +178,13 @@ class MapModel {
       if (bestPoint != null && bestEdgeD <= snapRange) {
         s.x = bestPoint.x;
         s.y = bestPoint.y;
+        // Align angle to coastline normal (toward cell centroid)
+        PVector cen = cellCentroid(c);
+        float nx = cen.x - bestPoint.x;
+        float ny = cen.y - bestPoint.y;
+        if (nx * nx + ny * ny > 1e-8f) {
+          s.angle = atan2(ny, nx);
+        }
       }
     }
 
