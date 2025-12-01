@@ -784,7 +784,7 @@ void drawPathsListPanel() {
       textAlign(CENTER, CENTER);
       text("X", delRect.x + delRect.w / 2, delRect.y + delRect.h / 2);
 
-      curY += nameRect.h + 2;
+      curY += nameRect.h + 6;
 
       PathType pt = mapModel.getPathType(p.typeId);
       String typLabel = (pt != null ? pt.name : "Type");
@@ -803,7 +803,7 @@ void drawPathsListPanel() {
       textAlign(LEFT, CENTER);
       text("Segments: " + segs + "   Len: " + nf(len, 1, 3), labelX + selectSize + 6, curY);
 
-      curY += rowH - 3 * PANEL_LABEL_H;
+      curY += rowH - (nameRect.h + typeRect.h + PANEL_LABEL_H + 6);
     }
   }
 

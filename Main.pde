@@ -47,7 +47,7 @@ int placementModeIndex = 2; // 0=GRID, 1=POISSON, 2=HEX
 final int MAX_SITE_COUNT = 20000;
 final int DEFAULT_SITE_COUNT = 5000;
 int siteTargetCount = DEFAULT_SITE_COUNT; // slider maps 0..MAX_SITE_COUNT
-float siteFuzz = 0.07;      // 0..1
+float siteFuzz = 0.05;      // 0..1
 boolean keepPropertiesOnGenerate = false;
 
 // Zones (biomes) painting
@@ -181,6 +181,7 @@ void draw() {
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
     mapModel.drawCellsRender(this, showBorders, seaLevel);
     mapModel.drawElevationOverlay(this, seaLevel, false, true, false);
+    mapModel.drawStructureSnapGuides(this, seaLevel);
   } else if (currentTool == Tool.EDIT_LABELS) {
     mapModel.drawCellsRender(this, showBorders, seaLevel);
     mapModel.drawElevationOverlay(this, seaLevel, false, true, false);

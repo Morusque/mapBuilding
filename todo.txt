@@ -15,7 +15,7 @@ Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
-The points on the frontier between two neighbor similar sites (meaning same biome, same water state) shot not appear and not be used.
+Elevation for this mode should be discretized (eg instead of having all shades between darker and brighter, have say 16 of them, make that an exposed variable in the code).
 Single segment paths still don't work. This is a seeminlgy simple yet persistent error so we need to talk about this.
 Paths list : text height should be taken into account when displaying number of segments and length so not so overlap with anything.
 Paths list : some button fail to press possibly because of their current placement or UI state, might be fixed along with the point above.
@@ -23,7 +23,8 @@ Flatest slope slider default value should be 0. Bug: mouse x mapping seems based
 (later) rivers could have an option that make them start small and end bigger when reaching the sea (this needs connection analysis, pathfinding etc when using multiple segments, to compute segment proximity to sea).
 
 Struct :
-Structures should not snap to frontiers between two sites whose biome, zone (tbd later) and water state is the same.
+Elevation for this mode should be discretized (using same variable than paths).
+(later) snapping lines could be refined (eg frontier "normals" often appear in addition to frontier while they should not)
 (later) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.
 (later) strure should be removable, grouppable, and displayed as a list.
 

@@ -113,12 +113,89 @@ class MapModel {
     app.popStyle();
   }
 
+  void drawStructureSnapGuides(PApplet app, float seaLevel) {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    float eps = 1e-4f;
+
+    app.pushStyle();
+    app.stroke(40, 80, 140, 180);
+    app.strokeWeight(2.0f / viewport.zoom);
+    app.noFill();
+
+    int n = cells.size();
+    for (int i = 0; i < n; i++) {
+      Cell a = cells.get(i);
+      ArrayList<Integer> nbs = cellNeighbors.get(i);
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb <= i) continue; // each pair once
+        Cell b = cells.get(nb);
+        if (b == null) continue;
+
+        boolean sameBiome = (a.biomeId == b.biomeId);
+        boolean aWater = (a.elevation < seaLevel);
+        boolean bWater = (b.elevation < seaLevel);
+        boolean sameWater = (aWater == bWater);
+
+        // Only draw guides on biome or water frontiers
+        if (sameBiome && sameWater) continue;
+
+        ArrayList<PVector> va = a.vertices;
+        if (va == null || va.size() < 2) continue;
+        ArrayList<PVector> vb = b.vertices;
+        if (vb == null || vb.size() < 2) continue;
+
+        int ac = va.size();
+        for (int ai = 0; ai < ac; ai++) {
+          PVector a0 = va.get(ai);
+          PVector a1 = va.get((ai + 1) % ac);
+          // look for matching edge in neighbor (any orientation)
+          for (int bi = 0; bi < vb.size(); bi++) {
+            PVector b0 = vb.get(bi);
+            PVector b1 = vb.get((bi + 1) % vb.size());
+            boolean matchForward = distSq(a0, b0) < eps && distSq(a1, b1) < eps;
+            boolean matchBackward = distSq(a0, b1) < eps && distSq(a1, b0) < eps;
+            if (matchForward || matchBackward) {
+              app.line(a0.x, a0.y, a1.x, a1.y);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // Path segments are also snap targets; overdraw lightly
+    if (paths != null) {
+      app.stroke(60, 60, 40, 200);
+      for (Path p : paths) {
+        if (p == null || p.segments == null) continue;
+        for (ArrayList<PVector> seg : p.segments) {
+          if (seg == null || seg.size() < 2) continue;
+          for (int i = 0; i < seg.size() - 1; i++) {
+            PVector a = seg.get(i);
+            PVector b = seg.get(i + 1);
+            app.line(a.x, a.y, b.x, b.y);
+          }
+        }
+      }
+    }
+
+    app.popStyle();
+  }
+
+  float distSq(PVector a, PVector b) {
+    float dx = a.x - b.x;
+    float dy = a.y - b.y;
+    return dx * dx + dy * dy;
+  }
+
   Structure computeSnappedStructure(float wx, float wy, float size) {
     Structure s = new Structure(wx, wy);
     s.size = size;
     float snapRange = max(0.04f, s.size * 2.0f);
 
-    // Snap priority: paths > other structures > land/water frontier
+    // Snap priority: paths > frontier guides (biome/water) > other structures
     PVector[] seg = nearestPathSegment(wx, wy, snapRange);
     if (seg != null) {
       PVector a = seg[0];
@@ -131,6 +208,25 @@ class MapModel {
       float ny = cos(ang);
       float offset = s.size * 0.6f;
       // Flip side based on cursor side of the segment
+      float side = (wx - p.x) * nx + (wy - p.y) * ny;
+      if (side < 0) offset = -offset;
+      s.x = p.x + nx * offset;
+      s.y = p.y + ny * offset;
+      s.angle = ang;
+      return s;
+    }
+
+    PVector[] guide = nearestFrontierSegment(wx, wy, snapRange);
+    if (guide != null) {
+      PVector a = guide[0];
+      PVector b = guide[1];
+      PVector p = guide[2];
+      float dx = b.x - a.x;
+      float dy = b.y - a.y;
+      float ang = atan2(dy, dx);
+      float nx = -sin(ang);
+      float ny = cos(ang);
+      float offset = s.size * 0.6f;
       float side = (wx - p.x) * nx + (wy - p.y) * ny;
       if (side < 0) offset = -offset;
       s.x = p.x + nx * offset;
@@ -161,36 +257,6 @@ class MapModel {
       s.y = wy + sin(ang) * reach;
       s.angle = ang;
       return s;
-    }
-
-    // Finally: snap to coastline (land/water frontier) by stepping toward seaLevel contour
-    Cell c = findCellContaining(wx, wy);
-    if (c != null && !c.vertices.isEmpty()) {
-      float targetElev = seaLevel;
-      float bestEdgeD = Float.MAX_VALUE;
-      PVector bestPoint = null;
-      int n = c.vertices.size();
-      for (int i = 0; i < n; i++) {
-        PVector va = c.vertices.get(i);
-        PVector vb = c.vertices.get((i + 1) % n);
-        PVector proj = closestPointOnSegment(wx, wy, va, vb);
-        float d = dist(wx, wy, proj.x, proj.y);
-        if (d < bestEdgeD) {
-          bestEdgeD = d;
-          bestPoint = proj;
-        }
-      }
-      if (bestPoint != null && bestEdgeD <= snapRange) {
-        s.x = bestPoint.x;
-        s.y = bestPoint.y;
-        // Align angle to coastline normal (toward cell centroid)
-        PVector cen = cellCentroid(c);
-        float nx = cen.x - bestPoint.x;
-        float ny = cen.y - bestPoint.y;
-        if (nx * nx + ny * ny > 1e-8f) {
-          s.angle = atan2(ny, nx);
-        }
-      }
     }
 
     return s;
@@ -399,6 +465,8 @@ class MapModel {
         }
       }
     }
+
+    pruneUniformFrontierSnapNodes();
   }
 
   String ensureNode(float x, float y) {
@@ -418,6 +486,59 @@ class MapModel {
     if (la == null || lb == null) return;
     if (!la.contains(b)) la.add(b);
     if (!lb.contains(a)) lb.add(a);
+  }
+
+  void pruneUniformFrontierSnapNodes() {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+
+    // Collect which cells touch each snap node
+    HashMap<String, ArrayList<Integer>> nodeCells = new HashMap<String, ArrayList<Integer>>();
+    for (int ci = 0; ci < cells.size(); ci++) {
+      Cell c = cells.get(ci);
+      if (c.vertices == null) continue;
+      for (PVector v : c.vertices) {
+        String k = keyFor(v.x, v.y);
+        ArrayList<Integer> list = nodeCells.get(k);
+        if (list == null) {
+          list = new ArrayList<Integer>();
+          nodeCells.put(k, list);
+        }
+        if (!list.contains(ci)) list.add(ci);
+      }
+    }
+
+    HashSet<String> toRemove = new HashSet<String>();
+    for (String k : snapNodes.keySet()) {
+      ArrayList<Integer> incident = nodeCells.get(k);
+      if (incident == null || incident.isEmpty()) continue;
+
+      int firstIdx = incident.get(0);
+      Cell first = cells.get(firstIdx);
+      int biome = first.biomeId;
+      boolean water = first.elevation < seaLevel;
+      boolean allSame = true;
+      for (int i = 1; i < incident.size(); i++) {
+        Cell c = cells.get(incident.get(i));
+        if (c.biomeId != biome || (c.elevation < seaLevel) != water) {
+          allSame = false;
+          break;
+        }
+      }
+      if (allSame) {
+        toRemove.add(k);
+      }
+    }
+
+    if (toRemove.isEmpty()) return;
+
+    for (String k : toRemove) {
+      snapNodes.remove(k);
+      snapAdj.remove(k);
+    }
+    for (ArrayList<String> adj : snapAdj.values()) {
+      adj.removeAll(toRemove);
+    }
   }
 
   ArrayList<PVector> reconstructPath(HashMap<String, String> prev, String start, String goal) {
@@ -571,6 +692,63 @@ class MapModel {
     float t = ((px - ax) * abx + (py - ay) * aby) / (abx * abx + aby * aby + 1e-9f);
     t = constrain(t, 0, 1);
     return new PVector(ax + abx * t, ay + aby * t);
+  }
+
+  PVector[] nearestFrontierSegment(float wx, float wy, float maxDist) {
+    if (cells == null || cells.isEmpty()) return null;
+    ensureCellNeighborsComputed();
+    float eps = 1e-4f;
+    float eps2 = eps * eps;
+
+    float best = maxDist;
+    PVector bestA = null, bestB = null, bestP = null;
+
+    int n = cells.size();
+    for (int i = 0; i < n; i++) {
+      Cell a = cells.get(i);
+      ArrayList<Integer> nbs = cellNeighbors.get(i);
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb <= i) continue;
+        Cell b = cells.get(nb);
+        if (b == null) continue;
+
+        boolean sameBiome = (a.biomeId == b.biomeId);
+        boolean aWater = (a.elevation < seaLevel);
+        boolean bWater = (b.elevation < seaLevel);
+        boolean sameWater = (aWater == bWater);
+        if (sameBiome && sameWater) continue;
+
+        ArrayList<PVector> va = a.vertices;
+        ArrayList<PVector> vb = b.vertices;
+        if (va == null || vb == null || va.size() < 2 || vb.size() < 2) continue;
+        int ac = va.size();
+        for (int ai = 0; ai < ac; ai++) {
+          PVector a0 = va.get(ai);
+          PVector a1 = va.get((ai + 1) % ac);
+          for (int bi = 0; bi < vb.size(); bi++) {
+            PVector b0 = vb.get(bi);
+            PVector b1 = vb.get((bi + 1) % vb.size());
+            boolean matchForward = distSq(a0, b0) < eps2 && distSq(a1, b1) < eps2;
+            boolean matchBackward = distSq(a0, b1) < eps2 && distSq(a1, b0) < eps2;
+            if (!matchForward && !matchBackward) continue;
+
+            PVector proj = closestPointOnSegment(wx, wy, a0, a1);
+            float d = dist(wx, wy, proj.x, proj.y);
+            if (d < best) {
+              best = d;
+              bestA = a0;
+              bestB = a1;
+              bestP = proj;
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    if (bestP == null) return null;
+    return new PVector[] { bestA, bestB, bestP };
   }
 
   // ---------- Sites management ----------
@@ -1093,8 +1271,8 @@ class MapModel {
 
     // Add random seeds inside "None" cells to diversify coverage
     Collections.shuffle(noneIndices);
-    int avgNumberOfSeedsPerBiomeType = 5;
-    int seedCount = min(typeCount*avgNumberOfSeedsPerBiomeType, noneIndices.size());
+    float avgBiomeSubzoneSize = random(10.0,200.0);
+    int seedCount = floor(noneIndices.size()/avgBiomeSubzoneSize);
     for (int i = 0; i < seedCount; i++) {
       int idx = noneIndices.get(i);
       Cell c = cells.get(idx);
@@ -1512,11 +1690,15 @@ class Structure {
     app.pushMatrix();
     app.translate(x, y);
     app.rotate(angle);
-    app.stroke(30);
-    app.strokeWeight(1.0f / viewport.zoom);
-    app.fill(200, 200, 180);
+    app.stroke(90, 90, 70);
+    app.strokeWeight(1.4f / viewport.zoom);
+    app.fill(245, 245, 235, 180);
     app.rectMode(CENTER);
     app.rect(0, 0, r, r);
+    // draw a clearer snap/axis line across the structure
+    float axis = r * 0.6f;
+    app.stroke(60, 60, 40);
+    app.line(-axis, 0, axis, 0);
     app.popMatrix();
   }
 }
