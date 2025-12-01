@@ -693,6 +693,7 @@ void handlePathsMousePressed(float wx, float wy) {
 
   // Ignore zero-length
   if (dist(pendingPathStart.x, pendingPathStart.y, target.x, target.y) < 1e-6f) {
+    pendingPathStart = null;
     return;
   }
 

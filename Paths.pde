@@ -14,7 +14,6 @@ class Path {
     if (segments.isEmpty()) return;
 
     for (ArrayList<PVector> seg : segments) {
-      if (seg == null || seg.size() < 2) continue;
       app.beginShape();
       for (PVector p : seg) {
         app.vertex(p.x, p.y);
@@ -36,7 +35,6 @@ class Path {
 
   // Used to preview a segment being drawn (can have different styling if needed)
   void drawPreview(PApplet app, ArrayList<PVector> seg, int strokeCol, float weightPx) {
-    if (seg == null || seg.size() < 2) return;
 
     app.pushStyle();
     app.noFill();

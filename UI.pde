@@ -733,7 +733,7 @@ void drawPathsListPanel() {
     textAlign(LEFT, TOP);
     text("No paths yet.", labelX, curY);
   } else {
-    int rowH = 56;
+    int rowH = 62;
     layout.deleteBtns.clear();
     layout.nameRects.clear();
     layout.typeRects.clear();

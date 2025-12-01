@@ -126,7 +126,7 @@ class MapModel {
     int n = cells.size();
     for (int i = 0; i < n; i++) {
       Cell a = cells.get(i);
-      ArrayList<Integer> nbs = cellNeighbors.get(i);
+    ArrayList<Integer> nbs = cellNeighbors.get(i);
       if (nbs == null) continue;
       for (int nb : nbs) {
         if (nb <= i) continue; // each pair once
@@ -178,6 +178,22 @@ class MapModel {
             app.line(a.x, a.y, b.x, b.y);
           }
         }
+      }
+    }
+
+    // Existing structure outlines as snap hints (outside only)
+    if (structures != null && !structures.isEmpty()) {
+      app.stroke(80, 80, 60, 180);
+      app.strokeWeight(1.4f / viewport.zoom);
+      for (Structure s : structures) {
+        float r = s.size;
+        app.pushMatrix();
+        app.translate(s.x, s.y);
+        app.rotate(s.angle);
+        app.noFill();
+        app.rectMode(CENTER);
+        app.rect(0, 0, r, r);
+        app.popMatrix();
       }
     }
 
@@ -641,6 +657,7 @@ class MapModel {
   void appendSegmentToPath(Path p, ArrayList<PVector> pts) {
     if (p == null || pts == null || pts.size() < 2) return;
     p.addSegment(pts);
+    snapDirty = true;
   }
 
   void removePathsNear(float wx, float wy, float radius) {

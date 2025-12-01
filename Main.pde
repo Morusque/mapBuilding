@@ -323,7 +323,7 @@ void drawPathSnappingPoints() {
     }
   }
 
-  float baseR = 3.0f / viewport.zoom;
+  float baseR = 2.0f / viewport.zoom;
 
   pushStyle();
   noStroke();
