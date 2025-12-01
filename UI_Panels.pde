@@ -163,7 +163,7 @@ class BiomesLayout {
   IntRect addBtn;
   IntRect removeBtn;
   ArrayList<IntRect> swatches = new ArrayList<IntRect>();
-  ArrayList<IntRect> nameRects = new ArrayList<IntRect>();
+  IntRect nameField;
   IntRect hueSlider;
   IntRect brushSlider;
 }
@@ -189,9 +189,8 @@ BiomesLayout buildBiomesLayout() {
   curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   // Palette
-  int swatchW = 60;
-  int swatchH = 18;
-  int nameH = 18;
+  int swatchW = 70;
+  int swatchH = 22;
   int gapX = 8;
   int maxPerRow = max(1, (PANEL_W - 2 * PANEL_PADDING + gapX) / (swatchW + gapX));
   int rowY = curY;
@@ -201,16 +200,18 @@ BiomesLayout buildBiomesLayout() {
     for (int i = 0; i < mapModel.biomeTypes.size(); i++) {
       int x = innerX + col * (swatchW + gapX);
       l.swatches.add(new IntRect(x, rowY, swatchW, swatchH));
-      l.nameRects.add(new IntRect(x, rowY + swatchH + 4, swatchW, nameH));
-      paletteBottom = max(paletteBottom, rowY + swatchH + 4 + nameH);
+      paletteBottom = max(paletteBottom, rowY + swatchH);
       col++;
       if (col >= maxPerRow) {
         col = 0;
-        rowY += swatchH + nameH + PANEL_ROW_GAP;
+        rowY += swatchH + PANEL_ROW_GAP;
       }
     }
   }
-  curY = paletteBottom + PANEL_SECTION_GAP;
+  curY = paletteBottom + PANEL_ROW_GAP;
+
+  l.nameField = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   l.hueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
@@ -281,38 +282,41 @@ void drawBiomesPanel() {
   int n = mapModel.biomeTypes.size();
   if (n == 0) return;
 
-  textAlign(CENTER, TOP);
-
   for (int i = 0; i < n; i++) {
+    pushStyle();
     ZoneType zt = mapModel.biomeTypes.get(i);
     IntRect sw = layout.swatches.get(i);
-    IntRect nameRect = layout.nameRects.get(i);
-    stroke(120);
-    if (i == activeBiomeIndex) {
-      strokeWeight(2);
-    } else {
-      strokeWeight(1);
-    }
+    stroke(i == activeBiomeIndex ? 0 : 120);
+    strokeWeight(i == activeBiomeIndex ? 2 : 1);
     fill(zt.col);
     rect(sw.x, sw.y, sw.w, sw.h, 4);
 
-    boolean editing = (editingZoneNameIndex == i);
+    // Overlay label text
+    fill(20);
+    textAlign(CENTER, CENTER);
+    text(zt.name, sw.x + sw.w * 0.5f, sw.y + sw.h * 0.5f);
+    popStyle();
+  }
+
+  // Editable name field for selected biome
+  if (activeBiomeIndex >= 0 && activeBiomeIndex < n) {
+    IntRect nf = layout.nameField;
+    ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+    boolean editing = (editingZoneNameIndex == activeBiomeIndex);
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Name", nf.x, nf.y - 4);
+    stroke(80);
+    fill(255);
+    rect(nf.x, nf.y, nf.w, nf.h);
+    fill(0);
+    textAlign(LEFT, CENTER);
+    String shown = editing ? zoneNameDraft : active.name;
+    text(shown, nf.x + 6, nf.y + nf.h / 2);
     if (editing) {
-      stroke(60);
-      fill(255);
-      rect(nameRect.x, nameRect.y, nameRect.w, nameRect.h);
-      fill(0);
-      textAlign(LEFT, CENTER);
-      String shown = zoneNameDraft;
-      text(shown, nameRect.x + 6, nameRect.y + nameRect.h / 2);
-      float caretX = nameRect.x + 6 + textWidth(shown);
+      float caretX = nf.x + 6 + textWidth(zoneNameDraft);
       stroke(0);
-      line(caretX, nameRect.y + 4, caretX, nameRect.y + nameRect.h - 4);
-    } else {
-      drawBevelButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, i == activeBiomeIndex);
-      fill(10);
-      textAlign(CENTER, CENTER);
-      text(zt.name, nameRect.x + nameRect.w * 0.5f, nameRect.y + nameRect.h * 0.5f);
+      line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
     }
   }
 
@@ -387,7 +391,7 @@ class PathsLayout {
   IntRect flattestSlider;
   IntRect avoidWaterCheck;
   ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
-  ArrayList<IntRect> typeNameRects = new ArrayList<IntRect>();
+  IntRect nameField;
   IntRect typeHueSlider;
   IntRect typeWeightSlider;
 }
@@ -433,7 +437,6 @@ PathsLayout buildPathsLayout() {
 
   int swatchW = 60;
   int swatchH = 18;
-  int nameH = 18;
   int gapX = 8;
   int maxPerRow = max(1, (PANEL_W - 2 * PANEL_PADDING + gapX) / (swatchW + gapX));
   int rowY = curY;
@@ -443,16 +446,18 @@ PathsLayout buildPathsLayout() {
     for (int i = 0; i < mapModel.pathTypes.size(); i++) {
       int x = innerX + col * (swatchW + gapX);
       l.typeSwatches.add(new IntRect(x, rowY, swatchW, swatchH));
-      l.typeNameRects.add(new IntRect(x, rowY + swatchH + 4, swatchW, nameH));
-      paletteBottom = max(paletteBottom, rowY + swatchH + 4 + nameH);
+      paletteBottom = max(paletteBottom, rowY + swatchH);
       col++;
       if (col >= maxPerRow) {
         col = 0;
-        rowY += swatchH + nameH + PANEL_ROW_GAP;
+        rowY += swatchH + PANEL_ROW_GAP;
       }
     }
   }
-  curY = paletteBottom + PANEL_SECTION_GAP;
+  curY = paletteBottom + PANEL_ROW_GAP;
+
+  l.nameField = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   l.typeHueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
@@ -581,39 +586,43 @@ void drawPathsPanel() {
   int n = mapModel.pathTypes.size();
   if (n == 0) return;
 
-  textAlign(CENTER, TOP);
   for (int i = 0; i < n; i++) {
+    pushStyle();
     PathType pt = mapModel.pathTypes.get(i);
     IntRect sw = layout.typeSwatches.get(i);
-    IntRect nameRect = layout.typeNameRects.get(i);
-    stroke(120);
+    stroke(i == activePathTypeIndex ? 0 : 120);
     strokeWeight(i == activePathTypeIndex ? 2 : 1);
     fill(pt.col);
     rect(sw.x, sw.y, sw.w, sw.h, 4);
 
-    boolean editing = (editingPathTypeNameIndex == i);
-    if (editing) {
-      stroke(60);
-      fill(255);
-      rect(nameRect.x, nameRect.y, nameRect.w, nameRect.h);
-      fill(0);
-      textAlign(LEFT, CENTER);
-      String shown = pathTypeNameDraft;
-      text(shown, nameRect.x + 6, nameRect.y + nameRect.h / 2);
-      float caretX = nameRect.x + 6 + textWidth(shown);
-      stroke(0);
-      line(caretX, nameRect.y + 4, caretX, nameRect.y + nameRect.h - 4);
-    } else {
-      drawBevelButton(nameRect.x, nameRect.y, nameRect.w, nameRect.h, i == activePathTypeIndex);
-      fill(10);
-      textAlign(CENTER, CENTER);
-      text(pt.name, nameRect.x + nameRect.w * 0.5f, nameRect.y + nameRect.h * 0.5f);
-    }
+    fill(20);
+    textAlign(CENTER, CENTER);
+    text(pt.name, sw.x + sw.w * 0.5f, sw.y + sw.h * 0.5f);
+    popStyle();
   }
 
   // Color (hue) slider for active path type
   if (activePathTypeIndex >= 0 && activePathTypeIndex < n) {
     PathType active = mapModel.pathTypes.get(activePathTypeIndex);
+    // Editable name field
+    IntRect nf = layout.nameField;
+    boolean editing = (editingPathTypeNameIndex == activePathTypeIndex);
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Name", nf.x, nf.y - 4);
+    stroke(80);
+    fill(255);
+    rect(nf.x, nf.y, nf.w, nf.h);
+    fill(0);
+    textAlign(LEFT, CENTER);
+    String shown = editing ? pathTypeNameDraft : active.name;
+    text(shown, nf.x + 6, nf.y + nf.h / 2);
+    if (editing) {
+      float caretX = nf.x + 6 + textWidth(pathTypeNameDraft);
+      stroke(0);
+      line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
+    }
+
     IntRect hue = layout.typeHueSlider;
     stroke(160);
     fill(230);

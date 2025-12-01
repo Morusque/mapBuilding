@@ -222,17 +222,17 @@ boolean handleZonesPanelClick(int mx, int my) {
 
   for (int i = 0; i < n; i++) {
     IntRect sw = layout.swatches.get(i);
-    IntRect nameRect = layout.nameRects.get(i);
     if (sw.contains(mx, my)) {
       activeBiomeIndex = i;
       return true;
     }
-    if (nameRect.contains(mx, my)) {
-      activeBiomeIndex = i;
-      editingZoneNameIndex = i;
-      zoneNameDraft = mapModel.biomeTypes.get(i).name;
-      return true;
-    }
+  }
+
+  // Name field for selected biome
+  if (layout.nameField.contains(mx, my) && activeBiomeIndex >= 0 && activeBiomeIndex < n) {
+    editingZoneNameIndex = activeBiomeIndex;
+    zoneNameDraft = mapModel.biomeTypes.get(activeBiomeIndex).name;
+    return true;
   }
 
   // Hue slider
@@ -461,18 +461,16 @@ boolean handlePathsPanelClick(int mx, int my) {
   // Swatches and names
   for (int i = 0; i < nTypes; i++) {
     IntRect sw = layout.typeSwatches.get(i);
-    IntRect nameRect = layout.typeNameRects.get(i);
     if (sw.contains(mx, my)) {
       activePathTypeIndex = i;
-      editingPathTypeNameIndex = -1;
       return true;
     }
-    if (nameRect.contains(mx, my)) {
-      activePathTypeIndex = i;
-      editingPathTypeNameIndex = i;
-      pathTypeNameDraft = mapModel.pathTypes.get(i).name;
-      return true;
-    }
+  }
+
+  if (layout.nameField.contains(mx, my) && activePathTypeIndex >= 0 && activePathTypeIndex < nTypes) {
+    editingPathTypeNameIndex = activePathTypeIndex;
+    pathTypeNameDraft = mapModel.pathTypes.get(activePathTypeIndex).name;
+    return true;
   }
 
   // Hue slider

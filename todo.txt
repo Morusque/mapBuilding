@@ -1,7 +1,6 @@
 
 Loading bar :
 (done) Voronoi rebuild now uses spatial bins/nearest neighbors for a fast approximate pass; loading bar stays responsive.
-(done) Switching tabs or clicking while loading now shows a wait notice.
 (later) Try to optimize further.
 
 Sites :
@@ -51,8 +50,7 @@ Rendering :
 (later) Respect LOD rules: constant stroke widths, hide/show groups vs members depending on zoom, optional merging of dense structures.
 
 Editable types : (for anywhere applicable: paths, biomes, etc)
-The way it works should be : a list of colors with overlay label text. this list has a visual feedback showing which is selected. 
-Below the list are a list of parameters for the selected type including the label for selected type; label feels like a text input area and is rewritable.
+(later) Visually show which parameters "belong" to a type or to a more general part of the interface.
 (later) Legend supports categories (zones, paths, structures, labels) with editable names/colors/default widths/sizes and exporting the legend for reference.
 (later) Region layer management in legend: add/remove layers (Biome, Admin, custom) and assign zone types per layer.
 
