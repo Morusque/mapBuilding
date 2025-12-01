@@ -377,49 +377,16 @@ boolean handlePathsPanelClick(int mx, int my) {
   if (!isInPathsPanel(mx, my)) return false;
   PathsLayout layout = buildPathsLayout();
 
-  // New path button
-  if (layout.startBtn.contains(mx, my)) {
-    isDrawingPath = false;
-    currentPath = null;
-    // Start fresh path on next click
-    return true;
-  }
-
-  // Undo (Del)
-  if (layout.undoBtn.contains(mx, my)) {
-    if (currentTool == Tool.EDIT_PATHS && isDrawingPath && currentPath != null) {
-      if (!currentPath.points.isEmpty()) {
-        currentPath.points.remove(currentPath.points.size() - 1);
-      }
-      if (currentPath.points.isEmpty()) {
-        isDrawingPath = false;
-        currentPath = null;
-      }
-    }
-    return true;
-  }
-
-  // Eraser toggle
-  if (layout.eraserBtn.contains(mx, my)) {
-    pathEraserMode = !pathEraserMode;
-    return true;
-  }
-
-  // Eraser radius slider
-  if (layout.eraserSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.eraserSlider.x) / (float)layout.eraserSlider.w, 0, 1);
-    pathEraserRadius = constrain(0.005f + t * (0.1f - 0.005f), 0.005f, 0.1f);
-    activeSlider = SLIDER_PATH_ERASER;
-    return true;
-  }
-
   // Add path type
   if (layout.typeAddBtn.contains(mx, my)) {
     int n = mapModel.pathTypes.size();
-    float baseHue = 0.1f * n % 1.0f;
-    PathType pt = new PathType("Type " + (n + 1), hsb01ToRGB(baseHue, 0.6f, 0.8f), 2.0f);
-    mapModel.addPathType(pt);
-    activePathTypeIndex = mapModel.pathTypes.size() - 1;
+    if (n < PATH_TYPE_PRESETS.length) {
+      PathType pt = mapModel.makePathTypeFromPreset(n);
+      if (pt != null) {
+        mapModel.addPathType(pt);
+        activePathTypeIndex = mapModel.pathTypes.size() - 1;
+      }
+    }
     return true;
   }
 
@@ -429,6 +396,7 @@ boolean handlePathsPanelClick(int mx, int my) {
     mapModel.removePathType(activePathTypeIndex);
     activePathTypeIndex = min(activePathTypeIndex, mapModel.pathTypes.size() - 1);
     if (activePathTypeIndex < 0) activePathTypeIndex = 0;
+    editingPathTypeNameIndex = -1;
     return true;
   }
 
@@ -485,38 +453,56 @@ boolean handlePathsListPanelClick(int mx, int my) {
   if (!isInPathsListPanel(mx, my)) return false;
   PathsListLayout layout = buildPathsListLayout();
 
-  // New path button starts a new drawing session
+  // New path button
   if (layout.newBtn.contains(mx, my)) {
-    isDrawingPath = false;
-    currentPath = null;
+    Path np = new Path();
+    np.typeId = activePathTypeIndex;
+    np.name = "Path " + (mapModel.paths.size() + 1);
+    mapModel.paths.add(np);
+    selectedPathIndex = mapModel.paths.size() - 1;
+    editingPathNameIndex = selectedPathIndex;
+    pathNameDraft = np.name;
+    pendingPathStart = null;
     return true;
   }
 
-  // Iterate current visible entries
   int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.newBtn.y + layout.newBtn.h + PANEL_SECTION_GAP;
-  int rowH = 48;
-  layout.deleteBtns.clear();
-  layout.nameRects.clear();
-  layout.typeRects.clear();
+  int curY = layout.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  int rowH = 44;
+  int maxY = layout.newBtn.y - PANEL_SECTION_GAP;
 
   for (int i = 0; i < mapModel.paths.size(); i++) {
+    if (curY + rowH > maxY) break;
     Path p = mapModel.paths.get(i);
-    if (curY + rowH > layout.panel.y + layout.panel.h - PANEL_PADDING) break;
 
-    IntRect nameRect = new IntRect(labelX, curY, layout.panel.w - 2 * PANEL_PADDING - 40, PANEL_LABEL_H + 4);
+    int selectSize = 16;
+    IntRect selectRect = new IntRect(labelX, curY, selectSize, selectSize);
+    IntRect nameRect = new IntRect(selectRect.x + selectRect.w + 6, curY,
+                                   layout.panel.w - 2 * PANEL_PADDING - selectRect.w - 6 - 40,
+                                   PANEL_LABEL_H + 4);
     IntRect delRect = new IntRect(nameRect.x + nameRect.w + 6, nameRect.y, 30, nameRect.h);
     curY += nameRect.h + 2;
-    IntRect typeRect = new IntRect(labelX, curY, 120, PANEL_LABEL_H + 2);
+    IntRect typeRect = new IntRect(labelX + selectSize + 6, curY, 140, PANEL_LABEL_H + 2);
     curY += rowH - 2 * PANEL_LABEL_H;
 
-    if (nameRect.contains(mx, my)) {
-      editingPathNameIndex = i;
-      pathNameDraft = (p.name != null) ? p.name : "";
+    if (selectRect.contains(mx, my) || nameRect.contains(mx, my)) {
+      selectedPathIndex = i;
+      editingPathNameIndex = nameRect.contains(mx, my) ? i : -1;
+      if (editingPathNameIndex == i) {
+        pathNameDraft = (p.name != null) ? p.name : "";
+      } else {
+        pendingPathStart = null;
+      }
       return true;
     }
     if (delRect.contains(mx, my)) {
       mapModel.paths.remove(i);
+      if (selectedPathIndex == i) {
+        selectedPathIndex = -1;
+        pendingPathStart = null;
+      } else if (selectedPathIndex > i) {
+        selectedPathIndex -= 1;
+      }
       if (editingPathNameIndex == i) editingPathNameIndex = -1;
       return true;
     }
@@ -624,45 +610,40 @@ boolean handleElevationPanelClick(int mx, int my) {
 }
 
 void handlePathsMousePressed(float wx, float wy) {
-  if (pathEraserMode) {
-    mapModel.removePathsNear(wx, wy, pathEraserRadius);
-    return;
-  }
+  if (selectedPathIndex < 0 || selectedPathIndex >= mapModel.paths.size()) return;
   wx = constrain(wx, mapModel.minX, mapModel.maxX);
   wy = constrain(wy, mapModel.minY, mapModel.maxY);
-  if (!isDrawingPath || currentPath == null) {
-    // Start new path
-    currentPath = new Path();
-    currentPath.typeId = activePathTypeIndex;
-    isDrawingPath = true;
-  }
+
   float maxSnapPx = 14;
   PVector snapped = findNearestSnappingPoint(wx, wy, maxSnapPx);
-  if (snapped != null) {
-    if (currentPath.points.size() > 0) {
-      PVector last = currentPath.points.get(currentPath.points.size() - 1);
-      ArrayList<PVector> route = mapModel.findSnapPath(last, snapped);
-      if (route != null && route.size() > 1) {
-        for (int i = 1; i < route.size(); i++) {
-          PVector step = route.get(i);
-          currentPath.addPoint(step.x, step.y);
-        }
-      } else {
-        currentPath.addPoint(snapped.x, snapped.y);
-      }
-    } else {
-      currentPath.addPoint(snapped.x, snapped.y);
-    }
-  } else {
-    currentPath.addPoint(wx, wy);
+  PVector target = (snapped != null) ? snapped : new PVector(wx, wy);
+
+  if (pendingPathStart == null) {
+    pendingPathStart = target;
+    return;
   }
 
-  // Auto-finish path after this step if at least a segment exists
-  if (currentPath.points.size() >= 2) {
-    mapModel.addFinishedPath(currentPath);
-    isDrawingPath = false;
-    currentPath = null;
+  Path targetPath = mapModel.paths.get(selectedPathIndex);
+  ArrayList<PVector> route = null;
+  if (snapped != null && pendingPathStart != null) {
+    ArrayList<PVector> rp = mapModel.findSnapPath(pendingPathStart, target);
+    if (rp != null && rp.size() > 1) {
+      route = rp;
+    }
   }
+  if (route == null) {
+    route = new ArrayList<PVector>();
+    route.add(pendingPathStart.copy());
+    route.add(target.copy());
+  }
+
+  if (targetPath != null) {
+    if (targetPath.points.isEmpty()) {
+      targetPath.typeId = activePathTypeIndex;
+    }
+    mapModel.appendSegmentToPath(targetPath, route);
+  }
+  pendingPathStart = null;
 }
 
 void mouseDragged() {
@@ -785,9 +766,6 @@ void mouseDragged() {
     PVector w = viewport.screenToWorld(mouseX, mouseY);
     float dir = elevationBrushRaise ? 1 : -1;
     mapModel.applyElevationBrush(w.x, w.y, elevationBrushRadius, elevationBrushStrength * dir, seaLevel);
-  } else if (mouseButton == LEFT && currentTool == Tool.EDIT_PATHS && pathEraserMode) {
-    PVector w = viewport.screenToWorld(mouseX, mouseY);
-    mapModel.removePathsNear(w.x, w.y, pathEraserRadius);
   }
 }
 
@@ -868,13 +846,6 @@ void updateActiveSlider(int mx, int my) {
       float t = (mx - l.noiseSlider.x) / (float)l.noiseSlider.w;
       t = constrain(t, 0, 1);
       elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
-      break;
-    }
-    case SLIDER_PATH_ERASER: {
-      PathsLayout l = buildPathsLayout();
-      float t = (mx - l.eraserSlider.x) / (float)l.eraserSlider.w;
-      t = constrain(t, 0, 1);
-      pathEraserRadius = constrain(0.005f + t * (0.1f - 0.005f), 0.005f, 0.1f);
       break;
     }
     case SLIDER_PATH_TYPE_HUE: {
@@ -997,24 +968,14 @@ void keyPressed() {
       mapModel.deleteSelectedSites();
       return;
     }
-    if (currentTool == Tool.EDIT_PATHS && isDrawingPath && currentPath != null) {
-      if (!currentPath.points.isEmpty()) {
-        currentPath.points.remove(currentPath.points.size() - 1);
-        if (currentPath.points.isEmpty()) {
-          isDrawingPath = false;
-          currentPath = null;
-        }
-      }
-      return;
-    }
   }
 
   // Clear all paths with 'c' or 'C' in Paths mode
   if (currentTool == Tool.EDIT_PATHS &&
       (key == 'c' || key == 'C')) {
     mapModel.clearAllPaths();
-    isDrawingPath = false;
-    currentPath = null;
+    selectedPathIndex = -1;
+    pendingPathStart = null;
     return;
   }
 }

@@ -1,6 +1,7 @@
 
 import processing.event.MouseEvent;
 import java.util.HashSet;
+import java.util.ArrayList;
 
 Viewport viewport;
 MapModel mapModel;
@@ -17,9 +18,8 @@ int lastMouseY;
 Site draggingSite = null;
 boolean isDraggingSite = false;
 
-// Path drawing state
-boolean isDrawingPath = false;
-Path currentPath = null;
+int selectedPathIndex = -1;
+PVector pendingPathStart = null;
 
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
@@ -58,8 +58,6 @@ float elevationBrushStrength = 0.05f; // per stroke
 boolean elevationBrushRaise = true;
 float elevationNoiseScale = 4.0f;
 float defaultElevation = 0.05f;
-float pathEraserRadius = 0.01f;
-boolean pathEraserMode = false;
 
 // Render toggles
 boolean renderShowZones = true;
@@ -98,11 +96,10 @@ final int SLIDER_ELEV_SEA = 6;
 final int SLIDER_ELEV_RADIUS = 7;
 final int SLIDER_ELEV_STRENGTH = 8;
 final int SLIDER_ELEV_NOISE = 9;
-final int SLIDER_PATH_ERASER = 10;
-final int SLIDER_PATH_TYPE_HUE = 11;
-final int SLIDER_PATH_TYPE_WEIGHT = 12;
-final int SLIDER_RENDER_LIGHT_AZIMUTH = 13;
-final int SLIDER_RENDER_LIGHT_ALTITUDE = 14;
+final int SLIDER_PATH_TYPE_HUE = 10;
+final int SLIDER_PATH_TYPE_WEIGHT = 11;
+final int SLIDER_RENDER_LIGHT_AZIMUTH = 12;
+final int SLIDER_RENDER_LIGHT_ALTITUDE = 13;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -134,10 +131,16 @@ void initBiomeTypes() {
 
 void initPathTypes() {
   mapModel.pathTypes.clear();
-  mapModel.pathTypes.add(new PathType("Road", color(80, 80, 80), 3.0f));
-  mapModel.pathTypes.add(new PathType("Street", color(110, 110, 110), 2.0f));
-  mapModel.pathTypes.add(new PathType("River", color(60, 90, 180), 3.0f));
-  mapModel.pathTypes.add(new PathType("Wall", color(90, 70, 50), 2.5f));
+  int initialCount = min(4, PATH_TYPE_PRESETS.length);
+  for (int i = 0; i < initialCount; i++) {
+    PathType pt = mapModel.makePathTypeFromPreset(i);
+    if (pt != null) {
+      mapModel.pathTypes.add(pt);
+    }
+  }
+  if (mapModel.pathTypes.isEmpty()) {
+    mapModel.pathTypes.add(new PathType("Path", color(80), 2.0f));
+  }
   activePathTypeIndex = 0;
 }
 
@@ -176,20 +179,45 @@ void draw() {
     mapModel.drawSites(this);
   }
 
-  // Current path being drawn (preview)
-  if (isDrawingPath && currentPath != null && currentTool == Tool.EDIT_PATHS) {
-    PathType pt = mapModel.getPathType(currentPath.typeId);
-    int col = (pt != null) ? pt.col : color(30, 30, 160);
-    float w = (pt != null) ? pt.weightPx : 2.0f;
-    currentPath.drawPreview(this, col, w);
-    // Segment to cursor preview
+  // Path segment preview when a start point is pending
+  if (currentTool == Tool.EDIT_PATHS && pendingPathStart != null) {
     PVector worldPos = viewport.screenToWorld(mouseX, mouseY);
     worldPos.x = constrain(worldPos.x, mapModel.minX, mapModel.maxX);
     worldPos.y = constrain(worldPos.y, mapModel.minY, mapModel.maxY);
-    PVector last = currentPath.points.get(currentPath.points.size() - 1);
+    float maxSnapPx = 14;
+    PVector snapped = findNearestSnappingPoint(worldPos.x, worldPos.y, maxSnapPx);
+    PVector target = (snapped != null) ? snapped : worldPos;
+
+    ArrayList<PVector> route = null;
+    if (snapped != null) {
+      route = mapModel.findSnapPath(pendingPathStart, target);
+    }
+    if (route == null || route.size() < 2) {
+      route = new ArrayList<PVector>();
+      route.add(pendingPathStart);
+      route.add(target);
+    }
+
+    PathType pt = null;
+    if (selectedPathIndex >= 0 && selectedPathIndex < mapModel.paths.size()) {
+      Path p = mapModel.paths.get(selectedPathIndex);
+      pt = mapModel.getPathType(p.typeId);
+    } else {
+      pt = mapModel.getPathType(activePathTypeIndex);
+    }
+    int col = (pt != null) ? pt.col : color(30, 30, 160);
+    float w = (pt != null) ? pt.weightPx : 2.0f;
+
+    pushStyle();
+    noFill();
     stroke(col);
     strokeWeight(max(0.5f, w) / viewport.zoom);
-    line(last.x, last.y, worldPos.x, worldPos.y);
+    beginShape();
+    for (PVector v : route) {
+      vertex(v.x, v.y);
+    }
+    endShape();
+    popStyle();
   }
 
   if (currentTool == Tool.EDIT_PATHS) {
@@ -213,8 +241,6 @@ void draw() {
     drawElevationBrushPreview();
   } else if (currentTool == Tool.EDIT_BIOMES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
-  } else if (currentTool == Tool.EDIT_PATHS && pathEraserMode) {
-    drawPathEraserPreview();
   } else if (currentTool == Tool.EDIT_RENDER) {
     if (renderShowElevation || renderShowWater) {
       mapModel.drawElevationOverlay(this, seaLevel, false, renderShowWater, renderShowElevation,
@@ -336,19 +362,6 @@ void drawElevationBrushPreview() {
   stroke(40, 120);
   strokeWeight(1.0f / viewport.zoom);
   float r = elevationBrushRadius;
-  ellipse(w.x, w.y, r * 2, r * 2);
-  popStyle();
-}
-
-void drawPathEraserPreview() {
-  IntRect panel = getActivePanelRect();
-  if (panel != null && panel.contains(mouseX, mouseY)) return;
-  PVector w = viewport.screenToWorld(mouseX, mouseY);
-  pushStyle();
-  noFill();
-  stroke(120, 40, 40, 150);
-  strokeWeight(1.0f / viewport.zoom);
-  float r = pathEraserRadius;
   ellipse(w.x, w.y, r * 2, r * 2);
   popStyle();
 }

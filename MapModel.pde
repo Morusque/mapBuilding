@@ -414,6 +414,28 @@ class MapModel {
     paths.clear();
   }
 
+  void appendSegmentToPath(Path p, ArrayList<PVector> pts) {
+    if (p == null || pts == null || pts.size() < 2) return;
+    if (p.points.isEmpty()) {
+      for (PVector v : pts) p.addPoint(v.x, v.y);
+      return;
+    }
+    PVector last = p.points.get(p.points.size() - 1);
+    int startIdx = 0;
+    if (!pts.isEmpty()) {
+      PVector first = pts.get(0);
+      float dx = last.x - first.x;
+      float dy = last.y - first.y;
+      if (dx * dx + dy * dy < 1e-10f) {
+        startIdx = 1; // avoid duplicate
+      }
+    }
+    for (int i = startIdx; i < pts.size(); i++) {
+      PVector v = pts.get(i);
+      p.addPoint(v.x, v.y);
+    }
+  }
+
   void removePathsNear(float wx, float wy, float radius) {
     if (paths == null) return;
     float r2 = radius * radius;
@@ -859,6 +881,12 @@ class MapModel {
     if (pathTypes == null) return null;
     if (idx < 0 || idx >= pathTypes.size()) return null;
     return pathTypes.get(idx);
+  }
+
+  PathType makePathTypeFromPreset(int presetIndex) {
+    if (presetIndex < 0 || presetIndex >= PATH_TYPE_PRESETS.length) return null;
+    PathTypePreset p = PATH_TYPE_PRESETS[presetIndex];
+    return new PathType(p.name, p.col, p.weightPx);
   }
 
   void generateElevationNoise(float scale, float amplitude, float seaLevel) {
@@ -1318,6 +1346,28 @@ class PathType {
     col = hsb01ToRGB(hue01, sat01, bri01);
   }
 }
+
+class PathTypePreset {
+  String name;
+  int col;
+  float weightPx;
+  PathTypePreset(String name, int col, float weightPx) {
+    this.name = name;
+    this.col = col;
+    this.weightPx = weightPx;
+  }
+}
+
+PathTypePreset[] PATH_TYPE_PRESETS = new PathTypePreset[] {
+  new PathTypePreset("Road",   color(80, 80, 80),   3.0f),
+  new PathTypePreset("Street", color(110, 110, 110), 2.0f),
+  new PathTypePreset("River",  color(60, 90, 180),  3.0f),
+  new PathTypePreset("Wall",   color(90, 70, 50),   2.5f),
+  new PathTypePreset("Trail",  color(140, 100, 70), 1.6f),
+  new PathTypePreset("Canal",  color(70, 110, 190), 2.4f),
+  new PathTypePreset("Rail",   color(70, 70, 70),   2.8f),
+  new PathTypePreset("Pipeline", color(120, 120, 120), 2.0f)
+};
 
 // ---------- Color helpers for HSB<->RGB in [0..1] ----------
 

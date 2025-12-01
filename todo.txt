@@ -6,14 +6,8 @@ Zones :
 This one should be implemented at some point but not yet.
 
 Paths :
-For now the menu on the left should contain only :
-- "+/-" buttons : that adds/removes types based on a hardcoded list similar to Biomes (while currently deleted then respawned types fallback to TypeN labels).
-- Selectable types with editable label, hue and weight.
-For now the menu on the right should contain only :
-- The list of Path, clicking on it (for instance on a bullet button) makes it selected (with visual feedback), it contains editable label, selectable type and delete button.
-- bottom of the list is a "New Path" button that adds a path at the end.
-The map : clicking the map alternatively starts and ends (validates) a new segment that gets added to the currently selected Path in the list (and not "as" a ne path).Closing the path should not be a step, the "Close (Enter)" button should not exist. The path should be closed by itself at every step (click). The next click then restarts a new list of segment, then the next one closes it etc.
-The segment preview should take pathfinding into account.
+Segments within a path are allowed to be disjoint, so when clicking four times (eg A[1,1]B[1,2]C[2,1]D[2,2]) that should create two segments (between A and B, then C and D) for the same path but not connect B and C. That means paths are made of segments with starts and ends, not just a list of points.
+There should be an option on the left menu that defines current placement and pathfinding type. "ends" should only snap segment start and end but not subdivide into smaller segments, "shortest" would be what how currently works, "flattest" would minimize slopes (eg when climbing a mountain it would do several diagonals like most real world roads instead of climbing straight).
 
 Struct :
 there should be a slider for structure size (for the next structs to be placed).
