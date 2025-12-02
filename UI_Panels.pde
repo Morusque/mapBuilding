@@ -1,3 +1,5 @@
+final int PANEL_HINT_H = PANEL_SECTION_GAP + (PANEL_LABEL_H + 2) * 2 + 6;
+
 // ----- SITES PANEL -----
 
 class SitesLayout {
@@ -33,6 +35,7 @@ SitesLayout buildSitesLayout() {
                                curY + (PANEL_BUTTON_H - PANEL_CHECK_SIZE) / 2,
                                PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
   curY += PANEL_BUTTON_H + PANEL_PADDING;
+  curY += PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -149,6 +152,10 @@ void drawSitesPanel() {
   fill(0);
   textAlign(LEFT, CENTER);
   text("Keep properties", c.x + c.w + 6, g.y + g.h / 2);
+
+  drawControlsHint(layout.panel,
+                   "Right-click pan; wheel zoom.",
+                   "Drag sites; DEL removes selected.");
 }
 
 // ----- Biomes PANEL -----
@@ -222,6 +229,7 @@ BiomesLayout buildBiomesLayout() {
   l.brushSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
 
+  curY += PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -370,6 +378,10 @@ void drawBiomesPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Brush radius", brush.x, brush.y - 4);
+
+  drawControlsHint(layout.panel,
+                   "Drag to paint; Fill floods cell.",
+                   "Right-click pan; wheel zoom.");
 }
 
 // ----- ADMIN (Zones) PANEL -----
@@ -442,6 +454,7 @@ AdminLayout buildAdminLayout() {
   // Right-side list panel reserved space
   l.listPanel = new IntRect(width - RIGHT_PANEL_W - PANEL_PADDING, panelTop(), RIGHT_PANEL_W, height - panelTop() - PANEL_PADDING);
 
+  curY += PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -584,6 +597,10 @@ void drawAdminPanel() {
     }
   }
   popStyle();
+
+  drawControlsHint(layout.panel,
+                   "Drag to paint; Fill floods cell.",
+                   "Right-click pan; wheel zoom.");
 }
 
 // ----- PATHS PANEL -----
@@ -679,6 +696,7 @@ PathsLayout buildPathsLayout() {
   l.taperCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
   curY += PANEL_CHECK_SIZE + PANEL_PADDING;
 
+  curY += PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -690,7 +708,7 @@ PathsListLayout buildPathsListLayout() {
   int y = panelTop();
   l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
   l.titleY = y + PANEL_PADDING;
-  int newBtnY = l.panel.y + l.panel.h - PANEL_PADDING - PANEL_BUTTON_H;
+  int newBtnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
   l.newBtn = new IntRect(x + PANEL_PADDING, newBtnY, 90, PANEL_BUTTON_H);
   return l;
 }
@@ -698,8 +716,8 @@ PathsListLayout buildPathsListLayout() {
 void populatePathsListRows(PathsListLayout layout) {
   layout.rows.clear();
   int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
-  int maxY = layout.newBtn.y - PANEL_SECTION_GAP;
+  int curY = layout.newBtn.y + layout.newBtn.h + PANEL_SECTION_GAP;
+  int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
 
   int textH = ceil(textAscent() + textDescent());
   int nameH = max(PANEL_LABEL_H + 6, textH + 8);
@@ -784,8 +802,6 @@ void drawPathsPanel() {
   // Avoid water checkbox
   drawCheckbox(layout.avoidWaterCheck.x, layout.avoidWaterCheck.y,
                layout.avoidWaterCheck.w, pathAvoidWater, "Avoid water");
-  drawCheckbox(layout.taperCheck.x, layout.taperCheck.y,
-               layout.taperCheck.w, mapModel.getPathType(activePathTypeIndex) != null && mapModel.getPathType(activePathTypeIndex).taperOn, "Taper width (start small)");
 
   // Only type management on this panel
 
@@ -868,11 +884,11 @@ void drawPathsPanel() {
     fill(0);
     text("Weight for \"" + active.name + "\" (px)", weight.x, weight.y - 4);
 
-    // Min weight slider per type
-    IntRect minw = layout.typeMinWeightSlider;
-    stroke(160);
-    fill(230);
-    rect(minw.x, minw.y, minw.w, minw.h, 4);
+  // Min weight slider per type
+  IntRect minw = layout.typeMinWeightSlider;
+  stroke(160);
+  fill(230);
+  rect(minw.x, minw.y, minw.w, minw.h, 4);
     float minNorm = constrain(map(active.minWeightPx, 0.5f, active.weightPx, 0, 1), 0, 1);
     float minx = minw.x + minNorm * minw.w;
     fill(40);
@@ -882,9 +898,13 @@ void drawPathsPanel() {
     text("Min weight (px)", minw.x, minw.y - 4);
 
     // Taper toggle per type
-    drawCheckbox(layout.taperCheck.x, layout.taperCheck.y,
-                 layout.taperCheck.w, active.taperOn, "Taper width (start small)");
+  drawCheckbox(layout.taperCheck.x, layout.taperCheck.y,
+               layout.taperCheck.w, active.taperOn, "Taper width (start small)");
   }
+
+  drawControlsHint(layout.panel,
+                   "Click start/end to add; DEL cancels pending; C clears.",
+                   "Right-click pan; wheel zoom.");
 }
 
 void drawPathsListPanel() {
@@ -904,11 +924,11 @@ void drawPathsListPanel() {
     textAlign(LEFT, TOP);
     text("No paths yet.", labelX, curY);
   } else {
-    for (int i = 0; i < layout.rows.size(); i++) {
-      Path p = mapModel.paths.get(i);
-      PathRowLayout row = layout.rows.get(i);
+  for (int i = 0; i < layout.rows.size(); i++) {
+    Path p = mapModel.paths.get(i);
+    PathRowLayout row = layout.rows.get(i);
 
-      boolean selected = (selectedPathIndex == i);
+    boolean selected = (selectedPathIndex == i);
       drawBevelButton(row.selectRect.x, row.selectRect.y, row.selectRect.w, row.selectRect.h, selected);
       fill(10);
       textAlign(CENTER, CENTER);
@@ -1006,6 +1026,7 @@ ElevationLayout buildElevationLayout() {
   l.varyBtn = new IntRect(l.perlinBtn.x + genW + 8, curY, genW, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_PADDING;
 
+  curY += PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -1087,6 +1108,10 @@ void drawElevationPanel() {
   textAlign(CENTER, CENTER);
   text("Perlin Generate", layout.perlinBtn.x + layout.perlinBtn.w / 2, layout.perlinBtn.y + layout.perlinBtn.h / 2);
   text("Vary", layout.varyBtn.x + layout.varyBtn.w / 2, layout.varyBtn.y + layout.varyBtn.h / 2);
+
+  drawControlsHint(layout.panel,
+                   "Drag to raise/lower; toggle Raise/Lower.",
+                   "Right-click pan; wheel zoom.");
 }
 
 // ----- LABELS PANEL -----
@@ -1128,6 +1153,7 @@ LabelsLayout buildLabelsLayout() {
     l.targetButtons.add(new IntRect(innerX + i * (btnW + gap), curY, btnW, PANEL_BUTTON_H));
   }
   curY += PANEL_BUTTON_H + PANEL_PADDING;
+  curY += PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -1160,6 +1186,10 @@ void drawLabelsPanel() {
     textAlign(CENTER, CENTER);
     text(targets[i], b.x + b.w / 2, b.y + b.h / 2);
   }
+
+  drawControlsHint(layout.panel,
+                   "Type then click map to place/edit.",
+                   "Right-click pan; wheel zoom.");
 }
 
 LabelsListLayout buildLabelsListLayout() {
@@ -1282,6 +1312,7 @@ StructuresLayout buildStructuresLayout() {
   }
   curY += PANEL_BUTTON_H + PANEL_PADDING;
 
+  curY += PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -1334,6 +1365,10 @@ void drawStructuresPanelUI() {
     textAlign(CENTER, CENTER);
     text(snapModes[i], b.x + b.w / 2, b.y + b.h / 2);
   }
+
+  drawControlsHint(layout.panel,
+                   "Click map to place; snaps to paths/frontiers/structures.",
+                   "Right-click pan; wheel zoom.");
 }
 
 // ----- STRUCTURES LIST (right panel) -----
@@ -1447,7 +1482,7 @@ RenderLayout buildRenderLayout() {
     }
   }
 
-  curY += PANEL_PADDING;
+  curY += PANEL_PADDING + PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -1504,6 +1539,10 @@ void drawRenderPanel() {
   drawCheckbox(layout.checks.get(6).x, layout.checks.get(6).y, layout.checks.get(6).w, renderShowLabels, "Labels");
   drawCheckbox(layout.checks.get(7).x, layout.checks.get(7).y, layout.checks.get(7).w, renderShowStructures, "Structures");
   // Black/white toggle already drawn above with checks[8]
+
+  drawControlsHint(layout.panel,
+                   "View only: toggles above.",
+                   "Right-click pan; wheel zoom.");
 }
 
 // ---------- UI helpers ----------
@@ -1568,6 +1607,33 @@ void drawCheckbox(int x, int y, int size, boolean on, String label) {
   fill(0);
   textAlign(LEFT, CENTER);
   text(label, x + size + 6, y + size / 2);
+}
+
+void drawControlsHint(IntRect panel, String line1, String line2) {
+  if (panel == null) return;
+  int lines = 0;
+  if (line1 != null && line1.length() > 0) lines++;
+  if (line2 != null && line2.length() > 0) lines++;
+  if (lines == 0) return;
+
+  float totalH = lines * (PANEL_LABEL_H + 2);
+  float yTop = panel.y + panel.h - PANEL_PADDING - totalH;
+  float sepY = yTop - 4;
+
+  // Separator to visually isolate hints from controls above
+  stroke(140);
+  line(panel.x + PANEL_PADDING, sepY, panel.x + panel.w - PANEL_PADDING, sepY);
+
+  fill(40);
+  textAlign(LEFT, TOP);
+  float y = yTop;
+  if (line1 != null && line1.length() > 0) {
+    text(line1, panel.x + PANEL_PADDING, y);
+    y += PANEL_LABEL_H + 2;
+  }
+  if (line2 != null && line2.length() > 0) {
+    text(line2, panel.x + PANEL_PADDING, y);
+  }
 }
 
 IntRect getActivePanelRect() {

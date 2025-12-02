@@ -8,6 +8,7 @@ Sites :
 Elevation :
 
 Biomes :
+(later) extend or shrink current biome button
 
 Zones :
 (later) a first-pass has been done but we need to redo this in a lot more specific way
@@ -48,5 +49,5 @@ General :
 (later) Refactor, optimize etc.
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
 (later) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
-(soon) on each panel, find a place to write non UI controls (role mouse buttons, wheel, keys such as DEL etc)
+(done) on each panel, find a place to write non UI controls (role mouse buttons, wheel, keys such as DEL etc)
 (later) option to generate details (about everything) for zooming
