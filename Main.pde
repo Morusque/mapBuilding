@@ -296,6 +296,14 @@ void draw() {
     }
     endShape();
     popStyle();
+
+    // Start marker
+    pushStyle();
+    noStroke();
+    fill(255, 180, 0, 200);
+    float sr = 5.0f / viewport.zoom;
+    ellipse(pendingPathStart.x, pendingPathStart.y, sr, sr);
+    popStyle();
   }
 
   if (currentTool == Tool.EDIT_PATHS) {

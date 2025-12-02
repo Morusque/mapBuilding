@@ -538,7 +538,9 @@ class MapModel {
     if (!snapNodes.containsKey(kFrom) || !snapNodes.containsKey(kTo)) return null;
     if (kFrom.equals(kTo)) {
       ArrayList<PVector> single = new ArrayList<PVector>();
-      single.add(snapNodes.get(kFrom));
+      PVector p = snapNodes.get(kFrom);
+      single.add(p);
+      single.add(p.copy()); // ensure at least two points so segments can be added
       return single;
     }
 
