@@ -1336,6 +1336,81 @@ void drawStructuresPanelUI() {
   }
 }
 
+// ----- STRUCTURES LIST (right panel) -----
+class StructuresListLayout {
+  IntRect panel;
+  int titleY;
+  ArrayList<StructureRowLayout> rows = new ArrayList<StructureRowLayout>();
+}
+
+class StructureRowLayout {
+  IntRect selectRect;
+  IntRect nameRect;
+  IntRect delRect;
+}
+
+StructuresListLayout buildStructuresListLayout() {
+  StructuresListLayout l = new StructuresListLayout();
+  int w = RIGHT_PANEL_W;
+  int x = width - w - PANEL_PADDING;
+  int y = panelTop();
+  l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
+  l.titleY = y + PANEL_PADDING;
+  return l;
+}
+
+void populateStructuresListRows(StructuresListLayout layout) {
+  layout.rows.clear();
+  int labelX = layout.panel.x + PANEL_PADDING;
+  int curY = layout.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
+  int rowH = 24;
+  for (int i = 0; i < mapModel.structures.size(); i++) {
+    if (curY + rowH > maxY) break;
+    StructureRowLayout row = new StructureRowLayout();
+    int selectW = 18;
+    row.selectRect = new IntRect(labelX, curY, selectW, rowH);
+    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - selectW - 6 - 30, rowH);
+    row.delRect = new IntRect(row.nameRect.x + row.nameRect.w + 6, curY, 24, rowH);
+    layout.rows.add(row);
+    curY += rowH + 6;
+  }
+}
+
+void drawStructuresListPanel() {
+  StructuresListLayout layout = buildStructuresListLayout();
+  populateStructuresListRows(layout);
+  drawPanelBackground(layout.panel);
+
+  int labelX = layout.panel.x + PANEL_PADDING;
+  int curY = layout.titleY;
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Structures", labelX, curY);
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  for (int i = 0; i < layout.rows.size(); i++) {
+    StructureRowLayout row = layout.rows.get(i);
+    Structure s = mapModel.structures.get(i);
+    boolean selected = (selectedStructureIndex == i);
+    drawBevelButton(row.selectRect.x, row.selectRect.y, row.selectRect.w, row.selectRect.h, selected);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text(selected ? "*" : "", row.selectRect.x + row.selectRect.w / 2, row.selectRect.y + row.selectRect.h / 2);
+
+    drawBevelButton(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, selected);
+    fill(10);
+    textAlign(LEFT, CENTER);
+    String label = "Struct " + (i + 1);
+    text(label, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
+
+    drawBevelButton(row.delRect.x, row.delRect.y, row.delRect.w, row.delRect.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("X", row.delRect.x + row.delRect.w / 2, row.delRect.y + row.delRect.h / 2);
+  }
+}
+
 // ----- RENDER PANEL -----
 class RenderLayout {
   IntRect panel;

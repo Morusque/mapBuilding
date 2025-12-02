@@ -381,7 +381,9 @@ class MapModel {
   Structure computeSnappedStructure(float wx, float wy, float size) {
     Structure s = new Structure(wx, wy);
     s.size = size;
-    float snapRange = max(0.04f, s.size * 2.0f);
+    // Keep magnetism roughly constant in screen space: smaller in world units when zoomed in.
+    float snapRangePx = 20.0f;
+    float snapRange = max(0.01f, snapRangePx / max(1e-3f, viewport.zoom));
 
     if (structureSnapMode == StructureSnapMode.NONE) {
       s.angle = structureAngleOffsetRad;

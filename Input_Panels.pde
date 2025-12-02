@@ -42,6 +42,12 @@ boolean isInStructuresPanel(int mx, int my) {
   return layout.panel.contains(mx, my);
 }
 
+boolean isInStructuresListPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_STRUCTURES) return false;
+  StructuresListLayout layout = buildStructuresListLayout();
+  return layout.panel.contains(mx, my);
+}
+
 boolean isInLabelsPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_LABELS) return false;
   LabelsLayout layout = buildLabelsLayout();
@@ -472,6 +478,8 @@ void mousePressed() {
   // Structures panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_STRUCTURES) {
     if (handleStructuresPanelClick(mouseX, mouseY)) return;
+    if (handleStructuresListPanelClick(mouseX, mouseY)) return;
+    if (isInStructuresListPanel(mouseX, mouseY)) return;
   }
 
   // Labels panel
@@ -490,6 +498,7 @@ void mousePressed() {
   if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
   if (isInActivePanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_PATHS && isInPathsListPanel(mouseX, mouseY)) return;
+  if (currentTool == Tool.EDIT_STRUCTURES && isInStructuresListPanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_LABELS && isInLabelsListPanel(mouseX, mouseY)) return;
 
   // Panning with right button (all modes)
@@ -526,6 +535,7 @@ void mousePressed() {
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
     Structure s = mapModel.computeSnappedStructure(worldPos.x, worldPos.y, structureSize);
     mapModel.structures.add(s);
+    selectedStructureIndex = mapModel.structures.size() - 1;
   } else if (currentTool == Tool.EDIT_LABELS) {
     MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, labelDraft, labelTargetMode);
     mapModel.labels.add(lbl);
@@ -796,6 +806,27 @@ boolean handleStructuresPanelClick(int mx, int my) {
     IntRect b = layout.snapButtons.get(i);
     if (b.contains(mx, my)) {
       structureSnapMode = StructureSnapMode.values()[i];
+      return true;
+    }
+  }
+  return false;
+}
+
+boolean handleStructuresListPanelClick(int mx, int my) {
+  if (!isInStructuresListPanel(mx, my)) return false;
+  StructuresListLayout layout = buildStructuresListLayout();
+  populateStructuresListRows(layout);
+
+  for (int i = 0; i < layout.rows.size(); i++) {
+    StructureRowLayout row = layout.rows.get(i);
+    if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
+      selectedStructureIndex = i;
+      return true;
+    }
+    if (row.delRect.contains(mx, my)) {
+      mapModel.structures.remove(i);
+      if (selectedStructureIndex == i) selectedStructureIndex = -1;
+      else if (selectedStructureIndex > i) selectedStructureIndex -= 1;
       return true;
     }
   }

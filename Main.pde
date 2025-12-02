@@ -106,6 +106,9 @@ String pathTypeNameDraft = "";
 int editingPathNameIndex = -1;
 String pathNameDraft = "";
 
+// Structure selection state
+int selectedStructureIndex = -1;
+
 // Loading indicator
 boolean isLoading = false;
 float loadingPhase = 0;
@@ -353,6 +356,7 @@ void draw() {
     drawAdminPanel();
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
     drawStructuresPanelUI();
+    drawStructuresListPanel();
   } else if (currentTool == Tool.EDIT_PATHS) {
     drawPathsPanel();
     drawPathsListPanel();
