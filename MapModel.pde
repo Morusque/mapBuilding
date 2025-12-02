@@ -888,7 +888,7 @@ class MapModel {
     }
   }
 
-  void drawPaths(PApplet app, int strokeCol, boolean highlightSelected) {
+  void drawPaths(PApplet app, int strokeCol, boolean highlightSelected, boolean showNodes) {
     if (paths.isEmpty()) return;
 
     app.pushStyle();
@@ -912,20 +912,22 @@ class MapModel {
           taperCache.put(p.typeId, taperW);
         }
       }
-      p.draw(app, w, taperOn, taperW, i);
+      p.draw(app, w, taperOn, taperW, i, showNodes);
 
       // Debug: draw small dots on all route vertices
-      app.pushStyle();
-      app.noStroke();
-      app.fill(255, 120, 0, 200);
-      float r = 3.0f / viewport.zoom;
-      for (ArrayList<PVector> rts : p.routes) {
-        if (rts == null) continue;
-        for (PVector v : rts) {
-          app.ellipse(v.x, v.y, r, r);
+      if (showNodes) {
+        app.pushStyle();
+        app.noStroke();
+        app.fill(255, 120, 0, 200);
+        float r = 3.0f / viewport.zoom;
+        for (ArrayList<PVector> rts : p.routes) {
+          if (rts == null) continue;
+          for (PVector v : rts) {
+            app.ellipse(v.x, v.y, r, r);
+          }
         }
+        app.popStyle();
       }
-      app.popStyle();
     }
 
     // Selected path highlight
@@ -952,7 +954,7 @@ class MapModel {
           taperCache.put(sel.typeId, taperW);
         }
       }
-      sel.draw(app, w, taperOn, taperW, selectedPathIndex);
+      sel.draw(app, w, taperOn, taperW, selectedPathIndex, showNodes);
     }
 
     app.popStyle();

@@ -11,13 +11,14 @@ class Path {
     routes.add(copy);
   }
 
-  void draw(PApplet app, float baseWeight, boolean taper, HashMap<String, Float> segWeights, int pathIndex) {
+  void draw(PApplet app, float baseWeight, boolean taper, HashMap<String, Float> segWeights, int pathIndex, boolean showNodes) {
     if (routes.isEmpty()) return;
 
     for (int ri = 0; ri < routes.size(); ri++) {
       ArrayList<PVector> seg = routes.get(ri);
       if (seg == null || seg.isEmpty()) continue;
       if (seg.size() == 1) {
+        if (!showNodes) continue;
         float r = 3.0f / viewport.zoom;
         app.pushStyle();
         app.noStroke();
@@ -43,15 +44,17 @@ class Path {
       }
 
       // Tiny endpoint dots to keep short segments visible
-      float r = 2.0f / viewport.zoom;
-      app.pushStyle();
-      app.noStroke();
-      app.fill(app.g.strokeColor);
-      PVector a = seg.get(0);
-      PVector b = seg.get(seg.size() - 1);
-      app.ellipse(a.x, a.y, r, r);
-      app.ellipse(b.x, b.y, r, r);
-      app.popStyle();
+      if (showNodes) {
+        float r = 2.0f / viewport.zoom;
+        app.pushStyle();
+        app.noStroke();
+        app.fill(app.g.strokeColor);
+        PVector a = seg.get(0);
+        PVector b = seg.get(seg.size() - 1);
+        app.ellipse(a.x, a.y, r, r);
+        app.ellipse(b.x, b.y, r, r);
+        app.popStyle();
+      }
     }
   }
 

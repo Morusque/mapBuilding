@@ -1,6 +1,5 @@
 
 Loading bar :
-(later) Try to optimize further.
 
 Sites :
 (later) There could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
@@ -36,7 +35,6 @@ Rendering :
 (later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed).
 (later) Exporting the legend for reference.
 (later) Comments exportable as custom format
-(later) in this specific mode, paths should not show node points
 
 Editable types : (for anywhere applicable: paths, biomes, etc)
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.

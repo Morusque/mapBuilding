@@ -240,11 +240,11 @@ void draw() {
   int pathCol = renderBlackWhite ? color(50) : color(60, 60, 200);
   int pathElevCol = renderBlackWhite ? color(90) : color(120);
   if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawPaths(this, pathElevCol, highlightPaths);
+    mapModel.drawPaths(this, pathElevCol, highlightPaths, true);
   } else if (currentTool == Tool.EDIT_RENDER) {
-    if (renderShowPaths) mapModel.drawPaths(this, pathCol, highlightPaths);
+    if (renderShowPaths) mapModel.drawPaths(this, pathCol, highlightPaths, false);
   } else {
-    mapModel.drawPaths(this, pathCol, highlightPaths);
+    mapModel.drawPaths(this, pathCol, highlightPaths, true);
   }
 
   // Sites only in Sites mode; paths use snapping dots instead
