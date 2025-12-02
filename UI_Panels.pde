@@ -160,6 +160,7 @@ class BiomesLayout {
   IntRect fillBtn;
   IntRect generateBtn;
   IntRect resetBtn;
+  IntRect fillUnderwaterBtn;
   IntRect addBtn;
   IntRect removeBtn;
   ArrayList<IntRect> swatches = new ArrayList<IntRect>();
@@ -178,6 +179,7 @@ BiomesLayout buildBiomesLayout() {
 
   l.resetBtn = new IntRect(innerX, curY, 90, PANEL_BUTTON_H);
   l.generateBtn = new IntRect(l.resetBtn.x + l.resetBtn.w + 8, curY, 90, PANEL_BUTTON_H);
+  l.fillUnderwaterBtn = new IntRect(l.generateBtn.x + l.generateBtn.w + 8, curY, 140, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
 
   l.paintBtn = new IntRect(innerX, curY, 70, PANEL_BUTTON_H);
@@ -245,6 +247,12 @@ void drawBiomesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Reset", layout.resetBtn.x + layout.resetBtn.w * 0.5f, layout.resetBtn.y + layout.resetBtn.h * 0.5f);
+
+  // Fill underwater button
+  drawBevelButton(layout.fillUnderwaterBtn.x, layout.fillUnderwaterBtn.y, layout.fillUnderwaterBtn.w, layout.fillUnderwaterBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Set underwater to biome", layout.fillUnderwaterBtn.x + layout.fillUnderwaterBtn.w * 0.5f, layout.fillUnderwaterBtn.y + layout.fillUnderwaterBtn.h * 0.5f);
 
   // Paint button
   drawBevelButton(layout.paintBtn.x, layout.paintBtn.y, layout.paintBtn.w, layout.paintBtn.h,

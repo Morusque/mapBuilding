@@ -1758,6 +1758,16 @@ class MapModel {
     }
   }
 
+  void setUnderwaterToBiome(int biomeId, float sea) {
+    if (cells == null || cells.isEmpty()) return;
+    for (Cell c : cells) {
+      if (c.elevation < sea) {
+        c.biomeId = biomeId;
+      }
+    }
+    snapDirty = true;
+  }
+
   boolean hasAnyNoneBiome() {
     if (cells == null || cells.isEmpty()) return false;
     for (Cell c : cells) {

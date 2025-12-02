@@ -195,6 +195,12 @@ boolean handleZonesPanelClick(int mx, int my) {
     return true;
   }
 
+  // Fill underwater button
+  if (layout.fillUnderwaterBtn.contains(mx, my)) {
+    mapModel.setUnderwaterToBiome(activeBiomeIndex, seaLevel);
+    return true;
+  }
+
   int nTypes = mapModel.biomeTypes.size();
 
   // "+" button
