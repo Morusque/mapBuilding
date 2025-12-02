@@ -22,6 +22,7 @@ int selectedPathIndex = -1;
 PVector pendingPathStart = null;
 float structureSize = 0.02f; // world units
 float structureAngleOffsetRad = 0.0f;
+float lastStructureSnapAngle = 0.0f;
 StructureSnapMode structureSnapMode = StructureSnapMode.NEXT_TO_PATH;
 
 // UI layout

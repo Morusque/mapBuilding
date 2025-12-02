@@ -386,7 +386,7 @@ class MapModel {
     float snapRange = max(0.01f, snapRangePx / max(1e-3f, viewport.zoom));
 
     if (structureSnapMode == StructureSnapMode.NONE) {
-      s.angle = structureAngleOffsetRad;
+      s.angle = lastStructureSnapAngle + structureAngleOffsetRad;
       return s;
     }
 
@@ -412,6 +412,7 @@ class MapModel {
         s.x = p.x + nx * offset;
         s.y = p.y + ny * offset;
       }
+      lastStructureSnapAngle = ang;
       s.angle = ang + structureAngleOffsetRad;
       return s;
     }
@@ -436,6 +437,7 @@ class MapModel {
         s.x = p.x + nx * offset;
         s.y = p.y + ny * offset;
       }
+      lastStructureSnapAngle = ang;
       s.angle = ang + structureAngleOffsetRad;
       return s;
     }
@@ -447,24 +449,26 @@ class MapModel {
       float dx = o.x - wx;
       float dy = o.y - wy;
       float d2 = dx * dx + dy * dy;
-      float minGap = (o.size + s.size) * 0.6f;
       if (d2 < bestD2) {
         bestD2 = d2;
         closest = o;
       }
     }
     if (closest != null) {
-      float ang = atan2(closest.y - wy, closest.x - wx);
-      float dist = sqrt(bestD2);
-      float gap = (closest.size + s.size) * 0.6f;
-      float reach = max(0, dist - gap);
-      s.x = wx + cos(ang) * reach;
-      s.y = wy + sin(ang) * reach;
+      // Snap edge-to-edge with a small margin so shapes don't overlap visually.
+      float ang = atan2(wy - closest.y, wx - closest.x);
+      float halfA = closest.size * 0.5f;
+      float halfB = s.size * 0.5f;
+      float margin = max(0.003f, min(halfA, halfB) * 0.12f);
+      float targetDist = halfA + halfB + margin;
+      s.x = closest.x + cos(ang) * targetDist;
+      s.y = closest.y + sin(ang) * targetDist;
+      lastStructureSnapAngle = ang;
       s.angle = ang + structureAngleOffsetRad;
       return s;
     }
 
-    s.angle = structureAngleOffsetRad;
+    s.angle = lastStructureSnapAngle + structureAngleOffsetRad;
     return s;
   }
 
