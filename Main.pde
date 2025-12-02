@@ -24,6 +24,7 @@ float structureSize = 0.02f; // world units
 float structureAngleOffsetRad = 0.0f;
 float lastStructureSnapAngle = 0.0f;
 StructureSnapMode structureSnapMode = StructureSnapMode.NEXT_TO_PATH;
+StructureShape structureShape = StructureShape.SQUARE;
 
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
@@ -488,15 +489,9 @@ void drawStructurePreview() {
   Structure tmp = mapModel.computeSnappedStructure(w.x, w.y, structureSize);
   if (tmp == null) return;
   pushStyle();
-  pushMatrix();
-  float r = tmp.size;
-  translate(tmp.x, tmp.y);
-  rotate(tmp.angle);
   stroke(80, 140);
   strokeWeight(1.0f / viewport.zoom);
   fill(200, 200, 180, 120);
-  rectMode(CENTER);
-  rect(0, 0, r, r);
-  popMatrix();
+  tmp.draw(this);
   popStyle();
 }

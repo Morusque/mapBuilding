@@ -150,6 +150,7 @@ class Structure {
   int typeId = 0;
   float angle = 0;
   float size = 0.02f; // world units square side
+  StructureShape shape = StructureShape.SQUARE;
 
   Structure(float x, float y) {
     this.x = x;
@@ -157,15 +158,44 @@ class Structure {
   }
 
   void draw(PApplet app) {
-    float r = size;
     app.pushMatrix();
     app.translate(x, y);
     app.rotate(angle);
     app.stroke(90, 90, 70);
     app.strokeWeight(1.4f / viewport.zoom);
     app.fill(245, 245, 235, 180);
-    app.rectMode(CENTER);
-    app.rect(0, 0, r, r);
+
+    float r = size;
+    switch (shape) {
+      case CIRCLE: {
+        app.ellipse(0, 0, r, r);
+        break;
+      }
+      case TRIANGLE: {
+        float h = r * 0.866f; // sqrt(3)/2 * r for equilateral, r is side
+        app.beginShape();
+        app.vertex(-r * 0.5f, h * 0.333f);
+        app.vertex(r * 0.5f, h * 0.333f);
+        app.vertex(0, -h * 0.666f);
+        app.endShape(CLOSE);
+        break;
+      }
+      case HEXAGON: {
+        float rad = r * 0.5f;
+        app.beginShape();
+        for (int i = 0; i < 6; i++) {
+          float a = radians(60 * i);
+          app.vertex(cos(a) * rad, sin(a) * rad);
+        }
+        app.endShape(CLOSE);
+        break;
+      }
+      default: {
+        app.rectMode(CENTER);
+        app.rect(0, 0, r, r);
+        break;
+      }
+    }
     app.popMatrix();
   }
 }

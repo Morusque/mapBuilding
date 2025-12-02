@@ -1281,12 +1281,22 @@ String labelTargetShort(LabelTarget lt) {
   }
 }
 
+String structureShapeLabel(StructureShape sh) {
+  switch (sh) {
+    case CIRCLE: return "Circle";
+    case TRIANGLE: return "Triangle";
+    case HEXAGON: return "Hex";
+    default: return "Square";
+  }
+}
+
 // ----- STRUCTURES PANEL -----
 class StructuresLayout {
   IntRect panel;
   int titleY;
   IntRect sizeSlider;
   IntRect angleSlider;
+  ArrayList<IntRect> shapeButtons = new ArrayList<IntRect>();
   ArrayList<IntRect> snapButtons = new ArrayList<IntRect>();
 }
 
@@ -1303,6 +1313,15 @@ StructuresLayout buildStructuresLayout() {
 
   l.angleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+
+  // Shape selection buttons
+  String[] shapeLabels = { "Square", "Circle", "Triangle", "Hex" };
+  int btnWShape = 70;
+  int gapShape = 6;
+  for (int i = 0; i < shapeLabels.length; i++) {
+    l.shapeButtons.add(new IntRect(innerX + i * (btnWShape + gapShape), curY, btnWShape, PANEL_BUTTON_H));
+  }
+  curY += PANEL_BUTTON_H + PANEL_PADDING;
 
   String[] snapModes = { "None", "Next", "Center" };
   int btnW = 70;
@@ -1354,6 +1373,17 @@ void drawStructuresPanelUI() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Angle offset (" + nf(angDeg, 1, 1) + "°)", ang.x, ang.y - 4);
+
+  // Shape buttons
+  String[] shapeLabels = { "Square", "Circle", "Triangle", "Hex" };
+  for (int i = 0; i < layout.shapeButtons.size(); i++) {
+    IntRect b = layout.shapeButtons.get(i);
+    boolean active = (structureShape == StructureShape.values()[i]);
+    drawBevelButton(b.x, b.y, b.w, b.h, active);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text(shapeLabels[i], b.x + b.w / 2, b.y + b.h / 2);
+  }
 
   // Snap mode buttons
   String[] snapModes = { "None", "Next", "Center" };
@@ -1436,7 +1466,7 @@ void drawStructuresListPanel() {
     drawBevelButton(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, selected);
     fill(10);
     textAlign(LEFT, CENTER);
-    String label = "Struct " + (i + 1);
+    String label = "Struct " + (i + 1) + " - " + structureShapeLabel(s.shape);
     text(label, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
 
     drawBevelButton(row.delRect.x, row.delRect.y, row.delRect.w, row.delRect.h, false);

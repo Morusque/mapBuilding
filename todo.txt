@@ -18,7 +18,6 @@ Paths :
 (later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
 
 Struct :
-(soon) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.
 (soon) structres should be removable, grouppable.
 (soon) selected structure need visual feedback on the map
 (later) some ui on the right panel for per-struct parameters (can be displayed once for selected struct)
@@ -49,5 +48,4 @@ General :
 (later) Refactor, optimize etc.
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
 (later) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
-(done) on each panel, find a place to write non UI controls (role mouse buttons, wheel, keys such as DEL etc)
 (later) option to generate details (about everything) for zooming

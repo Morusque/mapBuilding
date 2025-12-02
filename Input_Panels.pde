@@ -802,6 +802,13 @@ boolean handleStructuresPanelClick(int mx, int my) {
     activeSlider = SLIDER_STRUCT_ANGLE;
     return true;
   }
+  for (int i = 0; i < layout.shapeButtons.size(); i++) {
+    IntRect b = layout.shapeButtons.get(i);
+    if (b.contains(mx, my)) {
+      structureShape = StructureShape.values()[i];
+      return true;
+    }
+  }
   for (int i = 0; i < layout.snapButtons.size(); i++) {
     IntRect b = layout.snapButtons.get(i);
     if (b.contains(mx, my)) {

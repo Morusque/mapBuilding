@@ -31,6 +31,13 @@ enum StructureSnapMode {
   ON_PATH
 }
 
+enum StructureShape {
+  SQUARE,
+  CIRCLE,
+  TRIANGLE,
+  HEXAGON
+}
+
 enum LabelTarget {
   FREE,
   BIOME,
