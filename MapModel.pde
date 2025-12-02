@@ -339,7 +339,7 @@ class MapModel {
       if (side < 0) offset = -offset;
       s.x = p.x + nx * offset;
       s.y = p.y + ny * offset;
-      s.angle = ang;
+      s.angle = ang + structureAngleOffsetRad;
       return s;
     }
 
@@ -358,7 +358,7 @@ class MapModel {
       if (side < 0) offset = -offset;
       s.x = p.x + nx * offset;
       s.y = p.y + ny * offset;
-      s.angle = ang;
+      s.angle = ang + structureAngleOffsetRad;
       return s;
     }
 
@@ -382,10 +382,11 @@ class MapModel {
       float reach = max(0, dist - gap);
       s.x = wx + cos(ang) * reach;
       s.y = wy + sin(ang) * reach;
-      s.angle = ang;
+      s.angle = ang + structureAngleOffsetRad;
       return s;
     }
 
+    s.angle = structureAngleOffsetRad;
     return s;
   }
 

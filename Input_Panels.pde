@@ -707,6 +707,13 @@ boolean handleStructuresPanelClick(int mx, int my) {
     activeSlider = SLIDER_STRUCT_SIZE;
     return true;
   }
+  if (layout.angleSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.angleSlider.x) / (float)layout.angleSlider.w, 0, 1);
+    float angDeg = -180.0f + t * 360.0f;
+    structureAngleOffsetRad = radians(angDeg);
+    activeSlider = SLIDER_STRUCT_ANGLE;
+    return true;
+  }
   return false;
 }
 

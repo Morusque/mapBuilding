@@ -21,6 +21,7 @@ boolean isDraggingSite = false;
 int selectedPathIndex = -1;
 PVector pendingPathStart = null;
 float structureSize = 0.02f; // world units
+float structureAngleOffsetRad = 0.0f;
 
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
@@ -127,6 +128,7 @@ final int SLIDER_RENDER_LIGHT_ALTITUDE = 14;
 final int SLIDER_STRUCT_SIZE = 15;
 final int SLIDER_ADMIN_HUE = 16;
 final int SLIDER_ADMIN_BRUSH = 17;
+final int SLIDER_STRUCT_ANGLE = 18;
 int activeSlider = SLIDER_NONE;
 
 void settings() {

@@ -1106,6 +1106,7 @@ class StructuresLayout {
   IntRect panel;
   int titleY;
   IntRect sizeSlider;
+  IntRect angleSlider;
 }
 
 StructuresLayout buildStructuresLayout() {
@@ -1117,6 +1118,9 @@ StructuresLayout buildStructuresLayout() {
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
   l.sizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.angleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
 
   l.panel.h = curY - l.panel.y;
@@ -1145,6 +1149,21 @@ void drawStructuresPanelUI() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Size", sz.x, sz.y - 4);
+
+  // Angle offset slider (-180..180 deg)
+  IntRect ang = layout.angleSlider;
+  stroke(160);
+  fill(230);
+  rect(ang.x, ang.y, ang.w, ang.h, 4);
+  float angDeg = degrees(structureAngleOffsetRad);
+  float aNorm = constrain(map(angDeg, -180.0f, 180.0f, 0, 1), 0, 1);
+  float ax = ang.x + aNorm * ang.w;
+  fill(40);
+  noStroke();
+  ellipse(ax, ang.y + ang.h / 2.0f, ang.h * 0.9f, ang.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Angle offset (" + nf(angDeg, 1, 1) + "°)", ang.x, ang.y - 4);
 }
 
 // ----- RENDER PANEL -----

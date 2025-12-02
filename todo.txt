@@ -11,6 +11,7 @@ Sites :
 Elevation :
 
 Biomes :
+the "set underwater to biome" button label should be a but shorter and the button should be placed the next line (shift all other buttons from there)
 
 Zones :
 (later) a first-pass has been done but we need to redo this in a lot more specific way
@@ -42,12 +43,12 @@ Labels :
 (later) Label types with default style; attach to cells/paths/structures/groups or free position; anchor controls; option to follow path curvature.
 
 Rendering :
-(done) rendering has a black and white toggle.
 (later) water should have a "contour lines" option (based on proximity from coastline).
 (later) elevation should have a "contour lines" option (based on elevation landmarks).
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
 (later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons.
 (later) Respect LOD rules: constant stroke widths, hide/show groups vs members depending on zoom, optional merging of dense structures.
+(later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed).
 
 Editable types : (for anywhere applicable: paths, biomes, etc)
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
