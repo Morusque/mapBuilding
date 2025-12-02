@@ -255,9 +255,8 @@ void draw() {
     PVector worldPos = viewport.screenToWorld(mouseX, mouseY);
     worldPos.x = constrain(worldPos.x, mapModel.minX, mapModel.maxX);
     worldPos.y = constrain(worldPos.y, mapModel.minY, mapModel.maxY);
-    float maxSnapPx = 14;
-    PVector snapped = findNearestSnappingPoint(worldPos.x, worldPos.y, maxSnapPx);
-    PVector target = (snapped != null) ? snapped : worldPos;
+    PVector snapped = findNearestSnappingPoint(worldPos.x, worldPos.y, Float.MAX_VALUE);
+    PVector target = (snapped != null) ? snapped : pendingPathStart;
 
     ArrayList<PVector> route = null;
     PathRouteMode mode = currentPathRouteMode();
@@ -265,15 +264,20 @@ void draw() {
       route = new ArrayList<PVector>();
       route.add(pendingPathStart);
       route.add(target);
+      if (route.size() == 2) {
+        println("[PATH PREVIEW] ENDS start=(" + pendingPathStart.x + "," + pendingPathStart.y + ") end=(" + target.x + "," + target.y + ")");
+      }
     } else if (mode == PathRouteMode.PATHFIND) {
       if (snapped != null) {
         route = mapModel.findSnapPathFlattest(pendingPathStart, target);
+        println("[PATH PREVIEW] PATHFIND route size=" + ((route != null) ? route.size() : 0));
       }
     }
     if (route == null || route.size() < 2) {
       route = new ArrayList<PVector>();
       route.add(pendingPathStart);
       route.add(target);
+      println("[PATH PREVIEW] fallback route size=" + route.size());
     }
 
     PathType pt = null;
@@ -286,16 +290,10 @@ void draw() {
     int col = (pt != null) ? pt.col : color(30, 30, 160);
     float w = (pt != null) ? pt.weightPx : 2.0f;
 
-    pushStyle();
-    noFill();
-    stroke(col);
-    strokeWeight(max(0.5f, w) / viewport.zoom);
-    beginShape();
-    for (PVector v : route) {
-      vertex(v.x, v.y);
-    }
-    endShape();
-    popStyle();
+    // Use Path preview renderer for consistency
+    Path tmp = new Path();
+    tmp.routes.add(route);
+    tmp.drawPreview(this, route, col, w);
 
     // Start marker
     pushStyle();
@@ -303,6 +301,13 @@ void draw() {
     fill(255, 180, 0, 200);
     float sr = 5.0f / viewport.zoom;
     ellipse(pendingPathStart.x, pendingPathStart.y, sr, sr);
+    // Target marker for very short previews
+    if (!route.isEmpty()) {
+      PVector end = route.get(route.size() - 1);
+      float tr = 4.0f / viewport.zoom;
+      fill(80, 120, 240, 160);
+      ellipse(end.x, end.y, tr, tr);
+    }
     popStyle();
   }
 

@@ -14,12 +14,7 @@ Zones :
 (later) a first-pass has been done but we need to redo this in a lot more specific way
 
 Paths :
-(maybe later) Single segment paths still don't work. This is a seeminlgy simple yet persistent error so we need to talk about this.
-(maybe later) when tracing a path, starting position shoud have a visual feedback
-(maybe later) bug : sometimes when tracing, if mouse is slightly too far from ending position, ending circle appears but no path appears
 (maybe later) paths (typically rivers) could have an option that make them start small and end bigger when reaching the sea (this needs connection analysis, pathfinding etc when using multiple segments, to compute segment proximity to sea, parameter weight would be the bigger weight next to the sea).
-(done) clarified terminology: paths contain routes (point lists) and segments are point-to-point; code updated accordingly.
-(maybe later) why does the path confirmation take so much time? it only needs to push the previewed path into the valid list...
 (later) needs more optimization
 (later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
 

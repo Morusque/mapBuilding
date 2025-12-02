@@ -15,11 +15,25 @@ class Path {
     if (routes.isEmpty()) return;
 
     for (ArrayList<PVector> seg : routes) {
-      app.beginShape();
-      for (PVector p : seg) {
-        app.vertex(p.x, p.y);
+      if (seg == null || seg.isEmpty()) continue;
+      if (seg.size() == 1) {
+        float r = 3.0f / viewport.zoom;
+        app.pushStyle();
+        app.noStroke();
+        app.fill(app.g.strokeColor);
+        PVector a = seg.get(0);
+        app.ellipse(a.x, a.y, r, r);
+        app.popStyle();
+        println("[PATH DRAW ROUTE] single point at (" + a.x + "," + a.y + ")");
+        continue;
       }
-      app.endShape();
+
+      println("[PATH DRAW ROUTE] size=" + seg.size() + " first=(" + seg.get(0).x + "," + seg.get(0).y + ") last=(" + seg.get(seg.size()-1).x + "," + seg.get(seg.size()-1).y + ")");
+      for (int i = 0; i < seg.size() - 1; i++) {
+        PVector a = seg.get(i);
+        PVector b = seg.get(i + 1);
+        app.line(a.x, a.y, b.x, b.y);
+      }
 
       // Tiny endpoint dots to keep short segments visible
       float r = 2.0f / viewport.zoom;
@@ -36,17 +50,41 @@ class Path {
 
   // Used to preview a segment being drawn (can have different styling if needed)
   void drawPreview(PApplet app, ArrayList<PVector> seg, int strokeCol, float weightPx) {
+    if (seg == null || seg.isEmpty()) return;
+    if (seg.size() == 1) {
+      float r = 3.0f / viewport.zoom;
+      app.pushStyle();
+      app.noStroke();
+      app.fill(strokeCol);
+      PVector a = seg.get(0);
+      app.ellipse(a.x, a.y, r, r);
+      app.popStyle();
+      println("[PATH PREVIEW ROUTE] single point at (" + a.x + "," + a.y + ")");
+      return;
+    }
 
+    println("[PATH PREVIEW ROUTE] size=" + seg.size() + " first=(" + seg.get(0).x + "," + seg.get(0).y + ") last=(" + seg.get(seg.size()-1).x + "," + seg.get(seg.size()-1).y + ")");
     app.pushStyle();
     app.noFill();
     app.stroke(strokeCol);
-    app.strokeWeight(max(0.5f, weightPx) / viewport.zoom);
+    app.strokeWeight(max(2.0f, weightPx) / viewport.zoom); // keep preview visible
 
-    app.beginShape();
-    for (PVector p : seg) {
-      app.vertex(p.x, p.y);
+    for (int i = 0; i < seg.size() - 1; i++) {
+      PVector a = seg.get(i);
+      PVector b = seg.get(i + 1);
+      app.line(a.x, a.y, b.x, b.y);
     }
-    app.endShape();
+
+    // endpoint dots for clarity
+    app.pushStyle();
+    app.noStroke();
+    app.fill(strokeCol);
+    float r = 3.0f / viewport.zoom;
+    PVector start = seg.get(0);
+    PVector end = seg.get(seg.size() - 1);
+    app.ellipse(start.x, start.y, r, r);
+    app.ellipse(end.x, end.y, r, r);
+    app.popStyle();
 
     app.popStyle();
   }

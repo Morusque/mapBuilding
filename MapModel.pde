@@ -810,12 +810,27 @@ class MapModel {
     for (int i = 0; i < paths.size(); i++) {
       Path p = paths.get(i);
       if (p.routes.isEmpty()) continue;
+      println("[PATH DRAW] #" + i + " routes=" + p.routes.size() + " segments=" + p.segmentCount());
       PathType pt = getPathType(p.typeId);
       int col = (pt != null) ? pt.col : strokeCol;
       float w = (pt != null) ? pt.weightPx : 2.0f;
       app.stroke(col);
-      app.strokeWeight(max(0.5f, w) / viewport.zoom);
+      float screenPx = max(2.0f, w);
+      app.strokeWeight(screenPx / viewport.zoom); // keep at least ~2px on screen
       p.draw(app);
+
+      // Debug: draw small dots on all route vertices
+      app.pushStyle();
+      app.noStroke();
+      app.fill(255, 120, 0, 200);
+      float r = 3.0f / viewport.zoom;
+      for (ArrayList<PVector> rts : p.routes) {
+        if (rts == null) continue;
+        for (PVector v : rts) {
+          app.ellipse(v.x, v.y, r, r);
+        }
+      }
+      app.popStyle();
     }
 
     // Selected path highlight
