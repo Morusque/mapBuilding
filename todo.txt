@@ -3,7 +3,6 @@ Loading bar :
 (later) Try to optimize further.
 
 Sites :
-Site placement slowness was traced to neighbor/snap rebuilding; optimized those passes in MapModel to speed generation.
 (later) There could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 (later) Offer quick placement presets: pure random, even/poisson-ish grid, or manual only.
 (later) Sites should probably be renamed to cells in the UI.
@@ -43,7 +42,7 @@ Labels :
 (later) Label types with default style; attach to cells/paths/structures/groups or free position; anchor controls; option to follow path curvature.
 
 Rendering :
-(later) rendering should have a black an white option.
+(done) rendering has a black and white toggle.
 (later) water should have a "contour lines" option (based on proximity from coastline).
 (later) elevation should have a "contour lines" option (based on elevation landmarks).
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).

@@ -109,6 +109,10 @@ class MapModel {
         ZoneType zt = biomeTypes.get(c.biomeId);
         col = zt.col;
       }
+      if (renderBlackWhite) {
+        float shade = brightness(col);
+        col = color(shade);
+      }
 
       app.fill(col);
       if (showBorders) {
@@ -420,7 +424,7 @@ class MapModel {
           float levels = quantSteps - 1;
           litShade = round(litShade * levels) / levels;
         }
-        int col = app.color(litShade * 255);
+        int col = renderBlackWhite ? app.color(litShade * 255) : app.color(litShade * 255);
         app.fill(col, 140);
         app.beginShape();
         for (PVector v : c.vertices) app.vertex(v.x, v.y);
@@ -438,7 +442,13 @@ class MapModel {
         float baseR = 30;
         float baseG = 70;
         float baseB = 120;
-        int water = app.color(baseR * shade, baseG * shade, baseB * shade, 255);
+        int water;
+        if (renderBlackWhite) {
+          float gray = shade * 255;
+          water = app.color(gray, gray, gray, 255);
+        } else {
+          water = app.color(baseR * shade, baseG * shade, baseB * shade, 255);
+        }
         app.fill(water);
         app.beginShape();
         for (PVector v : c.vertices) app.vertex(v.x, v.y);

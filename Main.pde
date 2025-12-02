@@ -73,6 +73,7 @@ boolean renderShowElevation = true;
 boolean renderShowPaths = true;
 boolean renderShowLabels = true;
 boolean renderShowStructures = true;
+boolean renderBlackWhite = false;
 float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
 float flattestSlopeBias = FLATTEST_BIAS_MIN; // slope penalty in PATHFIND mode (min..max, 0 = shortest)
@@ -229,12 +230,14 @@ void draw() {
 
   // Paths are visible in all modes
   boolean highlightPaths = (currentTool == Tool.EDIT_PATHS);
+  int pathCol = renderBlackWhite ? color(50) : color(60, 60, 200);
+  int pathElevCol = renderBlackWhite ? color(90) : color(120);
   if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawPaths(this, color(120), highlightPaths);
+    mapModel.drawPaths(this, pathElevCol, highlightPaths);
   } else if (currentTool == Tool.EDIT_RENDER) {
-    if (renderShowPaths) mapModel.drawPaths(this, color(60, 60, 200), highlightPaths);
+    if (renderShowPaths) mapModel.drawPaths(this, pathCol, highlightPaths);
   } else {
-    mapModel.drawPaths(this, color(60, 60, 200), highlightPaths);
+    mapModel.drawPaths(this, pathCol, highlightPaths);
   }
 
   // Sites only in Sites mode; paths use snapping dots instead

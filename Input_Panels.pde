@@ -736,6 +736,7 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (layout.checks.get(3).contains(mx, my)) { renderShowPaths = !renderShowPaths; return true; }
   if (layout.checks.get(4).contains(mx, my)) { renderShowLabels = !renderShowLabels; return true; }
   if (layout.checks.get(5).contains(mx, my)) { renderShowStructures = !renderShowStructures; return true; }
+  if (layout.checks.size() > 6 && layout.checks.get(6).contains(mx, my)) { renderBlackWhite = !renderBlackWhite; return true; }
   return false;
 }
 
