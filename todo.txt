@@ -21,7 +21,6 @@ Paths :
 (later) width definer similar to water but using pathfinding to define more important roads
 
 Struct :
-(soon) selected structure needs visual feedback on the map
 (later) structures should be groupable
 (later) some ui on the right panel for per-struct parameters (can be displayed once for selected struct)
 
