@@ -322,6 +322,11 @@ class MapModel {
     s.size = size;
     float snapRange = max(0.04f, s.size * 2.0f);
 
+    if (structureSnapMode == StructureSnapMode.NONE) {
+      s.angle = structureAngleOffsetRad;
+      return s;
+    }
+
     // Snap priority: paths > frontier guides (biome/water) > other structures
     PVector[] seg = nearestPathSegment(wx, wy, snapRange);
     if (seg != null) {
@@ -331,14 +336,19 @@ class MapModel {
       float dx = b.x - a.x;
       float dy = b.y - a.y;
       float ang = atan2(dy, dx);
-      float nx = -sin(ang);
-      float ny = cos(ang);
-      float offset = s.size * 0.6f;
-      // Flip side based on cursor side of the segment
-      float side = (wx - p.x) * nx + (wy - p.y) * ny;
-      if (side < 0) offset = -offset;
-      s.x = p.x + nx * offset;
-      s.y = p.y + ny * offset;
+      if (structureSnapMode == StructureSnapMode.ON_PATH) {
+        s.x = p.x;
+        s.y = p.y;
+      } else {
+        float nx = -sin(ang);
+        float ny = cos(ang);
+        float offset = s.size * 0.6f;
+        // Flip side based on cursor side of the segment
+        float side = (wx - p.x) * nx + (wy - p.y) * ny;
+        if (side < 0) offset = -offset;
+        s.x = p.x + nx * offset;
+        s.y = p.y + ny * offset;
+      }
       s.angle = ang + structureAngleOffsetRad;
       return s;
     }
@@ -351,13 +361,18 @@ class MapModel {
       float dx = b.x - a.x;
       float dy = b.y - a.y;
       float ang = atan2(dy, dx);
-      float nx = -sin(ang);
-      float ny = cos(ang);
-      float offset = s.size * 0.6f;
-      float side = (wx - p.x) * nx + (wy - p.y) * ny;
-      if (side < 0) offset = -offset;
-      s.x = p.x + nx * offset;
-      s.y = p.y + ny * offset;
+      if (structureSnapMode == StructureSnapMode.ON_PATH) {
+        s.x = p.x;
+        s.y = p.y;
+      } else {
+        float nx = -sin(ang);
+        float ny = cos(ang);
+        float offset = s.size * 0.6f;
+        float side = (wx - p.x) * nx + (wy - p.y) * ny;
+        if (side < 0) offset = -offset;
+        s.x = p.x + nx * offset;
+        s.y = p.y + ny * offset;
+      }
       s.angle = ang + structureAngleOffsetRad;
       return s;
     }

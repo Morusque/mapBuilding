@@ -1229,6 +1229,7 @@ class StructuresLayout {
   int titleY;
   IntRect sizeSlider;
   IntRect angleSlider;
+  ArrayList<IntRect> snapButtons = new ArrayList<IntRect>();
 }
 
 StructuresLayout buildStructuresLayout() {
@@ -1244,6 +1245,14 @@ StructuresLayout buildStructuresLayout() {
 
   l.angleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+
+  String[] snapModes = { "None", "Next", "Center" };
+  int btnW = 70;
+  int gap = 6;
+  for (int i = 0; i < snapModes.length; i++) {
+    l.snapButtons.add(new IntRect(innerX + i * (btnW + gap), curY, btnW, PANEL_BUTTON_H));
+  }
+  curY += PANEL_BUTTON_H + PANEL_PADDING;
 
   l.panel.h = curY - l.panel.y;
   return l;
@@ -1286,6 +1295,17 @@ void drawStructuresPanelUI() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Angle offset (" + nf(angDeg, 1, 1) + "°)", ang.x, ang.y - 4);
+
+  // Snap mode buttons
+  String[] snapModes = { "None", "Next", "Center" };
+  for (int i = 0; i < layout.snapButtons.size(); i++) {
+    IntRect b = layout.snapButtons.get(i);
+    boolean active = (structureSnapMode == StructureSnapMode.values()[i]);
+    drawBevelButton(b.x, b.y, b.w, b.h, active);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text(snapModes[i], b.x + b.w / 2, b.y + b.h / 2);
+  }
 }
 
 // ----- RENDER PANEL -----

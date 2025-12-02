@@ -25,6 +25,12 @@ enum PathRouteMode {
   PATHFIND
 }
 
+enum StructureSnapMode {
+  NONE,
+  NEXT_TO_PATH,
+  ON_PATH
+}
+
 enum LabelTarget {
   FREE,
   BIOME,
