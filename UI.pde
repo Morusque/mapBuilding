@@ -43,17 +43,39 @@ void drawTopBar() {
   // Text
   fill(10);
   textAlign(LEFT, CENTER);
-  String info = "Tool: " + currentTool +
-                "   Zoom: " + nf(viewport.zoom, 1, 2) +
-                "   Center: (" + nf(viewport.centerX, 1, 3) + ", " +
-                               nf(viewport.centerY, 1, 3) + ")";
-  text(info, 10, TOP_BAR_HEIGHT / 2.0f);
+  String info1 = "Tool: " + currentTool +
+                 "   Zoom: " + nf(viewport.zoom, 1, 2) +
+                 "   Center: (" + nf(viewport.centerX, 1, 3) + ", " +
+                                nf(viewport.centerY, 1, 3) + ")";
+
+  int siteCount = (mapModel != null && mapModel.sites != null) ? mapModel.sites.size() : 0;
+  int cellCount = (mapModel != null && mapModel.cells != null) ? mapModel.cells.size() : 0;
+  int pathCount = (mapModel != null && mapModel.paths != null) ? mapModel.paths.size() : 0;
+  int pathSegs = 0;
+  if (mapModel != null && mapModel.paths != null) {
+    for (Path p : mapModel.paths) {
+      if (p != null) pathSegs += p.segmentCount();
+    }
+  }
+  String info2 = "FPS: " + nf(frameRate, 1, 1) +
+                 "   Sites: " + siteCount +
+                 "   Cells: " + cellCount +
+                 "   Paths: " + pathCount + " (" + pathSegs + " segs)";
+  if (mapModel != null) {
+    info2 += "   Snap: " + mapModel.lastSnapNodeCount + "n/" + mapModel.lastSnapEdgeCount +
+             "e (" + nf(mapModel.lastSnapBuildMs, 1, 1) + "ms)";
+    info2 += "   Pathfind: " + nf(mapModel.lastPathfindMs, 1, 1) + "ms " +
+             "[" + mapModel.lastPathfindExpanded + " expanded, len " + mapModel.lastPathfindLength +
+             (mapModel.lastPathfindHit ? "" : ", miss") + "]";
+  }
+  text(info1, 10, TOP_BAR_HEIGHT / 2.0f - 6);
+  text(info2, 10, TOP_BAR_HEIGHT / 2.0f + 8);
 
   // Notice (right side, above loading bar)
   if (uiNoticeFrames > 0 && uiNotice != null && uiNotice.length() > 0) {
     fill(180, 50, 50);
     textAlign(RIGHT, CENTER);
-    text(uiNotice, width - 150, TOP_BAR_HEIGHT / 2.0f);
+    text(uiNotice, width - 150, TOP_BAR_HEIGHT / 2.0f - 6);
     uiNoticeFrames--;
   }
 

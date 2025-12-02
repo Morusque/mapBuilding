@@ -29,6 +29,15 @@ class MapModel {
   ArrayList<Structure> structures = new ArrayList<Structure>();
   ArrayList<MapLabel> labels = new ArrayList<MapLabel>();
 
+  // Lightweight instrumentation for UI display
+  float lastPathfindMs = 0;
+  int lastPathfindExpanded = 0;
+  int lastPathfindLength = 0;
+  boolean lastPathfindHit = false;
+  float lastSnapBuildMs = 0;
+  int lastSnapNodeCount = 0;
+  int lastSnapEdgeCount = 0;
+
   boolean voronoiDirty = true;
   boolean snapDirty = true;
   ArrayList<Cell> preservedCells = null;
@@ -626,16 +635,28 @@ class MapModel {
   }
 
   ArrayList<PVector> findSnapPathWeighted(PVector from, PVector toP, boolean favorFlat) {
+    int tStart = millis();
     ensureSnapGraph();
     String kFrom = keyFor(from.x, from.y);
     String kTo = keyFor(toP.x, toP.y);
-    if (!snapNodes.containsKey(kFrom) || !snapNodes.containsKey(kTo)) return null;
+    ArrayList<PVector> result = null;
+    if (!snapNodes.containsKey(kFrom) || !snapNodes.containsKey(kTo)) {
+      lastPathfindMs = millis() - tStart;
+      lastPathfindExpanded = 0;
+      lastPathfindLength = 0;
+      lastPathfindHit = false;
+      return null;
+    }
     if (kFrom.equals(kTo)) {
-      ArrayList<PVector> single = new ArrayList<PVector>();
+      result = new ArrayList<PVector>();
       PVector p = snapNodes.get(kFrom);
-      single.add(p);
-      single.add(p.copy()); // ensure at least two points so segments can be added
-      return single;
+      result.add(p);
+      result.add(p.copy()); // ensure at least two points so segments can be added
+      lastPathfindMs = millis() - tStart;
+      lastPathfindExpanded = 0;
+      lastPathfindLength = result.size();
+      lastPathfindHit = (result.size() > 1);
+      return result;
     }
 
     HashMap<String, Float> dist = new HashMap<String, Float>();
@@ -710,16 +731,21 @@ class MapModel {
     if (!prev.containsKey(kTo) && !kFrom.equals(kTo)) {
       if (closest != null) {
         if (closest.equals(kFrom)) {
-          ArrayList<PVector> single = new ArrayList<PVector>();
-          single.add(snapNodes.get(kFrom));
-          return single;
+          result = new ArrayList<PVector>();
+          result.add(snapNodes.get(kFrom));
         } else if (prev.containsKey(closest)) {
-          return reconstructPath(prev, kFrom, closest);
+          result = reconstructPath(prev, kFrom, closest);
         }
       }
-      return null;
+    } else {
+      result = reconstructPath(prev, kFrom, kTo);
     }
-    return reconstructPath(prev, kFrom, kTo);
+
+    lastPathfindMs = millis() - tStart;
+    lastPathfindExpanded = expanded;
+    lastPathfindLength = (result != null) ? result.size() : 0;
+    lastPathfindHit = (result != null && result.size() > 1);
+    return result;
   }
 
   void ensureSnapGraph() {
@@ -729,6 +755,7 @@ class MapModel {
   }
 
   void recomputeSnappingGraph() {
+    int tStart = millis();
     snapNodes.clear();
     snapAdj.clear();
     if (sites == null || cells == null) return;
@@ -781,6 +808,14 @@ class MapModel {
     }
 
     pruneUniformFrontierSnapNodes();
+
+    lastSnapNodeCount = snapNodes.size();
+    int edgeSum = 0;
+    for (ArrayList<String> adj : snapAdj.values()) {
+      if (adj != null) edgeSum += adj.size();
+    }
+    lastSnapEdgeCount = edgeSum / 2; // undirected graph stored twice
+    lastSnapBuildMs = millis() - tStart;
   }
 
   String ensureNode(float x, float y) {
@@ -986,8 +1021,60 @@ class MapModel {
 
   void appendRouteToPath(Path p, ArrayList<PVector> pts) {
     if (p == null || pts == null || pts.size() < 2) return;
-    p.addRoute(pts);
+
+    // Skip segments that already exist in this path to avoid double-stacking identical edges.
+    ArrayList<PVector> cleaned = removeDuplicateSegments(p, pts);
+    if (cleaned == null || cleaned.size() < 2) return;
+
+    p.addRoute(cleaned);
     snapDirty = true;
+  }
+
+  ArrayList<PVector> removeDuplicateSegments(Path p, ArrayList<PVector> pts) {
+    if (pts == null || pts.size() < 2) return null;
+    HashSet<String> existing = collectSegmentKeys(p);
+
+    ArrayList<PVector> out = new ArrayList<PVector>();
+    out.add(pts.get(0).copy());
+    for (int i = 0; i < pts.size() - 1; i++) {
+      PVector a = out.get(out.size() - 1);
+      PVector b = pts.get(i + 1);
+      String key = segmentKey(a, b);
+      if (existing.contains(key)) {
+        continue;
+      }
+      existing.add(key);
+      out.add(b.copy());
+    }
+    if (out.size() < 2) return null;
+    return out;
+  }
+
+  HashSet<String> collectSegmentKeys(Path p) {
+    HashSet<String> keys = new HashSet<String>();
+    if (p == null || p.routes == null) return keys;
+    for (ArrayList<PVector> seg : p.routes) {
+      if (seg == null || seg.size() < 2) continue;
+      for (int i = 0; i < seg.size() - 1; i++) {
+        PVector a = seg.get(i);
+        PVector b = seg.get(i + 1);
+        keys.add(segmentKey(a, b));
+      }
+    }
+    return keys;
+  }
+
+  String segmentKey(PVector a, PVector b) {
+    // Undirected key with quantization to reduce floating noise.
+    int ax = round(a.x * 10000);
+    int ay = round(a.y * 10000);
+    int bx = round(b.x * 10000);
+    int by = round(b.y * 10000);
+    if (ax < bx || (ax == bx && ay <= by)) {
+      return ax + "," + ay + "-" + bx + "," + by;
+    } else {
+      return bx + "," + by + "-" + ax + "," + ay;
+    }
   }
 
   void removePathsNear(float wx, float wy, float radius) {
