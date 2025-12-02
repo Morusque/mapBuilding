@@ -517,20 +517,42 @@ class MapModel {
     HashMap<String, String> prev = new HashMap<String, String>();
     PriorityQueue<NodeDist> pq = new PriorityQueue<NodeDist>();
     dist.put(kFrom, 0.0f);
-    pq.add(new NodeDist(kFrom, 0.0f));
+    // A* priority = g + h
+    PVector target = snapNodes.get(kTo);
+    float hStart = (target != null) ? dist2D(snapNodes.get(kFrom), target) : 0;
+    pq.add(new NodeDist(kFrom, 0.0f, hStart));
 
+    // Spatial cull to a loose bounding box around endpoints
+    float minx = min(from.x, toP.x);
+    float maxx = max(from.x, toP.x);
+    float miny = min(from.y, toP.y);
+    float maxy = max(from.y, toP.y);
+    float margin = max(dist2D(from, toP) * 0.6f, 0.05f);
+    minx -= margin; maxx += margin; miny -= margin; maxy += margin;
+
+    int maxExpanded = 8000;
+    int expanded = 0;
+    String closest = kFrom;
+    float bestH = (target != null) ? dist2D(snapNodes.get(kFrom), target) : Float.MAX_VALUE;
     while (!pq.isEmpty()) {
       NodeDist nd = pq.poll();
       Float bestD = dist.get(nd.k);
-      if (bestD != null && nd.d > bestD + 1e-6f) continue;
+      if (bestD != null && nd.g > bestD + 1e-6f) continue;
       if (nd.k.equals(kTo)) break;
+      if (expanded++ > maxExpanded) break;
       ArrayList<String> neighbors = snapAdj.get(nd.k);
       if (neighbors == null) continue;
       PVector p = snapNodes.get(nd.k);
       if (p == null) continue;
+      float hCur = (target != null) ? dist2D(p, target) : Float.MAX_VALUE;
+      if (hCur < bestH) {
+        bestH = hCur;
+        closest = nd.k;
+      }
       for (String nb : neighbors) {
         PVector np = snapNodes.get(nb);
         if (np == null) continue;
+        if (np.x < minx || np.x > maxx || np.y < miny || np.y > maxy) continue;
         float w = dist2D(p, np);
         if (pathAvoidWater) {
           float elevA = sampleElevationAt(p.x, p.y, seaLevel);
@@ -549,17 +571,27 @@ class MapModel {
           // Penalize steep changes; keep distance as base
           w *= (1.0f + dh * flattestSlopeBias);
         }
-        float ndist = nd.d + w;
+        float ndist = nd.g + w;
         Float curD = dist.get(nb);
         if (curD == null || ndist < curD - 1e-6f) {
           dist.put(nb, ndist);
           prev.put(nb, nd.k);
-          pq.add(new NodeDist(nb, ndist));
+          float h = (target != null) ? dist2D(np, target) : 0;
+          pq.add(new NodeDist(nb, ndist, ndist + h * 0.8f)); // heuristic weight keeps routes short
         }
       }
     }
 
     if (!prev.containsKey(kTo) && !kFrom.equals(kTo)) {
+      if (closest != null) {
+        if (closest.equals(kFrom)) {
+          ArrayList<PVector> single = new ArrayList<PVector>();
+          single.add(snapNodes.get(kFrom));
+          return single;
+        } else if (prev.containsKey(closest)) {
+          return reconstructPath(prev, kFrom, closest);
+        }
+      }
       return null;
     }
     return reconstructPath(prev, kFrom, kTo);
@@ -730,10 +762,11 @@ class MapModel {
 
   class NodeDist implements Comparable<NodeDist> {
     String k;
-    float d;
-    NodeDist(String k, float d) { this.k = k; this.d = d; }
+    float g;
+    float f;
+    NodeDist(String k, float g, float f) { this.k = k; this.g = g; this.f = f; }
     public int compareTo(NodeDist other) {
-      return Float.compare(this.d, other.d);
+      return Float.compare(this.f, other.f);
     }
   }
 

@@ -22,10 +22,11 @@ Paths :
 (later) Path editing tools: click to add/remove vertices, drag vertices, inline per-segment weight handles, label editing per path.
 (later) Path grouping: optional groupId for higher-level objects (road network, river system).
 (later) Add path labels and path type defaults (width/style) in legend UI.
-(later) rivers could have an option that make them start small and end bigger when reaching the sea (this needs connection analysis, pathfinding etc when using multiple segments, to compute segment proximity to sea).
-(later) fix ambiguity between paths (made of tracks), tracks (made of consecutive segments), segments (straight line from point A to point B)
+(later) paths (typically rivers) could have an option that make them start small and end bigger when reaching the sea (this needs connection analysis, pathfinding etc when using multiple segments, to compute segment proximity to sea, parameter weight would be the bigger weight next to the sea).
+(later) fix ambiguity between paths (made of routes), routes (made of consecutive segments), segments (straight line from point A to point B)
 (later) why does the path confirmation take so much time? it only needs to push the previewed path into the valid list...
-(later) needs optimization as well, doesn't need much precision.
+(later) needs more optimization
+(later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
 
 Struct :
 (later) snapping lines could be refined (eg frontier "normals" often appear in addition to frontier while they should not)

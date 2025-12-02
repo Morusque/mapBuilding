@@ -477,6 +477,10 @@ void keyPressed() {
       mapModel.deleteSelectedSites();
       return;
     }
+    if (currentTool == Tool.EDIT_PATHS && pendingPathStart != null) {
+      pendingPathStart = null;
+      return;
+    }
   }
 
   // Clear all paths with 'c' or 'C' in Paths mode
