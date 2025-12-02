@@ -809,7 +809,9 @@ boolean handleRenderPanelClick(int mx, int my) {
   // zones, water, elevation, paths, labels, structures
   if (layout.checks.get(0).contains(mx, my)) { renderShowZones = !renderShowZones; return true; }
   if (layout.checks.get(1).contains(mx, my)) { renderShowWater = !renderShowWater; return true; }
-  if (layout.checks.get(2).contains(mx, my)) { renderShowElevation = !renderShowElevation; return true; }
+  if (layout.checks.get(2).contains(mx, my)) { renderWaterContours = !renderWaterContours; return true; }
+  if (layout.checks.get(3).contains(mx, my)) { renderShowElevation = !renderShowElevation; return true; }
+  if (layout.checks.get(4).contains(mx, my)) { renderElevationContours = !renderElevationContours; return true; }
 
   // Lighting sliders under Elevation
   if (layout.lightAzimuthSlider != null && layout.lightAzimuthSlider.contains(mx, my)) {
@@ -825,10 +827,10 @@ boolean handleRenderPanelClick(int mx, int my) {
     return true;
   }
 
-  if (layout.checks.get(3).contains(mx, my)) { renderShowPaths = !renderShowPaths; return true; }
-  if (layout.checks.get(4).contains(mx, my)) { renderShowLabels = !renderShowLabels; return true; }
-  if (layout.checks.get(5).contains(mx, my)) { renderShowStructures = !renderShowStructures; return true; }
-  if (layout.checks.size() > 6 && layout.checks.get(6).contains(mx, my)) { renderBlackWhite = !renderBlackWhite; return true; }
+  if (layout.checks.get(5).contains(mx, my)) { renderShowPaths = !renderShowPaths; return true; }
+  if (layout.checks.get(6).contains(mx, my)) { renderShowLabels = !renderShowLabels; return true; }
+  if (layout.checks.get(7).contains(mx, my)) { renderShowStructures = !renderShowStructures; return true; }
+  if (layout.checks.size() > 8 && layout.checks.get(8).contains(mx, my)) { renderBlackWhite = !renderBlackWhite; return true; }
   return false;
 }
 

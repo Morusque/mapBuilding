@@ -466,13 +466,15 @@ class MapModel {
     return s;
   }
 
-  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater, boolean drawElevation, int quantSteps) {
+  void drawElevationOverlay(PApplet app, float seaLevel, boolean showElevationContours, boolean drawWater, boolean drawElevation,
+                            boolean showWaterContours, int quantSteps) {
     // Default: no lighting, just grayscale
-    drawElevationOverlay(app, seaLevel, showContours, drawWater, drawElevation, false, 135.0f, 45.0f, quantSteps);
+    drawElevationOverlay(app, seaLevel, showElevationContours, drawWater, drawElevation, showWaterContours,
+                         false, 135.0f, 45.0f, quantSteps);
   }
 
-  void drawElevationOverlay(PApplet app, float seaLevel, boolean showContours, boolean drawWater, boolean drawElevation,
-                            boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg, int quantSteps) {
+  void drawElevationOverlay(PApplet app, float seaLevel, boolean showElevationContours, boolean drawWater, boolean drawElevation,
+                            boolean showWaterContours, boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg, int quantSteps) {
     if (cells == null) return;
     app.pushStyle();
     app.noStroke();
@@ -533,22 +535,148 @@ class MapModel {
       }
     }
 
-    if (showContours && drawElevation) {
-      float step = 0.1f;
-      app.stroke(60, 60, 60, 140);
-      app.strokeWeight(1.0f / viewport.zoom);
-      app.noFill();
-      for (Cell c : cells) {
-        if (c.vertices == null || c.vertices.size() < 3) continue;
-        float band = round(c.elevation / step) * step;
-        if (abs(c.elevation - band) < step * 0.35f) {
-          app.beginShape();
-          for (PVector v : c.vertices) app.vertex(v.x, v.y);
-          app.endShape(CLOSE);
+    // Region-level contours using marching squares on a coarse grid to avoid per-cell outlines.
+    if ((showElevationContours && drawElevation) || (showWaterContours && drawWater)) {
+      int cols = 90;
+      int rows = 90;
+      ContourGrid grid = sampleElevationGrid(cols, rows, seaLevel);
+      float minElev = grid.min;
+      float maxElev = grid.max;
+
+      if (showElevationContours && drawElevation) {
+        float range = max(1e-4f, maxElev - seaLevel);
+        float step = max(0.02f, range / 10.0f);
+        float start = ceil(seaLevel / step) * step;
+        int strokeCol = renderBlackWhite ? app.color(40) : app.color(50, 50, 50, 180);
+        drawContourSet(app, grid, start, maxElev, step, strokeCol);
+      }
+
+      if (showWaterContours && drawWater) {
+        float minWater = minElev;
+        if (minWater < seaLevel - 1e-4f) {
+          float depthRange = seaLevel - minWater;
+          float step = max(0.02f, depthRange / 5.0f);
+          float start = seaLevel - step;
+          int strokeCol = renderBlackWhite ? app.color(60) : app.color(30, 70, 140, 170);
+          drawContourSet(app, grid, start, minWater, -step, strokeCol);
         }
       }
     }
     app.popStyle();
+  }
+
+  class ContourGrid {
+    float[][] v;
+    int cols;
+    int rows;
+    float dx;
+    float dy;
+    float ox;
+    float oy;
+    float min;
+    float max;
+  }
+
+  ContourGrid sampleElevationGrid(int cols, int rows, float fallback) {
+    ContourGrid g = new ContourGrid();
+    g.cols = max(2, cols);
+    g.rows = max(2, rows);
+    g.v = new float[g.rows][g.cols];
+    g.ox = minX;
+    g.oy = minY;
+    g.dx = (maxX - minX) / (g.cols - 1);
+    g.dy = (maxY - minY) / (g.rows - 1);
+    g.min = Float.MAX_VALUE;
+    g.max = -Float.MAX_VALUE;
+    for (int j = 0; j < g.rows; j++) {
+      float y = g.oy + j * g.dy;
+      for (int i = 0; i < g.cols; i++) {
+        float x = g.ox + i * g.dx;
+        float val = sampleElevationAt(x, y, fallback);
+        g.v[j][i] = val;
+        g.min = min(g.min, val);
+        g.max = max(g.max, val);
+      }
+    }
+    return g;
+  }
+
+  void drawContourSet(PApplet app, ContourGrid g, float start, float end, float step, int strokeCol) {
+    if (step == 0) return;
+    if ((step > 0 && start > end) || (step < 0 && start < end)) return;
+    app.pushStyle();
+    app.noFill();
+    app.stroke(strokeCol);
+    app.strokeWeight(1.0f / viewport.zoom);
+
+    if (step > 0) {
+      for (float iso = start; iso <= end + 1e-6f; iso += step) {
+        drawIsoLine(app, g, iso);
+      }
+    } else {
+      for (float iso = start; iso >= end - 1e-6f; iso += step) {
+        drawIsoLine(app, g, iso);
+      }
+    }
+    app.popStyle();
+  }
+
+  void drawIsoLine(PApplet app, ContourGrid g, float iso) {
+    for (int j = 0; j < g.rows - 1; j++) {
+      float y0 = g.oy + j * g.dy;
+      float y1 = y0 + g.dy;
+      for (int i = 0; i < g.cols - 1; i++) {
+        float x0 = g.ox + i * g.dx;
+        float x1 = x0 + g.dx;
+        float v00 = g.v[j][i];
+        float v10 = g.v[j][i + 1];
+        float v11 = g.v[j + 1][i + 1];
+        float v01 = g.v[j + 1][i];
+
+        int caseId = 0;
+        if (v00 > iso) caseId |= 1;
+        if (v10 > iso) caseId |= 2;
+        if (v11 > iso) caseId |= 4;
+        if (v01 > iso) caseId |= 8;
+
+        if (caseId == 0 || caseId == 15) continue;
+
+        PVector eTop = interpIso(x0, y0, v00, x1, y0, v10, iso);
+        PVector eRight = interpIso(x1, y0, v10, x1, y1, v11, iso);
+        PVector eBottom = interpIso(x0, y1, v01, x1, y1, v11, iso);
+        PVector eLeft = interpIso(x0, y0, v00, x0, y1, v01, iso);
+
+        switch (caseId) {
+          case 1:  drawSeg(app, eLeft, eTop); break;
+          case 2:  drawSeg(app, eTop, eRight); break;
+          case 3:  drawSeg(app, eLeft, eRight); break;
+          case 4:  drawSeg(app, eRight, eBottom); break;
+          case 5:  drawSeg(app, eTop, eRight); drawSeg(app, eLeft, eBottom); break;
+          case 6:  drawSeg(app, eTop, eBottom); break;
+          case 7:  drawSeg(app, eLeft, eBottom); break;
+          case 8:  drawSeg(app, eBottom, eLeft); break;
+          case 9:  drawSeg(app, eTop, eBottom); break;
+          case 10: drawSeg(app, eTop, eLeft); drawSeg(app, eRight, eBottom); break;
+          case 11: drawSeg(app, eRight, eBottom); break;
+          case 12: drawSeg(app, eRight, eLeft); break;
+          case 13: drawSeg(app, eRight, eTop); break;
+          case 14: drawSeg(app, eTop, eLeft); break;
+        }
+      }
+    }
+  }
+
+  void drawSeg(PApplet app, PVector a, PVector b) {
+    if (a == null || b == null) return;
+    app.line(a.x, a.y, b.x, b.y);
+  }
+
+  PVector interpIso(float x0, float y0, float v0, float x1, float y1, float v1, float iso) {
+    float denom = (v1 - v0);
+    if (abs(denom) < 1e-6f) return new PVector((x0 + x1) * 0.5f, (y0 + y1) * 0.5f);
+    float t = (iso - v0) / denom;
+    t = constrain(t, 0, 1);
+    return new PVector(lerp(x0, x1, t), lerp(y0, y1, t));
   }
 
   // ---------- Snapping graph ----------

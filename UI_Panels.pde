@@ -1355,12 +1355,16 @@ RenderLayout buildRenderLayout() {
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
   int sliderW = 200;
-  l.labels = new String[] { "Biomes", "Water", "Elevation", "Paths", "Labels", "Structures", "Black/White" };
+  l.labels = new String[] {
+    "Biomes", "Water", "Water contours",
+    "Elevation", "Elevation contours",
+    "Paths", "Labels", "Structures", "Black/White"
+  };
   for (int i = 0; i < l.labels.length; i++) {
     l.checks.add(new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE));
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
 
-    if (i == 2) { // after "Elevation"
+    if (i == 3) { // after "Elevation"
       l.lightAzimuthSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
       curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
       l.lightAltitudeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
@@ -1384,8 +1388,10 @@ void drawRenderPanel() {
 
   drawCheckbox(layout.checks.get(0).x, layout.checks.get(0).y, layout.checks.get(0).w, renderShowZones, "Biomes");
   drawCheckbox(layout.checks.get(1).x, layout.checks.get(1).y, layout.checks.get(1).w, renderShowWater, "Water");
-  drawCheckbox(layout.checks.get(2).x, layout.checks.get(2).y, layout.checks.get(2).w, renderShowElevation, "Elevation");
-  drawCheckbox(layout.checks.get(6).x, layout.checks.get(6).y, layout.checks.get(6).w, renderBlackWhite, "Black/White");
+  drawCheckbox(layout.checks.get(2).x, layout.checks.get(2).y, layout.checks.get(2).w, renderWaterContours, "Water contours");
+  drawCheckbox(layout.checks.get(3).x, layout.checks.get(3).y, layout.checks.get(3).w, renderShowElevation, "Elevation");
+  drawCheckbox(layout.checks.get(4).x, layout.checks.get(4).y, layout.checks.get(4).w, renderElevationContours, "Elevation contours");
+  drawCheckbox(layout.checks.get(8).x, layout.checks.get(8).y, layout.checks.get(8).w, renderBlackWhite, "Black/White");
 
   // Lighting sliders (render mode only)
   if (layout.lightAzimuthSlider != null) {
@@ -1419,10 +1425,10 @@ void drawRenderPanel() {
     textAlign(LEFT, TOP);
   }
 
-  drawCheckbox(layout.checks.get(3).x, layout.checks.get(3).y, layout.checks.get(3).w, renderShowPaths, "Paths");
-  drawCheckbox(layout.checks.get(4).x, layout.checks.get(4).y, layout.checks.get(4).w, renderShowLabels, "Labels");
-  drawCheckbox(layout.checks.get(5).x, layout.checks.get(5).y, layout.checks.get(5).w, renderShowStructures, "Structures");
-  // Black/white toggle already drawn above with checks[6]
+  drawCheckbox(layout.checks.get(5).x, layout.checks.get(5).y, layout.checks.get(5).w, renderShowPaths, "Paths");
+  drawCheckbox(layout.checks.get(6).x, layout.checks.get(6).y, layout.checks.get(6).w, renderShowLabels, "Labels");
+  drawCheckbox(layout.checks.get(7).x, layout.checks.get(7).y, layout.checks.get(7).w, renderShowStructures, "Structures");
+  // Black/white toggle already drawn above with checks[8]
 }
 
 // ---------- UI helpers ----------

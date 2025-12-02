@@ -19,7 +19,7 @@ Paths :
 Struct :
 (soon) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.
 (soon) structres should be removable, grouppable, and displayed as a list.
-(later) snapping magnetism should probably be zoom-invarient (so that if we need more precision we can zoom and the snap is relatively smaller)
+(soon) snapping magnetism should probably be zoom-invarient (so that if we need more precision we can zoom and the snap is relatively smaller)
 
 Labels :
 (later) Label should be attributed to one or more elements on the map, or more arbitrarily placed.
@@ -27,14 +27,13 @@ Labels :
 (later) Label types with default style; attach to cells/paths/structures/groups or free position; anchor controls; option to follow path curvature.
 
 Rendering :
-(later) water should have a "contour lines" option (based on proximity from coastline).
-(later) elevation should have a "contour lines" option (based on elevation landmarks).
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
 (later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons.
 (later) Respect LOD rules: constant stroke widths, hide/show groups vs members depending on zoom, optional merging visually of dense structures.
 (later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed).
 (later) Exporting the legend for reference.
 (later) Comments exportable as custom format
+(later) refine the precise way contours work
 
 Editable types : (for anywhere applicable: paths, biomes, etc)
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
