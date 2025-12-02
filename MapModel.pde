@@ -280,8 +280,8 @@ class MapModel {
     if (paths != null) {
       app.stroke(60, 60, 40, 200);
       for (Path p : paths) {
-        if (p == null || p.segments == null) continue;
-        for (ArrayList<PVector> seg : p.segments) {
+        if (p == null || p.routes == null) continue;
+        for (ArrayList<PVector> seg : p.routes) {
           if (seg == null || seg.size() < 2) continue;
           for (int i = 0; i < seg.size() - 1; i++) {
             PVector a = seg.get(i);
@@ -809,6 +809,7 @@ class MapModel {
 
     for (int i = 0; i < paths.size(); i++) {
       Path p = paths.get(i);
+      if (p.routes.isEmpty()) continue;
       PathType pt = getPathType(p.typeId);
       int col = (pt != null) ? pt.col : strokeCol;
       float w = (pt != null) ? pt.weightPx : 2.0f;
@@ -820,6 +821,10 @@ class MapModel {
     // Selected path highlight
     if (highlightSelected && selectedPathIndex >= 0 && selectedPathIndex < paths.size()) {
       Path sel = paths.get(selectedPathIndex);
+      if (sel.routes.isEmpty()) {
+        app.popStyle();
+        return;
+      }
       PathType pt = getPathType(sel.typeId);
       int col = (pt != null) ? pt.col : strokeCol;
       int hi = app.color(255, 230, 80, 180);
@@ -837,7 +842,7 @@ class MapModel {
 
   void addFinishedPath(Path p) {
     if (p == null) return;
-    if (p.segments.isEmpty()) return; // ignore degenerate paths
+    if (p.routes.isEmpty()) return; // ignore degenerate paths
     if (p.name == null || p.name.length() == 0) {
       p.name = "Path " + (paths.size() + 1);
     }
@@ -851,9 +856,9 @@ class MapModel {
     paths.clear();
   }
 
-  void appendSegmentToPath(Path p, ArrayList<PVector> pts) {
+  void appendRouteToPath(Path p, ArrayList<PVector> pts) {
     if (p == null || pts == null || pts.size() < 2) return;
-    p.addSegment(pts);
+    p.addRoute(pts);
     snapDirty = true;
   }
 
@@ -863,7 +868,7 @@ class MapModel {
     for (int i = paths.size() - 1; i >= 0; i--) {
       Path p = paths.get(i);
       boolean hit = false;
-      for (ArrayList<PVector> seg : p.segments) {
+      for (ArrayList<PVector> seg : p.routes) {
         if (seg == null) continue;
         for (PVector v : seg) {
           float dx = v.x - wx;
@@ -886,7 +891,7 @@ class MapModel {
     float best = maxDist;
     PVector bestA = null, bestB = null, bestP = null;
     for (Path p : paths) {
-      for (ArrayList<PVector> seg : p.segments) {
+      for (ArrayList<PVector> seg : p.routes) {
         if (seg == null) continue;
         for (int i = 0; i < seg.size() - 1; i++) {
           PVector a = seg.get(i);

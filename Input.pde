@@ -46,10 +46,10 @@ void handlePathsMousePressed(float wx, float wy) {
   }
 
   if (targetPath != null) {
-    if (targetPath.segments.isEmpty()) {
+    if (targetPath.routes.isEmpty()) {
       targetPath.typeId = activePathTypeIndex;
     }
-    mapModel.appendSegmentToPath(targetPath, route);
+    mapModel.appendRouteToPath(targetPath, route);
   }
   pendingPathStart = null;
 }

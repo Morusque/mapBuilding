@@ -1,19 +1,20 @@
 class Path {
-  ArrayList<ArrayList<PVector>> segments = new ArrayList<ArrayList<PVector>>();
+  // Each route is an ordered list of points; consecutive pairs form straight segments.
+  ArrayList<ArrayList<PVector>> routes = new ArrayList<ArrayList<PVector>>();
   int typeId = 0;
   String name = "";
 
-  void addSegment(ArrayList<PVector> pts) {
+  void addRoute(ArrayList<PVector> pts) {
     if (pts == null || pts.size() < 2) return;
     ArrayList<PVector> copy = new ArrayList<PVector>();
     for (PVector v : pts) copy.add(v.copy());
-    segments.add(copy);
+    routes.add(copy);
   }
 
   void draw(PApplet app) {
-    if (segments.isEmpty()) return;
+    if (routes.isEmpty()) return;
 
-    for (ArrayList<PVector> seg : segments) {
+    for (ArrayList<PVector> seg : routes) {
       app.beginShape();
       for (PVector p : seg) {
         app.vertex(p.x, p.y);
@@ -50,13 +51,22 @@ class Path {
     app.popStyle();
   }
 
+  int routeCount() {
+    return routes.size();
+  }
+
   int segmentCount() {
-    return segments.size();
+    int count = 0;
+    for (ArrayList<PVector> r : routes) {
+      if (r == null) continue;
+      count += max(0, r.size() - 1);
+    }
+    return count;
   }
 
   float totalLength() {
     float len = 0;
-    for (ArrayList<PVector> seg : segments) {
+    for (ArrayList<PVector> seg : routes) {
       if (seg == null) continue;
       for (int i = 0; i < seg.size() - 1; i++) {
         PVector a = seg.get(i);
