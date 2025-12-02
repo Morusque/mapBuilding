@@ -250,20 +250,23 @@ class MapModel {
         ArrayList<PVector> vb = b.vertices;
         if (vb == null || vb.size() < 2) continue;
 
+        // Build edge sets to avoid duplicate normals and only draw shared frontier
+        HashSet<String> edgesA = new HashSet<String>();
         int ac = va.size();
         for (int ai = 0; ai < ac; ai++) {
           PVector a0 = va.get(ai);
           PVector a1 = va.get((ai + 1) % ac);
-          // look for matching edge in neighbor (any orientation)
-          for (int bi = 0; bi < vb.size(); bi++) {
-            PVector b0 = vb.get(bi);
-            PVector b1 = vb.get((bi + 1) % vb.size());
-            boolean matchForward = distSq(a0, b0) < eps && distSq(a1, b1) < eps;
-            boolean matchBackward = distSq(a0, b1) < eps && distSq(a1, b0) < eps;
-            if (matchForward || matchBackward) {
-              app.line(a0.x, a0.y, a1.x, a1.y);
-              break;
-            }
+          edgesA.add(undirectedEdgeKey(a0, a1));
+        }
+        int bc = vb.size();
+        for (int bi = 0; bi < bc; bi++) {
+          PVector b0 = vb.get(bi);
+          PVector b1 = vb.get((bi + 1) % bc);
+          String key = undirectedEdgeKey(b0, b1);
+          if (edgesA.contains(key)) {
+            // Draw only once per shared edge
+            app.line(b0.x, b0.y, b1.x, b1.y);
+            edgesA.remove(key); // avoid drawing twice for same pair
           }
         }
       }
