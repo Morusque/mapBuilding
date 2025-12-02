@@ -33,12 +33,10 @@ Struct :
 (later) structres should be removable, grouppable, and displayed as a list.
 (later) snapping magnetism should probably be zoom-invarient (so that if we need more precision we can zoom and the snap is relatively smaller)
 (later) option to either not snap at all, snap next to paths, snap right in the middle of paths
-(done) slider for angle offset (also per-struct)
 
 Labels :
 (later) Label should be attributed to one or more elements on the map, or more arbitrarily placed.
-(later) Display a list of editable labels to the right side same logic than for paths tab, we'll use it later to highlight associated elements and display logic.
-(later) there should be a selectable "layer" to define what to currently add labels to (biomes, zones, structures, arbitrary locations)
+(later) use label types as layers to display only certains things and associate labels to them
 (later) Label types with default style; attach to cells/paths/structures/groups or free position; anchor controls; option to follow path curvature.
 
 Rendering :

@@ -48,6 +48,12 @@ boolean isInLabelsPanel(int mx, int my) {
   return layout.panel.contains(mx, my);
 }
 
+boolean isInLabelsListPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_LABELS) return false;
+  LabelsListLayout layout = buildLabelsListLayout();
+  return layout.panel.contains(mx, my);
+}
+
 boolean isInRenderPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_RENDER) return false;
   RenderLayout layout = buildRenderLayout();
@@ -471,6 +477,8 @@ void mousePressed() {
   // Labels panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_LABELS) {
     if (handleLabelsPanelClick(mouseX, mouseY)) return;
+    if (handleLabelsListPanelClick(mouseX, mouseY)) return;
+    if (isInLabelsListPanel(mouseX, mouseY)) return;
   }
 
   // Render panel
@@ -482,6 +490,7 @@ void mousePressed() {
   if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
   if (isInActivePanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_PATHS && isInPathsListPanel(mouseX, mouseY)) return;
+  if (currentTool == Tool.EDIT_LABELS && isInLabelsListPanel(mouseX, mouseY)) return;
 
   // Panning with right button (all modes)
   if (mouseButton == RIGHT) {
@@ -514,15 +523,16 @@ void mousePressed() {
       mapModel.applyElevationBrush(worldPos.x, worldPos.y, elevationBrushRadius, elevationBrushStrength * dir, seaLevel);
     } else if (currentTool == Tool.EDIT_PATHS) {
       handlePathsMousePressed(worldPos.x, worldPos.y);
-    } else if (currentTool == Tool.EDIT_STRUCTURES) {
-      Structure s = mapModel.computeSnappedStructure(worldPos.x, worldPos.y, structureSize);
-      mapModel.structures.add(s);
-    } else if (currentTool == Tool.EDIT_LABELS) {
-      MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, labelDraft);
-      mapModel.labels.add(lbl);
-      editingLabelIndex = mapModel.labels.size() - 1;
-      labelDraft = lbl.text;
-    }
+  } else if (currentTool == Tool.EDIT_STRUCTURES) {
+    Structure s = mapModel.computeSnappedStructure(worldPos.x, worldPos.y, structureSize);
+    mapModel.structures.add(s);
+  } else if (currentTool == Tool.EDIT_LABELS) {
+    MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, labelDraft, labelTargetMode);
+    mapModel.labels.add(lbl);
+    selectedLabelIndex = mapModel.labels.size() - 1;
+    editingLabelIndex = selectedLabelIndex;
+    labelDraft = lbl.text;
+  }
   }
 }
 
@@ -639,9 +649,58 @@ boolean handlePathsPanelClick(int mx, int my) {
 
 boolean handleLabelsPanelClick(int mx, int my) {
   if (!isInLabelsPanel(mx, my)) return false;
-  // Simple text box focus
+  LabelsLayout layout = buildLabelsLayout();
+  // Text box focus
   editingLabelIndex = (mapModel.labels.size() > 0) ? mapModel.labels.size() - 1 : -1;
+  for (int i = 0; i < layout.targetButtons.size(); i++) {
+    IntRect b = layout.targetButtons.get(i);
+    if (b.contains(mx, my)) {
+      labelTargetMode = LabelTarget.values()[i];
+      return true;
+    }
+  }
   return true;
+}
+
+boolean handleLabelsListPanelClick(int mx, int my) {
+  if (!isInLabelsListPanel(mx, my)) return false;
+  LabelsListLayout layout = buildLabelsListLayout();
+  populateLabelsListRows(layout);
+
+  for (int i = 0; i < layout.rows.size(); i++) {
+LabelRowLayout row = layout.rows.get(i);
+    MapLabel lbl = mapModel.labels.get(i);
+    if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
+      selectedLabelIndex = i;
+      if (row.nameRect.contains(mx, my)) {
+        editingLabelIndex = i;
+        labelDraft = lbl.text;
+      } else {
+        editingLabelIndex = -1;
+      }
+      return true;
+    }
+    if (row.delRect.contains(mx, my)) {
+      mapModel.labels.remove(i);
+      if (selectedLabelIndex == i) selectedLabelIndex = -1;
+      if (editingLabelIndex == i) editingLabelIndex = -1;
+      return true;
+    }
+    if (row.targetRect.contains(mx, my)) {
+      lbl.target = nextLabelTarget(lbl.target);
+      return true;
+    }
+  }
+  return false;
+}
+
+LabelTarget nextLabelTarget(LabelTarget lt) {
+  switch (lt) {
+    case FREE: return LabelTarget.BIOME;
+    case BIOME: return LabelTarget.ZONE;
+    case ZONE: return LabelTarget.STRUCT;
+    default: return LabelTarget.FREE;
+  }
 }
 
 boolean handlePathsListPanelClick(int mx, int my) {

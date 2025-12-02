@@ -24,3 +24,10 @@ enum PathRouteMode {
   ENDS,
   PATHFIND
 }
+
+enum LabelTarget {
+  FREE,
+  BIOME,
+  ZONE,
+  STRUCT
+}

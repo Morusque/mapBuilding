@@ -173,11 +173,17 @@ class MapLabel {
   float x;
   float y;
   String text;
+  LabelTarget target = LabelTarget.FREE;
 
   MapLabel(float x, float y, String text) {
     this.x = x;
     this.y = y;
     this.text = text;
+  }
+
+  MapLabel(float x, float y, String text, LabelTarget target) {
+    this(x, y, text);
+    this.target = target;
   }
 
   void draw(PApplet app) {

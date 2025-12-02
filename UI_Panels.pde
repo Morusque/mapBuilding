@@ -1066,6 +1066,20 @@ class LabelsLayout {
   IntRect panel;
   int titleY;
   IntRect textBox;
+  ArrayList<IntRect> targetButtons = new ArrayList<IntRect>();
+}
+
+class LabelsListLayout {
+  IntRect panel;
+  int titleY;
+  ArrayList<LabelRowLayout> rows = new ArrayList<LabelRowLayout>();
+}
+
+class LabelRowLayout {
+  IntRect selectRect;
+  IntRect nameRect;
+  IntRect delRect;
+  IntRect targetRect;
 }
 
 LabelsLayout buildLabelsLayout() {
@@ -1077,6 +1091,14 @@ LabelsLayout buildLabelsLayout() {
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
   l.textBox = new IntRect(innerX, curY, PANEL_W - 2 * PANEL_PADDING - 20, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+  String[] targets = { "Free", "Biomes", "Zones", "Struct" };
+  int btnW = 60;
+  int gap = 6;
+  for (int i = 0; i < targets.length; i++) {
+    l.targetButtons.add(new IntRect(innerX + i * (btnW + gap), curY, btnW, PANEL_BUTTON_H));
+  }
   curY += PANEL_BUTTON_H + PANEL_PADDING;
   l.panel.h = curY - l.panel.y;
   return l;
@@ -1099,6 +1121,106 @@ void drawLabelsPanel() {
   text(labelDraft, layout.textBox.x + 6, layout.textBox.y + layout.textBox.h / 2);
   textAlign(LEFT, TOP);
   text("Type text then click map to place/continue editing", layout.textBox.x, layout.textBox.y - 18);
+
+  // Target buttons
+  String[] targets = { "Free", "Biomes", "Zones", "Struct" };
+  for (int i = 0; i < layout.targetButtons.size(); i++) {
+    IntRect b = layout.targetButtons.get(i);
+    boolean active = (labelTargetMode == LabelTarget.values()[i]);
+    drawBevelButton(b.x, b.y, b.w, b.h, active);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text(targets[i], b.x + b.w / 2, b.y + b.h / 2);
+  }
+}
+
+LabelsListLayout buildLabelsListLayout() {
+  LabelsListLayout l = new LabelsListLayout();
+  int w = RIGHT_PANEL_W;
+  int x = width - w - PANEL_PADDING;
+  int y = panelTop();
+  l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
+  l.titleY = y + PANEL_PADDING;
+  return l;
+}
+
+void populateLabelsListRows(LabelsListLayout layout) {
+  layout.rows.clear();
+  int labelX = layout.panel.x + PANEL_PADDING;
+  int curY = layout.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
+  int rowH = 24;
+  for (int i = 0; i < mapModel.labels.size(); i++) {
+    if (curY + rowH > maxY) break;
+    LabelRowLayout row = new LabelRowLayout();
+    int selectW = 18;
+    row.selectRect = new IntRect(labelX, curY, selectW, rowH);
+    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - selectW - 6 - 60, rowH);
+    row.targetRect = new IntRect(row.nameRect.x + row.nameRect.w + 4, curY, 26, rowH);
+    row.delRect = new IntRect(row.targetRect.x + row.targetRect.w + 4, curY, 26, rowH);
+    layout.rows.add(row);
+    curY += rowH + 6;
+  }
+}
+
+void drawLabelsListPanel() {
+  LabelsListLayout layout = buildLabelsListLayout();
+  populateLabelsListRows(layout);
+  drawPanelBackground(layout.panel);
+
+  int labelX = layout.panel.x + PANEL_PADDING;
+  int curY = layout.titleY;
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Labels", labelX, curY);
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  for (int i = 0; i < layout.rows.size(); i++) {
+    MapLabel lbl = mapModel.labels.get(i);
+    LabelRowLayout row = layout.rows.get(i);
+    boolean selected = (selectedLabelIndex == i);
+    drawBevelButton(row.selectRect.x, row.selectRect.y, row.selectRect.w, row.selectRect.h, selected);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text(selected ? "*" : "", row.selectRect.x + row.selectRect.w / 2, row.selectRect.y + row.selectRect.h / 2);
+
+    boolean editing = (editingLabelIndex == i);
+    if (editing) {
+      stroke(60);
+      fill(255);
+      rect(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h);
+      fill(0);
+      textAlign(LEFT, CENTER);
+      text(labelDraft, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
+      float caretX = row.nameRect.x + 6 + textWidth(labelDraft);
+      stroke(0);
+      line(caretX, row.nameRect.y + 4, caretX, row.nameRect.y + row.nameRect.h - 4);
+    } else {
+      drawBevelButton(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, selected);
+      fill(10);
+      textAlign(LEFT, CENTER);
+      text(lbl.text, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
+    }
+
+    drawBevelButton(row.targetRect.x, row.targetRect.y, row.targetRect.w, row.targetRect.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text(labelTargetShort(lbl.target), row.targetRect.x + row.targetRect.w / 2, row.targetRect.y + row.targetRect.h / 2);
+
+    drawBevelButton(row.delRect.x, row.delRect.y, row.delRect.w, row.delRect.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("X", row.delRect.x + row.delRect.w / 2, row.delRect.y + row.delRect.h / 2);
+  }
+}
+
+String labelTargetShort(LabelTarget lt) {
+  switch (lt) {
+    case BIOME: return "B";
+    case ZONE: return "Z";
+    case STRUCT: return "S";
+    default: return "F";
+  }
 }
 
 // ----- STRUCTURES PANEL -----

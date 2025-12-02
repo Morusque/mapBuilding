@@ -90,7 +90,9 @@ String adminNameDraft = "";
 
 // Label editing state
 int editingLabelIndex = -1;
+int selectedLabelIndex = -1;
 String labelDraft = "Label";
+LabelTarget labelTargetMode = LabelTarget.FREE;
 
 // Path type editing state
 int editingPathTypeNameIndex = -1;
@@ -341,6 +343,7 @@ void draw() {
     drawPathsListPanel();
   } else if (currentTool == Tool.EDIT_LABELS) {
     drawLabelsPanel();
+    drawLabelsListPanel();
   } else if (currentTool == Tool.EDIT_RENDER) {
     drawRenderPanel();
   }
