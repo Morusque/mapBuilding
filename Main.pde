@@ -80,6 +80,7 @@ float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
 float flattestSlopeBias = FLATTEST_BIAS_MIN; // slope penalty in PATHFIND mode (min..max, 0 = shortest)
 boolean pathAvoidWater = false;
+boolean pathTaperRivers = false;
 int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
 
@@ -265,19 +266,16 @@ void draw() {
       route.add(pendingPathStart);
       route.add(target);
       if (route.size() == 2) {
-        println("[PATH PREVIEW] ENDS start=(" + pendingPathStart.x + "," + pendingPathStart.y + ") end=(" + target.x + "," + target.y + ")");
       }
     } else if (mode == PathRouteMode.PATHFIND) {
       if (snapped != null) {
         route = mapModel.findSnapPathFlattest(pendingPathStart, target);
-        println("[PATH PREVIEW] PATHFIND route size=" + ((route != null) ? route.size() : 0));
       }
     }
     if (route == null || route.size() < 2) {
       route = new ArrayList<PVector>();
       route.add(pendingPathStart);
       route.add(target);
-      println("[PATH PREVIEW] fallback route size=" + route.size());
     }
 
     PathType pt = null;

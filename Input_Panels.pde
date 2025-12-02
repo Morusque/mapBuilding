@@ -583,6 +583,10 @@ boolean handlePathsPanelClick(int mx, int my) {
     pathAvoidWater = !pathAvoidWater;
     return true;
   }
+  if (layout.taperCheck.contains(mx, my)) {
+    pathTaperRivers = !pathTaperRivers;
+    return true;
+  }
 
   // Add path type
   if (layout.typeAddBtn.contains(mx, my)) {
@@ -750,6 +754,10 @@ boolean handlePathsListPanelClick(int mx, int my) {
       if (!mapModel.pathTypes.isEmpty()) {
         p.typeId = (p.typeId + 1) % mapModel.pathTypes.size();
       }
+      return true;
+    }
+    if (row.taperRect.contains(mx, my)) {
+      p.taper = !p.taper;
       return true;
     }
   }

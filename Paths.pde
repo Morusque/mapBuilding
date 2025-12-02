@@ -3,6 +3,7 @@ class Path {
   ArrayList<ArrayList<PVector>> routes = new ArrayList<ArrayList<PVector>>();
   int typeId = 0;
   String name = "";
+  boolean taper = false; // per-path taper toggle
 
   void addRoute(ArrayList<PVector> pts) {
     if (pts == null || pts.size() < 2) return;
@@ -11,10 +12,11 @@ class Path {
     routes.add(copy);
   }
 
-  void draw(PApplet app) {
+  void draw(PApplet app, float baseWeight, boolean taper, HashMap<String, Float> segWeights) {
     if (routes.isEmpty()) return;
 
-    for (ArrayList<PVector> seg : routes) {
+    for (int ri = 0; ri < routes.size(); ri++) {
+      ArrayList<PVector> seg = routes.get(ri);
       if (seg == null || seg.isEmpty()) continue;
       if (seg.size() == 1) {
         float r = 3.0f / viewport.zoom;
@@ -24,15 +26,21 @@ class Path {
         PVector a = seg.get(0);
         app.ellipse(a.x, a.y, r, r);
         app.popStyle();
-        println("[PATH DRAW ROUTE] single point at (" + a.x + "," + a.y + ")");
         continue;
       }
 
-      println("[PATH DRAW ROUTE] size=" + seg.size() + " first=(" + seg.get(0).x + "," + seg.get(0).y + ") last=(" + seg.get(seg.size()-1).x + "," + seg.get(seg.size()-1).y + ")");
       for (int i = 0; i < seg.size() - 1; i++) {
         PVector a = seg.get(i);
         PVector b = seg.get(i + 1);
+        String key = ri + "_" + i;
+        float w = baseWeight;
+        if (taper && segWeights != null && segWeights.containsKey(key)) {
+          w = segWeights.get(key);
+        }
+        app.pushStyle();
+        app.strokeWeight(max(1.5f, w) / viewport.zoom);
         app.line(a.x, a.y, b.x, b.y);
+        app.popStyle();
       }
 
       // Tiny endpoint dots to keep short segments visible
@@ -59,11 +67,9 @@ class Path {
       PVector a = seg.get(0);
       app.ellipse(a.x, a.y, r, r);
       app.popStyle();
-      println("[PATH PREVIEW ROUTE] single point at (" + a.x + "," + a.y + ")");
       return;
     }
 
-    println("[PATH PREVIEW ROUTE] size=" + seg.size() + " first=(" + seg.get(0).x + "," + seg.get(0).y + ") last=(" + seg.get(seg.size()-1).x + "," + seg.get(seg.size()-1).y + ")");
     app.pushStyle();
     app.noFill();
     app.stroke(strokeCol);

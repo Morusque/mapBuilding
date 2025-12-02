@@ -65,6 +65,94 @@ class MapModel {
     }
   }
 
+  HashMap<String, Float> computeRouteWeights(Path p, float baseWeight) {
+    HashMap<String, Float> weights = new HashMap<String, Float>();
+    if (p == null || p.routes == null || p.routes.isEmpty()) return weights;
+
+    // Build node adjacency and edge list keyed by route/segment index
+    HashMap<String, ArrayList<String>> nodeEdges = new HashMap<String, ArrayList<String>>();
+    ArrayList<String> edgeKeys = new ArrayList<String>();
+    ArrayList<String> edgeNodesA = new ArrayList<String>();
+    ArrayList<String> edgeNodesB = new ArrayList<String>();
+    ArrayList<Float> edgeLen = new ArrayList<Float>();
+
+    for (int ri = 0; ri < p.routes.size(); ri++) {
+      ArrayList<PVector> seg = p.routes.get(ri);
+      if (seg == null || seg.size() < 2) continue;
+      for (int i = 0; i < seg.size() - 1; i++) {
+        PVector a = seg.get(i);
+        PVector b = seg.get(i + 1);
+        String na = keyFor(a.x, a.y);
+        String nb = keyFor(b.x, b.y);
+        String ek = ri + "_" + i;
+        edgeKeys.add(ek);
+        edgeNodesA.add(na);
+        edgeNodesB.add(nb);
+        edgeLen.add(dist2D(a, b));
+        addEdgeToNode(nodeEdges, na, ek);
+        addEdgeToNode(nodeEdges, nb, ek);
+      }
+    }
+
+    int eCount = edgeKeys.size();
+    if (eCount == 0) return weights;
+
+    // Identify sink edges that touch water
+    ArrayDeque<Integer> queue = new ArrayDeque<Integer>();
+    int[] depth = new int[eCount];
+    boolean[] visited = new boolean[eCount];
+    for (int ei = 0; ei < eCount; ei++) {
+      String na = edgeNodesA.get(ei);
+      String nb = edgeNodesB.get(ei);
+      PVector pa = snapNodes.get(na);
+      PVector pb = snapNodes.get(nb);
+      boolean aWater = (pa != null && sampleElevationAt(pa.x, pa.y, seaLevel) <= seaLevel);
+      boolean bWater = (pb != null && sampleElevationAt(pb.x, pb.y, seaLevel) <= seaLevel);
+      if (aWater || bWater) {
+        queue.add(ei);
+        visited[ei] = true;
+        depth[ei] = 0;
+      }
+    }
+
+    // BFS to assign depths
+    while (!queue.isEmpty()) {
+      int ei = queue.removeFirst();
+      String na = edgeNodesA.get(ei);
+      String nb = edgeNodesB.get(ei);
+      for (String node : new String[] { na, nb }) {
+        ArrayList<String> adj = nodeEdges.get(node);
+        if (adj == null) continue;
+        for (String ek : adj) {
+          int nbEi = edgeKeys.indexOf(ek);
+          if (nbEi < 0 || visited[nbEi]) continue;
+          visited[nbEi] = true;
+          depth[nbEi] = depth[ei] + 1;
+          queue.add(nbEi);
+        }
+      }
+    }
+
+    float minW = max(1.0f, baseWeight * 0.4f);
+    float decay = 0.9f;
+    for (int ei = 0; ei < eCount; ei++) {
+      int d = depth[ei];
+      float w = baseWeight * pow(decay, d);
+      w = max(minW, w);
+      weights.put(edgeKeys.get(ei), w);
+    }
+    return weights;
+  }
+
+  void addEdgeToNode(HashMap<String, ArrayList<String>> nodeEdges, String node, String edgeKey) {
+    ArrayList<String> list = nodeEdges.get(node);
+    if (list == null) {
+      list = new ArrayList<String>();
+      nodeEdges.put(node, list);
+    }
+    if (!list.contains(edgeKey)) list.add(edgeKey);
+  }
+
   float[] rgbToHSB(int c) {
     float[] hsb = new float[3];
     rgbToHSB01(c, hsb);
@@ -815,9 +903,8 @@ class MapModel {
       int col = (pt != null) ? pt.col : strokeCol;
       float w = (pt != null) ? pt.weightPx : 2.0f;
       app.stroke(col);
-      float screenPx = max(2.0f, w);
-      app.strokeWeight(screenPx / viewport.zoom); // keep at least ~2px on screen
-      p.draw(app);
+      HashMap<String, Float> taperW = p.taper ? computeRouteWeights(p, w) : null;
+      p.draw(app, w, p.taper, taperW);
 
       // Debug: draw small dots on all route vertices
       app.pushStyle();
@@ -847,7 +934,8 @@ class MapModel {
       float hw = 5.0f / viewport.zoom; // constant ~5px
       app.stroke(hi);
       app.strokeWeight(hw);
-      sel.draw(app);
+      HashMap<String, Float> taperW = sel.taper ? computeRouteWeights(sel, w) : null;
+      sel.draw(app, w, sel.taper, taperW);
     }
 
     app.popStyle();

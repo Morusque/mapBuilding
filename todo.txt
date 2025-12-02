@@ -14,7 +14,7 @@ Zones :
 (later) a first-pass has been done but we need to redo this in a lot more specific way
 
 Paths :
-(maybe later) paths (typically rivers) could have an option that make them start small and end bigger when reaching the sea (this needs connection analysis, pathfinding etc when using multiple segments, to compute segment proximity to sea, parameter weight would be the bigger weight next to the sea).
+(done) paths have a taper option to start small and end bigger along the route.
 (later) needs more optimization
 (later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
 

@@ -596,6 +596,7 @@ class PathsLayout {
   IntRect routeSlider;
   IntRect flattestSlider;
   IntRect avoidWaterCheck;
+  IntRect taperCheck;
   ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
   IntRect nameField;
   IntRect typeHueSlider;
@@ -614,6 +615,7 @@ class PathRowLayout {
   IntRect nameRect;
   IntRect delRect;
   IntRect typeRect;
+  IntRect taperRect;
   int statsY;
   int statsH;
 }
@@ -634,6 +636,8 @@ PathsLayout buildPathsLayout() {
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   l.avoidWaterCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+  curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+  l.taperCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
   curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
 
   // Path types controls
@@ -713,7 +717,8 @@ void populatePathsListRows(PathsListLayout layout) {
 
     curY += nameH + 6;
 
-    row.typeRect = new IntRect(labelX + selectSize + 6, curY, 160, typeH);
+    row.typeRect = new IntRect(labelX + selectSize + 6, curY, 120, typeH);
+    row.taperRect = new IntRect(row.typeRect.x + row.typeRect.w + 6, curY, 70, typeH);
     curY += typeH + 4;
 
     row.statsY = curY;
@@ -776,6 +781,8 @@ void drawPathsPanel() {
   // Avoid water checkbox
   drawCheckbox(layout.avoidWaterCheck.x, layout.avoidWaterCheck.y,
                layout.avoidWaterCheck.w, pathAvoidWater, "Avoid water");
+  drawCheckbox(layout.taperCheck.x, layout.taperCheck.y,
+               layout.taperCheck.w, pathTaperRivers, "Taper width (start small)");
 
   // Only type management on this panel
 
@@ -918,6 +925,11 @@ void drawPathsListPanel() {
       fill(10);
       textAlign(LEFT, CENTER);
       text("Type: " + typLabel, row.typeRect.x + 6, row.typeRect.y + row.typeRect.h / 2);
+
+      drawBevelButton(row.taperRect.x, row.taperRect.y, row.taperRect.w, row.taperRect.h, p.taper);
+      fill(10);
+      textAlign(CENTER, CENTER);
+      text("Taper", row.taperRect.x + row.taperRect.w / 2, row.taperRect.y + row.taperRect.h / 2);
 
       int segs = p.segmentCount();
       float len = p.totalLength();
