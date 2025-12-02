@@ -377,6 +377,12 @@ void updateActiveSlider(int mx, int my) {
       structureAngleOffsetRad = radians(angDeg);
       break;
     }
+    case SLIDER_STRUCT_RATIO: {
+      StructuresLayout l = buildStructuresLayout();
+      float t = constrain((mx - l.ratioSlider.x) / (float)l.ratioSlider.w, 0, 1);
+      structureAspectRatio = constrain(0.3f + t * (3.0f - 0.3f), 0.3f, 3.0f);
+      break;
+    }
     case SLIDER_RENDER_LIGHT_AZIMUTH: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.lightAzimuthSlider.x) / (float)l.lightAzimuthSlider.w, 0, 1);

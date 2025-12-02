@@ -1283,6 +1283,7 @@ String labelTargetShort(LabelTarget lt) {
 
 String structureShapeLabel(StructureShape sh) {
   switch (sh) {
+    case RECTANGLE: return "Rect";
     case CIRCLE: return "Circle";
     case TRIANGLE: return "Triangle";
     case HEXAGON: return "Hex";
@@ -1296,6 +1297,7 @@ class StructuresLayout {
   int titleY;
   IntRect sizeSlider;
   IntRect angleSlider;
+  IntRect ratioSlider;
   ArrayList<IntRect> shapeButtons = new ArrayList<IntRect>();
   ArrayList<IntRect> snapButtons = new ArrayList<IntRect>();
 }
@@ -1314,9 +1316,12 @@ StructuresLayout buildStructuresLayout() {
   l.angleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
 
+  l.ratioSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+
   // Shape selection buttons
-  String[] shapeLabels = { "Square", "Circle", "Triangle", "Hex" };
-  int btnWShape = 70;
+  String[] shapeLabels = { "Rect", "Square", "Circle", "Triangle", "Hex" };
+  int btnWShape = 58;
   int gapShape = 6;
   for (int i = 0; i < shapeLabels.length; i++) {
     l.shapeButtons.add(new IntRect(innerX + i * (btnWShape + gapShape), curY, btnWShape, PANEL_BUTTON_H));
@@ -1372,10 +1377,24 @@ void drawStructuresPanelUI() {
   ellipse(ax, ang.y + ang.h / 2.0f, ang.h * 0.9f, ang.h * 0.9f);
   fill(0);
   textAlign(LEFT, BOTTOM);
-  text("Angle offset (" + nf(angDeg, 1, 1) + "°)", ang.x, ang.y - 4);
+  text("Angle offset (" + nf(angDeg, 1, 1) + " deg)", ang.x, ang.y - 4);
+
+  // Rectangle ratio slider (width/height)
+  IntRect ratio = layout.ratioSlider;
+  stroke(160);
+  fill(230);
+  rect(ratio.x, ratio.y, ratio.w, ratio.h, 4);
+  float rNorm = constrain(map(structureAspectRatio, 0.3f, 3.0f, 0, 1), 0, 1);
+  float rx = ratio.x + rNorm * ratio.w;
+  fill(40);
+  noStroke();
+  ellipse(rx, ratio.y + ratio.h / 2.0f, ratio.h * 0.9f, ratio.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Rectangle ratio (W/H): " + nf(structureAspectRatio, 1, 2), ratio.x, ratio.y - 4);
 
   // Shape buttons
-  String[] shapeLabels = { "Square", "Circle", "Triangle", "Hex" };
+  String[] shapeLabels = { "Rect", "Square", "Circle", "Triangle", "Hex" };
   for (int i = 0; i < layout.shapeButtons.size(); i++) {
     IntRect b = layout.shapeButtons.get(i);
     boolean active = (structureShape == StructureShape.values()[i]);

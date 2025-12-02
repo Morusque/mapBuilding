@@ -151,6 +151,7 @@ class Structure {
   float angle = 0;
   float size = 0.02f; // world units square side
   StructureShape shape = StructureShape.SQUARE;
+  float aspect = 1.0f; // width / height for rectangle
 
   Structure(float x, float y) {
     this.x = x;
@@ -167,6 +168,13 @@ class Structure {
 
     float r = size;
     switch (shape) {
+      case RECTANGLE: {
+        float w = r;
+        float h = (aspect != 0) ? (r / max(0.1f, aspect)) : r;
+        app.rectMode(CENTER);
+        app.rect(0, 0, w, h);
+        break;
+      }
       case CIRCLE: {
         app.ellipse(0, 0, r, r);
         break;

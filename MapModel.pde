@@ -357,14 +357,49 @@ class MapModel {
     if (structures != null && !structures.isEmpty()) {
       app.stroke(80, 80, 60, 180);
       app.strokeWeight(1.4f / viewport.zoom);
+      app.noFill();
       for (Structure s : structures) {
-        float r = s.size;
         app.pushMatrix();
         app.translate(s.x, s.y);
         app.rotate(s.angle);
-        app.noFill();
-        app.rectMode(CENTER);
-        app.rect(0, 0, r, r);
+        float r = s.size;
+        switch (s.shape) {
+          case RECTANGLE: {
+            float w = r;
+            float h = (s.aspect != 0) ? (r / max(0.1f, s.aspect)) : r;
+            app.rectMode(CENTER);
+            app.rect(0, 0, w, h);
+            break;
+          }
+          case CIRCLE: {
+            app.ellipse(0, 0, r, r);
+            break;
+          }
+          case TRIANGLE: {
+            float h = r * 0.866f;
+            app.beginShape();
+            app.vertex(-r * 0.5f, h * 0.333f);
+            app.vertex(r * 0.5f, h * 0.333f);
+            app.vertex(0, -h * 0.666f);
+            app.endShape(CLOSE);
+            break;
+          }
+          case HEXAGON: {
+            float rad = r * 0.5f;
+            app.beginShape();
+            for (int i = 0; i < 6; i++) {
+              float a = radians(60 * i);
+              app.vertex(cos(a) * rad, sin(a) * rad);
+            }
+            app.endShape(CLOSE);
+            break;
+          }
+          default: {
+            app.rectMode(CENTER);
+            app.rect(0, 0, r, r);
+            break;
+          }
+        }
         app.popMatrix();
       }
     }
@@ -382,6 +417,7 @@ class MapModel {
     Structure s = new Structure(wx, wy);
     s.size = size;
     s.shape = structureShape;
+    s.aspect = structureAspectRatio;
     // Keep magnetism roughly constant in screen space: smaller in world units when zoomed in.
     float snapRangePx = 20.0f;
     float snapRange = max(0.01f, snapRangePx / max(1e-3f, viewport.zoom));

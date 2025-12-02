@@ -25,6 +25,7 @@ float structureAngleOffsetRad = 0.0f;
 float lastStructureSnapAngle = 0.0f;
 StructureSnapMode structureSnapMode = StructureSnapMode.NEXT_TO_PATH;
 StructureShape structureShape = StructureShape.SQUARE;
+float structureAspectRatio = 1.0f; // width/height for rectangle shape
 
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
@@ -141,6 +142,7 @@ final int SLIDER_ADMIN_HUE = 16;
 final int SLIDER_ADMIN_BRUSH = 17;
 final int SLIDER_STRUCT_ANGLE = 18;
 final int SLIDER_PATH_TYPE_MIN_WEIGHT = 19;
+final int SLIDER_STRUCT_RATIO = 20;
 int activeSlider = SLIDER_NONE;
 
 void settings() {

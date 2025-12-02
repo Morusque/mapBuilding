@@ -802,6 +802,12 @@ boolean handleStructuresPanelClick(int mx, int my) {
     activeSlider = SLIDER_STRUCT_ANGLE;
     return true;
   }
+  if (layout.ratioSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.ratioSlider.x) / (float)layout.ratioSlider.w, 0, 1);
+    structureAspectRatio = constrain(0.3f + t * (3.0f - 0.3f), 0.3f, 3.0f);
+    activeSlider = SLIDER_STRUCT_RATIO;
+    return true;
+  }
   for (int i = 0; i < layout.shapeButtons.size(); i++) {
     IntRect b = layout.shapeButtons.get(i);
     if (b.contains(mx, my)) {

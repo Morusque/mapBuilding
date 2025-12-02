@@ -16,6 +16,7 @@ Zones :
 Paths :
 (later) needs more optimization
 (later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
+(later) width definer similar to water but using pathfinding to define more important roads
 
 Struct :
 (soon) structres should be removable, grouppable.
