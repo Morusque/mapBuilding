@@ -223,7 +223,7 @@ void draw() {
     if (renderShowZones) {
       mapModel.drawCellsRender(this, showBorders, seaLevel);
     }
-    if (renderShowElevation || renderShowWater) {
+    if (renderShowElevation || renderShowWater || renderElevationContours || renderWaterContours) {
       mapModel.drawElevationOverlay(this, seaLevel, renderElevationContours, renderShowWater, renderShowElevation,
                                     renderWaterContours, true, renderLightAzimuthDeg, renderLightAltitudeDeg, 0);
     }

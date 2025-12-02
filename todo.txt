@@ -11,18 +11,26 @@ Elevation :
 Biomes :
 (later) extend or shrink current biome button
 (later) add a "create beaches" using current biome
+(later) add a "underwater" ready biome (= sand?)
 
 Zones :
-(later) a first-pass has been done but we need to redo this in a lot more specific way
+(later) make the generation depend more on whatever is already on the map
+(later) allow shared borders to be seen for both zones
 
 Paths :
-(later) needs more optimization
+(later) needs more optimization or threading so not to hang anything
 (later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
 (later) width definer similar to water but using pathfinding to define more important roads
+(later) tweak default values for river (wider, taper on)
+(later) put eraser back
+(later) refine logic for types (and show colors on the right side menu)
+(later) assign placing strategies to types
+(later) using right click to move map also unselects path and that's bad, add a button next to "new path" for now
 
 Struct :
 (later) structures should be groupable
 (later) some ui on the right panel for per-struct parameters (can be displayed once for selected struct)
+(later) using right click to move map also unselects struct and that's probably bad, add a button next to "new struct" for now
 
 Labels :
 (later) Label should be attributed to one or more elements on the map, or more arbitrarily placed.
@@ -51,3 +59,4 @@ General :
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
 (later) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
 (later) option to generate details (about everything) for zooming
+(later) ui indications could be more than two lines instead of using "; "

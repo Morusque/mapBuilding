@@ -613,14 +613,14 @@ class MapModel {
     }
 
     // Region-level contours using marching squares on a coarse grid to avoid per-cell outlines.
-    if ((showElevationContours && drawElevation) || (showWaterContours && drawWater)) {
+    if (showElevationContours || showWaterContours) {
       int cols = 90;
       int rows = 90;
       ContourGrid grid = sampleElevationGrid(cols, rows, seaLevel);
       float minElev = grid.min;
       float maxElev = grid.max;
 
-      if (showElevationContours && drawElevation) {
+      if (showElevationContours) {
         float range = max(1e-4f, maxElev - seaLevel);
         float step = max(0.02f, range / 10.0f);
         float start = ceil(seaLevel / step) * step;
