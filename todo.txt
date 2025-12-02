@@ -31,10 +31,9 @@ Paths :
 Struct :
 (later) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.
 (later) structres should be removable, grouppable, and displayed as a list.
-(later) Placement should snap to nearest path/structure and allow rotation/resize handles; support group min-zoom-to-expand (city/forest clusters).
 (later) snapping magnetism should probably be zoom-invarient (so that if we need more precision we can zoom and the snap is relatively smaller)
 (later) option to either not snap at all, snap next to paths, snap right in the middle of paths
-(later) slider for angle offset (also per-struct)
+(done) slider for angle offset (also per-struct)
 
 Labels :
 (later) Label should be attributed to one or more elements on the map, or more arbitrarily placed.
@@ -71,3 +70,5 @@ General :
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
 (later) MapModel .pde file is very long, could it be subdivided? (might be hard since single class)
 (later) on each panel, find a place to write non UI controls (role mouse buttons, wheel, keys such as DEL etc)
+(later) group things visually when unzooming
+(later) option to generate details for zooming
