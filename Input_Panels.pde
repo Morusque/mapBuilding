@@ -584,7 +584,10 @@ boolean handlePathsPanelClick(int mx, int my) {
     return true;
   }
   if (layout.taperCheck.contains(mx, my)) {
-    pathTaperRivers = !pathTaperRivers;
+    if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.taperOn = !pt.taperOn;
+    }
     return true;
   }
 
@@ -644,6 +647,18 @@ boolean handlePathsPanelClick(int mx, int my) {
       PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
       pt.weightPx = constrain(0.5f + t * (8.0f - 0.5f), 0.5f, 8.0f);
       activeSlider = SLIDER_PATH_TYPE_WEIGHT;
+      return true;
+    }
+    if (layout.typeMinWeightSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.typeMinWeightSlider.x) / (float)layout.typeMinWeightSlider.w, 0, 1);
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.minWeightPx = constrain(0.5f + t * (pt.weightPx - 0.5f), 0.5f, pt.weightPx);
+      activeSlider = SLIDER_PATH_TYPE_MIN_WEIGHT;
+      return true;
+    }
+    if (layout.taperCheck.contains(mx, my)) {
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.taperOn = !pt.taperOn;
       return true;
     }
   }
@@ -754,10 +769,6 @@ boolean handlePathsListPanelClick(int mx, int my) {
       if (!mapModel.pathTypes.isEmpty()) {
         p.typeId = (p.typeId + 1) % mapModel.pathTypes.size();
       }
-      return true;
-    }
-    if (row.taperRect.contains(mx, my)) {
-      p.taper = !p.taper;
       return true;
     }
   }

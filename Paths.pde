@@ -3,7 +3,6 @@ class Path {
   ArrayList<ArrayList<PVector>> routes = new ArrayList<ArrayList<PVector>>();
   int typeId = 0;
   String name = "";
-  boolean taper = false; // per-path taper toggle
 
   void addRoute(ArrayList<PVector> pts) {
     if (pts == null || pts.size() < 2) return;
@@ -12,7 +11,7 @@ class Path {
     routes.add(copy);
   }
 
-  void draw(PApplet app, float baseWeight, boolean taper, HashMap<String, Float> segWeights) {
+  void draw(PApplet app, float baseWeight, boolean taper, HashMap<String, Float> segWeights, int pathIndex) {
     if (routes.isEmpty()) return;
 
     for (int ri = 0; ri < routes.size(); ri++) {
@@ -32,7 +31,7 @@ class Path {
       for (int i = 0; i < seg.size() - 1; i++) {
         PVector a = seg.get(i);
         PVector b = seg.get(i + 1);
-        String key = ri + "_" + i;
+        String key = pathIndex + ":" + ri + ":" + i;
         float w = baseWeight;
         if (taper && segWeights != null && segWeights.containsKey(key)) {
           w = segWeights.get(key);

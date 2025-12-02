@@ -326,6 +326,17 @@ void updateActiveSlider(int mx, int my) {
       }
       break;
     }
+    case SLIDER_PATH_TYPE_MIN_WEIGHT: {
+      PathsLayout l = buildPathsLayout();
+      float t = (mx - l.typeMinWeightSlider.x) / (float)l.typeMinWeightSlider.w;
+      t = constrain(t, 0, 1);
+      if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+        PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+        float minW = constrain(0.5f + t * (pt.weightPx - 0.5f), 0.5f, pt.weightPx);
+        pt.minWeightPx = minW;
+      }
+      break;
+    }
     case SLIDER_ADMIN_HUE: {
       AdminLayout l = buildAdminLayout();
       float t = (mx - l.hueSlider.x) / (float)l.hueSlider.w;

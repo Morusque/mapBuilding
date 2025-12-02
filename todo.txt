@@ -14,9 +14,10 @@ Zones :
 (later) a first-pass has been done but we need to redo this in a lot more specific way
 
 Paths :
-(done) paths have a taper option to start small and end bigger along the route.
 (later) needs more optimization
 (later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
+(later) if a segment exists at one node for a given path, don't add a second segment for the same path at the same place on top of it, it already exists.
+(later) tapered paths sometimes feel buggy (large weights away from water)
 
 Struct :
 (maybe later) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.

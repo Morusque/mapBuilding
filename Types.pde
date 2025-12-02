@@ -67,10 +67,13 @@ class PathType {
   float sat01;
   float bri01;
   float weightPx;
+  float minWeightPx;
+  boolean taperOn = false;
 
   PathType(String name, int col, float weightPx) {
     this.name = name;
     this.weightPx = weightPx;
+    this.minWeightPx = max(0.5f, weightPx * 0.4f);
     setFromColor(col);
   }
 

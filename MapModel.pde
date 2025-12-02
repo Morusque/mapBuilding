@@ -65,32 +65,37 @@ class MapModel {
     }
   }
 
-  HashMap<String, Float> computeRouteWeights(Path p, float baseWeight) {
+  HashMap<String, Float> computeTaperWeightsForType(int typeId, float baseWeight, float minWeight) {
     HashMap<String, Float> weights = new HashMap<String, Float>();
-    if (p == null || p.routes == null || p.routes.isEmpty()) return weights;
+    if (paths == null || paths.isEmpty()) return weights;
+    PathType t = getPathType(typeId);
+    if (t == null || !t.taperOn) return weights;
 
-    // Build node adjacency and edge list keyed by route/segment index
+    // Build graph across all paths of this type
     HashMap<String, ArrayList<String>> nodeEdges = new HashMap<String, ArrayList<String>>();
     ArrayList<String> edgeKeys = new ArrayList<String>();
     ArrayList<String> edgeNodesA = new ArrayList<String>();
     ArrayList<String> edgeNodesB = new ArrayList<String>();
-    ArrayList<Float> edgeLen = new ArrayList<Float>();
 
-    for (int ri = 0; ri < p.routes.size(); ri++) {
-      ArrayList<PVector> seg = p.routes.get(ri);
-      if (seg == null || seg.size() < 2) continue;
-      for (int i = 0; i < seg.size() - 1; i++) {
-        PVector a = seg.get(i);
-        PVector b = seg.get(i + 1);
-        String na = keyFor(a.x, a.y);
-        String nb = keyFor(b.x, b.y);
-        String ek = ri + "_" + i;
-        edgeKeys.add(ek);
-        edgeNodesA.add(na);
-        edgeNodesB.add(nb);
-        edgeLen.add(dist2D(a, b));
-        addEdgeToNode(nodeEdges, na, ek);
-        addEdgeToNode(nodeEdges, nb, ek);
+    for (int pi = 0; pi < paths.size(); pi++) {
+      Path p = paths.get(pi);
+      if (p == null || p.typeId != typeId || !t.taperOn) continue;
+      if (p.routes == null) continue;
+      for (int ri = 0; ri < p.routes.size(); ri++) {
+        ArrayList<PVector> seg = p.routes.get(ri);
+        if (seg == null || seg.size() < 2) continue;
+        for (int si = 0; si < seg.size() - 1; si++) {
+          PVector a = seg.get(si);
+          PVector b = seg.get(si + 1);
+          String na = keyFor(a.x, a.y);
+          String nb = keyFor(b.x, b.y);
+          String ek = pi + ":" + ri + ":" + si;
+          edgeKeys.add(ek);
+          edgeNodesA.add(na);
+          edgeNodesB.add(nb);
+          addEdgeToNode(nodeEdges, na, ek);
+          addEdgeToNode(nodeEdges, nb, ek);
+        }
       }
     }
 
@@ -101,6 +106,7 @@ class MapModel {
     ArrayDeque<Integer> queue = new ArrayDeque<Integer>();
     int[] depth = new int[eCount];
     boolean[] visited = new boolean[eCount];
+    boolean anyWater = false;
     for (int ei = 0; ei < eCount; ei++) {
       String na = edgeNodesA.get(ei);
       String nb = edgeNodesB.get(ei);
@@ -112,10 +118,11 @@ class MapModel {
         queue.add(ei);
         visited[ei] = true;
         depth[ei] = 0;
+        anyWater = true;
       }
     }
 
-    // BFS to assign depths
+    // BFS to assign depths across shared nodes
     while (!queue.isEmpty()) {
       int ei = queue.removeFirst();
       String na = edgeNodesA.get(ei);
@@ -133,12 +140,11 @@ class MapModel {
       }
     }
 
-    float minW = max(1.0f, baseWeight * 0.4f);
     float decay = 0.9f;
     for (int ei = 0; ei < eCount; ei++) {
-      int d = depth[ei];
+      int d = visited[ei] ? depth[ei] : (anyWater ? depth[ei] + 50 : 50);
       float w = baseWeight * pow(decay, d);
-      w = max(minW, w);
+      w = max(minWeight, w);
       weights.put(edgeKeys.get(ei), w);
     }
     return weights;
@@ -894,6 +900,7 @@ class MapModel {
 
     app.pushStyle();
     app.noFill();
+    HashMap<Integer, HashMap<String, Float>> taperCache = new HashMap<Integer, HashMap<String, Float>>();
 
     for (int i = 0; i < paths.size(); i++) {
       Path p = paths.get(i);
@@ -903,8 +910,17 @@ class MapModel {
       int col = (pt != null) ? pt.col : strokeCol;
       float w = (pt != null) ? pt.weightPx : 2.0f;
       app.stroke(col);
-      HashMap<String, Float> taperW = p.taper ? computeRouteWeights(p, w) : null;
-      p.draw(app, w, p.taper, taperW);
+      boolean taperOn = (pt != null && pt.taperOn);
+      HashMap<String, Float> taperW = null;
+      if (taperOn) {
+        taperW = taperCache.get(p.typeId);
+        if (taperW == null) {
+          float minW = (pt != null) ? pt.minWeightPx : max(1.0f, w * 0.4f);
+          taperW = computeTaperWeightsForType(p.typeId, w, minW);
+          taperCache.put(p.typeId, taperW);
+        }
+      }
+      p.draw(app, w, taperOn, taperW, i);
 
       // Debug: draw small dots on all route vertices
       app.pushStyle();
@@ -934,8 +950,17 @@ class MapModel {
       float hw = 5.0f / viewport.zoom; // constant ~5px
       app.stroke(hi);
       app.strokeWeight(hw);
-      HashMap<String, Float> taperW = sel.taper ? computeRouteWeights(sel, w) : null;
-      sel.draw(app, w, sel.taper, taperW);
+      boolean taperOn = (pt != null && pt.taperOn);
+      HashMap<String, Float> taperW = null;
+      if (taperOn) {
+        taperW = taperCache.get(sel.typeId);
+        if (taperW == null) {
+          float minW = (pt != null) ? pt.minWeightPx : max(1.0f, w * 0.4f);
+          taperW = computeTaperWeightsForType(sel.typeId, w, minW);
+          taperCache.put(sel.typeId, taperW);
+        }
+      }
+      sel.draw(app, w, taperOn, taperW, selectedPathIndex);
     }
 
     app.popStyle();

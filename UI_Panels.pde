@@ -597,6 +597,7 @@ class PathsLayout {
   IntRect flattestSlider;
   IntRect avoidWaterCheck;
   IntRect taperCheck;
+  IntRect typeMinWeightSlider;
   ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
   IntRect nameField;
   IntRect typeHueSlider;
@@ -615,7 +616,6 @@ class PathRowLayout {
   IntRect nameRect;
   IntRect delRect;
   IntRect typeRect;
-  IntRect taperRect;
   int statsY;
   int statsH;
 }
@@ -636,8 +636,6 @@ PathsLayout buildPathsLayout() {
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   l.avoidWaterCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
-  curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
-  l.taperCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
   curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
 
   // Path types controls
@@ -673,7 +671,13 @@ PathsLayout buildPathsLayout() {
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   l.typeWeightSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.typeMinWeightSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.taperCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+  curY += PANEL_CHECK_SIZE + PANEL_PADDING;
 
   l.panel.h = curY - l.panel.y;
   return l;
@@ -717,8 +721,7 @@ void populatePathsListRows(PathsListLayout layout) {
 
     curY += nameH + 6;
 
-    row.typeRect = new IntRect(labelX + selectSize + 6, curY, 120, typeH);
-    row.taperRect = new IntRect(row.typeRect.x + row.typeRect.w + 6, curY, 70, typeH);
+    row.typeRect = new IntRect(labelX + selectSize + 6, curY, 160, typeH);
     curY += typeH + 4;
 
     row.statsY = curY;
@@ -782,7 +785,7 @@ void drawPathsPanel() {
   drawCheckbox(layout.avoidWaterCheck.x, layout.avoidWaterCheck.y,
                layout.avoidWaterCheck.w, pathAvoidWater, "Avoid water");
   drawCheckbox(layout.taperCheck.x, layout.taperCheck.y,
-               layout.taperCheck.w, pathTaperRivers, "Taper width (start small)");
+               layout.taperCheck.w, mapModel.getPathType(activePathTypeIndex) != null && mapModel.getPathType(activePathTypeIndex).taperOn, "Taper width (start small)");
 
   // Only type management on this panel
 
@@ -864,6 +867,23 @@ void drawPathsPanel() {
     ellipse(wx, weight.y + weight.h / 2.0f, weight.h * 0.9f, weight.h * 0.9f);
     fill(0);
     text("Weight for \"" + active.name + "\" (px)", weight.x, weight.y - 4);
+
+    // Min weight slider per type
+    IntRect minw = layout.typeMinWeightSlider;
+    stroke(160);
+    fill(230);
+    rect(minw.x, minw.y, minw.w, minw.h, 4);
+    float minNorm = constrain(map(active.minWeightPx, 0.5f, active.weightPx, 0, 1), 0, 1);
+    float minx = minw.x + minNorm * minw.w;
+    fill(40);
+    noStroke();
+    ellipse(minx, minw.y + minw.h / 2.0f, minw.h * 0.9f, minw.h * 0.9f);
+    fill(0);
+    text("Min weight (px)", minw.x, minw.y - 4);
+
+    // Taper toggle per type
+    drawCheckbox(layout.taperCheck.x, layout.taperCheck.y,
+                 layout.taperCheck.w, active.taperOn, "Taper width (start small)");
   }
 }
 
@@ -925,11 +945,6 @@ void drawPathsListPanel() {
       fill(10);
       textAlign(LEFT, CENTER);
       text("Type: " + typLabel, row.typeRect.x + 6, row.typeRect.y + row.typeRect.h / 2);
-
-      drawBevelButton(row.taperRect.x, row.taperRect.y, row.taperRect.w, row.taperRect.h, p.taper);
-      fill(10);
-      textAlign(CENTER, CENTER);
-      text("Taper", row.taperRect.x + row.taperRect.w / 2, row.taperRect.y + row.taperRect.h / 2);
 
       int segs = p.segmentCount();
       float len = p.totalLength();

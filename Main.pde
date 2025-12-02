@@ -39,7 +39,7 @@ final int PANEL_CHECK_SIZE = 16;
 final int PANEL_TITLE_H = 18;
 final int RIGHT_PANEL_W = 260;
 final float FLATTEST_BIAS_MIN = 0.0f;
-final float FLATTEST_BIAS_MAX = 200.0f;
+final float FLATTEST_BIAS_MAX = 500.0f;
 
 // Sites generation config
 PlacementMode[] placementModes = {
@@ -133,6 +133,7 @@ final int SLIDER_STRUCT_SIZE = 15;
 final int SLIDER_ADMIN_HUE = 16;
 final int SLIDER_ADMIN_BRUSH = 17;
 final int SLIDER_STRUCT_ANGLE = 18;
+final int SLIDER_PATH_TYPE_MIN_WEIGHT = 19;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
