@@ -143,6 +143,7 @@ final int SLIDER_ADMIN_BRUSH = 17;
 final int SLIDER_STRUCT_ANGLE = 18;
 final int SLIDER_PATH_TYPE_MIN_WEIGHT = 19;
 final int SLIDER_STRUCT_RATIO = 20;
+final int SLIDER_ADMIN_ROW_HUE = 21;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -358,6 +359,7 @@ void draw() {
     drawBiomesPanel();
   } else if (currentTool == Tool.EDIT_ADMIN) {
     drawAdminPanel();
+    drawAdminZonesListPanel();
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
     drawStructuresPanelUI();
     drawStructuresListPanel();

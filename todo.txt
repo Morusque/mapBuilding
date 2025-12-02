@@ -2,13 +2,15 @@
 Loading bar :
 
 Sites :
-(later) There could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
+(later) there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 (later) should probably be called "grid" and "cell" instead of sites/site, at least in the UI, ideally in the code as well
+(later) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
 
 Elevation :
 
 Biomes :
 (later) extend or shrink current biome button
+(later) add a "create beaches" using current biome
 
 Zones :
 (later) a first-pass has been done but we need to redo this in a lot more specific way
@@ -19,8 +21,9 @@ Paths :
 (later) width definer similar to water but using pathfinding to define more important roads
 
 Struct :
-(soon) structres should be removable, grouppable.
+(soon) structures should be removable
 (soon) selected structure need visual feedback on the map
+(later) structres should be groupable
 (later) some ui on the right panel for per-struct parameters (can be displayed once for selected struct)
 
 Labels :
@@ -37,7 +40,7 @@ Rendering :
 (later) Comments exportable as custom format
 (later) refine the precise way contours work
 
-Editable types : (for anywhere applicable: paths, biomes, etc)
+Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
 
 Export :

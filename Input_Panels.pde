@@ -18,6 +18,12 @@ boolean isInAdminPanel(int mx, int my) {
   return layout.panel.contains(mx, my);
 }
 
+boolean isInAdminListPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_ADMIN) return false;
+  AdminListLayout layout = buildAdminListLayout();
+  return layout.panel.contains(mx, my);
+}
+
 boolean isInElevationPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_ELEVATION) return false;
   ElevationLayout layout = buildElevationLayout();
@@ -293,74 +299,6 @@ boolean handleAdminPanelClick(int mx, int my) {
 
   AdminLayout layout = buildAdminLayout();
 
-  if (layout.paintBtn.contains(mx, my)) {
-    currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
-    return true;
-  }
-  if (layout.fillBtn.contains(mx, my)) {
-    currentZonePaintMode = ZonePaintMode.ZONE_FILL;
-    return true;
-  }
-
-  if (layout.generateBtn.contains(mx, my)) {
-    // Fill all "None" admin cells with the currently selected admin type (or first non-None)
-    int target = (activeAdminIndex >= 0) ? activeAdminIndex : 0;
-    if (target >= 0 && target < mapModel.adminZones.size() && mapModel.cells != null) {
-      for (Cell c : mapModel.cells) {
-        int idx = mapModel.indexOfCell(c);
-        mapModel.addCellToAdminZone(idx, target);
-      }
-    }
-    return true;
-  }
-
-  if (layout.resetBtn.contains(mx, my)) {
-    mapModel.resetAllAdminsToNone();
-    activeAdminIndex = 0;
-    editingAdminNameIndex = -1;
-    return true;
-  }
-
-  int nTypes = mapModel.adminZones.size();
-
-  if (layout.addBtn.contains(mx, my)) {
-    mapModel.addAdminType();
-    activeAdminIndex = mapModel.adminZones.size() - 1;
-    return true;
-  }
-
-  boolean canRemove = nTypes > 1 && activeAdminIndex > 0;
-  if (canRemove && layout.removeBtn.contains(mx, my)) {
-    mapModel.removeAdminType(activeAdminIndex);
-    activeAdminIndex = constrain(activeAdminIndex - 1, 0, mapModel.adminZones.size() - 1);
-    editingAdminNameIndex = -1;
-    return true;
-  }
-
-  for (int i = 0; i < nTypes; i++) {
-    IntRect sw = layout.swatches.get(i);
-    if (sw.contains(mx, my)) {
-      activeAdminIndex = i;
-      return true;
-    }
-  }
-
-  if (layout.nameField.contains(mx, my) && activeAdminIndex >= 0 && activeAdminIndex < nTypes) {
-    editingAdminNameIndex = activeAdminIndex;
-    adminNameDraft = mapModel.adminZones.get(activeAdminIndex).name;
-    return true;
-  }
-
-  if (layout.hueSlider.contains(mx, my) && activeAdminIndex >= 0 && activeAdminIndex < nTypes) {
-    float t = (mx - layout.hueSlider.x) / (float)layout.hueSlider.w;
-    t = constrain(t, 0, 1);
-    MapModel.AdminZone zt = mapModel.adminZones.get(activeAdminIndex);
-    zt.hue01 = t;
-    zt.updateColorFromHSB();
-    activeSlider = SLIDER_ADMIN_HUE;
-    return true;
-  }
-
   if (layout.brushSlider.contains(mx, my)) {
     float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
     zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
@@ -368,6 +306,61 @@ boolean handleAdminPanelClick(int mx, int my) {
     return true;
   }
 
+  if (layout.resetBtn.contains(mx, my)) {
+    mapModel.resetAllAdminsToNone();
+    activeAdminIndex = -1;
+    editingAdminNameIndex = -1;
+    return true;
+  }
+
+  if (layout.regenerateBtn.contains(mx, my)) {
+    int target = max(3, mapModel.adminZones.size());
+    mapModel.regenerateRandomAdminZones(target);
+    activeAdminIndex = !mapModel.adminZones.isEmpty() ? 0 : -1;
+    editingAdminNameIndex = -1;
+    return true;
+  }
+
+  return false;
+}
+
+boolean handleAdminListPanelClick(int mx, int my) {
+  if (!isInAdminListPanel(mx, my)) return false;
+  AdminListLayout layout = buildAdminListLayout();
+  populateAdminRows(layout);
+
+  if (layout.newBtn.contains(mx, my)) {
+    mapModel.addAdminType();
+    activeAdminIndex = mapModel.adminZones.size() - 1;
+    return true;
+  }
+
+  for (int i = 0; i < layout.rows.size(); i++) {
+    MapModel.AdminZone az = mapModel.adminZones.get(i);
+    AdminRowLayout row = layout.rows.get(i);
+
+    if (row.selectRect.contains(mx, my)) {
+      activeAdminIndex = i;
+      editingAdminNameIndex = -1;
+      return true;
+    }
+
+    if (row.nameRect.contains(mx, my)) {
+      activeAdminIndex = i;
+      editingAdminNameIndex = i;
+      adminNameDraft = az.name;
+      return true;
+    }
+
+    if (row.hueSlider.contains(mx, my)) {
+      activeAdminIndex = i;
+      float t = constrain((mx - row.hueSlider.x) / (float)row.hueSlider.w, 0, 1);
+      az.hue01 = t;
+      az.updateColorFromHSB();
+      activeSlider = SLIDER_ADMIN_ROW_HUE;
+      return true;
+    }
+  }
   return false;
 }
 
@@ -461,6 +454,8 @@ void mousePressed() {
   // Admin panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ADMIN) {
     if (handleAdminPanelClick(mouseX, mouseY)) return;
+    if (handleAdminListPanelClick(mouseX, mouseY)) return;
+    if (isInAdminListPanel(mouseX, mouseY)) return;
   }
 
   // Elevation panel
@@ -497,6 +492,7 @@ void mousePressed() {
   // Ignore world interaction if inside any top UI area
   if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
   if (isInActivePanel(mouseX, mouseY)) return;
+  if (currentTool == Tool.EDIT_ADMIN && isInAdminListPanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_PATHS && isInPathsListPanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_STRUCTURES && isInStructuresListPanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_LABELS && isInLabelsListPanel(mouseX, mouseY)) return;

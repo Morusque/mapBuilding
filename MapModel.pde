@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.ArrayDeque;
 import java.util.PriorityQueue;
 import java.util.Collections;
+import java.util.Arrays;
 
 class MapModel {
   // World bounds in world coordinates
@@ -2158,6 +2159,69 @@ class MapModel {
     if (adminZones == null) return;
     for (AdminZone az : adminZones) {
       if (az != null) az.cells.clear();
+    }
+  }
+
+  void regenerateRandomAdminZones(int targetZones) {
+    if (cells == null || cells.isEmpty()) return;
+    int n = cells.size();
+    int zoneCount = max(1, targetZones);
+    adminZones.clear();
+
+    // Create zones with random hues
+    for (int i = 0; i < zoneCount; i++) {
+      float h = random(1.0f);
+      int col = hsb01ToRGB(h, 0.6f, 0.95f);
+      adminZones.add(new AdminZone("Zone" + (i + 1), col));
+    }
+
+    ensureCellNeighborsComputed();
+    ArrayList<Integer> indices = new ArrayList<Integer>();
+    for (int i = 0; i < n; i++) indices.add(i);
+    Collections.shuffle(indices);
+
+    int seedPerZone = max(1, n / zoneCount);
+    int idx = 0;
+
+    // Seed assignment
+    for (int z = 0; z < zoneCount && idx < indices.size(); z++) {
+      int ci = indices.get(idx++);
+      addCellToAdminZone(ci, z);
+    }
+
+    // Multi-source growth with random chunk sizes
+    int[] zoneForCell = new int[n];
+    Arrays.fill(zoneForCell, -1);
+    for (int z = 0; z < adminZones.size(); z++) {
+      for (int ci : adminZones.get(z).cells) {
+        if (ci >= 0 && ci < n) zoneForCell[ci] = z;
+      }
+    }
+
+    ArrayDeque<Integer> queue = new ArrayDeque<Integer>();
+    for (int i = 0; i < n; i++) {
+      if (zoneForCell[i] >= 0) queue.add(i);
+    }
+
+    while (!queue.isEmpty()) {
+      int ci = queue.removeFirst();
+      int z = zoneForCell[ci];
+      ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        if (zoneForCell[nb] >= 0) continue;
+        zoneForCell[nb] = z;
+        queue.add(nb);
+      }
+    }
+
+    // Write back memberships
+    for (int ci = 0; ci < n; ci++) {
+      int z = zoneForCell[ci];
+      if (z >= 0 && z < adminZones.size()) {
+        adminZones.get(z).cells.add(ci);
+      }
     }
   }
 

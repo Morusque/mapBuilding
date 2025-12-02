@@ -173,18 +173,6 @@ void mouseDragged() {
   // Admin: slider dragging
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ADMIN && isInAdminPanel(mouseX, mouseY)) {
     AdminLayout layout = buildAdminLayout();
-    int n = (mapModel.adminZones == null) ? 0 : mapModel.adminZones.size();
-    if (n > 0 && activeAdminIndex >= 0 && activeAdminIndex < n) {
-      if (layout.hueSlider.contains(mouseX, mouseY)) {
-        float t = (mouseX - layout.hueSlider.x) / (float)layout.hueSlider.w;
-        t = constrain(t, 0, 1);
-        MapModel.AdminZone active = mapModel.adminZones.get(activeAdminIndex);
-        active.hue01 = t;
-        active.updateColorFromHSB();
-        activeSlider = SLIDER_ADMIN_HUE;
-        return;
-      }
-    }
     if (layout.brushSlider.contains(mouseX, mouseY)) {
       float t = constrain((mouseX - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
@@ -338,20 +326,25 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_ADMIN_HUE: {
-      AdminLayout l = buildAdminLayout();
-      float t = (mx - l.hueSlider.x) / (float)l.hueSlider.w;
-      t = constrain(t, 0, 1);
-      if (mapModel.adminZones != null && activeAdminIndex >= 0 && activeAdminIndex < mapModel.adminZones.size()) {
-        MapModel.AdminZone active = mapModel.adminZones.get(activeAdminIndex);
-        active.hue01 = t;
-        active.updateColorFromHSB();
-      }
+      // Deprecated: admin hue is edited via list panel per-row slider
       break;
     }
     case SLIDER_ADMIN_BRUSH: {
       AdminLayout l = buildAdminLayout();
       float t = constrain((mx - l.brushSlider.x) / (float)l.brushSlider.w, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
+      break;
+    }
+    case SLIDER_ADMIN_ROW_HUE: {
+      AdminListLayout l = buildAdminListLayout();
+      populateAdminRows(l);
+      if (activeAdminIndex >= 0 && activeAdminIndex < l.rows.size()) {
+        AdminRowLayout row = l.rows.get(activeAdminIndex);
+        float t = constrain((mx - row.hueSlider.x) / (float)row.hueSlider.w, 0, 1);
+        MapModel.AdminZone az = mapModel.adminZones.get(activeAdminIndex);
+        az.hue01 = t;
+        az.updateColorFromHSB();
+      }
       break;
     }
     case SLIDER_FLATTEST_BIAS: {
