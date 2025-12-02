@@ -196,8 +196,41 @@ class MapModel {
   void drawStructures(PApplet app) {
     if (structures == null) return;
     app.pushStyle();
-    for (Structure s : structures) {
+    for (int i = 0; i < structures.size(); i++) {
+      Structure s = structures.get(i);
       s.draw(app);
+      if (i == selectedStructureIndex) {
+        app.pushStyle();
+        app.noFill();
+        app.stroke(255, 180, 0, 200);
+        app.strokeWeight(3.0f / viewport.zoom);
+        app.rectMode(CENTER);
+        float pad = s.size * 0.15f;
+        app.pushMatrix();
+        app.translate(s.x, s.y);
+        app.rotate(s.angle);
+        float w = s.size;
+        float h = (s.shape == StructureShape.RECTANGLE && s.aspect != 0) ? (s.size / max(0.1f, s.aspect)) : s.size;
+        switch (s.shape) {
+          case RECTANGLE:
+          case SQUARE:
+            app.rect(0, 0, w + pad * 2, h + pad * 2);
+            break;
+          case CIRCLE:
+            app.ellipse(0, 0, w + pad * 2, w + pad * 2);
+            break;
+          case TRIANGLE:
+          case HEXAGON:
+            app.scale(1.05f); // small inflate
+            s.draw(app);
+            break;
+          default:
+            app.rect(0, 0, w + pad * 2, w + pad * 2);
+            break;
+        }
+        app.popMatrix();
+        app.popStyle();
+      }
     }
     app.popStyle();
   }

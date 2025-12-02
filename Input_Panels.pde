@@ -113,6 +113,10 @@ boolean handleToolButtonClick(int mx, int my) {
     int bx2 = x + buttonW;
     int by2 = y + (barH - 4);
     if (mx >= bx1 && mx <= bx2 && my >= by1 && my <= by2) {
+      // Clear selections when switching modes
+      selectedPathIndex = -1;
+      pendingPathStart = null;
+      selectedStructureIndex = -1;
       currentTool = tools[i];
       return true;
     }
@@ -502,6 +506,14 @@ void mousePressed() {
     isPanning = true;
     lastMouseX = mouseX;
     lastMouseY = mouseY;
+    // Deselect items on right-click
+    if (currentTool == Tool.EDIT_PATHS) {
+      selectedPathIndex = -1;
+      pendingPathStart = null;
+    }
+    if (currentTool == Tool.EDIT_STRUCTURES) {
+      selectedStructureIndex = -1;
+    }
     return;
   }
 

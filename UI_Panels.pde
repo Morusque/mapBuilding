@@ -154,8 +154,8 @@ void drawSitesPanel() {
   text("Keep properties", c.x + c.w + 6, g.y + g.h / 2);
 
   drawControlsHint(layout.panel,
-                   "Right-click pan; wheel zoom.",
-                   "Drag sites; DEL removes selected.");
+                   "right-click: pan; wheel: zoom.",
+                   "drag: drag; DEL: remove selected.");
 }
 
 // ----- Biomes PANEL -----
@@ -380,8 +380,8 @@ void drawBiomesPanel() {
   text("Brush radius", brush.x, brush.y - 4);
 
   drawControlsHint(layout.panel,
-                   "Drag to paint; Fill floods cell.",
-                   "Right-click pan; wheel zoom.");
+                   "left-click: paint/fill",
+                   "right-click: pan, wheel: zoom.");
 }
 
 // ----- ADMIN (Zones) PANEL -----
@@ -554,8 +554,8 @@ void drawAdminPanel() {
   text("Brush radius", brush.x, brush.y - 4);
 
   drawControlsHint(layout.panel,
-                   "Drag to paint zones.",
-                   "Right-click pan; wheel zoom.");
+                   "left-click: paint",
+                   "right-click pan; wheel: zoom.");
 }
 
 // ----- PATHS PANEL -----
@@ -858,8 +858,8 @@ void drawPathsPanel() {
   }
 
   drawControlsHint(layout.panel,
-                   "Click start/end to add; DEL cancels pending; C clears.",
-                   "Right-click pan; wheel zoom.");
+                   "left-click: start/end; DEL: cancels",
+                   "right-click: deselect+pan; wheel: zoom; C: clear");
 }
 
 void drawPathsListPanel() {
@@ -1065,8 +1065,8 @@ void drawElevationPanel() {
   text("Vary", layout.varyBtn.x + layout.varyBtn.w / 2, layout.varyBtn.y + layout.varyBtn.h / 2);
 
   drawControlsHint(layout.panel,
-                   "Drag to raise/lower; toggle Raise/Lower.",
-                   "Right-click pan; wheel zoom.");
+                   "left-click: raise/lower",
+                   "right-click: pan; wheel: zoom.");
 }
 
 // ----- LABELS PANEL -----
@@ -1143,8 +1143,8 @@ void drawLabelsPanel() {
   }
 
   drawControlsHint(layout.panel,
-                   "Type then click map to place/edit.",
-                   "Right-click pan; wheel zoom.");
+                   "left-click: place",
+                   "right-click pan; wheel: zoom");
 }
 
 LabelsListLayout buildLabelsListLayout() {
@@ -1371,8 +1371,8 @@ void drawStructuresPanelUI() {
   }
 
   drawControlsHint(layout.panel,
-                   "Click map to place; snaps to paths/frontiers/structures.",
-                   "Right-click pan; wheel zoom.");
+                   "left-click: place",
+                   "right-click: deselect+pan; wheel: zoom.");
 }
 
 // ----- STRUCTURES LIST (right panel) -----
@@ -1545,8 +1545,8 @@ void drawRenderPanel() {
   // Black/white toggle already drawn above with checks[8]
 
   drawControlsHint(layout.panel,
-                   "View only: toggles above.",
-                   "Right-click pan; wheel zoom.");
+                   "right-click: pan",
+                   "wheel: zoom");
 }
 
 // ---------- UI helpers ----------
