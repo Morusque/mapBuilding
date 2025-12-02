@@ -80,12 +80,8 @@ class MapModel {
     PathType t = getPathType(typeId);
     if (t == null || !t.taperOn) return weights;
 
-    // Build graph across all paths of this type
-    HashMap<String, ArrayList<String>> nodeEdges = new HashMap<String, ArrayList<String>>();
-    ArrayList<String> edgeKeys = new ArrayList<String>();
-    ArrayList<String> edgeNodesA = new ArrayList<String>();
-    ArrayList<String> edgeNodesB = new ArrayList<String>();
-
+    // Per-route taper: start weight depends on start touching water, end weight on end touching water.
+    // Anything not touching water uses the minimum weight.
     for (int pi = 0; pi < paths.size(); pi++) {
       Path p = paths.get(pi);
       if (p == null || p.typeId != typeId || !t.taperOn) continue;
@@ -93,79 +89,41 @@ class MapModel {
       for (int ri = 0; ri < p.routes.size(); ri++) {
         ArrayList<PVector> seg = p.routes.get(ri);
         if (seg == null || seg.size() < 2) continue;
+        boolean startWater = sampleElevationAt(seg.get(0).x, seg.get(0).y, seaLevel) <= seaLevel;
+        boolean endWater = sampleElevationAt(seg.get(seg.size() - 1).x, seg.get(seg.size() - 1).y, seaLevel) <= seaLevel;
+        float startW = startWater ? baseWeight : minWeight;
+        float endW = endWater ? baseWeight : minWeight;
+
+        // Total length for interpolation; fall back to index-based if degenerate.
+        float totalLen = 0;
+        float[] segLen = new float[seg.size() - 1];
         for (int si = 0; si < seg.size() - 1; si++) {
           PVector a = seg.get(si);
           PVector b = seg.get(si + 1);
-          String na = keyFor(a.x, a.y);
-          String nb = keyFor(b.x, b.y);
+          float dx = b.x - a.x;
+          float dy = b.y - a.y;
+          float len = sqrt(dx * dx + dy * dy);
+          segLen[si] = len;
+          totalLen += len;
+        }
+        float acc = 0;
+        for (int si = 0; si < seg.size() - 1; si++) {
+          float midT;
+          if (totalLen > 1e-6f) {
+            midT = (acc + segLen[si] * 0.5f) / totalLen;
+          } else {
+            midT = (seg.size() <= 1) ? 0 : (si / max(1.0f, (seg.size() - 1.0f)));
+          }
+          float w = lerp(startW, endW, constrain(midT, 0, 1));
+          w = constrain(w, minWeight, baseWeight);
           String ek = pi + ":" + ri + ":" + si;
-          edgeKeys.add(ek);
-          edgeNodesA.add(na);
-          edgeNodesB.add(nb);
-          addEdgeToNode(nodeEdges, na, ek);
-          addEdgeToNode(nodeEdges, nb, ek);
+          weights.put(ek, w);
+          acc += segLen[si];
         }
       }
     }
 
-    int eCount = edgeKeys.size();
-    if (eCount == 0) return weights;
-
-    // Identify sink edges that touch water
-    ArrayDeque<Integer> queue = new ArrayDeque<Integer>();
-    int[] depth = new int[eCount];
-    boolean[] visited = new boolean[eCount];
-    boolean anyWater = false;
-    for (int ei = 0; ei < eCount; ei++) {
-      String na = edgeNodesA.get(ei);
-      String nb = edgeNodesB.get(ei);
-      PVector pa = snapNodes.get(na);
-      PVector pb = snapNodes.get(nb);
-      boolean aWater = (pa != null && sampleElevationAt(pa.x, pa.y, seaLevel) <= seaLevel);
-      boolean bWater = (pb != null && sampleElevationAt(pb.x, pb.y, seaLevel) <= seaLevel);
-      if (aWater || bWater) {
-        queue.add(ei);
-        visited[ei] = true;
-        depth[ei] = 0;
-        anyWater = true;
-      }
-    }
-
-    // BFS to assign depths across shared nodes
-    while (!queue.isEmpty()) {
-      int ei = queue.removeFirst();
-      String na = edgeNodesA.get(ei);
-      String nb = edgeNodesB.get(ei);
-      for (String node : new String[] { na, nb }) {
-        ArrayList<String> adj = nodeEdges.get(node);
-        if (adj == null) continue;
-        for (String ek : adj) {
-          int nbEi = edgeKeys.indexOf(ek);
-          if (nbEi < 0 || visited[nbEi]) continue;
-          visited[nbEi] = true;
-          depth[nbEi] = depth[ei] + 1;
-          queue.add(nbEi);
-        }
-      }
-    }
-
-    float decay = 0.9f;
-    for (int ei = 0; ei < eCount; ei++) {
-      int d = visited[ei] ? depth[ei] : (anyWater ? depth[ei] + 50 : 50);
-      float w = baseWeight * pow(decay, d);
-      w = max(minWeight, w);
-      weights.put(edgeKeys.get(ei), w);
-    }
     return weights;
-  }
-
-  void addEdgeToNode(HashMap<String, ArrayList<String>> nodeEdges, String node, String edgeKey) {
-    ArrayList<String> list = nodeEdges.get(node);
-    if (list == null) {
-      list = new ArrayList<String>();
-      nodeEdges.put(node, list);
-    }
-    if (!list.contains(edgeKey)) list.add(edgeKey);
   }
 
   float[] rgbToHSB(int c) {
@@ -940,7 +898,6 @@ class MapModel {
     for (int i = 0; i < paths.size(); i++) {
       Path p = paths.get(i);
       if (p.routes.isEmpty()) continue;
-      println("[PATH DRAW] #" + i + " routes=" + p.routes.size() + " segments=" + p.segmentCount());
       PathType pt = getPathType(p.typeId);
       int col = (pt != null) ? pt.col : strokeCol;
       float w = (pt != null) ? pt.weightPx : 2.0f;

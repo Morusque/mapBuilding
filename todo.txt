@@ -16,12 +16,10 @@ Zones :
 Paths :
 (later) needs more optimization
 (later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
-(later) if a segment exists at one node for a given path, don't add a second segment for the same path at the same place on top of it, it already exists.
-(later) tapered paths sometimes feel buggy (large weights away from water)
 
 Struct :
-(maybe later) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.
-(maybe later) structres should be removable, grouppable, and displayed as a list.
+(soon) add other kind of structures : rectangles, regular polygons, circles, all with appropriate sliders if needed.
+(soon) structres should be removable, grouppable, and displayed as a list.
 (later) snapping magnetism should probably be zoom-invarient (so that if we need more precision we can zoom and the snap is relatively smaller)
 
 Labels :
@@ -38,6 +36,7 @@ Rendering :
 (later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed).
 (later) Exporting the legend for reference.
 (later) Comments exportable as custom format
+(later) in this specific mode, paths should not show node points
 
 Editable types : (for anywhere applicable: paths, biomes, etc)
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
@@ -51,5 +50,5 @@ General :
 (later) Refactor, optimize etc.
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
 (later) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
-(maybe later) on each panel, find a place to write non UI controls (role mouse buttons, wheel, keys such as DEL etc)
+(soon) on each panel, find a place to write non UI controls (role mouse buttons, wheel, keys such as DEL etc)
 (later) option to generate details (about everything) for zooming
