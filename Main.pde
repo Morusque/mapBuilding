@@ -217,7 +217,7 @@ void draw() {
   pushMatrix();
   viewport.applyTransform(this);
 
-  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS);
+  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS || currentTool == Tool.EDIT_ZONES);
   boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER && !renderShowZones);
   if (currentTool == Tool.EDIT_RENDER) {
     if (renderShowZones) {
@@ -228,14 +228,17 @@ void draw() {
                                     renderWaterContours, true, renderLightAzimuthDeg, renderLightAltitudeDeg, 0);
     }
   } else if (currentTool == Tool.EDIT_PATHS) {
-    mapModel.drawCellsRender(this, showBorders, seaLevel);
+    mapModel.drawCellsRender(this, showBorders, seaLevel, true);
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
-    mapModel.drawCellsRender(this, showBorders, seaLevel);
+    mapModel.drawCellsRender(this, showBorders, seaLevel, true);
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
     mapModel.drawStructureSnapGuides(this, seaLevel);
   } else if (currentTool == Tool.EDIT_LABELS) {
-    mapModel.drawCellsRender(this, showBorders, seaLevel);
+    mapModel.drawCellsRender(this, showBorders, seaLevel, true);
+    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
+  } else if (currentTool == Tool.EDIT_ZONES) {
+    mapModel.drawCellsRender(this, showBorders, seaLevel, true);
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
   } else if (drawCellsFlag) {
     mapModel.drawCells(this, showBorders);

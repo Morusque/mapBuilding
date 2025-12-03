@@ -580,6 +580,7 @@ class PathsListLayout {
   IntRect panel;
   int titleY;
   IntRect newBtn;
+  IntRect deselectBtn;
   ArrayList<PathRowLayout> rows = new ArrayList<PathRowLayout>();
 }
 
@@ -665,6 +666,7 @@ PathsListLayout buildPathsListLayout() {
   l.titleY = y + PANEL_PADDING;
   int newBtnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
   l.newBtn = new IntRect(x + PANEL_PADDING, newBtnY, 90, PANEL_BUTTON_H);
+  l.deselectBtn = new IntRect(l.newBtn.x + l.newBtn.w + 8, newBtnY, 90, PANEL_BUTTON_H);
   return l;
 }
 
@@ -859,7 +861,7 @@ void drawPathsPanel() {
 
   drawControlsHint(layout.panel,
                    "left-click: start/end; DEL: cancels",
-                   "right-click: deselect+pan; wheel: zoom; C: clear");
+                   "right-click: pan; wheel: zoom; C: clear; use Deselect to unselect");
 }
 
 void drawPathsListPanel() {
@@ -931,9 +933,11 @@ void drawPathsListPanel() {
   }
 
   drawBevelButton(layout.newBtn.x, layout.newBtn.y, layout.newBtn.w, layout.newBtn.h, false);
+  drawBevelButton(layout.deselectBtn.x, layout.deselectBtn.y, layout.deselectBtn.w, layout.deselectBtn.h, false);
   fill(10);
   textAlign(CENTER, CENTER);
   text("New Path", layout.newBtn.x + layout.newBtn.w / 2, layout.newBtn.y + layout.newBtn.h / 2);
+  text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
 }
 
 // ----- ELEVATION PANEL -----
@@ -1372,13 +1376,14 @@ void drawStructuresPanelUI() {
 
   drawControlsHint(layout.panel,
                    "left-click: place",
-                   "right-click: deselect+pan; wheel: zoom.");
+                   "right-click: pan; wheel: zoom; use Deselect to unselect");
 }
 
 // ----- STRUCTURES LIST (right panel) -----
 class StructuresListLayout {
   IntRect panel;
   int titleY;
+  IntRect deselectBtn;
   ArrayList<StructureRowLayout> rows = new ArrayList<StructureRowLayout>();
 }
 
@@ -1395,13 +1400,15 @@ StructuresListLayout buildStructuresListLayout() {
   int y = panelTop();
   l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
   l.titleY = y + PANEL_PADDING;
+  int btnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  l.deselectBtn = new IntRect(x + PANEL_PADDING, btnY, 90, PANEL_BUTTON_H);
   return l;
 }
 
 void populateStructuresListRows(StructuresListLayout layout) {
   layout.rows.clear();
   int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  int curY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
   int rowH = 24;
   for (int i = 0; i < mapModel.structures.size(); i++) {
@@ -1427,6 +1434,11 @@ void drawStructuresListPanel() {
   textAlign(LEFT, TOP);
   text("Structures", labelX, curY);
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  drawBevelButton(layout.deselectBtn.x, layout.deselectBtn.y, layout.deselectBtn.w, layout.deselectBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
 
   for (int i = 0; i < layout.rows.size(); i++) {
     StructureRowLayout row = layout.rows.get(i);

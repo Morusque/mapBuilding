@@ -15,8 +15,7 @@ Biomes :
 Zones :
 (soon) make the generation depend more on whatever is already on the map (eg propagation priority lowered by biome change, big elevation changes, etc)
 (soon) allow shared borders to be seen for both zones
-(soon) zones default names aren't numerically consistent
-(soon) zone hue slider only makes sense if saturated enough
+(later) options to allow overlapping or not (groups?)
 
 Paths :
 (later) needs more optimization or threading so not to hang anything
@@ -28,16 +27,18 @@ Paths :
 (soon) put eraser back
 (soon) refine logic for types (and show colors on the right side menu)
 (soon) assign placing strategies to types
-(soon) using right click to move map also unselects path and that's bad, add a button next to "new path" for now
 
 Struct :
 (later) structures should be groupable
 (soon) some ui on the right panel for per-struct parameters (can be displayed once on top of the list for selected struct): name, size, type, angle, color (allow transparent)
-(soon) using right click to move map also unselects struct and that's probably bad, add a button next to "new struct" for now
+(later) structure should snap to zones
+(later) there should be checkboxes to what the structures can snap to: water, biomes, underwater biomes, zones, paths, other structures (only show snapping feedback overlay lines when snapping for a given feature is enabled)
 
 Labels :
 (soon) Label should be attributed to one or more elements on the map, or more arbitrarily placed, with assiciated default values (revise the way this was done)
 (soon) use label types as layers to display only certains things and associate labels to them
+(later) the left panel text input should be removed, a new label string should always be "label" if nothing selected, or copy of selected name if any label selected
+(later) deselect button on top of the list
 
 Rendering :
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
@@ -64,3 +65,4 @@ General :
 (soon) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
 (later) option to generate details (about everything) for zooming
 (soon) ui indications could be more than two lines instead of using "; "
+(later) very top panel should have a little bit more padding on the bottom, jus a few px to allow bottom of text to be good visually

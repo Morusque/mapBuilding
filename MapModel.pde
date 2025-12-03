@@ -63,11 +63,12 @@ class MapModel {
 
     MapZone(String name, int col) {
       this.name = name;
-      this.col = col;
       float[] hsb = rgbToHSB(col);
+      float[] sb = zoneBaseSatBri();
       hue01 = hsb[0];
-      sat01 = hsb[1];
-      bri01 = hsb[2];
+      sat01 = sb[0];
+      bri01 = sb[1];
+      this.col = hsb01ToRGB(hue01, sat01, bri01);
     }
 
     void updateColorFromHSB() {
@@ -133,6 +134,25 @@ class MapModel {
     return hsb;
   }
 
+  float[] zoneBaseSatBri() {
+    float[] sb = new float[2];
+    if (ZONE_PRESETS != null && ZONE_PRESETS.length > 1) {
+      float[] hsb = new float[3];
+      rgbToHSB01(ZONE_PRESETS[1].col, hsb);
+      sb[0] = hsb[1];
+      sb[1] = hsb[2];
+    } else {
+      sb[0] = 0.7f;
+      sb[1] = 0.9f;
+    }
+    return sb;
+  }
+
+  int zoneColorForHue(float hue) {
+    float[] sb = zoneBaseSatBri();
+    return hsb01ToRGB(hue, sb[0], sb[1]);
+  }
+
   // ---------- Drawing ----------
 
   void drawDebugWorldBounds(PApplet app) {
@@ -162,6 +182,10 @@ class MapModel {
 
   // Rendering-mode cell draw: keep underwater cells plain blue (no biome tint)
   void drawCellsRender(PApplet app, boolean showBorders, float seaLevel) {
+    drawCellsRender(app, showBorders, seaLevel, false);
+  }
+
+  void drawCellsRender(PApplet app, boolean showBorders, float seaLevel, boolean desaturate) {
     if (cells == null) return;
     app.pushStyle();
     for (Cell c : cells) {
@@ -170,6 +194,12 @@ class MapModel {
       if (biomeTypes != null && c.biomeId >= 0 && c.biomeId < biomeTypes.size()) {
         ZoneType zt = biomeTypes.get(c.biomeId);
         col = zt.col;
+      }
+      if (desaturate) {
+        float[] hsb = rgbToHSB(col);
+        hsb[1] = constrain(hsb[1] * 0.82f, 0, 1);
+        hsb[2] = constrain(hsb[2] * 1.05f, 0, 1);
+        col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
       }
       if (renderBlackWhite) {
         float shade = brightness(col);
@@ -2201,10 +2231,10 @@ class MapModel {
     int zoneCount = max(1, targetZones);
     zones.clear();
 
-    // Create zones with random hues
+    // Create zones with random hues (shared saturation/brightness)
     for (int i = 0; i < zoneCount; i++) {
       float h = random(1.0f);
-      int col = hsb01ToRGB(h, 0.6f, 0.95f);
+      int col = zoneColorForHue(h);
       zones.add(new MapZone("Zone" + (i + 1), col));
     }
 
@@ -2452,8 +2482,9 @@ class MapModel {
   void addZone() {
     int idx = zones.size();
     ZonePreset preset = (idx < ZONE_PRESETS.length) ? ZONE_PRESETS[idx] : null;
-    int col = (preset != null) ? preset.col : hsb01ToRGB(0.1f * (idx + 1), 0.5f, 0.95f);
-    zones.add(new MapZone("Zone" + idx, col));
+    float baseHue = (preset != null) ? rgbToHSB(preset.col)[0] : (0.1f * (idx + 1));
+    int col = zoneColorForHue(baseHue);
+    zones.add(new MapZone("Zone" + (idx + 1), col));
   }
 
   void addPathType(PathType pt) {

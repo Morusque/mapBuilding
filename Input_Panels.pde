@@ -506,14 +506,6 @@ void mousePressed() {
     isPanning = true;
     lastMouseX = mouseX;
     lastMouseY = mouseY;
-    // Deselect items on right-click
-    if (currentTool == Tool.EDIT_PATHS) {
-      selectedPathIndex = -1;
-      pendingPathStart = null;
-    }
-    if (currentTool == Tool.EDIT_STRUCTURES) {
-      selectedStructureIndex = -1;
-    }
     return;
   }
 
@@ -745,6 +737,13 @@ boolean handlePathsListPanelClick(int mx, int my) {
   PathsListLayout layout = buildPathsListLayout();
   populatePathsListRows(layout);
 
+  if (layout.deselectBtn.contains(mx, my)) {
+    selectedPathIndex = -1;
+    pendingPathStart = null;
+    editingPathNameIndex = -1;
+    return true;
+  }
+
   // New path button
   if (layout.newBtn.contains(mx, my)) {
     Path np = new Path();
@@ -837,6 +836,11 @@ boolean handleStructuresListPanelClick(int mx, int my) {
   if (!isInStructuresListPanel(mx, my)) return false;
   StructuresListLayout layout = buildStructuresListLayout();
   populateStructuresListRows(layout);
+
+  if (layout.deselectBtn.contains(mx, my)) {
+    selectedStructureIndex = -1;
+    return true;
+  }
 
   for (int i = 0; i < layout.rows.size(); i++) {
     StructureRowLayout row = layout.rows.get(i);
