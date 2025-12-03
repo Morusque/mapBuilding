@@ -3,10 +3,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.ArrayDeque;
 import java.util.PriorityQueue;
+import java.util.Comparator;
 import java.util.Collections;
 import java.util.Arrays;
 
 class MapModel {
+  // Zone style constants
+  final float ZONE_BASE_SAT = 0.78f;
+  final float ZONE_BASE_BRI = 0.9f;
   // World bounds in world coordinates
   float minX = 0.0f;
   float minY = 0.0f;
@@ -72,7 +76,9 @@ class MapModel {
     }
 
     void updateColorFromHSB() {
-      col = hsb01ToRGB(hue01, sat01, bri01);
+      col = hsb01ToRGB(hue01, ZONE_BASE_SAT, ZONE_BASE_BRI);
+      sat01 = ZONE_BASE_SAT;
+      bri01 = ZONE_BASE_BRI;
     }
   }
 
@@ -136,21 +142,27 @@ class MapModel {
 
   float[] zoneBaseSatBri() {
     float[] sb = new float[2];
-    if (ZONE_PRESETS != null && ZONE_PRESETS.length > 1) {
-      float[] hsb = new float[3];
-      rgbToHSB01(ZONE_PRESETS[1].col, hsb);
-      sb[0] = hsb[1];
-      sb[1] = hsb[2];
-    } else {
-      sb[0] = 0.7f;
-      sb[1] = 0.9f;
-    }
+    sb[0] = ZONE_BASE_SAT;
+    sb[1] = ZONE_BASE_BRI;
     return sb;
   }
 
   int zoneColorForHue(float hue) {
     float[] sb = zoneBaseSatBri();
     return hsb01ToRGB(hue, sb[0], sb[1]);
+  }
+
+  // Van der Corput sequence in base 2 to spread hues: 0, 0.5, 0.25, 0.75, 0.125, ...
+  float distributedHueForIndex(int idx) {
+    int n = max(0, idx);
+    float v = 0;
+    float denom = 2.0f;
+    while (n > 0) {
+      v += (n & 1) * (1.0f / denom);
+      denom *= 2.0f;
+      n >>= 1;
+    }
+    return v;
   }
 
   // ---------- Drawing ----------
@@ -276,58 +288,126 @@ class MapModel {
 
   void drawZoneOutlines(PApplet app) {
     if (cells == null || zones == null) return;
+    ensureCellNeighborsComputed();
+    int n = cells.size();
+    if (n == 0 || zones.isEmpty()) return;
+
+    // Zone memberships per cell (allow multiple zones); empty list = no zone.
+    ArrayList<ArrayList<Integer>> zoneForCell = new ArrayList<ArrayList<Integer>>(n);
+    for (int i = 0; i < n; i++) zoneForCell.add(new ArrayList<Integer>());
+    for (int zi = 0; zi < zones.size(); zi++) {
+      MapZone z = zones.get(zi);
+      if (z == null || z.cells == null) continue;
+      for (int ci : z.cells) {
+        if (ci < 0 || ci >= n) continue;
+        ArrayList<Integer> list = zoneForCell.get(ci);
+        if (!list.contains(zi)) list.add(zi);
+      }
+    }
+
+    float eps2 = 1e-8f;
+    float baseW = 2.0f / viewport.zoom;
+    HashSet<String> drawn = new HashSet<String>();
+
     app.pushStyle();
     app.noFill();
-    ensureCellNeighborsComputed();
-    float eps2 = 1e-8f;
-    int typeCount = zones.size();
 
-    for (int z = 0; z < zones.size(); z++) {
-      MapZone zone = zones.get(z);
-      if (zone == null || zone.cells.isEmpty()) continue;
-      int col = (z >= 0 && z < typeCount) ? zone.col : color(0);
-      HashSet<String> drawn = new HashSet<String>();
+    for (int ci = 0; ci < n; ci++) {
+      Cell c = cells.get(ci);
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      ArrayList<Integer> zonesA = zoneForCell.get(ci);
+      if (zonesA == null || zonesA.isEmpty()) continue; // No zone -> no outline
+      int primaryA = zonesA.get(0);
+      int vc = c.vertices.size();
+      for (int e = 0; e < vc; e++) {
+        PVector a = c.vertices.get(e);
+        PVector b = c.vertices.get((e + 1) % vc);
+        String key = undirectedEdgeKey(a, b);
+        if (drawn.contains(key)) continue;
 
-      for (int ci : zone.cells) {
-        if (ci < 0 || ci >= cells.size()) continue;
-        Cell c = cells.get(ci);
-        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
-        for (int e = 0; e < c.vertices.size(); e++) {
-          PVector a = c.vertices.get(e);
-          PVector b = c.vertices.get((e + 1) % c.vertices.size());
-          String k = undirectedEdgeKey(a, b);
-          if (drawn.contains(k)) continue;
-
-          boolean sharedWithZone = false;
-          ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
-          if (nbs != null) {
-            for (int nbIdx : nbs) {
-              if (!zone.cells.contains(nbIdx)) continue;
-              Cell nb = cells.get(nbIdx);
-              if (nb == null || nb.vertices == null) continue;
-              int nv = nb.vertices.size();
-              for (int j = 0; j < nv; j++) {
-                PVector na = nb.vertices.get(j);
-                PVector nbp = nb.vertices.get((j + 1) % nv);
-                boolean match = distSq(a, na) < eps2 && distSq(b, nbp) < eps2;
-                boolean matchRev = distSq(a, nbp) < eps2 && distSq(b, na) < eps2;
-                if (match || matchRev) {
-                  sharedWithZone = true;
-                  break;
-                }
+        ArrayList<Integer> zonesB = null;
+        int primaryB = -1;
+        int matchNbIdx = -1;
+        ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
+        if (nbs != null) {
+          for (int nbIdx : nbs) {
+            if (nbIdx < 0 || nbIdx >= n) continue;
+            Cell nb = cells.get(nbIdx);
+            if (nb == null || nb.vertices == null) continue;
+            int nv = nb.vertices.size();
+            for (int j = 0; j < nv; j++) {
+              PVector na = nb.vertices.get(j);
+              PVector nbp = nb.vertices.get((j + 1) % nv);
+              boolean match = distSq(a, na) < eps2 && distSq(b, nbp) < eps2;
+              boolean matchRev = distSq(a, nbp) < eps2 && distSq(b, na) < eps2;
+              if (match || matchRev) {
+                zonesB = zoneForCell.get(nbIdx);
+                primaryB = (zonesB != null && !zonesB.isEmpty()) ? zonesB.get(0) : -1;
+                matchNbIdx = nbIdx;
+                break;
               }
-              if (sharedWithZone) break;
+            }
+            if (matchNbIdx != -1) break;
+          }
+        }
+
+        // Skip pure interior edges.
+        if (zonesB != null && !zonesB.isEmpty()) {
+          boolean shareZone = false;
+          for (int z : zonesA) {
+            if (zonesB.contains(z)) {
+              shareZone = true;
+              break;
             }
           }
-
-          if (!sharedWithZone) {
-            app.stroke(col);
-            app.strokeWeight(2.0f / viewport.zoom);
-            app.line(a.x, a.y, b.x, b.y);
+          if (shareZone) {
+            drawn.add(key);
+            continue;
           }
-
-          drawn.add(k);
+        } else {
+          // Neighbor has no zones; no outline when touching unzoned cells
+          drawn.add(key);
+          continue;
         }
+
+        if (primaryA < 0) {
+          drawn.add(key);
+          continue;
+        }
+
+        PVector cenA = cellCentroid(c);
+        PVector cenB = (matchNbIdx >= 0 && matchNbIdx < n) ? cellCentroid(cells.get(matchNbIdx)) : null;
+        PVector mid = new PVector((a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f);
+        PVector edgeDir = new PVector(b.x - a.x, b.y - a.y);
+        PVector nrm = new PVector(-edgeDir.y, edgeDir.x);
+        float nLen = max(1e-6f, sqrt(nrm.x * nrm.x + nrm.y * nrm.y));
+        nrm.mult(1.0f / nLen);
+        // Orient normal toward cell A
+        if (cenA != null) {
+          PVector toCenter = PVector.sub(cenA, mid);
+          if (toCenter.dot(nrm) < 0) nrm.mult(-1);
+        }
+        float offset = 3.0f / viewport.zoom;
+        PVector offA = new PVector(nrm.x * offset, nrm.y * offset);
+        PVector offB = new PVector(-nrm.x * offset, -nrm.y * offset);
+
+        // Base subtle outline for separation
+        app.stroke(40, 120);
+        app.strokeWeight(baseW * 0.9f);
+        app.line(a.x + offA.x * 0.5f, a.y + offA.y * 0.5f, b.x + offA.x * 0.5f, b.y + offA.y * 0.5f);
+
+        if (primaryA >= 0 && primaryA < zones.size()) {
+          app.stroke(zones.get(primaryA).col, 240);
+          app.strokeWeight(baseW);
+          app.line(a.x + offA.x, a.y + offA.y, b.x + offA.x, b.y + offA.y);
+        }
+        if (primaryB >= 0 && primaryB < zones.size()) {
+          app.stroke(zones.get(primaryB).col, 240);
+          app.strokeWeight(baseW * 0.9f);
+          app.line(a.x + offB.x, a.y + offB.y, b.x + offB.x, b.y + offB.y);
+        }
+
+        drawn.add(key);
       }
     }
 
@@ -1844,6 +1924,14 @@ class MapModel {
     }
   }
 
+  void removeCellFromAllZones(int cellIdx) {
+    if (zones == null || cellIdx < 0 || cells == null || cellIdx >= cells.size()) return;
+    for (MapZone az : zones) {
+      if (az == null || az.cells == null) continue;
+      az.cells.remove((Integer)cellIdx);
+    }
+  }
+
   boolean cellInZone(int cellIdx, int zoneIdx) {
     if (zones == null || zoneIdx < 0 || zoneIdx >= zones.size()) return false;
     MapZone az = zones.get(zoneIdx);
@@ -2269,10 +2357,7 @@ class MapModel {
   }
 
   void resetAllZonesToNone() {
-    if (zones == null) return;
-    for (MapZone az : zones) {
-      if (az != null) az.cells.clear();
-    }
+    if (zones != null) zones.clear();
   }
 
   void regenerateRandomZones(int targetZones) {
@@ -2283,53 +2368,73 @@ class MapModel {
 
     // Create zones with random hues (shared saturation/brightness)
     for (int i = 0; i < zoneCount; i++) {
-      float h = random(1.0f);
+      float h = distributedHueForIndex(i);
       int col = zoneColorForHue(h);
       zones.add(new MapZone("Zone" + (i + 1), col));
     }
 
     ensureCellNeighborsComputed();
+
+    // Seed assignment (random cells become seeds)
     ArrayList<Integer> indices = new ArrayList<Integer>();
     for (int i = 0; i < n; i++) indices.add(i);
     Collections.shuffle(indices);
 
-    int seedPerZone = max(1, n / zoneCount);
-    int idx = 0;
+    int[] zoneForCell = new int[n];
+    float[] zoneCost = new float[n];
+    Arrays.fill(zoneForCell, -1);
+    Arrays.fill(zoneCost, Float.MAX_VALUE);
 
-    // Seed assignment
+    PriorityQueue<Integer> frontier = new PriorityQueue<Integer>(n, new Comparator<Integer>() {
+      public int compare(Integer a, Integer b) {
+        return Float.compare(zoneCost[a], zoneCost[b]);
+      }
+    });
+
+    int idx = 0;
     for (int z = 0; z < zoneCount && idx < indices.size(); z++) {
       int ci = indices.get(idx++);
-      addCellToZone(ci, z);
+      zoneForCell[ci] = z;
+      zoneCost[ci] = 0.0f;
+      frontier.add(ci);
     }
 
-    // Multi-source growth with random chunk sizes
-    int[] zoneForCell = new int[n];
-    Arrays.fill(zoneForCell, -1);
-    for (int z = 0; z < zones.size(); z++) {
-      for (int ci : zones.get(z).cells) {
-        if (ci >= 0 && ci < n) zoneForCell[ci] = z;
-      }
-    }
+    // Weighted expansion: discourage big elevation jumps and biome changes.
+    float biomePenalty = 6.0f;
+    float elevationPenaltyScale = 60.0f;
+    float waterPenalty = 12.0f;
 
-    ArrayDeque<Integer> queue = new ArrayDeque<Integer>();
-    for (int i = 0; i < n; i++) {
-      if (zoneForCell[i] >= 0) queue.add(i);
-    }
-
-    while (!queue.isEmpty()) {
-      int ci = queue.removeFirst();
-      int z = zoneForCell[ci];
+    while (!frontier.isEmpty()) {
+      int ci = frontier.poll();
+      float baseCost = zoneCost[ci];
       ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
       if (nbs == null) continue;
       for (int nb : nbs) {
         if (nb < 0 || nb >= n) continue;
-        if (zoneForCell[nb] >= 0) continue;
-        zoneForCell[nb] = z;
-        queue.add(nb);
+        float step = 1.0f;
+        Cell ca = cells.get(ci);
+        Cell cb = cells.get(nb);
+        if (ca != null && cb != null) {
+          if (ca.biomeId != cb.biomeId) step += biomePenalty;
+          float elevDiff = abs(ca.elevation - cb.elevation);
+          step += elevDiff * elevationPenaltyScale;
+          boolean waterChange = (ca.elevation < seaLevel) != (cb.elevation < seaLevel);
+          if (waterChange) step += waterPenalty;
+        }
+
+        float newCost = baseCost + step;
+        if (newCost < zoneCost[nb]) {
+          zoneCost[nb] = newCost;
+          zoneForCell[nb] = zoneForCell[ci];
+          frontier.add(nb);
+        }
       }
     }
 
     // Write back memberships
+    for (MapZone az : zones) {
+      if (az != null) az.cells.clear();
+    }
     for (int ci = 0; ci < n; ci++) {
       int z = zoneForCell[ci];
       if (z >= 0 && z < zones.size()) {
@@ -2532,7 +2637,7 @@ class MapModel {
   void addZone() {
     int idx = zones.size();
     ZonePreset preset = (idx < ZONE_PRESETS.length) ? ZONE_PRESETS[idx] : null;
-    float baseHue = (preset != null) ? rgbToHSB(preset.col)[0] : (0.1f * (idx + 1));
+    float baseHue = (preset != null) ? rgbToHSB(preset.col)[0] : distributedHueForIndex(idx);
     int col = zoneColorForHue(baseHue);
     zones.add(new MapZone("Zone" + (idx + 1), col));
   }

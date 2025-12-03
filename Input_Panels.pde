@@ -72,6 +72,12 @@ boolean isInRenderPanel(int mx, int my) {
   return layout.panel.contains(mx, my);
 }
 
+boolean isInExportPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_EXPORT) return false;
+  ExportLayout layout = buildExportLayout();
+  return layout.panel.contains(mx, my);
+}
+
 boolean isInActivePanel(int mx, int my) {
   IntRect panel = getActivePanelRect();
   return (panel != null && panel.contains(mx, my));
@@ -93,7 +99,7 @@ boolean handleToolButtonClick(int mx, int my) {
   int margin = 10;
   int buttonW = 90;
 
-  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering" };
+  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering", "Export" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
@@ -102,7 +108,8 @@ boolean handleToolButtonClick(int mx, int my) {
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS,
-    Tool.EDIT_RENDER
+    Tool.EDIT_RENDER,
+    Tool.EDIT_EXPORT
   };
 
   for (int i = 0; i < labels.length; i++) {
@@ -333,6 +340,12 @@ boolean handleZonesListPanelClick(int mx, int my) {
   ZonesListLayout layout = buildZonesListLayout();
   populateZonesRows(layout);
 
+  if (layout.deselectBtn.contains(mx, my)) {
+    activeZoneIndex = -1;
+    editingZoneNameIndex = -1;
+    return true;
+  }
+
   if (layout.newBtn.contains(mx, my)) {
     mapModel.addZone();
     activeZoneIndex = mapModel.zones.size() - 1;
@@ -408,25 +421,32 @@ void paintZoneAt(float wx, float wy) {
 }
 
 void fillZoneAt(float wx, float wy) {
-  if (mapModel.zones == null || activeZoneIndex < 0 || activeZoneIndex >= mapModel.zones.size()) return;
+  if (mapModel.zones == null) return;
   Cell c = mapModel.findCellContaining(wx, wy);
-  if (c != null) {
+  if (c == null) return;
+  if (activeZoneIndex < 0 || activeZoneIndex >= mapModel.zones.size()) {
+    mapModel.removeCellFromAllZones(mapModel.indexOfCell(c));
+  } else {
     mapModel.floodFillZone(c, activeZoneIndex);
   }
 }
 
 void paintZoneBrush(float wx, float wy) {
-  if (mapModel.zones == null || activeZoneIndex < 0 || activeZoneIndex >= mapModel.zones.size()) return;
-  if (mapModel.cells == null) return;
+  if (mapModel.zones == null || mapModel.cells == null) return;
+  boolean erasing = (activeZoneIndex < 0 || activeZoneIndex >= mapModel.zones.size());
   float r2 = zoneBrushRadius * zoneBrushRadius;
-  for (Cell c : mapModel.cells) {
+  for (int ci = 0; ci < mapModel.cells.size(); ci++) {
+    Cell c = mapModel.cells.get(ci);
     PVector cen = mapModel.cellCentroid(c);
     float dx = cen.x - wx;
     float dy = cen.y - wy;
     float d2 = dx * dx + dy * dy;
     if (d2 <= r2) {
-      int idx = mapModel.indexOfCell(c);
-      mapModel.addCellToZone(idx, activeZoneIndex);
+      if (erasing) {
+        mapModel.removeCellFromAllZones(ci);
+      } else {
+        mapModel.addCellToZone(ci, activeZoneIndex);
+      }
     }
   }
 }
@@ -491,6 +511,11 @@ void mousePressed() {
   // Render panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_RENDER) {
     if (handleRenderPanelClick(mouseX, mouseY)) return;
+  }
+
+  // Export panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_EXPORT) {
+    if (handleExportPanelClick(mouseX, mouseY)) return;
   }
 
   // Ignore world interaction if inside any top UI area
@@ -924,6 +949,12 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (layout.checks.get(6).contains(mx, my)) { renderShowLabels = !renderShowLabels; return true; }
   if (layout.checks.get(7).contains(mx, my)) { renderShowStructures = !renderShowStructures; return true; }
   if (layout.checks.size() > 8 && layout.checks.get(8).contains(mx, my)) { renderBlackWhite = !renderBlackWhite; return true; }
+  return false;
+}
+
+boolean handleExportPanelClick(int mx, int my) {
+  if (!isInExportPanel(mx, my)) return false;
+  // Placeholder: export panel will get actionable controls later.
   return false;
 }
 

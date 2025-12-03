@@ -6,7 +6,8 @@ enum Tool {
   EDIT_PATHS,
   EDIT_STRUCTURES,
   EDIT_LABELS,
-  EDIT_RENDER
+  EDIT_RENDER,
+  EDIT_EXPORT
 }
 
 enum PlacementMode {

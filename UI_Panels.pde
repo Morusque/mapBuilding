@@ -398,11 +398,13 @@ class ZoneRowLayout {
   IntRect selectRect;
   IntRect nameRect;
   IntRect hueSlider;
+  IntRect colorRect;
 }
 
 class ZonesListLayout {
   IntRect panel;
   int titleY;
+  IntRect deselectBtn;
   IntRect newBtn;
   ArrayList<ZoneRowLayout> rows = new ArrayList<ZoneRowLayout>();
 }
@@ -414,8 +416,9 @@ ZonesListLayout buildZonesListLayout() {
   int y = panelTop();
   l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
   l.titleY = y + PANEL_PADDING;
-  int newBtnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
-  l.newBtn = new IntRect(x + PANEL_PADDING, newBtnY, 100, PANEL_BUTTON_H);
+  int btnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  l.deselectBtn = new IntRect(x + PANEL_PADDING, btnY, 90, PANEL_BUTTON_H);
+  l.newBtn = new IntRect(l.deselectBtn.x + l.deselectBtn.w + 8, btnY, 90, PANEL_BUTTON_H);
   return l;
 }
 
@@ -433,6 +436,8 @@ void populateZonesRows(ZonesListLayout layout) {
     int selectW = 18;
     row.selectRect = new IntRect(labelX, curY, selectW, rowH);
     row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - selectW - 6 - hueW - 8, rowH);
+    int colorH = 6;
+    row.colorRect = new IntRect(row.nameRect.x, row.nameRect.y + row.nameRect.h - colorH - 2, row.nameRect.w, colorH);
     row.hueSlider = new IntRect(row.nameRect.x + row.nameRect.w + 6, curY + (rowH - PANEL_SLIDER_H) / 2, hueW, PANEL_SLIDER_H);
     layout.rows.add(row);
     curY += rowH + 6;
@@ -454,6 +459,11 @@ void drawZonesListPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("New zone", layout.newBtn.x + layout.newBtn.w / 2, layout.newBtn.y + layout.newBtn.h / 2);
+
+  drawBevelButton(layout.deselectBtn.x, layout.deselectBtn.y, layout.deselectBtn.w, layout.deselectBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
 
   if (mapModel == null || mapModel.zones == null) return;
 
@@ -479,8 +489,12 @@ void drawZonesListPanel() {
       stroke(0);
       line(caretX, row.nameRect.y + 4, caretX, row.nameRect.y + row.nameRect.h - 4);
     } else {
-      drawBevelButton(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, selected);
-      fill(10);
+      stroke(80);
+      fill(az.col);
+      rect(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, 4);
+      float br = brightness(az.col);
+      int txtCol = (br > 60) ? color(15) : color(245);
+      fill(txtCol);
       textAlign(LEFT, CENTER);
       text(az.name, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
     }
@@ -1690,6 +1704,10 @@ IntRect getActivePanelRect() {
     }
     case EDIT_RENDER: {
       RenderLayout l = buildRenderLayout();
+      return l.panel;
+    }
+    case EDIT_EXPORT: {
+      ExportLayout l = buildExportLayout();
       return l.panel;
     }
   }

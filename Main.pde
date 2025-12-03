@@ -178,12 +178,7 @@ void initBiomeTypes() {
 
 void initZones() {
   mapModel.zones.clear();
-  int initialCount = 2;
-  for (int i = 0; i < initialCount && i < ZONE_PRESETS.length; i++) {
-    ZonePreset zp = ZONE_PRESETS[i];
-    mapModel.zones.add(mapModel.new MapZone("Zone" + (i + 1), zp.col));
-  }
-  activeZoneIndex = mapModel.zones.isEmpty() ? -1 : 0;
+  activeZoneIndex = -1;
 }
 
 void initPathTypes() {
@@ -389,6 +384,8 @@ void draw() {
     drawLabelsListPanel();
   } else if (currentTool == Tool.EDIT_RENDER) {
     drawRenderPanel();
+  } else if (currentTool == Tool.EDIT_EXPORT) {
+    drawExportPanel();
   }
 }
 

@@ -122,7 +122,7 @@ void drawToolButtons() {
   line(0, barY + barH - 1, width, barY + barH - 1);
   line(width - 1, barY, width - 1, barY + barH);
 
-  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering" };
+  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering", "Export" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
@@ -131,7 +131,8 @@ void drawToolButtons() {
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS,
-    Tool.EDIT_RENDER
+    Tool.EDIT_RENDER,
+    Tool.EDIT_EXPORT
   };
 
   for (int i = 0; i < labels.length; i++) {

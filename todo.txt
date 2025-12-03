@@ -1,4 +1,7 @@
 
+// this TODO file has tasked marked as (now) (soon) (later) from more urgent to less
+// done tasks should be marked as (done) for review before I delete them
+
 Loading bar :
 
 Sites :
@@ -10,11 +13,11 @@ Elevation :
 Biomes :
 (later) extend or shrink current biome button
 (later) add a "create beaches" using current biome
+(later) use techtonic logic in addition to perlin
 
 Zones :
-(now) make the generation depend more on whatever is already on the map (eg propagation priority lowered by biome change, big elevation changes, etc)
-(now) allow shared borders to be seen for both zones
-(later) options to allow overlapping or not (groups?)
+(later) options to allow overlapping or not (two groups? allowed / not-allowed)
+(later) zone-painting brush is currently buggy
 
 Paths :
 (later) needs more optimization or threading so not to hang anything
@@ -22,6 +25,7 @@ Paths :
 (soon) other optimization possibility : make route start from both ends of the path and check when they connect
 (later) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
+(soon) when a path is being selected, also automatically select the associated type in the left menu
 
 Struct :
 (later) structures should be groupable
@@ -43,6 +47,7 @@ Rendering :
 (later) refine the precise way contours work
 (later) find a way to allow for labels text fill color and outline color, also parameters for font used (just a few typical options)
 (later) take inspiration from real map pictures
+(later) outer padding
 
 Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
@@ -51,6 +56,7 @@ Export :
 (now) create a new tab and .pde files for this (empty at first, I'll specity many things about)
 (later) JSON export/import (human-readable) with legend, layers, cells, paths, structures, groups, labels, view defaults.
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
+(later) are there existing formats for such tools to handle?
 
 General :
 (later) Refactor, optimize etc.
@@ -59,3 +65,4 @@ General :
 (later) option to generate details (about everything) for zooming
 (soon) ui indications could be more than two lines instead of using "; "
 (later) very top panel should have a little bit more padding on the bottom, jus a few px to allow bottom of text to be good visually
+(soon) list selections should feel more like win95 circular radio (beveled white hole, with black dot in it when selected)
