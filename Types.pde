@@ -233,6 +233,7 @@ class MapLabel {
   float y;
   String text;
   LabelTarget target = LabelTarget.FREE;
+  float size = labelSizeDefault();
 
   MapLabel(float x, float y, String text) {
     this.x = x;
@@ -249,7 +250,7 @@ class MapLabel {
     app.pushStyle();
     app.fill(0);
     app.textAlign(CENTER, CENTER);
-    app.textSize(12 / viewport.zoom);
+    app.textSize(size / viewport.zoom);
     app.text(text, x, y);
     app.popStyle();
   }

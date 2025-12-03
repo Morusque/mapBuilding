@@ -572,6 +572,7 @@ void mousePressed() {
       if (sel != null && sel.text != null && sel.text.length() > 0) baseText = sel.text;
     }
     MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, baseText, labelTargetMode);
+    lbl.size = labelSizeDefault();
     mapModel.labels.add(lbl);
     selectedLabelIndex = mapModel.labels.size() - 1;
     editingLabelIndex = selectedLabelIndex;
@@ -733,14 +734,6 @@ boolean handlePathsPanelClick(int mx, int my) {
 
 boolean handleLabelsPanelClick(int mx, int my) {
   if (!isInLabelsPanel(mx, my)) return false;
-  LabelsLayout layout = buildLabelsLayout();
-  for (int i = 0; i < layout.targetButtons.size(); i++) {
-    IntRect b = layout.targetButtons.get(i);
-    if (b.contains(mx, my)) {
-      labelTargetMode = LabelTarget.values()[i];
-      return true;
-    }
-  }
   return false;
 }
 
@@ -753,6 +746,18 @@ boolean handleLabelsListPanelClick(int mx, int my) {
     selectedLabelIndex = -1;
     editingLabelIndex = -1;
     labelDraft = "label";
+    return true;
+  }
+
+  // Size slider
+  if (layout.sizeSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.sizeSlider.x) / (float)layout.sizeSlider.w, 0, 1);
+    float newSize = 8 + t * (40 - 8);
+    setLabelSizeDefault(newSize);
+    if (selectedLabelIndex >= 0 && selectedLabelIndex < mapModel.labels.size()) {
+      MapLabel sel = mapModel.labels.get(selectedLabelIndex);
+      if (sel != null) sel.size = newSize;
+    }
     return true;
   }
 
@@ -775,10 +780,6 @@ boolean handleLabelsListPanelClick(int mx, int my) {
       if (selectedLabelIndex == i) selectedLabelIndex = -1;
       if (editingLabelIndex == i) editingLabelIndex = -1;
       labelDraft = "label";
-      return true;
-    }
-    if (row.targetRect.contains(mx, my)) {
-      lbl.target = nextLabelTarget(lbl.target);
       return true;
     }
   }

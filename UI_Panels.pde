@@ -1102,13 +1102,13 @@ void drawElevationPanel() {
 class LabelsLayout {
   IntRect panel;
   int titleY;
-  ArrayList<IntRect> targetButtons = new ArrayList<IntRect>();
 }
 
 class LabelsListLayout {
   IntRect panel;
   int titleY;
   IntRect deselectBtn;
+  IntRect sizeSlider;
   ArrayList<LabelRowLayout> rows = new ArrayList<LabelRowLayout>();
 }
 
@@ -1116,7 +1116,6 @@ class LabelRowLayout {
   IntRect selectRect;
   IntRect nameRect;
   IntRect delRect;
-  IntRect targetRect;
 }
 
 LabelsLayout buildLabelsLayout() {
@@ -1126,14 +1125,6 @@ LabelsLayout buildLabelsLayout() {
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
-
-  String[] targets = { "Free", "Biomes", "Zones", "Struct" };
-  int btnW = 60;
-  int gap = 6;
-  for (int i = 0; i < targets.length; i++) {
-    l.targetButtons.add(new IntRect(innerX + i * (btnW + gap), curY, btnW, PANEL_BUTTON_H));
-  }
-  curY += PANEL_BUTTON_H + PANEL_PADDING;
   curY += PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
   return l;
@@ -1147,17 +1138,6 @@ void drawLabelsPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Labels", labelX, layout.titleY);
-
-  // Target buttons
-  String[] targets = { "Free", "Biomes", "Zones", "Struct" };
-  for (int i = 0; i < layout.targetButtons.size(); i++) {
-    IntRect b = layout.targetButtons.get(i);
-    boolean active = (labelTargetMode == LabelTarget.values()[i]);
-    drawBevelButton(b.x, b.y, b.w, b.h, active);
-    fill(10);
-    textAlign(CENTER, CENTER);
-    text(targets[i], b.x + b.w / 2, b.y + b.h / 2);
-  }
 
   drawControlsHint(layout.panel,
                    "left-click: place",
@@ -1173,13 +1153,14 @@ LabelsListLayout buildLabelsListLayout() {
   l.titleY = y + PANEL_PADDING;
   int btnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
   l.deselectBtn = new IntRect(x + PANEL_PADDING, btnY, 90, PANEL_BUTTON_H);
+  l.sizeSlider = new IntRect(l.deselectBtn.x + l.deselectBtn.w + 10, btnY + 4, 140, PANEL_SLIDER_H);
   return l;
 }
 
 void populateLabelsListRows(LabelsListLayout layout) {
   layout.rows.clear();
   int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP;
+  int curY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP + 6;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
   int rowH = 24;
   for (int i = 0; i < mapModel.labels.size(); i++) {
@@ -1187,9 +1168,8 @@ void populateLabelsListRows(LabelsListLayout layout) {
     LabelRowLayout row = new LabelRowLayout();
     int selectW = 18;
     row.selectRect = new IntRect(labelX, curY, selectW, rowH);
-    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - selectW - 6 - 60, rowH);
-    row.targetRect = new IntRect(row.nameRect.x + row.nameRect.w + 4, curY, 26, rowH);
-    row.delRect = new IntRect(row.targetRect.x + row.targetRect.w + 4, curY, 26, rowH);
+    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - selectW - 6 - 30, rowH);
+    row.delRect = new IntRect(row.nameRect.x + row.nameRect.w + 4, curY, 24, rowH);
     layout.rows.add(row);
     curY += rowH + 6;
   }
@@ -1211,6 +1191,22 @@ void drawLabelsListPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
+
+  // Size slider
+  IntRect ss = layout.sizeSlider;
+  stroke(160);
+  fill(230);
+  rect(ss.x, ss.y, ss.w, ss.h, 4);
+  float sizeNorm = map(labelSizeDefault(), 8, 40, 0, 1);
+  sizeNorm = constrain(sizeNorm, 0, 1);
+  float sx = ss.x + sizeNorm * ss.w;
+  fill(40);
+  noStroke();
+  ellipse(sx, ss.y + ss.h / 2.0f, ss.h * 0.9f, ss.h * 0.9f);
+  fill(10);
+  textAlign(LEFT, BOTTOM);
+  text("Size " + nf(labelSizeDefault(), 1, 0), ss.x, ss.y - 4);
+  curY = ss.y + ss.h + PANEL_SECTION_GAP;
 
   for (int i = 0; i < layout.rows.size(); i++) {
     MapLabel lbl = mapModel.labels.get(i);
@@ -1238,11 +1234,6 @@ void drawLabelsListPanel() {
       textAlign(LEFT, CENTER);
       text(lbl.text, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
     }
-
-    drawBevelButton(row.targetRect.x, row.targetRect.y, row.targetRect.w, row.targetRect.h, false);
-    fill(10);
-    textAlign(CENTER, CENTER);
-    text(labelTargetShort(lbl.target), row.targetRect.x + row.targetRect.w / 2, row.targetRect.y + row.targetRect.h / 2);
 
     drawBevelButton(row.delRect.x, row.delRect.y, row.delRect.w, row.delRect.h, false);
     fill(10);

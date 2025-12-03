@@ -91,6 +91,14 @@ float pathEraserRadius = 0.04f;
 int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
 
+float labelSizeDefault() {
+  return labelSizeDefaultVal;
+}
+
+void setLabelSizeDefault(float v) {
+  labelSizeDefaultVal = constrain(v, 4, 72);
+}
+
 // Zone renaming state
 int editingBiomeNameIndex = -1;
 String biomeNameDraft = "";
@@ -102,6 +110,7 @@ int editingLabelIndex = -1;
 int selectedLabelIndex = -1;
 String labelDraft = "label";
 LabelTarget labelTargetMode = LabelTarget.FREE;
+float labelSizeDefaultVal = 12;
 
 // Path type editing state
 int editingPathTypeNameIndex = -1;

@@ -7,6 +7,7 @@ Loading bar :
 Sites :
 (later) there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 (later) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
+(later) poisson-disc doesn't seem to work anymore (but unless we can optimize it a lot, it would be ok to remove it)
 
 Elevation :
 
@@ -33,9 +34,9 @@ Struct :
 (later) there should be checkboxes to what the structures can snap to: water, biomes, underwater biomes, zones, paths, other structures (only show snapping feedback overlay lines when snapping for a given feature is enabled)
 
 Labels :
-(soon) Label should be attributed to one or more elements on the map, or more arbitrarily placed, with associated default values (revise the way this was done)
-(soon) use label types as layers to display only certains things and associate labels to them
-(soon) label naming doesn't seem to work anymore
+(later) optionally associate labels with map elements
+(later) have type presets for label styles (like with path types)
+(later) text size should be handled better (typo appears blurry)
 
 Rendering :
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
