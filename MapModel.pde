@@ -593,6 +593,12 @@ class MapModel {
     return dx * dx + dy * dy;
   }
 
+  float dist2DSq(PVector a, PVector b) {
+    float dx = a.x - b.x;
+    float dy = a.y - b.y;
+    return dx * dx + dy * dy;
+  }
+
   Structure computeSnappedStructure(float wx, float wy, float size) {
     Structure s = new Structure(wx, wy);
     s.size = size;
@@ -974,7 +980,7 @@ class MapModel {
     dist.put(kFrom, 0.0f);
     // A* priority = g + h
     PVector target = snapNodes.get(kTo);
-    float hStart = (target != null) ? dist2D(snapNodes.get(kFrom), target) : 0;
+    float hStart = (target != null) ? dist2DSq(snapNodes.get(kFrom), target) : 0;
     pq.add(new NodeDist(kFrom, 0.0f, hStart));
 
     // Spatial cull to a loose bounding box around endpoints
@@ -985,10 +991,12 @@ class MapModel {
     float margin = max(dist2D(from, toP) * 0.6f, 0.05f);
     minx -= margin; maxx += margin; miny -= margin; maxy += margin;
 
-    int maxExpanded = 8000;
+    int maxExpanded = PATH_MAX_EXPANSIONS;
     int expanded = 0;
     String closest = kFrom;
     float bestH = (target != null) ? dist2D(snapNodes.get(kFrom), target) : Float.MAX_VALUE;
+    HashMap<String, Float> elevCache = new HashMap<String, Float>();
+
     while (!pq.isEmpty()) {
       NodeDist nd = pq.poll();
       Float bestD = dist.get(nd.k);
@@ -999,7 +1007,7 @@ class MapModel {
       if (neighbors == null) continue;
       PVector p = snapNodes.get(nd.k);
       if (p == null) continue;
-      float hCur = (target != null) ? dist2D(p, target) : Float.MAX_VALUE;
+      float hCur = (target != null) ? dist2DSq(p, target) : Float.MAX_VALUE;
       if (hCur < bestH) {
         bestH = hCur;
         closest = nd.k;
@@ -1009,9 +1017,11 @@ class MapModel {
         if (np == null) continue;
         if (np.x < minx || np.x > maxx || np.y < miny || np.y > maxy) continue;
         float w = dist2D(p, np);
+        float elevA = elevCache.containsKey(nd.k) ? elevCache.get(nd.k) : sampleElevationAt(p.x, p.y, seaLevel);
+        float elevB = elevCache.containsKey(nb) ? elevCache.get(nb) : sampleElevationAt(np.x, np.y, seaLevel);
+        elevCache.put(nd.k, elevA);
+        elevCache.put(nb, elevB);
         if (pathAvoidWater) {
-          float elevA = sampleElevationAt(p.x, p.y, seaLevel);
-          float elevB = sampleElevationAt(np.x, np.y, seaLevel);
           boolean aw = elevA < seaLevel;
           boolean bw = elevB < seaLevel;
           if (aw || bw) {
@@ -1020,8 +1030,6 @@ class MapModel {
           }
         }
         if (favorFlat) {
-          float elevA = sampleElevationAt(p.x, p.y, from.z);
-          float elevB = sampleElevationAt(np.x, np.y, toP.z);
           float dh = abs(elevB - elevA);
           // Penalize steep changes; keep distance as base
           w *= (1.0f + dh * flattestSlopeBias);
@@ -1031,8 +1039,8 @@ class MapModel {
         if (curD == null || ndist < curD - 1e-6f) {
           dist.put(nb, ndist);
           prev.put(nb, nd.k);
-          float h = (target != null) ? dist2D(np, target) : 0;
-          pq.add(new NodeDist(nb, ndist, ndist + h * 0.8f)); // heuristic weight keeps routes short
+          float h = (target != null) ? dist2DSq(np, target) : 0;
+          pq.add(new NodeDist(nb, ndist, ndist + h * 0.5f)); // squared heuristic, lighter weight
         }
       }
     }

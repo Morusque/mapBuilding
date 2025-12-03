@@ -23,7 +23,6 @@ Zones :
 Paths :
 (later) needs more optimization or threading so not to hang anything
 (later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
-(soon) other optimization possibility : make route start from both ends of the path and check when they connect
 (later) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
 
