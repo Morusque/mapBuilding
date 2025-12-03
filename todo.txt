@@ -3,7 +3,7 @@ Loading bar :
 
 Sites :
 (later) there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
-(later) should probably be called "grid" and "cell" instead of sites/site, at least in the UI, ideally in the code as well
+(now) should probably be called "grid" and "cell" instead of sites/site, at least in the UI, ideally in the code as well
 (later) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
 
 Elevation :
@@ -11,52 +11,56 @@ Elevation :
 Biomes :
 (later) extend or shrink current biome button
 (later) add a "create beaches" using current biome
-(later) add a "underwater" ready biome (= sand?)
+(soon) add a "underwater" ready biome (= sand?)
 
 Zones :
-(later) make the generation depend more on whatever is already on the map
-(later) allow shared borders to be seen for both zones
+(soon) make the generation depend more on whatever is already on the map (eg propagation priority lowered by biome change, big elevation changes, etc)
+(soon) allow shared borders to be seen for both zones
 
 Paths :
 (later) needs more optimization or threading so not to hang anything
 (later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
+(soon) other optimization possibility : make route start from both ends of the path and check when they connect
 (later) width definer similar to water but using pathfinding to define more important roads
-(later) tweak default values for river (wider, taper on)
-(later) put eraser back
-(later) refine logic for types (and show colors on the right side menu)
-(later) assign placing strategies to types
-(later) using right click to move map also unselects path and that's bad, add a button next to "new path" for now
+(later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
+(soon) tweak default values for river (wider, taper on)
+(soon) put eraser back
+(soon) refine logic for types (and show colors on the right side menu)
+(soon) assign placing strategies to types
+(soon) using right click to move map also unselects path and that's bad, add a button next to "new path" for now
 
 Struct :
 (later) structures should be groupable
-(later) some ui on the right panel for per-struct parameters (can be displayed once for selected struct)
-(later) using right click to move map also unselects struct and that's probably bad, add a button next to "new struct" for now
+(soon) some ui on the right panel for per-struct parameters (can be displayed once on top of the list for selected struct): name, size, type, angle, color (allow transparent)
+(soon) using right click to move map also unselects struct and that's probably bad, add a button next to "new struct" for now
 
 Labels :
-(later) Label should be attributed to one or more elements on the map, or more arbitrarily placed.
-(later) use label types as layers to display only certains things and associate labels to them
-(later) Label types with default style; attach to cells/paths/structures/groups or free position; anchor controls; option to follow path curvature.
+(soon) Label should be attributed to one or more elements on the map, or more arbitrarily placed, with assiciated default values (revise the way this was done)
+(soon) use label types as layers to display only certains things and associate labels to them
 
 Rendering :
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
-(later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons.
+(soon) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons.
 (later) Respect LOD rules: constant stroke widths, hide/show groups vs members depending on zoom, optional merging visually of dense structures.
 (later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed).
 (later) Exporting the legend for reference.
 (later) Comments exportable as custom format
 (later) refine the precise way contours work
+(later) find a way to allow for labels text fill color and outline color, also parameters for font used (just a few typical options)
+(later) take inspiration from real map pictures
 
 Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
 
 Export :
+(soon) create a new tab and .pde files for this (empty at first, I'll specity many things about)
 (later) JSON export/import (human-readable) with legend, layers, cells, paths, structures, groups, labels, view defaults.
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 
 General :
-(later) Define a precise lexicon and homogenize code and ui labels.
+(now) Define a precise lexicon and homogenize code and ui labels.
 (later) Refactor, optimize etc.
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
-(later) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
+(soon) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
 (later) option to generate details (about everything) for zooming
-(later) ui indications could be more than two lines instead of using "; "
+(soon) ui indications could be more than two lines instead of using "; "
