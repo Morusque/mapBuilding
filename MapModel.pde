@@ -79,8 +79,8 @@ class MapModel {
       col = hsb01ToRGB(hue01, ZONE_BASE_SAT, ZONE_BASE_BRI);
       sat01 = ZONE_BASE_SAT;
       bri01 = ZONE_BASE_BRI;
-    }
   }
+}
 
   HashMap<String, Float> computeTaperWeightsForType(int typeId, float baseWeight, float minWeight) {
     HashMap<String, Float> weights = new HashMap<String, Float>();
@@ -971,6 +971,14 @@ class MapModel {
       lastPathfindExpanded = 0;
       lastPathfindLength = result.size();
       lastPathfindHit = (result.size() > 1);
+      return result;
+    }
+
+    if (PATH_BIDIRECTIONAL) {
+      result = findSnapPathBidirectional(kFrom, kTo, from, toP, favorFlat, snapNodes, snapAdj);
+      lastPathfindMs = millis() - tStart;
+      lastPathfindHit = (result != null && result.size() > 1);
+      lastPathfindLength = (result != null) ? result.size() : 0;
       return result;
     }
 
@@ -2726,5 +2734,114 @@ class MapModel {
     if (index < 0 || index >= zones.size()) return;
     zones.remove(index);
   }
-}
 
+  ArrayList<PVector> findSnapPathBidirectional(String kFrom, String kTo, PVector from, PVector toP, boolean favorFlat,
+                                               HashMap<String, PVector> snapNodes,
+                                               HashMap<String, ArrayList<String>> snapAdj) {
+    ArrayList<PVector> result = null;
+    PVector target = snapNodes.get(kTo);
+    PVector startP = snapNodes.get(kFrom);
+    if (startP == null || target == null) return null;
+
+    HashMap<String, Float> distF = new HashMap<String, Float>();
+    HashMap<String, Float> distB = new HashMap<String, Float>();
+    HashMap<String, String> prevF = new HashMap<String, String>();
+    HashMap<String, String> prevB = new HashMap<String, String>();
+    HashSet<String> closedF = new HashSet<String>();
+    HashSet<String> closedB = new HashSet<String>();
+    PriorityQueue<NodeDist> pqF = new PriorityQueue<NodeDist>();
+    PriorityQueue<NodeDist> pqB = new PriorityQueue<NodeDist>();
+
+    distF.put(kFrom, 0.0f);
+    distB.put(kTo, 0.0f);
+    pqF.add(new NodeDist(kFrom, 0.0f, dist2DSq(startP, target)));
+    pqB.add(new NodeDist(kTo, 0.0f, dist2DSq(target, startP)));
+
+    float bestCost = Float.MAX_VALUE;
+    String bestMeet = null;
+    int expanded = 0;
+    HashMap<String, Float> elevCache = new HashMap<String, Float>();
+
+    while (!pqF.isEmpty() || !pqB.isEmpty()) {
+      float fFront = pqF.isEmpty() ? Float.MAX_VALUE : pqF.peek().f;
+      float fBack = pqB.isEmpty() ? Float.MAX_VALUE : pqB.peek().f;
+      boolean expandFront = fFront <= fBack;
+      PriorityQueue<NodeDist> pq = expandFront ? pqF : pqB;
+      HashMap<String, Float> dist = expandFront ? distF : distB;
+      HashMap<String, Float> distOther = expandFront ? distB : distF;
+      HashMap<String, String> prev = expandFront ? prevF : prevB;
+      HashSet<String> closed = expandFront ? closedF : closedB;
+
+      if (pq.isEmpty()) break;
+      NodeDist nd = pq.poll();
+      Float bestD = dist.get(nd.k);
+      if (bestD != null && nd.g > bestD + 1e-6f) continue;
+      if (expanded++ > PATH_MAX_EXPANSIONS) break;
+      closed.add(nd.k);
+
+      Float otherCost = distOther.get(nd.k);
+      if (otherCost != null) {
+        float total = nd.g + otherCost;
+        if (total < bestCost) {
+          bestCost = total;
+          bestMeet = nd.k;
+        }
+      }
+
+      if (nd.f >= bestCost) continue;
+
+      ArrayList<String> neighbors = snapAdj.get(nd.k);
+      if (neighbors == null) continue;
+      PVector p = snapNodes.get(nd.k);
+      if (p == null) continue;
+
+      for (String nb : neighbors) {
+        if (closed.contains(nb)) continue;
+        PVector np = snapNodes.get(nb);
+        if (np == null) continue;
+
+        float elevA = elevCache.containsKey(nd.k) ? elevCache.get(nd.k) : sampleElevationAt(p.x, p.y, seaLevel);
+        float elevB = elevCache.containsKey(nb) ? elevCache.get(nb) : sampleElevationAt(np.x, np.y, seaLevel);
+        elevCache.put(nd.k, elevA);
+        elevCache.put(nb, elevB);
+
+        float w = dist2DSq(p, np);
+        if (pathAvoidWater) {
+          boolean aw = elevA < seaLevel;
+          boolean bw = elevB < seaLevel;
+          if (aw || bw) w *= 1e6f;
+        }
+        if (favorFlat) {
+          float dh = abs(elevB - elevA);
+          w *= (1.0f + dh * flattestSlopeBias);
+        }
+
+        float ng = nd.g + w;
+        Float curD = dist.get(nb);
+        if (curD == null || ng < curD - 1e-6f) {
+          dist.put(nb, ng);
+          prev.put(nb, nd.k);
+          float h = expandFront ? dist2DSq(np, target) : dist2DSq(np, startP);
+          pq.add(new NodeDist(nb, ng, ng + h * 0.5f));
+        }
+      }
+    }
+
+    if (bestMeet != null) {
+      ArrayList<PVector> forward = reconstructPath(prevF, kFrom, bestMeet);
+      ArrayList<PVector> backward = reconstructPath(prevB, kTo, bestMeet);
+      if (forward != null && backward != null) {
+        Collections.reverse(backward);
+        if (!backward.isEmpty()) backward.remove(0); // drop duplicate meet
+        forward.addAll(backward);
+        result = forward;
+      }
+    } else {
+      // fallback: try one-sided best effort
+      result = reconstructPath(prevF, kFrom, kTo);
+    }
+
+    lastPathfindExpanded = expanded;
+    return result;
+  }
+}

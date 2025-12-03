@@ -88,7 +88,8 @@ boolean pathAvoidWater = false;
 boolean pathTaperRivers = false;
 boolean pathEraserMode = false;
 float pathEraserRadius = 0.04f;
-int PATH_MAX_EXPANSIONS = 5000; // tweakable pathfinding budget per query
+int PATH_MAX_EXPANSIONS = 10000; // tweakable pathfinding budget per query (per-direction if bidirectional)
+boolean PATH_BIDIRECTIONAL = true; // grow paths from both ends
 int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
 

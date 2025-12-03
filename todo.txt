@@ -21,8 +21,6 @@ Zones :
 (later) zone-painting brush is currently buggy
 
 Paths :
-(later) needs more optimization or threading so not to hang anything
-(later) to prevent hanging could we start with straightforward route and each frame refine it to comply with parameters?
 (later) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
 
@@ -65,3 +63,4 @@ General :
 (soon) ui indications could be more than two lines instead of using "; "
 (later) very top panel should have a little bit more padding on the bottom, jus a few px to allow bottom of text to be good visually
 (soon) list selections should feel more like win95 circular radio (beveled white hole, with black dot in it when selected)
+(later) check useless variables, problems tabs and stuff like those
