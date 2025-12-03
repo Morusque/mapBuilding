@@ -3,7 +3,6 @@ Loading bar :
 
 Sites :
 (later) there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
-(now) should probably be called "grid" and "cell" instead of sites/site, at least in the UI, ideally in the code as well
 (later) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
 
 Elevation :

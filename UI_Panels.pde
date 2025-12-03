@@ -47,7 +47,7 @@ void drawSitesPanel() {
   int labelX = layout.panel.x + PANEL_PADDING;
   fill(0);
   textAlign(LEFT, TOP);
-  text("Sites generation", labelX, layout.titleY);
+  text("Cells generation", labelX, layout.titleY);
 
   // ---------- Density slider ----------
   IntRect d = layout.densitySlider;
@@ -65,7 +65,7 @@ void drawSitesPanel() {
 
   fill(0);
   textAlign(LEFT, BOTTOM);
-  text("Density: " + siteTargetCount + " sites", d.x, d.y - 4);
+  text("Density: " + siteTargetCount + " cells", d.x, d.y - 4);
 
   // ---------- Fuzz slider (0..0.3) ----------
   IntRect f = layout.fuzzSlider;

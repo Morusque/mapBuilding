@@ -122,7 +122,7 @@ void drawToolButtons() {
   line(0, barY + barH - 1, width, barY + barH - 1);
   line(width - 1, barY, width - 1, barY + barH);
 
-  String[] labels = { "Sites", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering" };
+  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,

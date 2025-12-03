@@ -93,7 +93,7 @@ boolean handleToolButtonClick(int mx, int my) {
   int margin = 10;
   int buttonW = 90;
 
-  String[] labels = { "Sites", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering" };
+  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,

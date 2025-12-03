@@ -44,7 +44,7 @@ final int RIGHT_PANEL_W = 260;
 final float FLATTEST_BIAS_MIN = 0.0f;
 final float FLATTEST_BIAS_MAX = 500.0f;
 
-// Sites generation config
+// Cells (site seeds) generation config
 PlacementMode[] placementModes = {
   PlacementMode.GRID,
   PlacementMode.POISSON,
@@ -151,7 +151,7 @@ void settings() {
 }
 
 void setup() {
-  surface.setTitle("Map Editor - Sites + Zones + Paths");
+  surface.setTitle("Map Editor - Cells + Zones + Paths");
   viewport = new Viewport();
   mapModel = new MapModel();
   initBiomeTypes();
