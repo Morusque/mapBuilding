@@ -18,7 +18,6 @@ Biomes :
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
 (later) zone-painting brush is currently buggy
-(soon) when creating new zone, use a new hue that is as distant as possible as any other zone hue already present
 
 Paths :
 (later) needs more optimization or threading so not to hang anything

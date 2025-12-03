@@ -568,7 +568,7 @@ void drawZonesPanel() {
   text("Brush radius", brush.x, brush.y - 4);
 
   drawControlsHint(layout.panel,
-                   "left-click: paint",
+                   "left-click: paint (erase when none selected)",
                    "right-click pan; wheel: zoom.");
 }
 

@@ -152,6 +152,42 @@ class MapModel {
     return hsb01ToRGB(hue, sb[0], sb[1]);
   }
 
+  float hueDistance01(float a, float b) {
+    float d = abs(a - b);
+    return min(d, 1.0f - d);
+  }
+
+  // Pick a hue on the circle that maximizes the minimum distance to all existing hues.
+  float pickMaxGapHue() {
+    if (zones == null || zones.isEmpty()) return 0.0f;
+    ArrayList<Float> hs = new ArrayList<Float>();
+    for (MapZone z : zones) {
+      if (z == null) continue;
+      float h = z.hue01 % 1.0f;
+      if (h < 0) h += 1.0f;
+      hs.add(h);
+    }
+    if (hs.isEmpty()) return 0.0f;
+
+    // Sample the circle; 720 samples gives ~0.5 degree resolution.
+    int samples = 720;
+    float bestHue = 0.0f;
+    float bestScore = -1.0f;
+    for (int i = 0; i < samples; i++) {
+      float h = i / (float)samples;
+      float minD = 1.0f;
+      for (float hz : hs) {
+        minD = min(minD, hueDistance01(h, hz));
+        if (minD < bestScore) break; // early exit if already worse
+      }
+      if (minD > bestScore) {
+        bestScore = minD;
+        bestHue = h;
+      }
+    }
+    return bestHue;
+  }
+
   // Van der Corput sequence in base 2 to spread hues: 0, 0.5, 0.25, 0.75, 0.125, ...
   float distributedHueForIndex(int idx) {
     int n = max(0, idx);
@@ -2368,9 +2404,12 @@ class MapModel {
 
     // Create zones with random hues (shared saturation/brightness)
     for (int i = 0; i < zoneCount; i++) {
-      float h = distributedHueForIndex(i);
+      float h = pickMaxGapHue();
       int col = zoneColorForHue(h);
-      zones.add(new MapZone("Zone" + (i + 1), col));
+      MapZone z = new MapZone("Zone" + (i + 1), col);
+      z.hue01 = h;
+      z.updateColorFromHSB();
+      zones.add(z);
     }
 
     ensureCellNeighborsComputed();
@@ -2636,10 +2675,12 @@ class MapModel {
 
   void addZone() {
     int idx = zones.size();
-    ZonePreset preset = (idx < ZONE_PRESETS.length) ? ZONE_PRESETS[idx] : null;
-    float baseHue = (preset != null) ? rgbToHSB(preset.col)[0] : distributedHueForIndex(idx);
+    float baseHue = (zones.isEmpty()) ? distributedHueForIndex(0) : pickMaxGapHue();
     int col = zoneColorForHue(baseHue);
-    zones.add(new MapZone("Zone" + (idx + 1), col));
+    MapZone z = new MapZone("Zone" + (idx + 1), col);
+    z.hue01 = baseHue;
+    z.updateColorFromHSB();
+    zones.add(z);
   }
 
   void addPathType(PathType pt) {
