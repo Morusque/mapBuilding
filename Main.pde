@@ -98,7 +98,7 @@ String zoneNameDraft = "";
 // Label editing state
 int editingLabelIndex = -1;
 int selectedLabelIndex = -1;
-String labelDraft = "Label";
+String labelDraft = "label";
 LabelTarget labelTargetMode = LabelTarget.FREE;
 
 // Path type editing state

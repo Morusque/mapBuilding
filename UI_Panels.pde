@@ -1077,13 +1077,13 @@ void drawElevationPanel() {
 class LabelsLayout {
   IntRect panel;
   int titleY;
-  IntRect textBox;
   ArrayList<IntRect> targetButtons = new ArrayList<IntRect>();
 }
 
 class LabelsListLayout {
   IntRect panel;
   int titleY;
+  IntRect deselectBtn;
   ArrayList<LabelRowLayout> rows = new ArrayList<LabelRowLayout>();
 }
 
@@ -1101,9 +1101,6 @@ LabelsLayout buildLabelsLayout() {
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
-
-  l.textBox = new IntRect(innerX, curY, PANEL_W - 2 * PANEL_PADDING - 20, PANEL_BUTTON_H);
-  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
 
   String[] targets = { "Free", "Biomes", "Zones", "Struct" };
   int btnW = 60;
@@ -1125,15 +1122,6 @@ void drawLabelsPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Labels", labelX, layout.titleY);
-
-  stroke(80);
-  fill(245);
-  rect(layout.textBox.x, layout.textBox.y, layout.textBox.w, layout.textBox.h);
-  fill(0);
-  textAlign(LEFT, CENTER);
-  text(labelDraft, layout.textBox.x + 6, layout.textBox.y + layout.textBox.h / 2);
-  textAlign(LEFT, TOP);
-  text("Type text then click map to place/continue editing", layout.textBox.x, layout.textBox.y - 18);
 
   // Target buttons
   String[] targets = { "Free", "Biomes", "Zones", "Struct" };
@@ -1158,13 +1146,15 @@ LabelsListLayout buildLabelsListLayout() {
   int y = panelTop();
   l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
   l.titleY = y + PANEL_PADDING;
+  int btnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  l.deselectBtn = new IntRect(x + PANEL_PADDING, btnY, 90, PANEL_BUTTON_H);
   return l;
 }
 
 void populateLabelsListRows(LabelsListLayout layout) {
   layout.rows.clear();
   int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  int curY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
   int rowH = 24;
   for (int i = 0; i < mapModel.labels.size(); i++) {
@@ -1191,6 +1181,11 @@ void drawLabelsListPanel() {
   textAlign(LEFT, TOP);
   text("Labels", labelX, curY);
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  drawBevelButton(layout.deselectBtn.x, layout.deselectBtn.y, layout.deselectBtn.w, layout.deselectBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
 
   for (int i = 0; i < layout.rows.size(); i++) {
     MapLabel lbl = mapModel.labels.get(i);

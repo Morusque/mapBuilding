@@ -10,11 +10,10 @@ Elevation :
 Biomes :
 (later) extend or shrink current biome button
 (later) add a "create beaches" using current biome
-(soon) add a "underwater" ready biome (= sand?)
 
 Zones :
-(soon) make the generation depend more on whatever is already on the map (eg propagation priority lowered by biome change, big elevation changes, etc)
-(soon) allow shared borders to be seen for both zones
+(now) make the generation depend more on whatever is already on the map (eg propagation priority lowered by biome change, big elevation changes, etc)
+(now) allow shared borders to be seen for both zones
 (later) options to allow overlapping or not (groups?)
 
 Paths :
@@ -23,8 +22,8 @@ Paths :
 (soon) other optimization possibility : make route start from both ends of the path and check when they connect
 (later) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
-(soon) tweak default values for river (wider, taper on)
-(soon) put eraser back
+(now) tweak default values for river (wider, taper on)
+(now) put eraser back
 (soon) refine logic for types (and show colors on the right side menu)
 (soon) assign placing strategies to types
 
@@ -35,10 +34,8 @@ Struct :
 (later) there should be checkboxes to what the structures can snap to: water, biomes, underwater biomes, zones, paths, other structures (only show snapping feedback overlay lines when snapping for a given feature is enabled)
 
 Labels :
-(soon) Label should be attributed to one or more elements on the map, or more arbitrarily placed, with assiciated default values (revise the way this was done)
-(soon) use label types as layers to display only certains things and associate labels to them
-(later) the left panel text input should be removed, a new label string should always be "label" if nothing selected, or copy of selected name if any label selected
-(later) deselect button on top of the list
+(now) Label should be attributed to one or more elements on the map, or more arbitrarily placed, with assiciated default values (revise the way this was done)
+(now) use label types as layers to display only certains things and associate labels to them
 
 Rendering :
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).

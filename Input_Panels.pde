@@ -537,7 +537,12 @@ void mousePressed() {
     mapModel.structures.add(s);
     selectedStructureIndex = mapModel.structures.size() - 1;
   } else if (currentTool == Tool.EDIT_LABELS) {
-    MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, labelDraft, labelTargetMode);
+    String baseText = "label";
+    if (selectedLabelIndex >= 0 && selectedLabelIndex < mapModel.labels.size()) {
+      MapLabel sel = mapModel.labels.get(selectedLabelIndex);
+      if (sel != null && sel.text != null && sel.text.length() > 0) baseText = sel.text;
+    }
+    MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, baseText, labelTargetMode);
     mapModel.labels.add(lbl);
     selectedLabelIndex = mapModel.labels.size() - 1;
     editingLabelIndex = selectedLabelIndex;
@@ -679,8 +684,6 @@ boolean handlePathsPanelClick(int mx, int my) {
 boolean handleLabelsPanelClick(int mx, int my) {
   if (!isInLabelsPanel(mx, my)) return false;
   LabelsLayout layout = buildLabelsLayout();
-  // Text box focus
-  editingLabelIndex = (mapModel.labels.size() > 0) ? mapModel.labels.size() - 1 : -1;
   for (int i = 0; i < layout.targetButtons.size(); i++) {
     IntRect b = layout.targetButtons.get(i);
     if (b.contains(mx, my)) {
@@ -688,7 +691,7 @@ boolean handleLabelsPanelClick(int mx, int my) {
       return true;
     }
   }
-  return true;
+  return false;
 }
 
 boolean handleLabelsListPanelClick(int mx, int my) {
@@ -696,8 +699,15 @@ boolean handleLabelsListPanelClick(int mx, int my) {
   LabelsListLayout layout = buildLabelsListLayout();
   populateLabelsListRows(layout);
 
+  if (layout.deselectBtn.contains(mx, my)) {
+    selectedLabelIndex = -1;
+    editingLabelIndex = -1;
+    labelDraft = "label";
+    return true;
+  }
+
   for (int i = 0; i < layout.rows.size(); i++) {
-LabelRowLayout row = layout.rows.get(i);
+    LabelRowLayout row = layout.rows.get(i);
     MapLabel lbl = mapModel.labels.get(i);
     if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
       selectedLabelIndex = i;
@@ -706,6 +716,7 @@ LabelRowLayout row = layout.rows.get(i);
         labelDraft = lbl.text;
       } else {
         editingLabelIndex = -1;
+        labelDraft = lbl.text;
       }
       return true;
     }
@@ -713,6 +724,7 @@ LabelRowLayout row = layout.rows.get(i);
       mapModel.labels.remove(i);
       if (selectedLabelIndex == i) selectedLabelIndex = -1;
       if (editingLabelIndex == i) editingLabelIndex = -1;
+      labelDraft = "label";
       return true;
     }
     if (row.targetRect.contains(mx, my)) {

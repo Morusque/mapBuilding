@@ -37,10 +37,10 @@ class ZonePreset {
 
 ZonePreset[] ZONE_PRESETS = new ZonePreset[] {
   new ZonePreset("Dirt",        color(210, 180, 140)),
-  new ZonePreset("Sand",        color(230, 214, 160)),
+  new ZonePreset("Rock",        color(150, 150, 150)),
   new ZonePreset("Grassland",   color(186, 206, 140)),
   new ZonePreset("Forest",      color(110, 150, 95)),
-  new ZonePreset("Rock",        color(150, 150, 150)),
+  new ZonePreset("Sand",        color(230, 214, 160)),
   new ZonePreset("Snow",        color(235, 240, 245)),
   new ZonePreset("Wetland",     color(165, 190, 155)),
   new ZonePreset("Shrubland",   color(195, 205, 170)),
