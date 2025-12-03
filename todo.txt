@@ -18,6 +18,7 @@ Biomes :
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
 (later) zone-painting brush is currently buggy
+(soon) when creating new zone, use a new hue that is as distant as possible as any other zone hue already present
 
 Paths :
 (later) needs more optimization or threading so not to hang anything
@@ -34,8 +35,9 @@ Struct :
 (later) there should be checkboxes to what the structures can snap to: water, biomes, underwater biomes, zones, paths, other structures (only show snapping feedback overlay lines when snapping for a given feature is enabled)
 
 Labels :
-(now) Label should be attributed to one or more elements on the map, or more arbitrarily placed, with assiciated default values (revise the way this was done)
-(now) use label types as layers to display only certains things and associate labels to them
+(soon) Label should be attributed to one or more elements on the map, or more arbitrarily placed, with associated default values (revise the way this was done)
+(soon) use label types as layers to display only certains things and associate labels to them
+(soon) label naming doesn't seem to work anymore
 
 Rendering :
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
@@ -53,7 +55,6 @@ Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
 
 Export :
-(now) create a new tab and .pde files for this (empty at first, I'll specity many things about)
 (later) JSON export/import (human-readable) with legend, layers, cells, paths, structures, groups, labels, view defaults.
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 (later) are there existing formats for such tools to handle?
