@@ -22,7 +22,7 @@ class MapModel {
 
   // Biomes / zone types
   ArrayList<ZoneType> biomeTypes = new ArrayList<ZoneType>();
-  ArrayList<AdminZone> adminZones = new ArrayList<AdminZone>();
+  ArrayList<MapZone> zones = new ArrayList<MapZone>();
 
   // Cell adjacency (rebuilt when Voronoi is recomputed)
   ArrayList<ArrayList<Integer>> cellNeighbors = new ArrayList<ArrayList<Integer>>();
@@ -53,7 +53,7 @@ class MapModel {
     // biomeTypes will be filled from Main.initBiomeTypes()
   }
 
-  class AdminZone {
+  class MapZone {
     String name;
     int col;
     float hue01 = 0.0f;
@@ -61,7 +61,7 @@ class MapModel {
     float bri01 = 0.9f;
     ArrayList<Integer> cells = new ArrayList<Integer>(); // indices into cells array
 
-    AdminZone(String name, int col) {
+    MapZone(String name, int col) {
       this.name = name;
       this.col = col;
       float[] hsb = rgbToHSB(col);
@@ -244,16 +244,16 @@ class MapModel {
     app.popStyle();
   }
 
-  void drawAdminOutlines(PApplet app) {
-    if (cells == null || adminZones == null) return;
+  void drawZoneOutlines(PApplet app) {
+    if (cells == null || zones == null) return;
     app.pushStyle();
     app.noFill();
     ensureCellNeighborsComputed();
     float eps2 = 1e-8f;
-    int typeCount = adminZones.size();
+    int typeCount = zones.size();
 
-    for (int z = 0; z < adminZones.size(); z++) {
-      AdminZone zone = adminZones.get(z);
+    for (int z = 0; z < zones.size(); z++) {
+      MapZone zone = zones.get(z);
       if (zone == null || zone.cells.isEmpty()) continue;
       int col = (z >= 0 && z < typeCount) ? zone.col : color(0);
       HashSet<String> drawn = new HashSet<String>();
@@ -1525,8 +1525,8 @@ class MapModel {
     return fallbackBiome;
   }
 
-  int sampleAdminFromOldCells(ArrayList<Cell> oldCells, float x, float y, int fallbackAdmin) {
-    return fallbackAdmin;
+  int sampleZoneFromOldCells(ArrayList<Cell> oldCells, float x, float y, int fallbackZone) {
+    return fallbackZone;
   }
 
   float sampleElevationFromOldCells(ArrayList<Cell> oldCells, float x, float y, float fallback) {
@@ -1754,24 +1754,24 @@ class MapModel {
     }
   }
 
-  void addCellToAdminZone(int cellIdx, int zoneIdx) {
-    if (adminZones == null || zoneIdx < 0 || zoneIdx >= adminZones.size()) return;
+  void addCellToZone(int cellIdx, int zoneIdx) {
+    if (zones == null || zoneIdx < 0 || zoneIdx >= zones.size()) return;
     if (cellIdx < 0 || cellIdx >= cells.size()) return;
-    AdminZone az = adminZones.get(zoneIdx);
+    MapZone az = zones.get(zoneIdx);
     if (az == null) return;
     if (!az.cells.contains(cellIdx)) {
       az.cells.add(cellIdx);
     }
   }
 
-  boolean cellInAdminZone(int cellIdx, int zoneIdx) {
-    if (adminZones == null || zoneIdx < 0 || zoneIdx >= adminZones.size()) return false;
-    AdminZone az = adminZones.get(zoneIdx);
+  boolean cellInZone(int cellIdx, int zoneIdx) {
+    if (zones == null || zoneIdx < 0 || zoneIdx >= zones.size()) return false;
+    MapZone az = zones.get(zoneIdx);
     if (az == null) return false;
     return az.cells.contains(cellIdx);
   }
 
-  void floodFillAdminZone(Cell start, int zoneIdx) {
+  void floodFillZone(Cell start, int zoneIdx) {
     if (start == null) return;
     int startIndex = indexOfCell(start);
     if (startIndex < 0) return;
@@ -1785,7 +1785,7 @@ class MapModel {
     visited[startIndex] = true;
     while (stackSize > 0) {
       int idx = stack[--stackSize];
-      addCellToAdminZone(idx, zoneIdx);
+      addCellToZone(idx, zoneIdx);
       ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
       if (nbs == null) continue;
       for (int nb : nbs) {
@@ -1957,8 +1957,8 @@ class MapModel {
     int clampedCount = constrain(targetCount, 0, MAX_SITE_COUNT);
     preservedCells = preserveCellData ? new ArrayList<Cell>(cells) : null;
     sites.clear();
-    if (!preserveCellData && adminZones != null) {
-      for (AdminZone az : adminZones) {
+    if (!preserveCellData && zones != null) {
+      for (MapZone az : zones) {
         if (az != null) az.cells.clear();
       }
     }
@@ -2188,24 +2188,24 @@ class MapModel {
     return false;
   }
 
-  void resetAllAdminsToNone() {
-    if (adminZones == null) return;
-    for (AdminZone az : adminZones) {
+  void resetAllZonesToNone() {
+    if (zones == null) return;
+    for (MapZone az : zones) {
       if (az != null) az.cells.clear();
     }
   }
 
-  void regenerateRandomAdminZones(int targetZones) {
+  void regenerateRandomZones(int targetZones) {
     if (cells == null || cells.isEmpty()) return;
     int n = cells.size();
     int zoneCount = max(1, targetZones);
-    adminZones.clear();
+    zones.clear();
 
     // Create zones with random hues
     for (int i = 0; i < zoneCount; i++) {
       float h = random(1.0f);
       int col = hsb01ToRGB(h, 0.6f, 0.95f);
-      adminZones.add(new AdminZone("Zone" + (i + 1), col));
+      zones.add(new MapZone("Zone" + (i + 1), col));
     }
 
     ensureCellNeighborsComputed();
@@ -2219,14 +2219,14 @@ class MapModel {
     // Seed assignment
     for (int z = 0; z < zoneCount && idx < indices.size(); z++) {
       int ci = indices.get(idx++);
-      addCellToAdminZone(ci, z);
+      addCellToZone(ci, z);
     }
 
     // Multi-source growth with random chunk sizes
     int[] zoneForCell = new int[n];
     Arrays.fill(zoneForCell, -1);
-    for (int z = 0; z < adminZones.size(); z++) {
-      for (int ci : adminZones.get(z).cells) {
+    for (int z = 0; z < zones.size(); z++) {
+      for (int ci : zones.get(z).cells) {
         if (ci >= 0 && ci < n) zoneForCell[ci] = z;
       }
     }
@@ -2252,15 +2252,15 @@ class MapModel {
     // Write back memberships
     for (int ci = 0; ci < n; ci++) {
       int z = zoneForCell[ci];
-      if (z >= 0 && z < adminZones.size()) {
-        adminZones.get(z).cells.add(ci);
+      if (z >= 0 && z < zones.size()) {
+        zones.get(z).cells.add(ci);
       }
     }
   }
 
-  boolean hasAnyNoneAdmin() {
-    if (adminZones == null || adminZones.isEmpty()) return true;
-    for (AdminZone az : adminZones) {
+  boolean hasAnyNoneZone() {
+    if (zones == null || zones.isEmpty()) return true;
+    for (MapZone az : zones) {
       if (az != null && az.cells.isEmpty()) return true;
     }
     return false;
@@ -2449,11 +2449,11 @@ class MapModel {
     }
   }
 
-  void addAdminType() {
-    int idx = adminZones.size();
+  void addZone() {
+    int idx = zones.size();
     ZonePreset preset = (idx < ZONE_PRESETS.length) ? ZONE_PRESETS[idx] : null;
     int col = (preset != null) ? preset.col : hsb01ToRGB(0.1f * (idx + 1), 0.5f, 0.95f);
-    adminZones.add(new AdminZone("Zone" + idx, col));
+    zones.add(new MapZone("Zone" + idx, col));
   }
 
   void addPathType(PathType pt) {
@@ -2487,9 +2487,9 @@ class MapModel {
     }
   }
 
-  void removeAdminType(int index) {
-    if (index < 0 || index >= adminZones.size()) return;
-    adminZones.remove(index);
+  void removeZone(int index) {
+    if (index < 0 || index >= zones.size()) return;
+    zones.remove(index);
   }
 }
 

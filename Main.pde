@@ -59,7 +59,7 @@ boolean keepPropertiesOnGenerate = false;
 
 // Zones (biomes) painting
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
-int activeAdminIndex = 1;                 // 0 = "None", 1..N = types
+int activeZoneIndex = 1;                  // 0 = "None", 1..N = zones
 ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
 int activePathTypeIndex = 0;
 int pathRouteModeIndex = 1; // 0=ENDS,1=PATHFIND
@@ -90,10 +90,10 @@ int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
 
 // Zone renaming state
+int editingBiomeNameIndex = -1;
+String biomeNameDraft = "";
 int editingZoneNameIndex = -1;
 String zoneNameDraft = "";
-int editingAdminNameIndex = -1;
-String adminNameDraft = "";
 
 // Label editing state
 int editingLabelIndex = -1;
@@ -126,8 +126,8 @@ final int SLIDER_NONE = 0;
 final int SLIDER_SITES_DENSITY = 1;
 final int SLIDER_SITES_FUZZ = 2;
 final int SLIDER_SITES_MODE = 3;
-final int SLIDER_ZONE_HUE = 4;
-final int SLIDER_ZONE_BRUSH = 5;
+final int SLIDER_BIOME_HUE = 4;
+final int SLIDER_BIOME_BRUSH = 5;
 final int SLIDER_ELEV_SEA = 6;
 final int SLIDER_ELEV_RADIUS = 7;
 final int SLIDER_ELEV_STRENGTH = 8;
@@ -138,12 +138,12 @@ final int SLIDER_FLATTEST_BIAS = 12;
 final int SLIDER_RENDER_LIGHT_AZIMUTH = 13;
 final int SLIDER_RENDER_LIGHT_ALTITUDE = 14;
 final int SLIDER_STRUCT_SIZE = 15;
-final int SLIDER_ADMIN_HUE = 16;
-final int SLIDER_ADMIN_BRUSH = 17;
+final int SLIDER_ZONES_HUE = 16;
+final int SLIDER_ZONES_BRUSH = 17;
 final int SLIDER_STRUCT_ANGLE = 18;
 final int SLIDER_PATH_TYPE_MIN_WEIGHT = 19;
 final int SLIDER_STRUCT_RATIO = 20;
-final int SLIDER_ADMIN_ROW_HUE = 21;
+final int SLIDER_ZONES_ROW_HUE = 21;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -155,7 +155,7 @@ void setup() {
   viewport = new Viewport();
   mapModel = new MapModel();
   initBiomeTypes();
-  initAdminTypes();
+  initZones();
   initPathTypes();
   mapModel.generateSites(currentPlacementMode(), siteTargetCount);
   mapModel.ensureVoronoiComputed();
@@ -174,14 +174,14 @@ void initBiomeTypes() {
   }
 }
 
-void initAdminTypes() {
-  mapModel.adminZones.clear();
+void initZones() {
+  mapModel.zones.clear();
   int initialCount = 2;
   for (int i = 0; i < initialCount && i < ZONE_PRESETS.length; i++) {
     ZonePreset zp = ZONE_PRESETS[i];
-    mapModel.adminZones.add(mapModel.new AdminZone("Zone" + (i + 1), zp.col));
+    mapModel.zones.add(mapModel.new MapZone("Zone" + (i + 1), zp.col));
   }
-  activeAdminIndex = mapModel.adminZones.isEmpty() ? -1 : 0;
+  activeZoneIndex = mapModel.zones.isEmpty() ? -1 : 0;
 }
 
 void initPathTypes() {
@@ -241,8 +241,8 @@ void draw() {
     mapModel.drawCells(this, showBorders);
   }
 
-  if (currentTool == Tool.EDIT_ADMIN) {
-    mapModel.drawAdminOutlines(this);
+  if (currentTool == Tool.EDIT_ZONES) {
+    mapModel.drawZoneOutlines(this);
   }
 
   // Paths are visible in all modes
@@ -341,7 +341,7 @@ void draw() {
     drawElevationBrushPreview();
   } else if (currentTool == Tool.EDIT_BIOMES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
-  } else if (currentTool == Tool.EDIT_ADMIN && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+  } else if (currentTool == Tool.EDIT_ZONES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
   } else {
     mapModel.drawDebugWorldBounds(this);
@@ -357,9 +357,9 @@ void draw() {
     drawElevationPanel();
   } else if (currentTool == Tool.EDIT_BIOMES) {
     drawBiomesPanel();
-  } else if (currentTool == Tool.EDIT_ADMIN) {
-    drawAdminPanel();
-    drawAdminZonesListPanel();
+  } else if (currentTool == Tool.EDIT_ZONES) {
+    drawZonesPanel();
+    drawZonesListPanel();
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
     drawStructuresPanelUI();
     drawStructuresListPanel();

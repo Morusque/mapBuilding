@@ -6,21 +6,21 @@ boolean isInSitesPanel(int mx, int my) {
   return layout.panel.contains(mx, my);
 }
 
-boolean isInZonesPanel(int mx, int my) {
+boolean isInBiomesPanel(int mx, int my) {
   if (currentTool != Tool.EDIT_BIOMES) return false;
   BiomesLayout layout = buildBiomesLayout();
   return layout.panel.contains(mx, my);
 }
 
-boolean isInAdminPanel(int mx, int my) {
-  if (currentTool != Tool.EDIT_ADMIN) return false;
-  AdminLayout layout = buildAdminLayout();
+boolean isInZonesPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_ZONES) return false;
+  ZonesLayout layout = buildZonesLayout();
   return layout.panel.contains(mx, my);
 }
 
-boolean isInAdminListPanel(int mx, int my) {
-  if (currentTool != Tool.EDIT_ADMIN) return false;
-  AdminListLayout layout = buildAdminListLayout();
+boolean isInZonesListPanel(int mx, int my) {
+  if (currentTool != Tool.EDIT_ZONES) return false;
+  ZonesListLayout layout = buildZonesListLayout();
   return layout.panel.contains(mx, my);
 }
 
@@ -98,7 +98,7 @@ boolean handleToolButtonClick(int mx, int my) {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
     Tool.EDIT_BIOMES,
-    Tool.EDIT_ADMIN,
+    Tool.EDIT_ZONES,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS,
@@ -177,8 +177,8 @@ boolean handleSitesPanelClick(int mx, int my) {
 
 // ----- Zones panel click (tool + biome selection + add/remove + hue) -----
 
-boolean handleZonesPanelClick(int mx, int my) {
-  if (!isInZonesPanel(mx, my)) return false;
+boolean handleBiomesPanelClick(int mx, int my) {
+  if (!isInBiomesPanel(mx, my)) return false;
   if (mapModel == null || mapModel.biomeTypes == null) return false;
 
   BiomesLayout layout = buildBiomesLayout();
@@ -204,7 +204,7 @@ boolean handleZonesPanelClick(int mx, int my) {
       mapModel.resetAllBiomesToNone();
       mapModel.generateZonesFromSeeds();
       activeBiomeIndex = 0;
-      editingZoneNameIndex = -1;
+      editingBiomeNameIndex = -1;
     }
     return true;
   }
@@ -213,7 +213,7 @@ boolean handleZonesPanelClick(int mx, int my) {
   if (layout.resetBtn.contains(mx, my)) {
     mapModel.resetAllBiomesToNone();
     activeBiomeIndex = 0;
-    editingZoneNameIndex = -1;
+    editingBiomeNameIndex = -1;
     return true;
   }
 
@@ -264,8 +264,8 @@ boolean handleZonesPanelClick(int mx, int my) {
 
   // Name field for selected biome
   if (layout.nameField.contains(mx, my) && activeBiomeIndex >= 0 && activeBiomeIndex < n) {
-    editingZoneNameIndex = activeBiomeIndex;
-    zoneNameDraft = mapModel.biomeTypes.get(activeBiomeIndex).name;
+    editingBiomeNameIndex = activeBiomeIndex;
+    biomeNameDraft = mapModel.biomeTypes.get(activeBiomeIndex).name;
     return true;
   }
 
@@ -279,7 +279,7 @@ boolean handleZonesPanelClick(int mx, int my) {
       ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
       active.hue01 = t;
       active.updateColorFromHSB();
-      activeSlider = SLIDER_ZONE_HUE;
+      activeSlider = SLIDER_BIOME_HUE;
 
       return true;
     }
@@ -289,79 +289,79 @@ boolean handleZonesPanelClick(int mx, int my) {
   if (layout.brushSlider.contains(mx, my)) {
     float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
     zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
-    activeSlider = SLIDER_ZONE_BRUSH;
+    activeSlider = SLIDER_BIOME_BRUSH;
     return true;
   }
 
   return false;
 }
 
-// ----- Admin panel click -----
-boolean handleAdminPanelClick(int mx, int my) {
-  if (!isInAdminPanel(mx, my)) return false;
-  if (mapModel == null || mapModel.adminZones == null) return false;
+// ----- Zones panel click -----
+boolean handleZonesPanelClick(int mx, int my) {
+  if (!isInZonesPanel(mx, my)) return false;
+  if (mapModel == null || mapModel.zones == null) return false;
 
-  AdminLayout layout = buildAdminLayout();
+  ZonesLayout layout = buildZonesLayout();
 
   if (layout.brushSlider.contains(mx, my)) {
     float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
     zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
-    activeSlider = SLIDER_ADMIN_BRUSH;
+    activeSlider = SLIDER_ZONES_BRUSH;
     return true;
   }
 
   if (layout.resetBtn.contains(mx, my)) {
-    mapModel.resetAllAdminsToNone();
-    activeAdminIndex = -1;
-    editingAdminNameIndex = -1;
+    mapModel.resetAllZonesToNone();
+    activeZoneIndex = -1;
+    editingZoneNameIndex = -1;
     return true;
   }
 
   if (layout.regenerateBtn.contains(mx, my)) {
-    int target = max(3, mapModel.adminZones.size());
-    mapModel.regenerateRandomAdminZones(target);
-    activeAdminIndex = !mapModel.adminZones.isEmpty() ? 0 : -1;
-    editingAdminNameIndex = -1;
+    int target = max(3, mapModel.zones.size());
+    mapModel.regenerateRandomZones(target);
+    activeZoneIndex = !mapModel.zones.isEmpty() ? 0 : -1;
+    editingZoneNameIndex = -1;
     return true;
   }
 
   return false;
 }
 
-boolean handleAdminListPanelClick(int mx, int my) {
-  if (!isInAdminListPanel(mx, my)) return false;
-  AdminListLayout layout = buildAdminListLayout();
-  populateAdminRows(layout);
+boolean handleZonesListPanelClick(int mx, int my) {
+  if (!isInZonesListPanel(mx, my)) return false;
+  ZonesListLayout layout = buildZonesListLayout();
+  populateZonesRows(layout);
 
   if (layout.newBtn.contains(mx, my)) {
-    mapModel.addAdminType();
-    activeAdminIndex = mapModel.adminZones.size() - 1;
+    mapModel.addZone();
+    activeZoneIndex = mapModel.zones.size() - 1;
     return true;
   }
 
   for (int i = 0; i < layout.rows.size(); i++) {
-    MapModel.AdminZone az = mapModel.adminZones.get(i);
-    AdminRowLayout row = layout.rows.get(i);
+    MapModel.MapZone az = mapModel.zones.get(i);
+    ZoneRowLayout row = layout.rows.get(i);
 
     if (row.selectRect.contains(mx, my)) {
-      activeAdminIndex = i;
-      editingAdminNameIndex = -1;
+      activeZoneIndex = i;
+      editingZoneNameIndex = -1;
       return true;
     }
 
     if (row.nameRect.contains(mx, my)) {
-      activeAdminIndex = i;
-      editingAdminNameIndex = i;
-      adminNameDraft = az.name;
+      activeZoneIndex = i;
+      editingZoneNameIndex = i;
+      zoneNameDraft = az.name;
       return true;
     }
 
     if (row.hueSlider.contains(mx, my)) {
-      activeAdminIndex = i;
+      activeZoneIndex = i;
       float t = constrain((mx - row.hueSlider.x) / (float)row.hueSlider.w, 0, 1);
       az.hue01 = t;
       az.updateColorFromHSB();
-      activeSlider = SLIDER_ADMIN_ROW_HUE;
+      activeSlider = SLIDER_ZONES_ROW_HUE;
       return true;
     }
   }
@@ -398,25 +398,25 @@ void paintBiomeBrush(float wx, float wy) {
   }
 }
 
-void paintAdminAt(float wx, float wy) {
-  if (mapModel.adminZones == null || activeAdminIndex < 0 || activeAdminIndex >= mapModel.adminZones.size()) return;
+void paintZoneAt(float wx, float wy) {
+  if (mapModel.zones == null || activeZoneIndex < 0 || activeZoneIndex >= mapModel.zones.size()) return;
   Cell c = mapModel.findCellContaining(wx, wy);
   if (c != null) {
     int idx = mapModel.indexOfCell(c);
-    mapModel.addCellToAdminZone(idx, activeAdminIndex);
+    mapModel.addCellToZone(idx, activeZoneIndex);
   }
 }
 
-void fillAdminAt(float wx, float wy) {
-  if (mapModel.adminZones == null || activeAdminIndex < 0 || activeAdminIndex >= mapModel.adminZones.size()) return;
+void fillZoneAt(float wx, float wy) {
+  if (mapModel.zones == null || activeZoneIndex < 0 || activeZoneIndex >= mapModel.zones.size()) return;
   Cell c = mapModel.findCellContaining(wx, wy);
   if (c != null) {
-    mapModel.floodFillAdminZone(c, activeAdminIndex);
+    mapModel.floodFillZone(c, activeZoneIndex);
   }
 }
 
-void paintAdminBrush(float wx, float wy) {
-  if (mapModel.adminZones == null || activeAdminIndex < 0 || activeAdminIndex >= mapModel.adminZones.size()) return;
+void paintZoneBrush(float wx, float wy) {
+  if (mapModel.zones == null || activeZoneIndex < 0 || activeZoneIndex >= mapModel.zones.size()) return;
   if (mapModel.cells == null) return;
   float r2 = zoneBrushRadius * zoneBrushRadius;
   for (Cell c : mapModel.cells) {
@@ -426,7 +426,7 @@ void paintAdminBrush(float wx, float wy) {
     float d2 = dx * dx + dy * dy;
     if (d2 <= r2) {
       int idx = mapModel.indexOfCell(c);
-      mapModel.addCellToAdminZone(idx, activeAdminIndex);
+      mapModel.addCellToZone(idx, activeZoneIndex);
     }
   }
 }
@@ -452,14 +452,14 @@ void mousePressed() {
 
   // Biomes panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_BIOMES) {
-    if (handleZonesPanelClick(mouseX, mouseY)) return;
+    if (handleBiomesPanelClick(mouseX, mouseY)) return;
   }
 
-  // Admin panel
-  if (mouseButton == LEFT && currentTool == Tool.EDIT_ADMIN) {
-    if (handleAdminPanelClick(mouseX, mouseY)) return;
-    if (handleAdminListPanelClick(mouseX, mouseY)) return;
-    if (isInAdminListPanel(mouseX, mouseY)) return;
+  // Zones panel
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
+    if (handleZonesPanelClick(mouseX, mouseY)) return;
+    if (handleZonesListPanelClick(mouseX, mouseY)) return;
+    if (isInZonesListPanel(mouseX, mouseY)) return;
   }
 
   // Elevation panel
@@ -496,7 +496,7 @@ void mousePressed() {
   // Ignore world interaction if inside any top UI area
   if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
   if (isInActivePanel(mouseX, mouseY)) return;
-  if (currentTool == Tool.EDIT_ADMIN && isInAdminListPanel(mouseX, mouseY)) return;
+  if (currentTool == Tool.EDIT_ZONES && isInZonesListPanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_PATHS && isInPathsListPanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_STRUCTURES && isInStructuresListPanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_LABELS && isInLabelsListPanel(mouseX, mouseY)) return;
@@ -529,11 +529,11 @@ void mousePressed() {
       } else {
         fillBiomeAt(worldPos.x, worldPos.y);
       }
-    } else if (currentTool == Tool.EDIT_ADMIN) {
+    } else if (currentTool == Tool.EDIT_ZONES) {
       if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
-        paintAdminBrush(worldPos.x, worldPos.y);
+        paintZoneBrush(worldPos.x, worldPos.y);
       } else {
-        fillAdminAt(worldPos.x, worldPos.y);
+        fillZoneAt(worldPos.x, worldPos.y);
       }
     } else if (currentTool == Tool.EDIT_ELEVATION) {
       float dir = elevationBrushRaise ? 1 : -1;

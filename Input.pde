@@ -133,7 +133,7 @@ void mouseDragged() {
   }
 
   // Zones: slider dragging (only for hue + paint while dragging)
-  if (mouseButton == LEFT && currentTool == Tool.EDIT_BIOMES && isInZonesPanel(mouseX, mouseY)) {
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_BIOMES && isInBiomesPanel(mouseX, mouseY)) {
     BiomesLayout layout = buildBiomesLayout();
     int n = (mapModel.biomeTypes == null) ? 0 : mapModel.biomeTypes.size();
 
@@ -144,7 +144,7 @@ void mouseDragged() {
         ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
         active.hue01 = t;
         active.updateColorFromHSB();
-        activeSlider = SLIDER_ZONE_HUE;
+        activeSlider = SLIDER_BIOME_HUE;
         return;
       }
     }
@@ -152,7 +152,7 @@ void mouseDragged() {
     if (layout.brushSlider.contains(mouseX, mouseY)) {
       float t = constrain((mouseX - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
-      activeSlider = SLIDER_ZONE_BRUSH;
+      activeSlider = SLIDER_BIOME_BRUSH;
       return;
     }
   }
@@ -170,25 +170,25 @@ void mouseDragged() {
     return;
   }
 
-  // Admin: slider dragging
-  if (mouseButton == LEFT && currentTool == Tool.EDIT_ADMIN && isInAdminPanel(mouseX, mouseY)) {
-    AdminLayout layout = buildAdminLayout();
+  // Zones: slider dragging
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES && isInZonesPanel(mouseX, mouseY)) {
+    ZonesLayout layout = buildZonesLayout();
     if (layout.brushSlider.contains(mouseX, mouseY)) {
       float t = constrain((mouseX - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
-      activeSlider = SLIDER_ADMIN_BRUSH;
+      activeSlider = SLIDER_ZONES_BRUSH;
       return;
     }
   }
 
-  // Admin: paint while dragging
-  if (mouseButton == LEFT && currentTool == Tool.EDIT_ADMIN) {
+  // Zones: paint while dragging
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
     IntRect panel = getActivePanelRect();
     boolean inPanel = (panel != null && panel.contains(mouseX, mouseY));
     if (!inPanel) {
       PVector w = viewport.screenToWorld(mouseX, mouseY);
       if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
-        paintAdminBrush(w.x, w.y);
+        paintZoneBrush(w.x, w.y);
       }
     }
     return;
@@ -247,7 +247,7 @@ void updateActiveSlider(int mx, int my) {
       placementModeIndex = constrain(idx, 0, placementModes.length - 1);
       break;
     }
-    case SLIDER_ZONE_HUE: {
+    case SLIDER_BIOME_HUE: {
       BiomesLayout l = buildBiomesLayout();
       float t = (mx - l.hueSlider.x) / (float)l.hueSlider.w;
       t = constrain(t, 0, 1);
@@ -258,7 +258,7 @@ void updateActiveSlider(int mx, int my) {
       }
       break;
     }
-    case SLIDER_ZONE_BRUSH: {
+    case SLIDER_BIOME_BRUSH: {
       BiomesLayout l = buildBiomesLayout();
       float t = (mx - l.brushSlider.x) / (float)l.brushSlider.w;
       t = constrain(t, 0, 1);
@@ -325,23 +325,23 @@ void updateActiveSlider(int mx, int my) {
       }
       break;
     }
-    case SLIDER_ADMIN_HUE: {
-      // Deprecated: admin hue is edited via list panel per-row slider
+    case SLIDER_ZONES_HUE: {
+      // Deprecated: zone hue is edited via list panel per-row slider
       break;
     }
-    case SLIDER_ADMIN_BRUSH: {
-      AdminLayout l = buildAdminLayout();
+    case SLIDER_ZONES_BRUSH: {
+      ZonesLayout l = buildZonesLayout();
       float t = constrain((mx - l.brushSlider.x) / (float)l.brushSlider.w, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
       break;
     }
-    case SLIDER_ADMIN_ROW_HUE: {
-      AdminListLayout l = buildAdminListLayout();
-      populateAdminRows(l);
-      if (activeAdminIndex >= 0 && activeAdminIndex < l.rows.size()) {
-        AdminRowLayout row = l.rows.get(activeAdminIndex);
+    case SLIDER_ZONES_ROW_HUE: {
+      ZonesListLayout l = buildZonesListLayout();
+      populateZonesRows(l);
+      if (activeZoneIndex >= 0 && activeZoneIndex < l.rows.size()) {
+        ZoneRowLayout row = l.rows.get(activeZoneIndex);
         float t = constrain((mx - row.hueSlider.x) / (float)row.hueSlider.w, 0, 1);
-        MapModel.AdminZone az = mapModel.adminZones.get(activeAdminIndex);
+        MapModel.MapZone az = mapModel.zones.get(activeZoneIndex);
         az.hue01 = t;
         az.updateColorFromHSB();
       }
@@ -401,10 +401,27 @@ void mouseWheel(MouseEvent event) {
 
 void keyPressed() {
   // Inline text editing for zones
+  if (editingBiomeNameIndex >= 0) {
+    if (key == ENTER || key == RETURN) {
+      if (editingBiomeNameIndex < mapModel.biomeTypes.size()) {
+        mapModel.biomeTypes.get(editingBiomeNameIndex).name = biomeNameDraft;
+      }
+      editingBiomeNameIndex = -1;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (biomeNameDraft.length() > 0) biomeNameDraft = biomeNameDraft.substring(0, biomeNameDraft.length() - 1);
+      return;
+    } else if (key >= 32) {
+      biomeNameDraft += key;
+      return;
+    }
+  }
+
+  // Inline text editing for zones
   if (editingZoneNameIndex >= 0) {
     if (key == ENTER || key == RETURN) {
-      if (editingZoneNameIndex < mapModel.biomeTypes.size()) {
-        mapModel.biomeTypes.get(editingZoneNameIndex).name = zoneNameDraft;
+      if (editingZoneNameIndex < mapModel.zones.size()) {
+        mapModel.zones.get(editingZoneNameIndex).name = zoneNameDraft;
       }
       editingZoneNameIndex = -1;
       return;
@@ -413,23 +430,6 @@ void keyPressed() {
       return;
     } else if (key >= 32) {
       zoneNameDraft += key;
-      return;
-    }
-  }
-
-  // Inline text editing for admin zones
-  if (editingAdminNameIndex >= 0) {
-    if (key == ENTER || key == RETURN) {
-      if (editingAdminNameIndex < mapModel.adminZones.size()) {
-        mapModel.adminZones.get(editingAdminNameIndex).name = adminNameDraft;
-      }
-      editingAdminNameIndex = -1;
-      return;
-    } else if (key == BACKSPACE || key == DELETE) {
-      if (adminNameDraft.length() > 0) adminNameDraft = adminNameDraft.substring(0, adminNameDraft.length() - 1);
-      return;
-    } else if (key >= 32) {
-      adminNameDraft += key;
       return;
     }
   }

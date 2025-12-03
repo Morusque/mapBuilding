@@ -15,6 +15,8 @@ Biomes :
 Zones :
 (soon) make the generation depend more on whatever is already on the map (eg propagation priority lowered by biome change, big elevation changes, etc)
 (soon) allow shared borders to be seen for both zones
+(soon) zones default names aren't numerically consistent
+(soon) zone hue slider only makes sense if saturated enough
 
 Paths :
 (later) needs more optimization or threading so not to hang anything
@@ -57,7 +59,6 @@ Export :
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 
 General :
-(now) Define a precise lexicon and homogenize code and ui labels.
 (later) Refactor, optimize etc.
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
 (soon) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)

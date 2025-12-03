@@ -127,7 +127,7 @@ void drawToolButtons() {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
     Tool.EDIT_BIOMES,
-    Tool.EDIT_ADMIN,
+    Tool.EDIT_ZONES,
     Tool.EDIT_PATHS,
     Tool.EDIT_STRUCTURES,
     Tool.EDIT_LABELS,

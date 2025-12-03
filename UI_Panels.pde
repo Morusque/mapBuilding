@@ -319,7 +319,7 @@ void drawBiomesPanel() {
   if (activeBiomeIndex >= 0 && activeBiomeIndex < n) {
     IntRect nf = layout.nameField;
     ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
-    boolean editing = (editingZoneNameIndex == activeBiomeIndex);
+    boolean editing = (editingBiomeNameIndex == activeBiomeIndex);
     fill(0);
     textAlign(LEFT, BOTTOM);
     text("Name", nf.x, nf.y - 4);
@@ -328,10 +328,10 @@ void drawBiomesPanel() {
     rect(nf.x, nf.y, nf.w, nf.h);
     fill(0);
     textAlign(LEFT, CENTER);
-    String shown = editing ? zoneNameDraft : active.name;
+    String shown = editing ? biomeNameDraft : active.name;
     text(shown, nf.x + 6, nf.y + nf.h / 2);
     if (editing) {
-      float caretX = nf.x + 6 + textWidth(zoneNameDraft);
+      float caretX = nf.x + 6 + textWidth(biomeNameDraft);
       stroke(0);
       line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
     }
@@ -384,8 +384,8 @@ void drawBiomesPanel() {
                    "right-click: pan, wheel: zoom.");
 }
 
-// ----- ADMIN (Zones) PANEL -----
-class AdminLayout {
+// ----- ZONES PANEL -----
+class ZonesLayout {
   IntRect panel;
   int titleY;
   IntRect resetBtn;
@@ -394,21 +394,21 @@ class AdminLayout {
   IntRect listPanel;
 }
 
-class AdminRowLayout {
+class ZoneRowLayout {
   IntRect selectRect;
   IntRect nameRect;
   IntRect hueSlider;
 }
 
-class AdminListLayout {
+class ZonesListLayout {
   IntRect panel;
   int titleY;
   IntRect newBtn;
-  ArrayList<AdminRowLayout> rows = new ArrayList<AdminRowLayout>();
+  ArrayList<ZoneRowLayout> rows = new ArrayList<ZoneRowLayout>();
 }
 
-AdminListLayout buildAdminListLayout() {
-  AdminListLayout l = new AdminListLayout();
+ZonesListLayout buildZonesListLayout() {
+  ZonesListLayout l = new ZonesListLayout();
   int w = RIGHT_PANEL_W;
   int x = width - w - PANEL_PADDING;
   int y = panelTop();
@@ -419,17 +419,17 @@ AdminListLayout buildAdminListLayout() {
   return l;
 }
 
-void populateAdminRows(AdminListLayout layout) {
+void populateZonesRows(ZonesListLayout layout) {
   layout.rows.clear();
-  if (mapModel == null || mapModel.adminZones == null) return;
+  if (mapModel == null || mapModel.zones == null) return;
   int labelX = layout.panel.x + PANEL_PADDING;
   int curY = layout.newBtn.y + layout.newBtn.h + PANEL_SECTION_GAP;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
   int rowH = 28;
   int hueW = 90;
-  for (int i = 0; i < mapModel.adminZones.size(); i++) {
+  for (int i = 0; i < mapModel.zones.size(); i++) {
     if (curY + rowH > maxY) break;
-    AdminRowLayout row = new AdminRowLayout();
+    ZoneRowLayout row = new ZoneRowLayout();
     int selectW = 18;
     row.selectRect = new IntRect(labelX, curY, selectW, rowH);
     row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - selectW - 6 - hueW - 8, rowH);
@@ -439,9 +439,9 @@ void populateAdminRows(AdminListLayout layout) {
   }
 }
 
-void drawAdminZonesListPanel() {
-  AdminListLayout layout = buildAdminListLayout();
-  populateAdminRows(layout);
+void drawZonesListPanel() {
+  ZonesListLayout layout = buildZonesListLayout();
+  populateZonesRows(layout);
   drawPanelBackground(layout.panel);
 
   int labelX = layout.panel.x + PANEL_PADDING;
@@ -455,27 +455,27 @@ void drawAdminZonesListPanel() {
   textAlign(CENTER, CENTER);
   text("New zone", layout.newBtn.x + layout.newBtn.w / 2, layout.newBtn.y + layout.newBtn.h / 2);
 
-  if (mapModel == null || mapModel.adminZones == null) return;
+  if (mapModel == null || mapModel.zones == null) return;
 
   for (int i = 0; i < layout.rows.size(); i++) {
-    MapModel.AdminZone az = mapModel.adminZones.get(i);
-    AdminRowLayout row = layout.rows.get(i);
-    boolean selected = (activeAdminIndex == i);
+    MapModel.MapZone az = mapModel.zones.get(i);
+    ZoneRowLayout row = layout.rows.get(i);
+    boolean selected = (activeZoneIndex == i);
 
     drawBevelButton(row.selectRect.x, row.selectRect.y, row.selectRect.w, row.selectRect.h, selected);
     fill(10);
     textAlign(CENTER, CENTER);
     text(selected ? "*" : "", row.selectRect.x + row.selectRect.w / 2, row.selectRect.y + row.selectRect.h / 2);
 
-    boolean editing = (editingAdminNameIndex == i);
+    boolean editing = (editingZoneNameIndex == i);
     if (editing) {
       stroke(60);
       fill(255);
       rect(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h);
       fill(0);
       textAlign(LEFT, CENTER);
-      text(adminNameDraft, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
-      float caretX = row.nameRect.x + 6 + textWidth(adminNameDraft);
+      text(zoneNameDraft, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
+      float caretX = row.nameRect.x + 6 + textWidth(zoneNameDraft);
       stroke(0);
       line(caretX, row.nameRect.y + 4, caretX, row.nameRect.y + row.nameRect.h - 4);
     } else {
@@ -498,8 +498,8 @@ void drawAdminZonesListPanel() {
   }
 }
 
-AdminLayout buildAdminLayout() {
-  AdminLayout l = new AdminLayout();
+ZonesLayout buildZonesLayout() {
+  ZonesLayout l = new ZonesLayout();
   l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
   int innerX = l.panel.x + PANEL_PADDING;
   int curY = l.panel.y + PANEL_PADDING;
@@ -522,8 +522,8 @@ AdminLayout buildAdminLayout() {
   return l;
 }
 
-void drawAdminPanel() {
-  AdminLayout layout = buildAdminLayout();
+void drawZonesPanel() {
+  ZonesLayout layout = buildZonesLayout();
   drawPanelBackground(layout.panel);
 
   int labelX = layout.panel.x + PANEL_PADDING;
@@ -1654,7 +1654,7 @@ IntRect getActivePanelRect() {
       BiomesLayout l = buildBiomesLayout();
       return l.panel;
     }
-    case EDIT_ADMIN: { AdminLayout l = buildAdminLayout(); return l.panel; }
+    case EDIT_ZONES: { ZonesLayout l = buildZonesLayout(); return l.panel; }
     case EDIT_STRUCTURES: {
       StructuresLayout l = buildStructuresLayout();
       return l.panel;
