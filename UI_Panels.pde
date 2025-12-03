@@ -1,5 +1,10 @@
 final int PANEL_HINT_H = PANEL_SECTION_GAP + (PANEL_LABEL_H + 2) * 2 + 6;
 
+int hintHeight(int lines) {
+  if (lines <= 0) return 0;
+  return PANEL_SECTION_GAP + (PANEL_LABEL_H + 2) * lines + 6;
+}
+
 // ----- SITES PANEL -----
 
 class SitesLayout {
@@ -35,7 +40,7 @@ SitesLayout buildSitesLayout() {
                                curY + (PANEL_BUTTON_H - PANEL_CHECK_SIZE) / 2,
                                PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
   curY += PANEL_BUTTON_H + PANEL_PADDING;
-  curY += PANEL_HINT_H;
+  curY += hintHeight(4);
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -154,8 +159,10 @@ void drawSitesPanel() {
   text("Keep properties", c.x + c.w + 6, g.y + g.h / 2);
 
   drawControlsHint(layout.panel,
-                   "right-click: pan; wheel: zoom.",
-                   "drag: drag; DEL: remove selected.");
+                   "right-click: pan",
+                   "wheel: zoom",
+                   "drag: drag",
+                   "DEL: remove selected");
 }
 
 // ----- Biomes PANEL -----
@@ -229,7 +236,7 @@ BiomesLayout buildBiomesLayout() {
   l.brushSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
 
-  curY += PANEL_HINT_H;
+  curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -381,7 +388,8 @@ void drawBiomesPanel() {
 
   drawControlsHint(layout.panel,
                    "left-click: paint/fill",
-                   "right-click: pan, wheel: zoom.");
+                   "right-click: pan",
+                   "wheel: zoom.");
 }
 
 // ----- ZONES PANEL -----
@@ -530,8 +538,7 @@ ZonesLayout buildZonesLayout() {
   // Right-side list panel reserved space
   l.listPanel = new IntRect(width - RIGHT_PANEL_W - PANEL_PADDING, panelTop(), RIGHT_PANEL_W, height - panelTop() - PANEL_PADDING);
 
-  curY += PANEL_HINT_H;
-  curY += PANEL_HINT_H;
+  curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -568,8 +575,9 @@ void drawZonesPanel() {
   text("Brush radius", brush.x, brush.y - 4);
 
   drawControlsHint(layout.panel,
-                   "left-click: paint (erase when none selected)",
-                   "right-click pan; wheel: zoom.");
+                   "left-click: paint or erase",
+                   "right-click pan",
+                   "wheel: zoom");
 }
 
 // ----- PATHS PANEL -----
@@ -670,7 +678,7 @@ PathsLayout buildPathsLayout() {
   l.eraserBtn = new IntRect(innerX, curY, 90, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
-  curY += PANEL_HINT_H;
+  curY += hintHeight(5);
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -882,8 +890,11 @@ void drawPathsPanel() {
   }
 
   drawControlsHint(layout.panel,
-                   "left-click: start/end; DEL: cancels",
-                   "right-click: pan; wheel: zoom; C: clear; use Deselect to unselect");
+                   "left-click: start/end",
+                   "DEL: cancels",
+                   "right-click: pan",
+                   "wheel: zoom",
+                   "C: clear");
 }
 
 void drawPathsListPanel() {
@@ -1010,7 +1021,7 @@ ElevationLayout buildElevationLayout() {
   l.varyBtn = new IntRect(l.perlinBtn.x + genW + 8, curY, genW, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_PADDING;
 
-  curY += PANEL_HINT_H;
+  curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -1095,7 +1106,8 @@ void drawElevationPanel() {
 
   drawControlsHint(layout.panel,
                    "left-click: raise/lower",
-                   "right-click: pan; wheel: zoom.");
+                   "right-click: pan",
+                   "wheel: zoom");
 }
 
 // ----- LABELS PANEL -----
@@ -1125,7 +1137,7 @@ LabelsLayout buildLabelsLayout() {
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
-  curY += PANEL_HINT_H;
+  curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -1141,7 +1153,8 @@ void drawLabelsPanel() {
 
   drawControlsHint(layout.panel,
                    "left-click: place",
-                   "right-click pan; wheel: zoom");
+                   "right-click pan",
+                   "wheel: zoom");
 }
 
 LabelsListLayout buildLabelsListLayout() {
@@ -1306,7 +1319,7 @@ StructuresLayout buildStructuresLayout() {
   }
   curY += PANEL_BUTTON_H + PANEL_PADDING;
 
-  curY += PANEL_HINT_H;
+  curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -1387,7 +1400,8 @@ void drawStructuresPanelUI() {
 
   drawControlsHint(layout.panel,
                    "left-click: place",
-                   "right-click: pan; wheel: zoom; use Deselect to unselect");
+                   "right-click: pan",
+                   "wheel: zoom");
 }
 
 // ----- STRUCTURES LIST (right panel) -----
@@ -1509,7 +1523,7 @@ RenderLayout buildRenderLayout() {
     }
   }
 
-  curY += PANEL_PADDING + PANEL_HINT_H;
+  curY += PANEL_PADDING + hintHeight(2);
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -1639,14 +1653,15 @@ void drawCheckbox(int x, int y, int size, boolean on, String label) {
   text(label, x + size + 6, y + size / 2);
 }
 
-void drawControlsHint(IntRect panel, String line1, String line2) {
-  if (panel == null) return;
-  int lines = 0;
-  if (line1 != null && line1.length() > 0) lines++;
-  if (line2 != null && line2.length() > 0) lines++;
-  if (lines == 0) return;
+void drawControlsHint(IntRect panel, String... linesArr) {
+  if (panel == null || linesArr == null) return;
+  ArrayList<String> lines = new ArrayList<String>();
+  for (String s : linesArr) {
+    if (s != null && s.length() > 0) lines.add(s);
+  }
+  if (lines.isEmpty()) return;
 
-  float totalH = lines * (PANEL_LABEL_H + 2);
+  float totalH = lines.size() * (PANEL_LABEL_H + 2);
   float yTop = panel.y + panel.h - PANEL_PADDING - totalH;
   float sepY = yTop - 4;
 
@@ -1657,12 +1672,9 @@ void drawControlsHint(IntRect panel, String line1, String line2) {
   fill(40);
   textAlign(LEFT, TOP);
   float y = yTop;
-  if (line1 != null && line1.length() > 0) {
-    text(line1, panel.x + PANEL_PADDING, y);
+  for (String s : lines) {
+    text(s, panel.x + PANEL_PADDING, y);
     y += PANEL_LABEL_H + 2;
-  }
-  if (line2 != null && line2.length() > 0) {
-    text(line2, panel.x + PANEL_PADDING, y);
   }
 }
 
