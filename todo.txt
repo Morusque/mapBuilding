@@ -64,5 +64,6 @@ General :
 (soon) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
 (later) option to generate details (about everything) for zooming
 (later) very top panel should have a little bit more padding on the bottom, jus a few px to allow bottom of text to be good visually
-(soon) list selections should feel more like win95 circular radio (beveled white hole, with black dot in it when selected)
 (later) check useless variables, problems tabs and stuff like those
+(later) scrollbars for long right-panel lists
+

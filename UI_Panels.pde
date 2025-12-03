@@ -480,10 +480,7 @@ void drawZonesListPanel() {
     ZoneRowLayout row = layout.rows.get(i);
     boolean selected = (activeZoneIndex == i);
 
-    drawBevelButton(row.selectRect.x, row.selectRect.y, row.selectRect.w, row.selectRect.h, selected);
-    fill(10);
-    textAlign(CENTER, CENTER);
-    text(selected ? "*" : "", row.selectRect.x + row.selectRect.w / 2, row.selectRect.y + row.selectRect.h / 2);
+    drawRadioButton(row.selectRect, selected);
 
     boolean editing = (editingZoneNameIndex == i);
     if (editing) {
@@ -919,10 +916,7 @@ void drawPathsListPanel() {
     PathRowLayout row = layout.rows.get(i);
 
     boolean selected = (selectedPathIndex == i);
-      drawBevelButton(row.selectRect.x, row.selectRect.y, row.selectRect.w, row.selectRect.h, selected);
-      fill(10);
-      textAlign(CENTER, CENTER);
-      text(selected ? "*" : "", row.selectRect.x + row.selectRect.w / 2, row.selectRect.y + row.selectRect.h / 2 - 1);
+    drawRadioButton(row.selectRect, selected);
 
       boolean editing = (editingPathNameIndex == i);
       if (editing) {
@@ -1225,10 +1219,7 @@ void drawLabelsListPanel() {
     MapLabel lbl = mapModel.labels.get(i);
     LabelRowLayout row = layout.rows.get(i);
     boolean selected = (selectedLabelIndex == i);
-    drawBevelButton(row.selectRect.x, row.selectRect.y, row.selectRect.w, row.selectRect.h, selected);
-    fill(10);
-    textAlign(CENTER, CENTER);
-    text(selected ? "*" : "", row.selectRect.x + row.selectRect.w / 2, row.selectRect.y + row.selectRect.h / 2);
+    drawRadioButton(row.selectRect, selected);
 
     boolean editing = (editingLabelIndex == i);
     if (editing) {
@@ -1469,10 +1460,7 @@ void drawStructuresListPanel() {
     StructureRowLayout row = layout.rows.get(i);
     Structure s = mapModel.structures.get(i);
     boolean selected = (selectedStructureIndex == i);
-    drawBevelButton(row.selectRect.x, row.selectRect.y, row.selectRect.w, row.selectRect.h, selected);
-    fill(10);
-    textAlign(CENTER, CENTER);
-    text(selected ? "*" : "", row.selectRect.x + row.selectRect.w / 2, row.selectRect.y + row.selectRect.h / 2);
+    drawRadioButton(row.selectRect, selected);
 
     drawBevelButton(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, selected);
     fill(10);
@@ -1637,6 +1625,20 @@ void drawBevelButton(int x, int y, int w, int h, boolean pressed) {
     stroke(hl);
     line(x, y + h - 1, x + w - 1, y + h - 1);
     line(x + w - 1, y, x + w - 1, y + h - 1);
+  }
+}
+
+void drawRadioButton(IntRect r, boolean selected) {
+  // Checkbox-like bevel
+  drawBevelButton(r.x, r.y, r.w, r.h, false);
+  // Radio dot
+  float cx = r.x + r.w * 0.5f;
+  float cy = r.y + r.h * 0.5f;
+  float inner = min(r.w, r.h) * 0.4f;
+  if (selected) {
+    noStroke();
+    fill(0);
+    ellipse(cx, cy, inner, inner);
   }
 }
 
