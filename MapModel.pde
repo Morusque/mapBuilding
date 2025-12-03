@@ -1295,6 +1295,56 @@ class MapModel {
     }
   }
 
+  void erasePathSegments(float wx, float wy, float radius) {
+    if (paths == null || paths.isEmpty()) return;
+    float r2 = radius * radius;
+    for (int pi = paths.size() - 1; pi >= 0; pi--) {
+      Path p = paths.get(pi);
+      if (p == null || p.routes == null) continue;
+      ArrayList<ArrayList<PVector>> newRoutes = new ArrayList<ArrayList<PVector>>();
+      boolean modified = false;
+      for (ArrayList<PVector> seg : p.routes) {
+        if (seg == null || seg.size() < 2) continue;
+        ArrayList<PVector> cur = new ArrayList<PVector>();
+        cur.add(seg.get(0).copy());
+        for (int i = 0; i < seg.size() - 1; i++) {
+          PVector a = seg.get(i);
+          PVector b = seg.get(i + 1);
+          PVector proj = closestPointOnSegment(wx, wy, a, b);
+          float dx = proj.x - wx;
+          float dy = proj.y - wy;
+          float d2 = dx * dx + dy * dy;
+          boolean hit = d2 <= r2;
+          // Also treat endpoints inside radius as hits to fully remove adjacent segments
+          float dxA = a.x - wx;
+          float dyA = a.y - wy;
+          float dxB = b.x - wx;
+          float dyB = b.y - wy;
+          if (dxA * dxA + dyA * dyA <= r2 || dxB * dxB + dyB * dyB <= r2) {
+            hit = true;
+          }
+          if (hit) {
+            // Cut here: close current route before this segment, start a new one after.
+            if (cur.size() >= 2) newRoutes.add(cur);
+            cur = new ArrayList<PVector>();
+            cur.add(b.copy());
+            modified = true;
+          } else {
+            cur.add(b.copy());
+          }
+        }
+        if (cur.size() >= 2) newRoutes.add(cur);
+      }
+      if (modified) {
+        p.routes = newRoutes;
+        if (p.routes.isEmpty()) {
+          paths.remove(pi);
+        }
+        snapDirty = true;
+      }
+    }
+  }
+
   PVector[] nearestPathSegment(float wx, float wy, float maxDist) {
     if (paths == null || paths.isEmpty()) return null;
     float best = maxDist;
@@ -2048,7 +2098,7 @@ class MapModel {
   PathType makePathTypeFromPreset(int presetIndex) {
     if (presetIndex < 0 || presetIndex >= PATH_TYPE_PRESETS.length) return null;
     PathTypePreset p = PATH_TYPE_PRESETS[presetIndex];
-    return new PathType(p.name, p.col, p.weightPx);
+    return new PathType(p.name, p.col, p.weightPx, p.minWeightPx, p.routeMode, p.slopeBias, p.avoidWater, p.taperOn);
   }
 
   void generateElevationNoise(float scale, float amplitude, float seaLevel) {

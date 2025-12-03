@@ -22,10 +22,6 @@ Paths :
 (soon) other optimization possibility : make route start from both ends of the path and check when they connect
 (later) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
-(now) tweak default values for river (wider, taper on)
-(now) put eraser back
-(soon) refine logic for types (and show colors on the right side menu)
-(soon) assign placing strategies to types
 
 Struct :
 (later) structures should be groupable
@@ -52,7 +48,7 @@ Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
 
 Export :
-(soon) create a new tab and .pde files for this (empty at first, I'll specity many things about)
+(now) create a new tab and .pde files for this (empty at first, I'll specity many things about)
 (later) JSON export/import (human-readable) with legend, layers, cells, paths, structures, groups, labels, view defaults.
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 

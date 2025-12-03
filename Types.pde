@@ -69,11 +69,18 @@ class PathType {
   float weightPx;
   float minWeightPx;
   boolean taperOn = false;
+  PathRouteMode routeMode = PathRouteMode.PATHFIND;
+  float slopeBias = 0.0f;
+  boolean avoidWater = true;
 
-  PathType(String name, int col, float weightPx) {
+  PathType(String name, int col, float weightPx, float minWeightPx, PathRouteMode routeMode, float slopeBias, boolean avoidWater, boolean taperOn) {
     this.name = name;
     this.weightPx = weightPx;
-    this.minWeightPx = max(0.5f, weightPx * 0.4f);
+    this.minWeightPx = max(0.5f, minWeightPx);
+    this.routeMode = (routeMode != null) ? routeMode : PathRouteMode.PATHFIND;
+    this.slopeBias = slopeBias;
+    this.avoidWater = avoidWater;
+    this.taperOn = taperOn;
     setFromColor(col);
   }
 
@@ -95,22 +102,33 @@ class PathTypePreset {
   String name;
   int col;
   float weightPx;
-  PathTypePreset(String name, int col, float weightPx) {
+  float minWeightPx;
+  PathRouteMode routeMode;
+  float slopeBias;
+  boolean avoidWater;
+  boolean taperOn;
+  PathTypePreset(String name, int col, float weightPx, float minWeightPx, PathRouteMode routeMode, float slopeBias, boolean avoidWater, boolean taperOn) {
     this.name = name;
     this.col = col;
     this.weightPx = weightPx;
+    this.minWeightPx = minWeightPx;
+    this.routeMode = routeMode;
+    this.slopeBias = slopeBias;
+    this.avoidWater = avoidWater;
+    this.taperOn = taperOn;
   }
 }
 
 PathTypePreset[] PATH_TYPE_PRESETS = new PathTypePreset[] {
-  new PathTypePreset("Road",   color(80, 80, 80),   3.0f),
-  new PathTypePreset("Street", color(110, 110, 110), 2.0f),
-  new PathTypePreset("River",  color(60, 90, 180),  3.0f),
-  new PathTypePreset("Wall",   color(90, 70, 50),   2.5f),
-  new PathTypePreset("Trail",  color(140, 100, 70), 1.6f),
-  new PathTypePreset("Canal",  color(70, 110, 190), 2.4f),
-  new PathTypePreset("Rail",   color(70, 70, 70),   2.8f),
-  new PathTypePreset("Pipeline", color(120, 120, 120), 2.0f)
+  new PathTypePreset("Road",    color(80, 80, 80),    3.0f, 1.2f, PathRouteMode.PATHFIND, 0.0f,   true,  false),
+  new PathTypePreset("River",   color(60, 90, 180),   8.0f, 2.0f, PathRouteMode.PATHFIND, 40.0f,  false, true),
+  new PathTypePreset("Street",  color(110, 110, 110), 2.2f, 0.8f, PathRouteMode.PATHFIND, 300.0f, true,  false),
+  new PathTypePreset("Wall",    color(90, 70, 50),    2.5f, 1.0f, PathRouteMode.ENDS,     0.0f,   true,  false),
+  new PathTypePreset("Bridge",  color(130, 130, 160), 2.5f, 1.0f, PathRouteMode.ENDS,     0.0f,   false, false),
+  new PathTypePreset("Trail",   color(140, 100, 70),  1.6f, 0.6f, PathRouteMode.PATHFIND, 150.0f, true,  false),
+  new PathTypePreset("Canal",   color(70, 110, 190),  2.4f, 1.0f, PathRouteMode.PATHFIND, 80.0f,  false, true),
+  new PathTypePreset("Rail",    color(70, 70, 70),    2.8f, 1.2f, PathRouteMode.PATHFIND, 0.0f,   true,  false),
+  new PathTypePreset("Pipeline",color(120, 120, 120), 2.0f, 0.8f, PathRouteMode.PATHFIND, 0.0f,   true,  false)
 };
 
 // ---------- Color helpers for HSB<->RGB in [0..1] ----------

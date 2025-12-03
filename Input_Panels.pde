@@ -531,7 +531,11 @@ void mousePressed() {
       float dir = elevationBrushRaise ? 1 : -1;
       mapModel.applyElevationBrush(worldPos.x, worldPos.y, elevationBrushRadius, elevationBrushStrength * dir, seaLevel);
     } else if (currentTool == Tool.EDIT_PATHS) {
-      handlePathsMousePressed(worldPos.x, worldPos.y);
+      if (pathEraserMode) {
+        mapModel.erasePathSegments(worldPos.x, worldPos.y, pathEraserRadius);
+      } else {
+        handlePathsMousePressed(worldPos.x, worldPos.y);
+      }
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
     Structure s = mapModel.computeSnappedStructure(worldPos.x, worldPos.y, structureSize);
     mapModel.structures.add(s);
@@ -582,6 +586,10 @@ boolean handlePathsPanelClick(int mx, int my) {
     float t = constrain((mx - layout.routeSlider.x) / (float)layout.routeSlider.w, 0, 1);
     int idx = round(t * (modeCount - 1));
     pathRouteModeIndex = constrain(idx, 0, modeCount - 1);
+    if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.routeMode = PathRouteMode.values()[pathRouteModeIndex];
+    }
     activeSlider = SLIDER_NONE;
     return true;
   }
@@ -590,12 +598,26 @@ boolean handlePathsPanelClick(int mx, int my) {
     float t = constrain((mx - layout.flattestSlider.x) / (float)layout.flattestSlider.w, 0, 1);
     flattestSlopeBias = constrain(FLATTEST_BIAS_MIN + t * (FLATTEST_BIAS_MAX - FLATTEST_BIAS_MIN),
                                   FLATTEST_BIAS_MIN, FLATTEST_BIAS_MAX);
+    if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.slopeBias = flattestSlopeBias;
+    }
     activeSlider = SLIDER_FLATTEST_BIAS;
     return true;
   }
 
   if (layout.avoidWaterCheck.contains(mx, my)) {
     pathAvoidWater = !pathAvoidWater;
+    if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.avoidWater = pathAvoidWater;
+    }
+    return true;
+  }
+
+  if (layout.eraserBtn.contains(mx, my)) {
+    pathEraserMode = !pathEraserMode;
+    pendingPathStart = null;
     return true;
   }
   if (layout.taperCheck.contains(mx, my)) {
@@ -614,6 +636,7 @@ boolean handlePathsPanelClick(int mx, int my) {
       if (pt != null) {
         mapModel.addPathType(pt);
         activePathTypeIndex = mapModel.pathTypes.size() - 1;
+        syncActivePathTypeGlobals();
       }
     }
     return true;
@@ -626,6 +649,7 @@ boolean handlePathsPanelClick(int mx, int my) {
     activePathTypeIndex = min(activePathTypeIndex, mapModel.pathTypes.size() - 1);
     if (activePathTypeIndex < 0) activePathTypeIndex = 0;
     editingPathTypeNameIndex = -1;
+    syncActivePathTypeGlobals();
     return true;
   }
 
@@ -636,6 +660,7 @@ boolean handlePathsPanelClick(int mx, int my) {
     IntRect sw = layout.typeSwatches.get(i);
     if (sw.contains(mx, my)) {
       activePathTypeIndex = i;
+      syncActivePathTypeGlobals();
       return true;
     }
   }

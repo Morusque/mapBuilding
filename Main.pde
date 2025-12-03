@@ -86,6 +86,8 @@ float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
 float flattestSlopeBias = FLATTEST_BIAS_MIN; // slope penalty in PATHFIND mode (min..max, 0 = shortest)
 boolean pathAvoidWater = false;
 boolean pathTaperRivers = false;
+boolean pathEraserMode = false;
+float pathEraserRadius = 0.04f;
 int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
 
@@ -194,9 +196,20 @@ void initPathTypes() {
     }
   }
   if (mapModel.pathTypes.isEmpty()) {
-    mapModel.pathTypes.add(new PathType("Path", color(80), 2.0f));
+    mapModel.pathTypes.add(new PathType("Path", color(80), 2.0f, 1.0f, PathRouteMode.PATHFIND, 0.0f, true, false));
   }
   activePathTypeIndex = 0;
+  syncActivePathTypeGlobals();
+}
+
+void syncActivePathTypeGlobals() {
+  if (mapModel == null || mapModel.pathTypes == null || mapModel.pathTypes.isEmpty()) return;
+  activePathTypeIndex = constrain(activePathTypeIndex, 0, mapModel.pathTypes.size() - 1);
+  PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+  if (pt == null) return;
+  pathRouteModeIndex = (pt.routeMode == PathRouteMode.ENDS) ? 0 : 1;
+  flattestSlopeBias = pt.slopeBias;
+  pathAvoidWater = pt.avoidWater;
 }
 
 void draw() {
@@ -346,6 +359,8 @@ void draw() {
     drawZoneBrushPreview();
   } else if (currentTool == Tool.EDIT_ZONES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
+  } else if (currentTool == Tool.EDIT_PATHS && pathEraserMode) {
+    drawPathEraserPreview();
   } else {
     mapModel.drawDebugWorldBounds(this);
   }
@@ -378,6 +393,7 @@ void draw() {
 }
 
 void drawPathSnappingPoints() {
+  if (pathEraserMode) return;
   ArrayList<PVector> snaps = mapModel.getSnapPoints();
   if (snaps == null || snaps.isEmpty()) return;
 
@@ -466,6 +482,7 @@ void showNotice(String msg) {
 void drawZoneBrushPreview() {
   IntRect panel = getActivePanelRect();
   if (panel != null && panel.contains(mouseX, mouseY)) return;
+  if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
   PVector w = viewport.screenToWorld(mouseX, mouseY);
   pushStyle();
   noFill();
@@ -473,6 +490,19 @@ void drawZoneBrushPreview() {
   strokeWeight(1.0f / viewport.zoom);
   float r = zoneBrushRadius;
   ellipse(w.x, w.y, r * 2, r * 2);
+  popStyle();
+}
+
+void drawPathEraserPreview() {
+  IntRect panel = getActivePanelRect();
+  if (panel != null && panel.contains(mouseX, mouseY)) return;
+  if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
+  PVector w = viewport.screenToWorld(mouseX, mouseY);
+  pushStyle();
+  noFill();
+  stroke(200, 40, 40, 160);
+  strokeWeight(1.0f / viewport.zoom);
+  ellipse(w.x, w.y, pathEraserRadius * 2, pathEraserRadius * 2);
   popStyle();
 }
 

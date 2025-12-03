@@ -194,6 +194,17 @@ void mouseDragged() {
     return;
   }
 
+  // Paths: erase while dragging
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_PATHS && pathEraserMode) {
+    IntRect panel = getActivePanelRect();
+    boolean inPanel = (panel != null && panel.contains(mouseX, mouseY));
+    if (!inPanel && !isInPathsListPanel(mouseX, mouseY)) {
+      PVector w = viewport.screenToWorld(mouseX, mouseY);
+      mapModel.erasePathSegments(w.x, w.y, pathEraserRadius);
+    }
+    return;
+  }
+
   // Ignore world if dragging in UI
   if (isInActivePanel(mouseX, mouseY)) return;
 

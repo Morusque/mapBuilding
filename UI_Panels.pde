@@ -568,6 +568,7 @@ class PathsLayout {
   IntRect routeSlider;
   IntRect flattestSlider;
   IntRect avoidWaterCheck;
+  IntRect eraserBtn;
   IntRect taperCheck;
   IntRect typeMinWeightSlider;
   ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
@@ -600,16 +601,6 @@ PathsLayout buildPathsLayout() {
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
-
-  int sliderW = 200;
-  l.routeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
-
-  l.flattestSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
-
-  l.avoidWaterCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
-  curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
 
   // Path types controls
   l.typeAddBtn = new IntRect(innerX, curY, 24, PANEL_BUTTON_H);
@@ -651,6 +642,19 @@ PathsLayout buildPathsLayout() {
 
   l.taperCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
   curY += PANEL_CHECK_SIZE + PANEL_PADDING;
+
+  int sliderW = 200;
+  l.routeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.flattestSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.avoidWaterCheck = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+  curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+
+  l.eraserBtn = new IntRect(innerX, curY, 90, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   curY += PANEL_HINT_H;
   l.panel.h = curY - l.panel.y;
@@ -759,6 +763,10 @@ void drawPathsPanel() {
   // Avoid water checkbox
   drawCheckbox(layout.avoidWaterCheck.x, layout.avoidWaterCheck.y,
                layout.avoidWaterCheck.w, pathAvoidWater, "Avoid water");
+  drawBevelButton(layout.eraserBtn.x, layout.eraserBtn.y, layout.eraserBtn.w, layout.eraserBtn.h, pathEraserMode);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Eraser", layout.eraserBtn.x + layout.eraserBtn.w / 2, layout.eraserBtn.y + layout.eraserBtn.h / 2);
 
   // Only type management on this panel
 
@@ -918,10 +926,13 @@ void drawPathsListPanel() {
 
       PathType pt = mapModel.getPathType(p.typeId);
       String typLabel = (pt != null ? pt.name : "Type");
-      drawBevelButton(row.typeRect.x, row.typeRect.y, row.typeRect.w, row.typeRect.h, false);
-      fill(10);
-      textAlign(LEFT, CENTER);
-      text("Type: " + typLabel, row.typeRect.x + 6, row.typeRect.y + row.typeRect.h / 2);
+      int typeCol = (pt != null) ? pt.col : color(180);
+      stroke(80);
+      fill(typeCol);
+      rect(row.typeRect.x, row.typeRect.y, row.typeRect.w, row.typeRect.h, 4);
+      fill(255);
+      textAlign(CENTER, CENTER);
+      text(typLabel, row.typeRect.x + row.typeRect.w * 0.5f, row.typeRect.y + row.typeRect.h * 0.5f);
 
       int segs = p.segmentCount();
       float len = p.totalLength();
@@ -1573,11 +1584,14 @@ PlacementMode currentPlacementMode() {
 }
 
 PathRouteMode currentPathRouteMode() {
-  int idx = constrain(pathRouteModeIndex, 0, 1);
-  switch (idx) {
-    case 0: return PathRouteMode.ENDS;
-    case 1: return PathRouteMode.PATHFIND;
+  PathRouteMode fromType = null;
+  if (mapModel != null && mapModel.pathTypes != null && activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+    PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+    if (pt != null) fromType = pt.routeMode;
   }
+  if (fromType != null) return fromType;
+  int idx = constrain(pathRouteModeIndex, 0, 1);
+  if (idx == 0) return PathRouteMode.ENDS;
   return PathRouteMode.PATHFIND;
 }
 
