@@ -25,7 +25,6 @@ Paths :
 (soon) other optimization possibility : make route start from both ends of the path and check when they connect
 (later) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
-(soon) when a path is being selected, also automatically select the associated type in the left menu
 
 Struct :
 (later) structures should be groupable

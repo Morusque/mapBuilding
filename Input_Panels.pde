@@ -813,6 +813,8 @@ boolean handlePathsListPanelClick(int mx, int my) {
     np.name = "Path " + (mapModel.paths.size() + 1);
     mapModel.paths.add(np);
     selectedPathIndex = mapModel.paths.size() - 1;
+    activePathTypeIndex = (np.typeId >= 0 && np.typeId < mapModel.pathTypes.size()) ? np.typeId : activePathTypeIndex;
+    syncActivePathTypeGlobals();
     editingPathNameIndex = selectedPathIndex;
     pathNameDraft = np.name;
     pendingPathStart = null;
@@ -825,6 +827,10 @@ boolean handlePathsListPanelClick(int mx, int my) {
 
     if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
       selectedPathIndex = i;
+      if (p != null && p.typeId >= 0 && p.typeId < mapModel.pathTypes.size()) {
+        activePathTypeIndex = p.typeId;
+        syncActivePathTypeGlobals();
+      }
       editingPathNameIndex = row.nameRect.contains(mx, my) ? i : -1;
       if (editingPathNameIndex == i) {
         pathNameDraft = (p.name != null) ? p.name : "";
@@ -847,6 +853,8 @@ boolean handlePathsListPanelClick(int mx, int my) {
     if (row.typeRect.contains(mx, my)) {
       if (!mapModel.pathTypes.isEmpty()) {
         p.typeId = (p.typeId + 1) % mapModel.pathTypes.size();
+        activePathTypeIndex = p.typeId;
+        syncActivePathTypeGlobals();
       }
       return true;
     }
