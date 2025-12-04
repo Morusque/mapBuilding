@@ -26,6 +26,48 @@ class IntRect {
   boolean contains(int px, int py) { return px >= x && px <= x + w && py >= y && py <= y + h; }
 }
 
+float clampScroll(float scroll, float contentH, float viewH) {
+  float maxScroll = max(0, contentH - viewH);
+  return constrain(scroll, 0, maxScroll);
+}
+
+void drawScrollbar(IntRect track, float contentH, float scroll) {
+  if (track == null || track.h <= 0) return;
+  boolean active = contentH > track.h;
+
+  // Track
+  noStroke();
+  fill(active ? 214 : 200);
+  rect(track.x, track.y, track.w, track.h);
+  stroke(255);
+  line(track.x, track.y, track.x + track.w, track.y);
+  line(track.x, track.y, track.x, track.y + track.h);
+  stroke(96);
+  line(track.x, track.y + track.h - 1, track.x + track.w, track.y + track.h - 1);
+  line(track.x + track.w - 1, track.y, track.x + track.w - 1, track.y + track.h);
+
+  if (!active) return;
+
+  int inset = 2;
+  int thumbH = max(SCROLLBAR_THUMB_MIN, round(track.h * track.h / contentH));
+  thumbH = min(thumbH, track.h - inset * 2);
+  float travel = track.h - inset * 2 - thumbH;
+  float maxScroll = max(1e-3f, contentH - track.h);
+  int thumbY = track.y + inset + round((scroll / maxScroll) * travel);
+  IntRect thumb = new IntRect(track.x + inset, thumbY, track.w - inset * 2, thumbH);
+
+  // Thumb with Win95-ish bevel
+  noStroke();
+  fill(205);
+  rect(thumb.x, thumb.y, thumb.w, thumb.h);
+  stroke(255);
+  line(thumb.x, thumb.y, thumb.x + thumb.w, thumb.y);
+  line(thumb.x, thumb.y, thumb.x, thumb.y + thumb.h);
+  stroke(96);
+  line(thumb.x, thumb.y + thumb.h - 1, thumb.x + thumb.w, thumb.y + thumb.h - 1);
+  line(thumb.x + thumb.w - 1, thumb.y, thumb.x + thumb.w - 1, thumb.y + thumb.h);
+}
+
 void drawTopBar() {
   // Background
   noStroke();

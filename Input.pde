@@ -492,8 +492,76 @@ void updateActiveSlider(int mx, int my) {
   }
 }
 
+boolean scrollListIfHovered(float wheelCount) {
+  int deltaPx = round(wheelCount * SCROLL_STEP_PX);
+  if (deltaPx == 0) return false;
+
+  if (currentTool == Tool.EDIT_ZONES && isInZonesListPanel(mouseX, mouseY)) {
+    ZonesListLayout l = buildZonesListLayout();
+    int startY = l.newBtn.y + l.newBtn.h + PANEL_SECTION_GAP;
+    int viewH = max(0, (l.panel.y + l.panel.h - PANEL_SECTION_GAP) - startY);
+    int rowH = 28;
+    int rowGap = 6;
+    int total = (mapModel != null && mapModel.zones != null) ? mapModel.zones.size() : 0;
+    int contentH = (total > 0) ? total * (rowH + rowGap) - rowGap : 0;
+    if (contentH > viewH && viewH > 0) {
+      zonesListScroll = clampScroll(zonesListScroll + deltaPx, contentH, viewH);
+      return true;
+    }
+  }
+
+  if (currentTool == Tool.EDIT_PATHS && isInPathsListPanel(mouseX, mouseY)) {
+    PathsListLayout l = buildPathsListLayout();
+    int startY = l.newBtn.y + l.newBtn.h + PANEL_SECTION_GAP;
+    int viewH = max(0, (l.panel.y + l.panel.h - PANEL_SECTION_GAP) - startY);
+    int textH = ceil(textAscent() + textDescent());
+    int nameH = max(PANEL_LABEL_H + 6, textH + 8);
+    int typeH = max(PANEL_LABEL_H + 2, textH + 6);
+    int statsH = max(PANEL_LABEL_H, textH);
+    int rowGap = 10;
+    int rowTotal = nameH + 6 + typeH + 4 + statsH + rowGap;
+    int total = (mapModel != null && mapModel.paths != null) ? mapModel.paths.size() : 0;
+    int contentH = (total > 0) ? total * rowTotal : 0;
+    if (contentH > viewH && viewH > 0) {
+      pathsListScroll = clampScroll(pathsListScroll + deltaPx, contentH, viewH);
+      return true;
+    }
+  }
+
+  if (currentTool == Tool.EDIT_STRUCTURES && isInStructuresListPanel(mouseX, mouseY)) {
+    StructuresListLayout l = buildStructuresListLayout();
+    int startY = layoutStructureDetails(l);
+    int viewH = max(0, (l.panel.y + l.panel.h - PANEL_SECTION_GAP) - startY);
+    int rowH = 24;
+    int rowGap = 6;
+    int total = (mapModel != null && mapModel.structures != null) ? mapModel.structures.size() : 0;
+    int contentH = (total > 0) ? total * (rowH + rowGap) - rowGap : 0;
+    if (contentH > viewH && viewH > 0) {
+      structuresListScroll = clampScroll(structuresListScroll + deltaPx, contentH, viewH);
+      return true;
+    }
+  }
+
+  if (currentTool == Tool.EDIT_LABELS && isInLabelsListPanel(mouseX, mouseY)) {
+    LabelsListLayout l = buildLabelsListLayout();
+    int startY = l.deselectBtn.y + l.deselectBtn.h + PANEL_SECTION_GAP + 6;
+    int viewH = max(0, (l.panel.y + l.panel.h - PANEL_SECTION_GAP) - startY);
+    int rowH = 24;
+    int rowGap = 6;
+    int total = (mapModel != null && mapModel.labels != null) ? mapModel.labels.size() : 0;
+    int contentH = (total > 0) ? total * (rowH + rowGap) - rowGap : 0;
+    if (contentH > viewH && viewH > 0) {
+      labelsListScroll = clampScroll(labelsListScroll + deltaPx, contentH, viewH);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void mouseWheel(MouseEvent event) {
   float count = event.getCount();
+  if (scrollListIfHovered(count)) return;
   float factor = pow(1.1f, -count);
   viewport.zoomAt(factor, mouseX, mouseY);
 }

@@ -30,6 +30,10 @@ float structureHue01 = 0.0f;
 float structureSat01 = 0.0f;
 float structureAlpha01 = 0.7f;
 float structureStrokePx = 1.4f;
+float zonesListScroll = 0;
+float pathsListScroll = 0;
+float structuresListScroll = 0;
+float labelsListScroll = 0;
 
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
@@ -45,6 +49,9 @@ final int PANEL_BUTTON_H = 22;
 final int PANEL_CHECK_SIZE = 16;
 final int PANEL_TITLE_H = 18;
 final int RIGHT_PANEL_W = 260;
+final int SCROLLBAR_W = 14;
+final int SCROLLBAR_THUMB_MIN = 24;
+final int SCROLL_STEP_PX = 24;
 final float FLATTEST_BIAS_MIN = 0.0f;
 final float FLATTEST_BIAS_MAX = 500.0f;
 

@@ -353,24 +353,25 @@ boolean handleZonesListPanelClick(int mx, int my) {
   }
 
   for (int i = 0; i < layout.rows.size(); i++) {
-    MapModel.MapZone az = mapModel.zones.get(i);
     ZoneRowLayout row = layout.rows.get(i);
+    if (row.index < 0 || row.index >= mapModel.zones.size()) continue;
+    MapModel.MapZone az = mapModel.zones.get(row.index);
 
     if (row.selectRect.contains(mx, my)) {
-      activeZoneIndex = i;
+      activeZoneIndex = row.index;
       editingZoneNameIndex = -1;
       return true;
     }
 
     if (row.nameRect.contains(mx, my)) {
-      activeZoneIndex = i;
-      editingZoneNameIndex = i;
+      activeZoneIndex = row.index;
+      editingZoneNameIndex = row.index;
       zoneNameDraft = az.name;
       return true;
     }
 
     if (row.hueSlider.contains(mx, my)) {
-      activeZoneIndex = i;
+      activeZoneIndex = row.index;
       float t = constrain((mx - row.hueSlider.x) / (float)row.hueSlider.w, 0, 1);
       az.hue01 = t;
       az.updateColorFromHSB();
@@ -763,11 +764,12 @@ boolean handleLabelsListPanelClick(int mx, int my) {
 
   for (int i = 0; i < layout.rows.size(); i++) {
     LabelRowLayout row = layout.rows.get(i);
-    MapLabel lbl = mapModel.labels.get(i);
+    if (row.index < 0 || row.index >= mapModel.labels.size()) continue;
+    MapLabel lbl = mapModel.labels.get(row.index);
     if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
-      selectedLabelIndex = i;
+      selectedLabelIndex = row.index;
       if (row.nameRect.contains(mx, my)) {
-        editingLabelIndex = i;
+        editingLabelIndex = row.index;
         labelDraft = lbl.text;
       } else {
         editingLabelIndex = -1;
@@ -776,9 +778,9 @@ boolean handleLabelsListPanelClick(int mx, int my) {
       return true;
     }
     if (row.delRect.contains(mx, my)) {
-      mapModel.labels.remove(i);
-      if (selectedLabelIndex == i) selectedLabelIndex = -1;
-      if (editingLabelIndex == i) editingLabelIndex = -1;
+      mapModel.labels.remove(row.index);
+      if (selectedLabelIndex == row.index) selectedLabelIndex = -1;
+      if (editingLabelIndex == row.index) editingLabelIndex = -1;
       labelDraft = "label";
       return true;
     }
@@ -824,17 +826,18 @@ boolean handlePathsListPanelClick(int mx, int my) {
 
   for (int i = 0; i < layout.rows.size(); i++) {
     PathRowLayout row = layout.rows.get(i);
-    Path p = mapModel.paths.get(i);
+    if (row.index < 0 || row.index >= mapModel.paths.size()) continue;
+    Path p = mapModel.paths.get(row.index);
     if (p == null) continue;
 
     if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
-      selectedPathIndex = i;
+      selectedPathIndex = row.index;
       if (p != null && p.typeId >= 0 && p.typeId < mapModel.pathTypes.size()) {
         activePathTypeIndex = p.typeId;
         syncActivePathTypeGlobals();
       }
-      editingPathNameIndex = row.nameRect.contains(mx, my) ? i : -1;
-      if (editingPathNameIndex == i) {
+      editingPathNameIndex = row.nameRect.contains(mx, my) ? row.index : -1;
+      if (editingPathNameIndex == row.index) {
         pathNameDraft = (p.name != null) ? p.name : "";
       } else {
         pendingPathStart = null;
@@ -842,14 +845,14 @@ boolean handlePathsListPanelClick(int mx, int my) {
       return true;
     }
     if (row.delRect.contains(mx, my)) {
-      mapModel.paths.remove(i);
-      if (selectedPathIndex == i) {
+      mapModel.paths.remove(row.index);
+      if (selectedPathIndex == row.index) {
         selectedPathIndex = -1;
         pendingPathStart = null;
-      } else if (selectedPathIndex > i) {
+      } else if (selectedPathIndex > row.index) {
         selectedPathIndex -= 1;
       }
-      if (editingPathNameIndex == i) editingPathNameIndex = -1;
+      if (editingPathNameIndex == row.index) editingPathNameIndex = -1;
       return true;
     }
     if (row.typeRect.contains(mx, my)) {
@@ -973,17 +976,18 @@ boolean handleStructuresListPanelClick(int mx, int my) {
 
   for (int i = 0; i < layout.rows.size(); i++) {
     StructureRowLayout row = layout.rows.get(i);
+    if (row.index < 0 || row.index >= mapModel.structures.size()) continue;
     if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
-      selectedStructureIndex = i;
+      selectedStructureIndex = row.index;
       editingStructureNameIndex = -1;
       return true;
     }
     if (row.delRect.contains(mx, my)) {
-      mapModel.structures.remove(i);
-      if (selectedStructureIndex == i) selectedStructureIndex = -1;
-      else if (selectedStructureIndex > i) selectedStructureIndex -= 1;
-      if (editingStructureNameIndex == i) editingStructureNameIndex = -1;
-      else if (editingStructureNameIndex > i) editingStructureNameIndex -= 1;
+      mapModel.structures.remove(row.index);
+      if (selectedStructureIndex == row.index) selectedStructureIndex = -1;
+      else if (selectedStructureIndex > row.index) selectedStructureIndex -= 1;
+      if (editingStructureNameIndex == row.index) editingStructureNameIndex = -1;
+      else if (editingStructureNameIndex > row.index) editingStructureNameIndex -= 1;
       return true;
     }
   }

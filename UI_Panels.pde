@@ -403,6 +403,7 @@ class ZonesLayout {
 }
 
 class ZoneRowLayout {
+  int index;
   IntRect selectRect;
   IntRect nameRect;
   IntRect hueSlider;
@@ -415,6 +416,10 @@ class ZonesListLayout {
   IntRect deselectBtn;
   IntRect newBtn;
   ArrayList<ZoneRowLayout> rows = new ArrayList<ZoneRowLayout>();
+  int rowsStartY;
+  int rowsViewH;
+  float contentH;
+  IntRect scrollbar;
 }
 
 ZonesListLayout buildZonesListLayout() {
@@ -434,21 +439,37 @@ void populateZonesRows(ZonesListLayout layout) {
   layout.rows.clear();
   if (mapModel == null || mapModel.zones == null) return;
   int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.newBtn.y + layout.newBtn.h + PANEL_SECTION_GAP;
+  int startY = layout.newBtn.y + layout.newBtn.h + PANEL_SECTION_GAP;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
+  int viewH = max(0, maxY - startY);
   int rowH = 28;
+  int rowGap = 6;
   int hueW = 90;
-  for (int i = 0; i < mapModel.zones.size(); i++) {
-    if (curY + rowH > maxY) break;
+  int totalRows = mapModel.zones.size();
+  int contentH = (totalRows > 0) ? totalRows * (rowH + rowGap) - rowGap : 0;
+  layout.rowsStartY = startY;
+  layout.rowsViewH = viewH;
+  layout.contentH = contentH;
+  layout.scrollbar = new IntRect(layout.panel.x + layout.panel.w - SCROLLBAR_W, startY, SCROLLBAR_W, viewH);
+  zonesListScroll = clampScroll(zonesListScroll, contentH, viewH);
+  int curY = startY - round(zonesListScroll);
+
+  for (int i = 0; i < totalRows; i++) {
+    if (curY > maxY) break;
+    if (curY + rowH < startY) {
+      curY += rowH + rowGap;
+      continue;
+    }
     ZoneRowLayout row = new ZoneRowLayout();
+    row.index = i;
     int selectW = 18;
     row.selectRect = new IntRect(labelX, curY, selectW, rowH);
-    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - selectW - 6 - hueW - 8, rowH);
+    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - SCROLLBAR_W - selectW - 6 - hueW - 8, rowH);
     int colorH = 6;
     row.colorRect = new IntRect(row.nameRect.x, row.nameRect.y + row.nameRect.h - colorH - 2, row.nameRect.w, colorH);
     row.hueSlider = new IntRect(row.nameRect.x + row.nameRect.w + 6, curY + (rowH - PANEL_SLIDER_H) / 2, hueW, PANEL_SLIDER_H);
     layout.rows.add(row);
-    curY += rowH + 6;
+    curY += rowH + rowGap;
   }
 }
 
@@ -476,13 +497,14 @@ void drawZonesListPanel() {
   if (mapModel == null || mapModel.zones == null) return;
 
   for (int i = 0; i < layout.rows.size(); i++) {
-    MapModel.MapZone az = mapModel.zones.get(i);
     ZoneRowLayout row = layout.rows.get(i);
-    boolean selected = (activeZoneIndex == i);
+    if (row.index < 0 || row.index >= mapModel.zones.size()) continue;
+    MapModel.MapZone az = mapModel.zones.get(row.index);
+    boolean selected = (activeZoneIndex == row.index);
 
     drawRadioButton(row.selectRect, selected);
 
-    boolean editing = (editingZoneNameIndex == i);
+    boolean editing = (editingZoneNameIndex == row.index);
     if (editing) {
       stroke(60);
       fill(255);
@@ -515,6 +537,8 @@ void drawZonesListPanel() {
     noStroke();
     ellipse(hx, hy, hr, hr);
   }
+
+  drawScrollbar(layout.scrollbar, layout.contentH, zonesListScroll);
 }
 
 ZonesLayout buildZonesLayout() {
@@ -602,9 +626,14 @@ class PathsListLayout {
   IntRect newBtn;
   IntRect deselectBtn;
   ArrayList<PathRowLayout> rows = new ArrayList<PathRowLayout>();
+  int rowsStartY;
+  int rowsViewH;
+  float contentH;
+  IntRect scrollbar;
 }
 
 class PathRowLayout {
+  int index;
   IntRect selectRect;
   IntRect nameRect;
   IntRect delRect;
@@ -696,24 +725,40 @@ PathsListLayout buildPathsListLayout() {
 void populatePathsListRows(PathsListLayout layout) {
   layout.rows.clear();
   int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.newBtn.y + layout.newBtn.h + PANEL_SECTION_GAP;
+  int startY = layout.newBtn.y + layout.newBtn.h + PANEL_SECTION_GAP;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
+  int viewH = max(0, maxY - startY);
 
   int textH = ceil(textAscent() + textDescent());
   int nameH = max(PANEL_LABEL_H + 6, textH + 8);
   int typeH = max(PANEL_LABEL_H + 2, textH + 6);
   int statsH = max(PANEL_LABEL_H, textH);
   int rowGap = 10;
+  int rowTotal = nameH + 6 + typeH + 4 + statsH + rowGap;
+  int totalRows = (mapModel != null && mapModel.paths != null) ? mapModel.paths.size() : 0;
+  int contentH = (totalRows > 0) ? totalRows * rowTotal : 0;
 
-  for (int i = 0; i < mapModel.paths.size(); i++) {
-    int rowTotal = nameH + 6 + typeH + 4 + statsH + rowGap;
-    if (curY + rowTotal > maxY) break;
+  layout.rowsStartY = startY;
+  layout.rowsViewH = viewH;
+  layout.contentH = contentH;
+  layout.scrollbar = new IntRect(layout.panel.x + layout.panel.w - SCROLLBAR_W, startY, SCROLLBAR_W, viewH);
+  pathsListScroll = clampScroll(pathsListScroll, contentH, viewH);
+
+  int curY = startY - round(pathsListScroll);
+
+  for (int i = 0; i < totalRows; i++) {
+    if (curY > maxY) break;
+    if (curY + rowTotal < startY) {
+      curY += rowTotal;
+      continue;
+    }
 
     int selectSize = max(16, nameH - 2);
     PathRowLayout row = new PathRowLayout();
+    row.index = i;
     row.selectRect = new IntRect(labelX, curY, selectSize, selectSize);
     row.nameRect = new IntRect(row.selectRect.x + row.selectRect.w + 6, curY,
-                               layout.panel.w - 2 * PANEL_PADDING - row.selectRect.w - 6 - 40,
+                               layout.panel.w - 2 * PANEL_PADDING - SCROLLBAR_W - row.selectRect.w - 6 - 40,
                                nameH);
     row.delRect = new IntRect(row.nameRect.x + row.nameRect.w + 6, curY, 30, nameH);
 
@@ -912,13 +957,14 @@ void drawPathsListPanel() {
     text("No paths yet.", labelX, curY);
   } else {
   for (int i = 0; i < layout.rows.size(); i++) {
-    Path p = mapModel.paths.get(i);
     PathRowLayout row = layout.rows.get(i);
+    if (row.index < 0 || row.index >= mapModel.paths.size()) continue;
+    Path p = mapModel.paths.get(row.index);
 
-    boolean selected = (selectedPathIndex == i);
+    boolean selected = (selectedPathIndex == row.index);
     drawRadioButton(row.selectRect, selected);
 
-      boolean editing = (editingPathNameIndex == i);
+      boolean editing = (editingPathNameIndex == row.index);
       if (editing) {
         stroke(60);
         fill(255);
@@ -935,7 +981,7 @@ void drawPathsListPanel() {
         fill(10);
         textAlign(LEFT, CENTER);
         String title = (p.name != null && p.name.length() > 0 ? p.name : "Path");
-        text("#" + (i + 1) + " " + title, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
+        text("#" + (row.index + 1) + " " + title, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
       }
 
       drawBevelButton(row.delRect.x, row.delRect.y, row.delRect.w, row.delRect.h, false);
@@ -961,6 +1007,8 @@ void drawPathsListPanel() {
            labelX + row.selectRect.w + 6, row.statsY + row.statsH / 2);
     }
   }
+
+  drawScrollbar(layout.scrollbar, layout.contentH, pathsListScroll);
 
   drawBevelButton(layout.newBtn.x, layout.newBtn.y, layout.newBtn.w, layout.newBtn.h, false);
   drawBevelButton(layout.deselectBtn.x, layout.deselectBtn.y, layout.deselectBtn.w, layout.deselectBtn.h, false);
@@ -1116,9 +1164,14 @@ class LabelsListLayout {
   IntRect deselectBtn;
   IntRect sizeSlider;
   ArrayList<LabelRowLayout> rows = new ArrayList<LabelRowLayout>();
+  int rowsStartY;
+  int rowsViewH;
+  float contentH;
+  IntRect scrollbar;
 }
 
 class LabelRowLayout {
+  int index;
   IntRect selectRect;
   IntRect nameRect;
   IntRect delRect;
@@ -1166,18 +1219,34 @@ LabelsListLayout buildLabelsListLayout() {
 void populateLabelsListRows(LabelsListLayout layout) {
   layout.rows.clear();
   int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP + 6;
+  int startY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP + 6;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
+  int viewH = max(0, maxY - startY);
   int rowH = 24;
-  for (int i = 0; i < mapModel.labels.size(); i++) {
-    if (curY + rowH > maxY) break;
+  int rowGap = 6;
+  int totalRows = (mapModel != null && mapModel.labels != null) ? mapModel.labels.size() : 0;
+  int contentH = (totalRows > 0) ? totalRows * (rowH + rowGap) - rowGap : 0;
+  layout.rowsStartY = startY;
+  layout.rowsViewH = viewH;
+  layout.contentH = contentH;
+  layout.scrollbar = new IntRect(layout.panel.x + layout.panel.w - SCROLLBAR_W, startY, SCROLLBAR_W, viewH);
+  labelsListScroll = clampScroll(labelsListScroll, contentH, viewH);
+  int curY = startY - round(labelsListScroll);
+
+  for (int i = 0; i < totalRows; i++) {
+    if (curY > maxY) break;
+    if (curY + rowH < startY) {
+      curY += rowH + rowGap;
+      continue;
+    }
     LabelRowLayout row = new LabelRowLayout();
+    row.index = i;
     int selectW = 18;
     row.selectRect = new IntRect(labelX, curY, selectW, rowH);
-    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - selectW - 6 - 30, rowH);
+    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - SCROLLBAR_W - selectW - 6 - 30, rowH);
     row.delRect = new IntRect(row.nameRect.x + row.nameRect.w + 4, curY, 24, rowH);
     layout.rows.add(row);
-    curY += rowH + 6;
+    curY += rowH + rowGap;
   }
 }
 
@@ -1215,12 +1284,13 @@ void drawLabelsListPanel() {
   curY = ss.y + ss.h + PANEL_SECTION_GAP;
 
   for (int i = 0; i < layout.rows.size(); i++) {
-    MapLabel lbl = mapModel.labels.get(i);
     LabelRowLayout row = layout.rows.get(i);
-    boolean selected = (selectedLabelIndex == i);
+    if (row.index < 0 || row.index >= mapModel.labels.size()) continue;
+    MapLabel lbl = mapModel.labels.get(row.index);
+    boolean selected = (selectedLabelIndex == row.index);
     drawRadioButton(row.selectRect, selected);
 
-    boolean editing = (editingLabelIndex == i);
+    boolean editing = (editingLabelIndex == row.index);
     if (editing) {
       stroke(60);
       fill(255);
@@ -1243,6 +1313,8 @@ void drawLabelsListPanel() {
     textAlign(CENTER, CENTER);
     text("X", row.delRect.x + row.delRect.w / 2, row.delRect.y + row.delRect.h / 2);
   }
+
+  drawScrollbar(layout.scrollbar, layout.contentH, labelsListScroll);
 }
 
 String labelTargetShort(LabelTarget lt) {
@@ -1407,9 +1479,14 @@ class StructuresListLayout {
   IntRect detailSatSlider;
   IntRect detailStrokeSlider;
   ArrayList<StructureRowLayout> rows = new ArrayList<StructureRowLayout>();
+  int rowsStartY;
+  int rowsViewH;
+  float contentH;
+  IntRect scrollbar;
 }
 
 class StructureRowLayout {
+  int index;
   IntRect selectRect;
   IntRect nameRect;
   IntRect delRect;
@@ -1451,18 +1528,34 @@ int layoutStructureDetails(StructuresListLayout layout) {
 void populateStructuresListRows(StructuresListLayout layout, int startY) {
   layout.rows.clear();
   int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = startY;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
+  int viewH = max(0, maxY - startY);
+  int curY = startY - round(structuresListScroll);
   int rowH = 24;
-  for (int i = 0; i < mapModel.structures.size(); i++) {
-    if (curY + rowH > maxY) break;
+  int rowGap = 6;
+  int totalRows = (mapModel != null && mapModel.structures != null) ? mapModel.structures.size() : 0;
+  int contentH = (totalRows > 0) ? totalRows * (rowH + rowGap) - rowGap : 0;
+  layout.rowsStartY = startY;
+  layout.rowsViewH = viewH;
+  layout.contentH = contentH;
+  layout.scrollbar = new IntRect(layout.panel.x + layout.panel.w - SCROLLBAR_W, startY, SCROLLBAR_W, viewH);
+  structuresListScroll = clampScroll(structuresListScroll, contentH, viewH);
+  curY = startY - round(structuresListScroll);
+
+  for (int i = 0; i < totalRows; i++) {
+    if (curY > maxY) break;
+    if (curY + rowH < startY) {
+      curY += rowH + rowGap;
+      continue;
+    }
     StructureRowLayout row = new StructureRowLayout();
+    row.index = i;
     int selectW = 18;
     row.selectRect = new IntRect(labelX, curY, selectW, rowH);
-    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - selectW - 6 - 30, rowH);
+    row.nameRect = new IntRect(labelX + selectW + 6, curY, layout.panel.w - 2 * PANEL_PADDING - SCROLLBAR_W - selectW - 6 - 30, rowH);
     row.delRect = new IntRect(row.nameRect.x + row.nameRect.w + 6, curY, 24, rowH);
     layout.rows.add(row);
-    curY += rowH + 6;
+    curY += rowH + rowGap;
   }
 }
 
@@ -1606,21 +1699,24 @@ void drawStructuresListPanel() {
 
   for (int i = 0; i < layout.rows.size(); i++) {
     StructureRowLayout row = layout.rows.get(i);
-    Structure s = mapModel.structures.get(i);
-    boolean selected = (selectedStructureIndex == i);
+    Structure s = (row.index >= 0 && row.index < mapModel.structures.size()) ? mapModel.structures.get(row.index) : null;
+    if (s == null) continue;
+    boolean selected = (selectedStructureIndex == row.index);
     drawRadioButton(row.selectRect, selected);
 
     drawBevelButton(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, selected);
     fill(10);
     textAlign(LEFT, CENTER);
-    String base = (s.name != null && s.name.length() > 0) ? s.name : "Struct " + (i + 1);
-    text(base + " · " + structureShapeLabel(s.shape), row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
+    String base = (s.name != null && s.name.length() > 0) ? s.name : "Struct " + (row.index + 1);
+    text(base + " - " + structureShapeLabel(s.shape), row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
 
     drawBevelButton(row.delRect.x, row.delRect.y, row.delRect.w, row.delRect.h, false);
     fill(10);
     textAlign(CENTER, CENTER);
     text("X", row.delRect.x + row.delRect.w / 2, row.delRect.y + row.delRect.h / 2);
   }
+
+  drawScrollbar(layout.scrollbar, layout.contentH, structuresListScroll);
 }
 
 // ----- RENDER PANEL -----

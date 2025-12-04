@@ -65,5 +65,4 @@ General :
 (later) option to generate details (about everything) for zooming
 (later) very top panel should have a little bit more padding on the bottom, jus a few px to allow bottom of text to be good visually
 (soon) investigate caching options
-(soon) scrollbars for long right-panel lists
 (later) "generate" buttons should preferably be on top
