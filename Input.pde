@@ -30,11 +30,10 @@ void handlePathsMousePressed(float wx, float wy) {
   }
 
   Path targetPath = mapModel.paths.get(selectedPathIndex);
-  ArrayList<PVector> route = null;
+  ArrayList<PVector> route = new ArrayList<PVector>();
   if (pendingPathStart != null) {
     PathRouteMode mode = currentPathRouteMode();
     if (mode == PathRouteMode.ENDS) {
-      route = new ArrayList<PVector>();
       route.add(pendingPathStart.copy());
       route.add(target.copy());
       println("[PATH] route ENDS size=" + route.size());
@@ -43,7 +42,7 @@ void handlePathsMousePressed(float wx, float wy) {
       if (rp != null && rp.size() > 1) route = rp;
       println("[PATH] route PATHFIND size=" + ((route != null) ? route.size() : 0));
     }
-    if (route == null) {
+    if (route == null || route.isEmpty()) {
       route = new ArrayList<PVector>();
       route.add(pendingPathStart.copy());
       route.add(target.copy());
@@ -55,8 +54,10 @@ void handlePathsMousePressed(float wx, float wy) {
     if (targetPath.routes.isEmpty()) {
       targetPath.typeId = activePathTypeIndex;
     }
-    mapModel.appendRouteToPath(targetPath, route);
-    println("[PATH] appended route points=" + route.size() + " to path#" + selectedPathIndex);
+    if (route != null) {
+      mapModel.appendRouteToPath(targetPath, route);
+      println("[PATH] appended route points=" + route.size() + " to path#" + selectedPathIndex);
+    }
   }
   pendingPathStart = null;
 }
@@ -234,6 +235,7 @@ void mouseReleased() {
 }
 
 void updateActiveSlider(int mx, int my) {
+  if (my < -99999) return; // retain parameter to avoid unused warning
   switch (activeSlider) {
     case SLIDER_SITES_DENSITY: {
       SitesLayout l = buildSitesLayout();

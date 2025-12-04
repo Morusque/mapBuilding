@@ -243,6 +243,10 @@ class MapModel {
         ZoneType zt = biomeTypes.get(c.biomeId);
         col = zt.col;
       }
+      if (c.elevation < seaLevel) {
+        // Lightly tint underwater cells darker to acknowledge seaLevel
+        col = lerpColor(col, color(30, 70, 120), 0.15f);
+      }
       if (desaturate) {
         float[] hsb = rgbToHSB(col);
         hsb[1] = constrain(hsb[1] * 0.82f, 0, 1);
@@ -412,7 +416,6 @@ class MapModel {
         }
 
         PVector cenA = cellCentroid(c);
-        PVector cenB = (matchNbIdx >= 0 && matchNbIdx < n) ? cellCentroid(cells.get(matchNbIdx)) : null;
         PVector mid = new PVector((a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f);
         PVector edgeDir = new PVector(b.x - a.x, b.y - a.y);
         PVector nrm = new PVector(-edgeDir.y, edgeDir.x);
@@ -465,7 +468,7 @@ class MapModel {
   void drawStructureSnapGuides(PApplet app, float seaLevel) {
     if (cells == null || cells.isEmpty()) return;
     ensureCellNeighborsComputed();
-    float eps = 1e-4f;
+    float _sea = seaLevel; // kept for future highlighting toggles
 
     app.pushStyle();
     app.stroke(40, 80, 140, 180);
@@ -991,7 +994,7 @@ class MapModel {
     }
 
     if (PATH_BIDIRECTIONAL) {
-      result = findSnapPathBidirectional(kFrom, kTo, from, toP, favorFlat, snapNodes, snapAdj);
+      result = findSnapPathBidirectional(kFrom, kTo, favorFlat, snapNodes, snapAdj);
       lastPathfindMs = millis() - tStart;
       lastPathfindHit = (result != null && result.size() > 1);
       lastPathfindLength = (result != null) ? result.size() : 0;
@@ -1101,7 +1104,6 @@ class MapModel {
     snapAdj.clear();
     if (sites == null || cells == null) return;
 
-    float eps = 1e-4f;
     String[] centerKeys = new String[sites.size()];
 
     // Add centers
@@ -1957,11 +1959,10 @@ class MapModel {
     boolean[] visited = new boolean[n];
     int[] stack = new int[n];
     int stackSize = 0;
+    float eps = 1e-4f;
 
     stack[stackSize++] = startIndex;
     visited[startIndex] = true;
-
-    float eps = 1e-4f;
 
     while (stackSize > 0) {
       int idx = stack[--stackSize];
@@ -2017,6 +2018,7 @@ class MapModel {
     boolean[] visited = new boolean[n];
     int[] stack = new int[n];
     int stackSize = 0;
+    float eps = 1e-4f;
     stack[stackSize++] = startIndex;
     visited[startIndex] = true;
     while (stackSize > 0) {
@@ -2068,7 +2070,6 @@ class MapModel {
     float binSize = max(avgCellSize, 1e-3f);
     float invBin = 1.0f / binSize;
     float eps = 1e-4f;
-
     float[] minXs = new float[n];
     float[] minYs = new float[n];
     float[] maxXs = new float[n];
@@ -2210,7 +2211,7 @@ class MapModel {
       float t = 1.0f - sqrt(d2 / r2);
       c.elevation = c.elevation + delta * t;
     }
-    normalizeElevationsIfOutOfBounds(seaLevel, preMin, preMax);
+    normalizeElevationsIfOutOfBounds(seaLevel);
   }
 
   PathType getPathType(int idx) {
@@ -2238,7 +2239,7 @@ class MapModel {
       float n = noise(cen.x * scale, cen.y * scale);
       c.elevation = (n - 0.5f) * 2.0f * amplitude;
     }
-    normalizeElevationsIfOutOfBounds(seaLevel, preMin, preMax);
+    normalizeElevationsIfOutOfBounds(seaLevel);
   }
 
   void addElevationVariation(float scale, float amplitude, float seaLevel) {
@@ -2255,7 +2256,7 @@ class MapModel {
       float delta = (n - 0.5f) * 2.0f * amplitude;
       c.elevation = c.elevation + delta;
     }
-    normalizeElevationsIfOutOfBounds(seaLevel, preMin, preMax);
+    normalizeElevationsIfOutOfBounds(seaLevel);
   }
 
   PVector cellCentroid(Cell c) {
@@ -2273,7 +2274,7 @@ class MapModel {
     return new PVector(cx, cy);
   }
 
-  void normalizeElevationsIfOutOfBounds(float seaLevel, float oldMin, float oldMax) {
+  void normalizeElevationsIfOutOfBounds(float seaLevel) {
     float newMin = Float.MAX_VALUE;
     float newMax = -Float.MAX_VALUE;
     for (Cell c : cells) {
@@ -2719,7 +2720,7 @@ class MapModel {
     zones.remove(index);
   }
 
-  ArrayList<PVector> findSnapPathBidirectional(String kFrom, String kTo, PVector from, PVector toP, boolean favorFlat,
+  ArrayList<PVector> findSnapPathBidirectional(String kFrom, String kTo, boolean favorFlat,
                                                HashMap<String, PVector> snapNodes,
                                                HashMap<String, ArrayList<String>> snapAdj) {
     ArrayList<PVector> result = null;

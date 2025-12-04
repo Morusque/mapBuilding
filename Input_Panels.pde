@@ -825,6 +825,7 @@ boolean handlePathsListPanelClick(int mx, int my) {
   for (int i = 0; i < layout.rows.size(); i++) {
     PathRowLayout row = layout.rows.get(i);
     Path p = mapModel.paths.get(i);
+    if (p == null) continue;
 
     if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
       selectedPathIndex = i;
@@ -1091,4 +1092,3 @@ boolean handleElevationPanelClick(int mx, int my) {
 
   return false;
 }
-

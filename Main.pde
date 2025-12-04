@@ -460,11 +460,12 @@ PVector findNearestSnappingPoint(float wx, float wy, float maxScreenDist) {
 
   float bestSq = maxScreenDist * maxScreenDist;
   PVector best = null;
+  PVector cursorScreen = viewport.worldToScreen(wx, wy);
 
   for (PVector p : snaps) {
     PVector s = viewport.worldToScreen(p.x, p.y);
-    float dx = s.x - mouseX;
-    float dy = s.y - mouseY;
+    float dx = s.x - cursorScreen.x;
+    float dy = s.y - cursorScreen.y;
     float d2 = dx * dx + dy * dy;
     if (d2 < bestSq) {
       bestSq = d2;

@@ -1127,7 +1127,6 @@ class LabelRowLayout {
 LabelsLayout buildLabelsLayout() {
   LabelsLayout l = new LabelsLayout();
   l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
-  int innerX = l.panel.x + PANEL_PADDING;
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
