@@ -25,6 +25,13 @@ SitesLayout buildSitesLayout() {
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
+  // Generate controls up top
+  l.generateBtn = new IntRect(innerX, curY, 110, PANEL_BUTTON_H);
+  l.keepCheckbox = new IntRect(l.generateBtn.x + l.generateBtn.w + 12,
+                               curY + (PANEL_BUTTON_H - PANEL_CHECK_SIZE) / 2,
+                               PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
   int sliderW = 200;
   l.densitySlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
@@ -35,12 +42,7 @@ SitesLayout buildSitesLayout() {
   l.modeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
-  l.generateBtn = new IntRect(innerX, curY, 110, PANEL_BUTTON_H);
-  l.keepCheckbox = new IntRect(l.generateBtn.x + l.generateBtn.w + 12,
-                               curY + (PANEL_BUTTON_H - PANEL_CHECK_SIZE) / 2,
-                               PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
-  curY += PANEL_BUTTON_H + PANEL_PADDING;
-  curY += hintHeight(4);
+  curY += PANEL_PADDING + hintHeight(4);
   l.panel.h = curY - l.panel.y;
   return l;
 }
@@ -1041,6 +1043,11 @@ ElevationLayout buildElevationLayout() {
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
+  int genW = 120;
+  l.perlinBtn = new IntRect(innerX, curY, genW, PANEL_BUTTON_H);
+  l.varyBtn = new IntRect(l.perlinBtn.x + genW + 8, curY, genW, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
   int sliderW = 200;
   l.seaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
@@ -1056,12 +1063,7 @@ ElevationLayout buildElevationLayout() {
   curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   l.noiseSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-
-  int genW = 120;
-  l.perlinBtn = new IntRect(innerX, curY, genW, PANEL_BUTTON_H);
-  l.varyBtn = new IntRect(l.perlinBtn.x + genW + 8, curY, genW, PANEL_BUTTON_H);
-  curY += PANEL_BUTTON_H + PANEL_PADDING;
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
 
   curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
@@ -1143,7 +1145,7 @@ void drawElevationPanel() {
   drawBevelButton(layout.varyBtn.x, layout.varyBtn.y, layout.varyBtn.w, layout.varyBtn.h, false);
   fill(10);
   textAlign(CENTER, CENTER);
-  text("Perlin Generate", layout.perlinBtn.x + layout.perlinBtn.w / 2, layout.perlinBtn.y + layout.perlinBtn.h / 2);
+  text("Generate", layout.perlinBtn.x + layout.perlinBtn.w / 2, layout.perlinBtn.y + layout.perlinBtn.h / 2);
   text("Vary", layout.varyBtn.x + layout.varyBtn.w / 2, layout.varyBtn.y + layout.varyBtn.h / 2);
 
   drawControlsHint(layout.panel,
@@ -1369,9 +1371,14 @@ StructuresLayout buildStructuresLayout() {
   int btnWShape = 58;
   int gapShape = 6;
   for (int i = 0; i < shapeLabels.length; i++) {
-    l.shapeButtons.add(new IntRect(innerX + i * (btnWShape + gapShape), curY, btnWShape, PANEL_BUTTON_H));
+    int row = i / 3;
+    int col = i % 3;
+    int x = innerX + col * (btnWShape + gapShape);
+    int y = curY + row * (PANEL_BUTTON_H + PANEL_ROW_GAP);
+    l.shapeButtons.add(new IntRect(x, y, btnWShape, PANEL_BUTTON_H));
   }
-  curY += PANEL_BUTTON_H + PANEL_PADDING;
+  curY += (PANEL_BUTTON_H + PANEL_ROW_GAP) * 2; // two rows of shape buttons
+  curY += PANEL_PADDING - PANEL_ROW_GAP;
 
   String[] snapModes = { "None", "Next", "Center" };
   int btnW = 70;
@@ -1727,6 +1734,7 @@ class RenderLayout {
   String[] labels;
   IntRect lightAzimuthSlider;
   IntRect lightAltitudeSlider;
+  IntRect paddingSlider;
 }
 
 RenderLayout buildRenderLayout() {
@@ -1754,6 +1762,9 @@ RenderLayout buildRenderLayout() {
       curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
     }
   }
+
+  l.paddingSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   curY += PANEL_PADDING + hintHeight(2);
   l.panel.h = curY - l.panel.y;
@@ -1806,6 +1817,22 @@ void drawRenderPanel() {
     textAlign(LEFT, BOTTOM);
     text("Light altitude (" + nf(renderLightAltitudeDeg, 1, 0) + " deg)", alt.x, alt.y - 4);
     textAlign(LEFT, TOP);
+  }
+
+  // Export padding slider
+  if (layout.paddingSlider != null) {
+    IntRect pad = layout.paddingSlider;
+    stroke(160);
+    fill(230);
+    rect(pad.x, pad.y, pad.w, pad.h, 4);
+    float padNorm = constrain(map(renderPaddingPct, 0.0f, 0.10f, 0, 1), 0, 1);
+    float px = pad.x + padNorm * pad.w;
+    fill(40);
+    noStroke();
+    ellipse(px, pad.y + pad.h / 2.0f, pad.h * 0.9f, pad.h * 0.9f);
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Export padding (" + nf(renderPaddingPct * 100.0f, 1, 1) + "% of screen)", pad.x, pad.y - 4);
   }
 
   drawCheckbox(layout.checks.get(5).x, layout.checks.get(5).y, layout.checks.get(5).w, renderShowPaths, "Paths");

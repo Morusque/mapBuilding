@@ -37,6 +37,8 @@ float labelsListScroll = 0;
 
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
+final int TOP_BAR_EXTRA_PAD = 4;
+final int TOP_BAR_TOTAL = TOP_BAR_HEIGHT + TOP_BAR_EXTRA_PAD;
 final int TOOL_BAR_HEIGHT = 26;
 final int PANEL_X = 0;
 final int PANEL_W = 320;
@@ -104,6 +106,7 @@ int PATH_MAX_EXPANSIONS = 10000; // tweakable pathfinding budget per query (per-
 boolean PATH_BIDIRECTIONAL = true; // grow paths from both ends
 int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
+float renderPaddingPct = 0.01f; // fraction of min(screenW, screenH) cropped from all sides
 
 float labelSizeDefault() {
   return labelSizeDefaultVal;
@@ -177,6 +180,7 @@ final int SLIDER_STRUCT_SELECTED_HUE = 24;
 final int SLIDER_STRUCT_SELECTED_ALPHA = 25;
 final int SLIDER_STRUCT_SELECTED_SAT = 26;
 final int SLIDER_STRUCT_SELECTED_STROKE = 27;
+final int SLIDER_RENDER_PADDING = 28;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -236,6 +240,36 @@ void syncActivePathTypeGlobals() {
   pathRouteModeIndex = (pt.routeMode == PathRouteMode.ENDS) ? 0 : 1;
   flattestSlopeBias = pt.slopeBias;
   pathAvoidWater = pt.avoidWater;
+}
+
+void drawExportPaddingOverlay() {
+  if (mapModel == null) return;
+  float worldW = mapModel.maxX - mapModel.minX;
+  float worldH = mapModel.maxY - mapModel.minY;
+  float padWorld = max(0, renderPaddingPct) * min(worldW, worldH);
+  float innerWX = mapModel.minX + padWorld;
+  float innerWY = mapModel.minY + padWorld;
+  float innerWW = max(0, worldW - padWorld * 2);
+  float innerWH = max(0, worldH - padWorld * 2);
+  if (innerWW <= 0 || innerWH <= 0) return;
+
+  PVector tl = viewport.worldToScreen(innerWX, innerWY);
+  PVector br = viewport.worldToScreen(innerWX + innerWW, innerWY + innerWH);
+  float innerX = min(tl.x, br.x);
+  float innerY = min(tl.y, br.y);
+  float innerW = abs(br.x - tl.x);
+  float innerH = abs(br.y - tl.y);
+  noStroke();
+  fill(80, 80, 80, 70);
+  rect(0, 0, width, innerY); // top
+  rect(0, innerY, innerX, innerH); // left
+  rect(innerX + innerW, innerY, width - (innerX + innerW), innerH); // right
+  rect(0, innerY + innerH, width, height - (innerY + innerH)); // bottom
+
+  noFill();
+  stroke(40, 40, 40, 180);
+  strokeWeight(1);
+  rect(innerX, innerY, innerW, innerH);
 }
 
 void draw() {
@@ -392,6 +426,10 @@ void draw() {
   }
   popMatrix();
 
+  if (currentTool == Tool.EDIT_RENDER) {
+    drawExportPaddingOverlay();
+  }
+
   // ----- UI overlay -----
   drawTopBar();
   drawToolButtons();
@@ -511,7 +549,7 @@ void showNotice(String msg) {
 void drawZoneBrushPreview() {
   IntRect panel = getActivePanelRect();
   if (panel != null && panel.contains(mouseX, mouseY)) return;
-  if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
+  if (mouseY < TOP_BAR_TOTAL + TOOL_BAR_HEIGHT) return;
   PVector w = viewport.screenToWorld(mouseX, mouseY);
   pushStyle();
   noFill();
@@ -525,7 +563,7 @@ void drawZoneBrushPreview() {
 void drawPathEraserPreview() {
   IntRect panel = getActivePanelRect();
   if (panel != null && panel.contains(mouseX, mouseY)) return;
-  if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
+  if (mouseY < TOP_BAR_TOTAL + TOOL_BAR_HEIGHT) return;
   PVector w = viewport.screenToWorld(mouseX, mouseY);
   pushStyle();
   noFill();
@@ -549,7 +587,7 @@ void drawElevationBrushPreview() {
 }
 
 void drawStructurePreview() {
-  int uiBottom = TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  int uiBottom = TOP_BAR_TOTAL + TOOL_BAR_HEIGHT;
   if (mouseY < uiBottom) return;
   PVector w = viewport.screenToWorld(mouseX, mouseY);
   Structure tmp = mapModel.computeSnappedStructure(w.x, w.y, structureSize);

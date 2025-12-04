@@ -487,6 +487,13 @@ void updateActiveSlider(int mx, int my) {
       renderLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
       break;
     }
+    case SLIDER_RENDER_PADDING: {
+      RenderLayout l = buildRenderLayout();
+      float t = (mx - l.paddingSlider.x) / (float)l.paddingSlider.w;
+      t = constrain(t, 0, 1);
+      renderPaddingPct = constrain(t * 0.10f, 0, 0.10f);
+      break;
+    }
     default:
       break;
   }

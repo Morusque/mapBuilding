@@ -1,7 +1,7 @@
 // ---------- UI DRAWING ----------
 
 int panelTop() {
-  return TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT;
+  return TOP_BAR_TOTAL + TOOL_BAR_HEIGHT;
 }
 
 void drawPanelBackground(IntRect frame) {
@@ -69,18 +69,19 @@ void drawScrollbar(IntRect track, float contentH, float scroll) {
 }
 
 void drawTopBar() {
+  int topBarH = TOP_BAR_TOTAL;
   // Background
   noStroke();
   fill(202);
-  rect(0, 0, width, TOP_BAR_HEIGHT);
+  rect(0, 0, width, topBarH);
 
   // Bevel edges (Win95-ish)
   stroke(255);
   line(0, 0, width, 0);
-  line(0, 0, 0, TOP_BAR_HEIGHT);
+  line(0, 0, 0, topBarH);
   stroke(96);
-  line(0, TOP_BAR_HEIGHT - 1, width, TOP_BAR_HEIGHT - 1);
-  line(width - 1, 0, width - 1, TOP_BAR_HEIGHT);
+  line(0, topBarH - 1, width, topBarH - 1);
+  line(width - 1, 0, width - 1, topBarH);
 
   // Text
   fill(10);
@@ -110,14 +111,14 @@ void drawTopBar() {
              "[" + mapModel.lastPathfindExpanded + " expanded, len " + mapModel.lastPathfindLength +
              (mapModel.lastPathfindHit ? "" : ", miss") + "]";
   }
-  text(info1, 10, TOP_BAR_HEIGHT / 2.0f - 6);
-  text(info2, 10, TOP_BAR_HEIGHT / 2.0f + 8);
+  text(info1, 10, topBarH / 2.0f - 7);
+  text(info2, 10, topBarH / 2.0f + 7);
 
   // Notice (right side, above loading bar)
   if (uiNoticeFrames > 0 && uiNotice != null && uiNotice.length() > 0) {
     fill(180, 50, 50);
     textAlign(RIGHT, CENTER);
-    text(uiNotice, width - 150, TOP_BAR_HEIGHT / 2.0f - 6);
+    text(uiNotice, width - 150, topBarH / 2.0f - 6);
     uiNoticeFrames--;
   }
 
@@ -129,7 +130,7 @@ void drawTopBar() {
     float barW = 120;
     float barH = 10;
     float x = width - barW - 12;
-    float y = (TOP_BAR_HEIGHT - barH) / 2.0f;
+    float y = (topBarH - barH) / 2.0f;
     stroke(80);
     fill(235);
     rect(x, y, barW, barH, 3);
@@ -146,7 +147,7 @@ void drawTopBar() {
 }
 
 void drawToolButtons() {
-  int barY = TOP_BAR_HEIGHT;
+  int barY = TOP_BAR_TOTAL;
   int barH = TOOL_BAR_HEIGHT;
   int margin = 10;
   int buttonW = 90;

@@ -49,7 +49,6 @@ Rendering :
 (later) refine the precise way contours work
 (later) find a way to allow for labels text fill color and outline color, also parameters for font used (just a few typical options)
 (later) take inspiration from real map pictures
-(later) outer padding
 
 Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
@@ -64,5 +63,5 @@ General :
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
 (later) option to generate details (about everything) for zooming
 (later) very top panel should have a little bit more padding on the bottom, jus a few px to allow bottom of text to be good visually
-(soon) investigate caching options
+(later) investigate caching options
 (later) "generate" buttons should preferably be on top

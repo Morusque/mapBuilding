@@ -84,7 +84,7 @@ boolean isInActivePanel(int mx, int my) {
 }
 
 boolean handleToolButtonClick(int mx, int my) {
-  int barY = TOP_BAR_HEIGHT;
+  int barY = TOP_BAR_TOTAL;
   int barH = TOOL_BAR_HEIGHT;
 
   if (mapModel.isVoronoiBuilding()) {
@@ -520,7 +520,7 @@ void mousePressed() {
   }
 
   // Ignore world interaction if inside any top UI area
-  if (mouseY < TOP_BAR_HEIGHT + TOOL_BAR_HEIGHT) return;
+  if (mouseY < TOP_BAR_TOTAL + TOOL_BAR_HEIGHT) return;
   if (isInActivePanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_ZONES && isInZonesListPanel(mouseX, mouseY)) return;
   if (currentTool == Tool.EDIT_PATHS && isInPathsListPanel(mouseX, mouseY)) return;
@@ -1016,6 +1016,13 @@ boolean handleRenderPanelClick(int mx, int my) {
     float t = constrain((mx - layout.lightAltitudeSlider.x) / (float)layout.lightAltitudeSlider.w, 0, 1);
     renderLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
     activeSlider = SLIDER_RENDER_LIGHT_ALTITUDE;
+    return true;
+  }
+
+  if (layout.paddingSlider != null && layout.paddingSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.paddingSlider.x) / (float)layout.paddingSlider.w, 0, 1);
+    renderPaddingPct = constrain(t * 0.10f, 0, 0.10f);
+    activeSlider = SLIDER_RENDER_PADDING;
     return true;
   }
 
