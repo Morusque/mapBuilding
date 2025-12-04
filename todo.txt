@@ -64,8 +64,6 @@ General :
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
 (later) option to generate details (about everything) for zooming
 (later) very top panel should have a little bit more padding on the bottom, jus a few px to allow bottom of text to be good visually
-(soon) check useless variables and stuff like these
 (soon) investigate caching options
 (soon) scrollbars for long right-panel lists
 (soon) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
-

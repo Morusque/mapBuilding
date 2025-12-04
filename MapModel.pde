@@ -229,11 +229,11 @@ class MapModel {
   }
 
   // Rendering-mode cell draw: keep underwater cells plain blue (no biome tint)
-  void drawCellsRender(PApplet app, boolean showBorders, float seaLevel) {
-    drawCellsRender(app, showBorders, seaLevel, false);
+  void drawCellsRender(PApplet app, boolean showBorders) {
+    drawCellsRender(app, showBorders, false);
   }
 
-  void drawCellsRender(PApplet app, boolean showBorders, float seaLevel, boolean desaturate) {
+  void drawCellsRender(PApplet app, boolean showBorders, boolean desaturate) {
     if (cells == null) return;
     app.pushStyle();
     for (Cell c : cells) {
