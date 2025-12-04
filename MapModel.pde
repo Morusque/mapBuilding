@@ -601,9 +601,14 @@ class MapModel {
 
   Structure computeSnappedStructure(float wx, float wy, float size) {
     Structure s = new Structure(wx, wy);
+    s.name = "Struct " + (structures.size() + 1);
     s.size = size;
     s.shape = structureShape;
     s.aspect = structureAspectRatio;
+    s.setHue(structureHue01);
+    s.setSaturation(structureSat01);
+    s.setAlpha(structureAlpha01);
+    s.strokeWeightPx = structureStrokePx;
     // Keep magnetism roughly constant in screen space: smaller in world units when zoomed in.
     float snapRangePx = 20.0f;
     float snapRange = max(0.01f, snapRangePx / max(1e-3f, viewport.zoom));
@@ -704,6 +709,18 @@ class MapModel {
 
   void drawElevationOverlay(PApplet app, float seaLevel, boolean showElevationContours, boolean drawWater, boolean drawElevation,
                             boolean showWaterContours, boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg, int quantSteps) {
+    if (useNewElevationShading) {
+      ElevationRenderer.drawOverlay(this, app, seaLevel, showElevationContours, drawWater, drawElevation,
+                                    showWaterContours, useLighting, lightAzimuthDeg, lightAltitudeDeg, quantSteps,
+                                    renderBlackWhite);
+    } else {
+      drawElevationOverlayLegacy(app, seaLevel, showElevationContours, drawWater, drawElevation, showWaterContours,
+                                 useLighting, lightAzimuthDeg, lightAltitudeDeg, quantSteps);
+    }
+  }
+
+  void drawElevationOverlayLegacy(PApplet app, float seaLevel, boolean showElevationContours, boolean drawWater, boolean drawElevation,
+                                  boolean showWaterContours, boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg, int quantSteps) {
     if (cells == null) return;
     app.pushStyle();
     app.noStroke();
@@ -725,7 +742,7 @@ class MapModel {
         float shade = constrain((h + 0.5f), 0, 1); // center on 0
         float light = 1.0f;
         if (useLighting && lightDir != null) {
-          light = computeLightForCell(ci, lightDir);
+          light = ElevationRenderer.computeLightForCell(this, ci, lightDir);
         }
         float litShade = constrain(shade * light, 0, 1);
         if (quantSteps > 1) {
@@ -764,7 +781,6 @@ class MapModel {
       }
     }
 
-    // Region-level contours using marching squares on a coarse grid to avoid per-cell outlines.
     if (showElevationContours || showWaterContours) {
       int cols = 90;
       int rows = 90;
@@ -2134,38 +2150,6 @@ class MapModel {
     }
   }
 
-  float computeLightForCell(int idx, PVector lightDir) {
-    if (idx < 0 || idx >= cells.size()) return 1.0f;
-    ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
-    if (nbs == null || nbs.isEmpty()) return 1.0f;
-
-    Cell c = cells.get(idx);
-    PVector cen = cellCentroid(c);
-
-    float gx = 0;
-    float gy = 0;
-    for (int nbIdx : nbs) {
-      if (nbIdx < 0 || nbIdx >= cells.size()) continue;
-      Cell nb = cells.get(nbIdx);
-      PVector ncen = cellCentroid(nb);
-      float dx = ncen.x - cen.x;
-      float dy = ncen.y - cen.y;
-      float dist = sqrt(dx * dx + dy * dy);
-      if (dist < 1e-6f) continue;
-      float dh = nb.elevation - c.elevation;
-      float w = 1.0f / dist;
-      gx += dh * (dx / dist) * w;
-      gy += dh * (dy / dist) * w;
-    }
-
-    PVector normal = new PVector(-gx, -gy, 1.0f);
-    if (normal.magSq() < 1e-8f) normal.set(0, 0, 1);
-    else normal.normalize();
-
-    float d = max(0, normal.x * lightDir.x + normal.y * lightDir.y + normal.z * lightDir.z);
-    float ambient = 0.35f;
-    return constrain(ambient + (1.0f - ambient) * d, 0, 1);
-  }
 
   // ---------- Sites generation ----------
 

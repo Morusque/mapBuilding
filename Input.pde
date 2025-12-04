@@ -387,6 +387,92 @@ void updateActiveSlider(int mx, int my) {
       structureAspectRatio = constrain(0.3f + t * (3.0f - 0.3f), 0.3f, 3.0f);
       break;
     }
+    case SLIDER_STRUCT_SELECTED_SIZE: {
+      StructuresListLayout l = buildStructuresListLayout();
+      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailSizeSlider.x) / (float)l.detailSizeSlider.w, 0, 1);
+        Structure sel = mapModel.structures.get(selectedStructureIndex);
+        sel.size = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+      } else {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailSizeSlider.x) / (float)l.detailSizeSlider.w, 0, 1);
+        structureSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+      }
+      break;
+    }
+    case SLIDER_STRUCT_SELECTED_ANGLE: {
+      StructuresListLayout l = buildStructuresListLayout();
+      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailAngleSlider.x) / (float)l.detailAngleSlider.w, 0, 1);
+        float angDeg = -180.0f + t * 360.0f;
+        Structure sel = mapModel.structures.get(selectedStructureIndex);
+        sel.angle = radians(angDeg);
+      } else {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailAngleSlider.x) / (float)l.detailAngleSlider.w, 0, 1);
+        float angDeg = -180.0f + t * 360.0f;
+        structureAngleOffsetRad = radians(angDeg);
+      }
+      break;
+    }
+    case SLIDER_STRUCT_SELECTED_HUE: {
+      StructuresListLayout l = buildStructuresListLayout();
+      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailHueSlider.x) / (float)l.detailHueSlider.w, 0, 1);
+        Structure sel = mapModel.structures.get(selectedStructureIndex);
+        sel.setHue(t);
+      } else {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailHueSlider.x) / (float)l.detailHueSlider.w, 0, 1);
+        structureHue01 = t;
+      }
+      break;
+    }
+    case SLIDER_STRUCT_SELECTED_ALPHA: {
+      StructuresListLayout l = buildStructuresListLayout();
+      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailAlphaSlider.x) / (float)l.detailAlphaSlider.w, 0, 1);
+        Structure sel = mapModel.structures.get(selectedStructureIndex);
+        sel.setAlpha(t);
+      } else {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailAlphaSlider.x) / (float)l.detailAlphaSlider.w, 0, 1);
+        structureAlpha01 = t;
+      }
+      break;
+    }
+    case SLIDER_STRUCT_SELECTED_SAT: {
+      StructuresListLayout l = buildStructuresListLayout();
+      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailSatSlider.x) / (float)l.detailSatSlider.w, 0, 1);
+        Structure sel = mapModel.structures.get(selectedStructureIndex);
+        sel.setSaturation(t);
+      } else {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailSatSlider.x) / (float)l.detailSatSlider.w, 0, 1);
+        structureSat01 = t;
+      }
+      break;
+    }
+    case SLIDER_STRUCT_SELECTED_STROKE: {
+      StructuresListLayout l = buildStructuresListLayout();
+      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailStrokeSlider.x) / (float)l.detailStrokeSlider.w, 0, 1);
+        Structure sel = mapModel.structures.get(selectedStructureIndex);
+        sel.strokeWeightPx = constrain(0.5f + t * (4.0f - 0.5f), 0.5f, 4.0f);
+      } else {
+        layoutStructureDetails(l);
+        float t = constrain((mx - l.detailStrokeSlider.x) / (float)l.detailStrokeSlider.w, 0, 1);
+        structureStrokePx = constrain(0.5f + t * (4.0f - 0.5f), 0.5f, 4.0f);
+      }
+      break;
+    }
     case SLIDER_RENDER_LIGHT_AZIMUTH: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.lightAzimuthSlider.x) / (float)l.lightAzimuthSlider.w, 0, 1);
@@ -464,6 +550,30 @@ void keyPressed() {
     }
   }
 
+  // Inline text editing for structures (name)
+  if (editingStructureNameIndex >= 0) {
+    if (key == ENTER || key == RETURN) {
+      if (editingStructureNameIndex < mapModel.structures.size()) {
+        mapModel.structures.get(editingStructureNameIndex).name = structureNameDraft;
+      }
+      editingStructureNameIndex = -1;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (structureNameDraft.length() > 0) structureNameDraft = structureNameDraft.substring(0, structureNameDraft.length() - 1);
+      if (editingStructureNameIndex < mapModel.structures.size()) {
+        mapModel.structures.get(editingStructureNameIndex).name = structureNameDraft;
+      }
+      return;
+    } else if (key >= 32) {
+      structureNameDraft += key;
+      if (editingStructureNameIndex < mapModel.structures.size()) {
+        mapModel.structures.get(editingStructureNameIndex).name = structureNameDraft;
+      }
+      return;
+    }
+  }
+
+  // Inline text editing for structures (type)
   // Structures: sliders dragging
   if (mouseButton == LEFT && currentTool == Tool.EDIT_STRUCTURES && isInStructuresPanel(mouseX, mouseY)) {
     StructuresLayout layout = buildStructuresLayout();

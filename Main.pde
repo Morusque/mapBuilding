@@ -26,6 +26,10 @@ float lastStructureSnapAngle = 0.0f;
 StructureSnapMode structureSnapMode = StructureSnapMode.NEXT_TO_PATH;
 StructureShape structureShape = StructureShape.SQUARE;
 float structureAspectRatio = 1.0f; // width/height for rectangle shape
+float structureHue01 = 0.0f;
+float structureSat01 = 0.0f;
+float structureAlpha01 = 0.7f;
+float structureStrokePx = 1.4f;
 
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
@@ -83,6 +87,7 @@ boolean renderWaterContours = false;
 boolean renderElevationContours = false;
 float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
+boolean useNewElevationShading = false;
 float flattestSlopeBias = FLATTEST_BIAS_MIN; // slope penalty in PATHFIND mode (min..max, 0 = shortest)
 boolean pathAvoidWater = false;
 boolean pathTaperRivers = false;
@@ -124,6 +129,8 @@ String pathNameDraft = "";
 
 // Structure selection state
 int selectedStructureIndex = -1;
+int editingStructureNameIndex = -1;
+String structureNameDraft = "";
 
 // Loading indicator
 boolean isLoading = false;
@@ -157,6 +164,12 @@ final int SLIDER_STRUCT_ANGLE = 18;
 final int SLIDER_PATH_TYPE_MIN_WEIGHT = 19;
 final int SLIDER_STRUCT_RATIO = 20;
 final int SLIDER_ZONES_ROW_HUE = 21;
+final int SLIDER_STRUCT_SELECTED_SIZE = 22;
+final int SLIDER_STRUCT_SELECTED_ANGLE = 23;
+final int SLIDER_STRUCT_SELECTED_HUE = 24;
+final int SLIDER_STRUCT_SELECTED_ALPHA = 25;
+final int SLIDER_STRUCT_SELECTED_SAT = 26;
+final int SLIDER_STRUCT_SELECTED_STROKE = 27;
 int activeSlider = SLIDER_NONE;
 
 void settings() {

@@ -170,19 +170,60 @@ class Structure {
   float size = 0.02f; // world units square side
   StructureShape shape = StructureShape.SQUARE;
   float aspect = 1.0f; // width / height for rectangle
+  String name = "";
+  float hue01 = 0.0f;
+  float sat01 = 0.0f;
+  float bri01 = 0.9f;
+  float alpha01 = 0.7f;
+  float strokeWeightPx = 1.4f;
+  int fillCol = color(245, 245, 235, 180);
 
   Structure(float x, float y) {
     this.x = x;
     this.y = y;
+    setColor(color(245, 245, 235), 180.0f / 255.0f);
+  }
+
+  void setColor(int c, float alpha) {
+    float[] hsb = new float[3];
+    rgbToHSB01(c, hsb);
+    hue01 = hsb[0];
+    sat01 = hsb[1];
+    bri01 = hsb[2];
+    alpha01 = constrain(alpha, 0, 1);
+    updateFillColor();
+  }
+
+  void setHue(float h) {
+    hue01 = constrain(h, 0, 1);
+    updateFillColor();
+  }
+
+  void setSaturation(float s) {
+    sat01 = constrain(s, 0, 1);
+    updateFillColor();
+  }
+
+  void setAlpha(float a) {
+    alpha01 = constrain(a, 0, 1);
+    updateFillColor();
+  }
+
+  void updateFillColor() {
+    int rgb = hsb01ToRGB(hue01, sat01, bri01);
+    int r = (rgb >> 16) & 0xFF;
+    int g = (rgb >> 8) & 0xFF;
+    int b = rgb & 0xFF;
+    fillCol = color(r, g, b, alpha01 * 255.0f);
   }
 
   void draw(PApplet app) {
     app.pushMatrix();
     app.translate(x, y);
     app.rotate(angle);
-    app.stroke(90, 90, 70);
-    app.strokeWeight(1.4f / viewport.zoom);
-    app.fill(245, 245, 235, 180);
+    app.stroke(0);
+    app.strokeWeight(strokeWeightPx / viewport.zoom);
+    app.fill(fillCol);
 
     float r = size;
     switch (shape) {

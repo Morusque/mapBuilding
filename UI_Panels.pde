@@ -1400,6 +1400,13 @@ class StructuresListLayout {
   IntRect panel;
   int titleY;
   IntRect deselectBtn;
+  IntRect detailNameField;
+  IntRect detailSizeSlider;
+  IntRect detailAngleSlider;
+  IntRect detailHueSlider;
+  IntRect detailAlphaSlider;
+  IntRect detailSatSlider;
+  IntRect detailStrokeSlider;
   ArrayList<StructureRowLayout> rows = new ArrayList<StructureRowLayout>();
 }
 
@@ -1421,10 +1428,31 @@ StructuresListLayout buildStructuresListLayout() {
   return l;
 }
 
-void populateStructuresListRows(StructuresListLayout layout) {
-  layout.rows.clear();
+int layoutStructureDetails(StructuresListLayout layout) {
   int labelX = layout.panel.x + PANEL_PADDING;
   int curY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP;
+  int fullW = layout.panel.w - 2 * PANEL_PADDING;
+  layout.detailNameField = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
+  layout.detailSizeSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  layout.detailAngleSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  layout.detailHueSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  layout.detailAlphaSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  layout.detailSatSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  layout.detailStrokeSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  return curY;
+}
+
+void populateStructuresListRows(StructuresListLayout layout, int startY) {
+  layout.rows.clear();
+  int labelX = layout.panel.x + PANEL_PADDING;
+  int curY = startY;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
   int rowH = 24;
   for (int i = 0; i < mapModel.structures.size(); i++) {
@@ -1441,7 +1469,8 @@ void populateStructuresListRows(StructuresListLayout layout) {
 
 void drawStructuresListPanel() {
   StructuresListLayout layout = buildStructuresListLayout();
-  populateStructuresListRows(layout);
+  int listStartY = layoutStructureDetails(layout);
+  populateStructuresListRows(layout, listStartY);
   drawPanelBackground(layout.panel);
 
   int labelX = layout.panel.x + PANEL_PADDING;
@@ -1456,6 +1485,126 @@ void drawStructuresListPanel() {
   textAlign(CENTER, CENTER);
   text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
 
+  Structure target = (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) ?
+    mapModel.structures.get(selectedStructureIndex) : null;
+
+  // Name field (selected struct only)
+  {
+    IntRect nf = layout.detailNameField;
+    boolean editingName = (target != null && editingStructureNameIndex == selectedStructureIndex);
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text(target != null ? "Name" : "Next name", nf.x, nf.y - 4);
+    stroke(80);
+    fill(255);
+    rect(nf.x, nf.y, nf.w, nf.h);
+    fill(0);
+    textAlign(LEFT, CENTER);
+    String shownName;
+    if (target != null) {
+      shownName = editingName ? structureNameDraft : target.name;
+    } else {
+      shownName = "Struct " + (mapModel.structures.size() + 1);
+    }
+    text(shownName, nf.x + 6, nf.y + nf.h / 2);
+    if (editingName) {
+      float caretX = nf.x + 6 + textWidth(structureNameDraft);
+      stroke(0);
+      line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
+    }
+  }
+
+  float baseSize = (target != null) ? target.size : structureSize;
+  float baseAngDeg = (target != null) ? degrees(target.angle) : degrees(structureAngleOffsetRad);
+  float baseHue = (target != null) ? target.hue01 : structureHue01;
+  float baseSat = (target != null) ? target.sat01 : structureSat01;
+  float baseAlpha = (target != null) ? target.alpha01 : structureAlpha01;
+  float baseStroke = (target != null) ? target.strokeWeightPx : structureStrokePx;
+
+  // Size slider
+  IntRect ss = layout.detailSizeSlider;
+  stroke(160);
+  fill(230);
+  rect(ss.x, ss.y, ss.w, ss.h, 4);
+  float sNorm = constrain(map(baseSize, 0.01f, 0.2f, 0, 1), 0, 1);
+  float sx = ss.x + sNorm * ss.w;
+  fill(40);
+  noStroke();
+  ellipse(sx, ss.y + ss.h / 2.0f, ss.h * 0.9f, ss.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Size", ss.x, ss.y - 4);
+
+  // Angle slider
+  IntRect ang = layout.detailAngleSlider;
+  stroke(160);
+  fill(230);
+  rect(ang.x, ang.y, ang.w, ang.h, 4);
+  float aNorm = constrain(map(baseAngDeg, -180.0f, 180.0f, 0, 1), 0, 1);
+  float ax = ang.x + aNorm * ang.w;
+  fill(40);
+  noStroke();
+  ellipse(ax, ang.y + ang.h / 2.0f, ang.h * 0.9f, ang.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Angle (" + nf(baseAngDeg, 1, 1) + " deg)", ang.x, ang.y - 4);
+
+  // Hue slider
+  IntRect hue = layout.detailHueSlider;
+  stroke(160);
+  fill(230);
+  rect(hue.x, hue.y, hue.w, hue.h, 4);
+  float hNorm = constrain(baseHue, 0, 1);
+  float hx = hue.x + hNorm * hue.w;
+  fill(40);
+  noStroke();
+  ellipse(hx, hue.y + hue.h / 2.0f, hue.h * 0.9f, hue.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Hue", hue.x, hue.y - 4);
+
+  // Saturation slider
+  IntRect sat = layout.detailSatSlider;
+  stroke(160);
+  fill(230);
+  rect(sat.x, sat.y, sat.w, sat.h, 4);
+  float satNorm = constrain(baseSat, 0, 1);
+  float satx = sat.x + satNorm * sat.w;
+  fill(40);
+  noStroke();
+  ellipse(satx, sat.y + sat.h / 2.0f, sat.h * 0.9f, sat.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Saturation", sat.x, sat.y - 4);
+
+  // Alpha slider (fill only)
+  IntRect alp = layout.detailAlphaSlider;
+  stroke(160);
+  fill(230);
+  rect(alp.x, alp.y, alp.w, alp.h, 4);
+  float aNorm2 = constrain(baseAlpha, 0, 1);
+  float apx = alp.x + aNorm2 * alp.w;
+  fill(40);
+  noStroke();
+  ellipse(apx, alp.y + alp.h / 2.0f, alp.h * 0.9f, alp.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Alpha (" + nf(baseAlpha * 100.0f, 1, 0) + "%)", alp.x, alp.y - 4);
+
+  // Stroke weight slider
+  IntRect st = layout.detailStrokeSlider;
+  stroke(160);
+  fill(230);
+  rect(st.x, st.y, st.w, st.h, 4);
+  float stNorm = constrain(map(baseStroke, 0.5f, 4.0f, 0, 1), 0, 1);
+  float stx = st.x + stNorm * st.w;
+  fill(40);
+  noStroke();
+  ellipse(stx, st.y + st.h / 2.0f, st.h * 0.9f, st.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Stroke weight (px)", st.x, st.y - 4);
+
   for (int i = 0; i < layout.rows.size(); i++) {
     StructureRowLayout row = layout.rows.get(i);
     Structure s = mapModel.structures.get(i);
@@ -1465,8 +1614,8 @@ void drawStructuresListPanel() {
     drawBevelButton(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, selected);
     fill(10);
     textAlign(LEFT, CENTER);
-    String label = "Struct " + (i + 1) + " - " + structureShapeLabel(s.shape);
-    text(label, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
+    String base = (s.name != null && s.name.length() > 0) ? s.name : "Struct " + (i + 1);
+    text(base + " · " + structureShapeLabel(s.shape), row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
 
     drawBevelButton(row.delRect.x, row.delRect.y, row.delRect.w, row.delRect.h, false);
     fill(10);

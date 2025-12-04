@@ -27,10 +27,11 @@ Paths :
 
 Struct :
 (later) structures should be groupable
-(soon) some ui on the right panel for per-struct parameters (can be displayed once on top of the list for selected struct): name, size, type, angle, color (allow transparent)
 (later) structure should snap to zones
 (later) there should be checkboxes to what the structures can snap to: water, biomes, underwater biomes, zones, paths, other structures (only show snapping feedback overlay lines when snapping for a given feature is enabled)
 (later) option to generate structs
+(later) a way to move already placed structs
+(later) refine the way parameters work (UI, default, selected, etc)
 
 Labels :
 (later) optionally associate labels with map elements
@@ -40,7 +41,7 @@ Labels :
 
 Rendering :
 (later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
-(soon) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons.
+(later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (already done but disabled, needs refinement)
 (later) Respect LOD rules: constant stroke widths, hide/show groups vs members depending on zoom, optional merging visually of dense structures.
 (later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed).
 (later) Exporting the legend for reference.
@@ -61,9 +62,9 @@ Export :
 General :
 (later) Refactor, optimize etc.
 (later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
-(soon) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
 (later) option to generate details (about everything) for zooming
 (later) very top panel should have a little bit more padding on the bottom, jus a few px to allow bottom of text to be good visually
-(later) check useless variables, problems tabs and stuff like those
-(later) scrollbars for long right-panel lists
+(soon) check useless variables, caching, problems tabs and stuff like those
+(soon) scrollbars for long right-panel lists
+(soon) MapModel.pde file is very long, could it be subdivided? (might be hard since single class)
 

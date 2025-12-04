@@ -906,10 +906,67 @@ boolean handleStructuresPanelClick(int mx, int my) {
 boolean handleStructuresListPanelClick(int mx, int my) {
   if (!isInStructuresListPanel(mx, my)) return false;
   StructuresListLayout layout = buildStructuresListLayout();
-  populateStructuresListRows(layout);
+  boolean hasSelection = (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size());
+  int listStartY = layoutStructureDetails(layout);
+  populateStructuresListRows(layout, listStartY);
 
   if (layout.deselectBtn.contains(mx, my)) {
     selectedStructureIndex = -1;
+    editingStructureNameIndex = -1;
+    return true;
+  }
+
+  Structure sel = hasSelection ? mapModel.structures.get(selectedStructureIndex) : null;
+  if (layout.detailNameField.contains(mx, my)) {
+    if (sel != null) {
+      editingStructureNameIndex = selectedStructureIndex;
+      structureNameDraft = (sel.name != null) ? sel.name : "";
+    }
+    return true;
+  }
+  if (layout.detailSizeSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.detailSizeSlider.x) / (float)layout.detailSizeSlider.w, 0, 1);
+    float newSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+    if (sel != null) sel.size = newSize;
+    else structureSize = newSize;
+    activeSlider = SLIDER_STRUCT_SELECTED_SIZE;
+    return true;
+  }
+  if (layout.detailAngleSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.detailAngleSlider.x) / (float)layout.detailAngleSlider.w, 0, 1);
+    float angDeg = -180.0f + t * 360.0f;
+    if (sel != null) sel.angle = radians(angDeg);
+    else structureAngleOffsetRad = radians(angDeg);
+    activeSlider = SLIDER_STRUCT_SELECTED_ANGLE;
+    return true;
+  }
+  if (layout.detailHueSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.detailHueSlider.x) / (float)layout.detailHueSlider.w, 0, 1);
+    if (sel != null) sel.setHue(t);
+    else structureHue01 = t;
+    activeSlider = SLIDER_STRUCT_SELECTED_HUE;
+    return true;
+  }
+  if (layout.detailSatSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.detailSatSlider.x) / (float)layout.detailSatSlider.w, 0, 1);
+    if (sel != null) sel.setSaturation(t);
+    else structureSat01 = t;
+    activeSlider = SLIDER_STRUCT_SELECTED_SAT;
+    return true;
+  }
+  if (layout.detailAlphaSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.detailAlphaSlider.x) / (float)layout.detailAlphaSlider.w, 0, 1);
+    if (sel != null) sel.setAlpha(t);
+    else structureAlpha01 = t;
+    activeSlider = SLIDER_STRUCT_SELECTED_ALPHA;
+    return true;
+  }
+  if (layout.detailStrokeSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.detailStrokeSlider.x) / (float)layout.detailStrokeSlider.w, 0, 1);
+    float w = constrain(0.5f + t * (4.0f - 0.5f), 0.5f, 4.0f);
+    if (sel != null) sel.strokeWeightPx = w;
+    else structureStrokePx = w;
+    activeSlider = SLIDER_STRUCT_SELECTED_STROKE;
     return true;
   }
 
@@ -917,12 +974,15 @@ boolean handleStructuresListPanelClick(int mx, int my) {
     StructureRowLayout row = layout.rows.get(i);
     if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
       selectedStructureIndex = i;
+      editingStructureNameIndex = -1;
       return true;
     }
     if (row.delRect.contains(mx, my)) {
       mapModel.structures.remove(i);
       if (selectedStructureIndex == i) selectedStructureIndex = -1;
       else if (selectedStructureIndex > i) selectedStructureIndex -= 1;
+      if (editingStructureNameIndex == i) editingStructureNameIndex = -1;
+      else if (editingStructureNameIndex > i) editingStructureNameIndex -= 1;
       return true;
     }
   }
