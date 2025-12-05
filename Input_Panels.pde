@@ -333,7 +333,7 @@ boolean handleZonesPanelClick(int mx, int my) {
   }
 
   if (layout.regenerateBtn.contains(mx, my)) {
-    int target = max(3, mapModel.zones.size());
+    int target = max(5, mapModel.zones.size());
     mapModel.regenerateRandomZones(target);
     activeZoneIndex = !mapModel.zones.isEmpty() ? 0 : -1;
     editingZoneNameIndex = -1;

@@ -46,8 +46,10 @@ Rendering :
 (later) Exporting the legend for reference.
 (later) Comments exportable as custom format
 (later) refine the precise way contours work
-(later) take inspiration from real map pictures
+(later) take inspiration from real map pictures (eg ign maps)
 (later) add loading bars for long operations (contours)
+(later) don't show cell borders unless specified
+(later) some ugly dots appear sometimes between polygones
 
 Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
