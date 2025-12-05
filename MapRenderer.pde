@@ -148,8 +148,10 @@ class MapRenderer {
       }
     }
 
-    float eps2 = 1e-8f;
+    float eps2 = 1e-6f; // lenient match to avoid missing shared edges
     float baseW = 2.0f / viewport.zoom;
+    float offset = 3.0f / viewport.zoom;
+    float laneGap = 1.4f / viewport.zoom;
     HashSet<String> drawn = new HashSet<String>();
 
     app.pushStyle();
@@ -160,7 +162,6 @@ class MapRenderer {
       if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
       ArrayList<Integer> zonesA = zoneForCell.get(ci);
       if (zonesA == null || zonesA.isEmpty()) continue; // No zone -> no outline
-      int primaryA = zonesA.get(0);
       int vc = c.vertices.size();
       for (int e = 0; e < vc; e++) {
         PVector a = c.vertices.get(e);
@@ -169,8 +170,6 @@ class MapRenderer {
         if (drawn.contains(key)) continue;
 
         ArrayList<Integer> zonesB = null;
-        int primaryB = -1;
-        int matchNbIdx = -1;
         ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
         if (nbs != null) {
           for (int nbIdx : nbs) {
@@ -178,6 +177,7 @@ class MapRenderer {
             Cell nb = model.cells.get(nbIdx);
             if (nb == null || nb.vertices == null) continue;
             int nv = nb.vertices.size();
+            boolean matched = false;
             for (int j = 0; j < nv; j++) {
               PVector na = nb.vertices.get(j);
               PVector nbp = nb.vertices.get((j + 1) % nv);
@@ -185,35 +185,23 @@ class MapRenderer {
               boolean matchRev = model.distSq(a, nbp) < eps2 && model.distSq(b, na) < eps2;
               if (match || matchRev) {
                 zonesB = zoneForCell.get(nbIdx);
-                primaryB = (zonesB != null && !zonesB.isEmpty()) ? zonesB.get(0) : -1;
-                matchNbIdx = nbIdx;
+                matched = true;
                 break;
               }
             }
-            if (matchNbIdx != -1) break;
+            if (matched) break;
           }
         }
 
-        // Skip pure interior edges.
-        if (zonesB != null && !zonesB.isEmpty()) {
-          boolean shareZone = false;
-          for (int z : zonesA) {
-            if (zonesB.contains(z)) {
-              shareZone = true;
-              break;
-            }
-          }
-          if (shareZone) {
-            drawn.add(key);
-            continue;
-          }
-        } else {
-          // Neighbor has no zones; no outline when touching unzoned cells
-          drawn.add(key);
-          continue;
-        }
+        HashSet<Integer> setA = new HashSet<Integer>(zonesA);
+        HashSet<Integer> setB = (zonesB != null) ? new HashSet<Integer>(zonesB) : new HashSet<Integer>();
+        HashSet<Integer> uniqueA = new HashSet<Integer>(setA);
+        uniqueA.removeAll(setB);
+        HashSet<Integer> uniqueB = new HashSet<Integer>(setB);
+        uniqueB.removeAll(setA);
 
-        if (primaryA < 0) {
+        // Skip pure interior edges where memberships are identical
+        if (uniqueA.isEmpty() && uniqueB.isEmpty()) {
           drawn.add(key);
           continue;
         }
@@ -229,24 +217,26 @@ class MapRenderer {
           PVector toCenter = PVector.sub(cenA, mid);
           if (toCenter.dot(nrm) < 0) nrm.mult(-1);
         }
-        float offset = 3.0f / viewport.zoom;
-        PVector offA = new PVector(nrm.x * offset, nrm.y * offset);
-        PVector offB = new PVector(-nrm.x * offset, -nrm.y * offset);
 
-        // Base subtle outline for separation
-        app.stroke(40, 120);
-        app.strokeWeight(baseW * 0.9f);
-        app.line(a.x + offA.x * 0.5f, a.y + offA.y * 0.5f, b.x + offA.x * 0.5f, b.y + offA.y * 0.5f);
-
-        if (primaryA >= 0 && primaryA < model.zones.size()) {
-          app.stroke(model.zones.get(primaryA).col, 240);
+        // Draw all differing zones with small per-zone offsets so they do not overlap.
+        float startA = offset;
+        for (int zId : uniqueA) {
+          if (zId < 0 || zId >= model.zones.size()) continue;
+          app.stroke(model.zones.get(zId).col, 240);
           app.strokeWeight(baseW);
-          app.line(a.x + offA.x, a.y + offA.y, b.x + offA.x, b.y + offA.y);
+          float lane = startA;
+          app.line(a.x + nrm.x * lane, a.y + nrm.y * lane, b.x + nrm.x * lane, b.y + nrm.y * lane);
+          startA += laneGap;
         }
-        if (primaryB >= 0 && primaryB < model.zones.size()) {
-          app.stroke(model.zones.get(primaryB).col, 240);
+
+        float startB = offset;
+        for (int zId : uniqueB) {
+          if (zId < 0 || zId >= model.zones.size()) continue;
+          app.stroke(model.zones.get(zId).col, 240);
           app.strokeWeight(baseW * 0.9f);
-          app.line(a.x + offB.x, a.y + offB.y, b.x + offB.x, b.y + offB.y);
+          float lane = startB;
+          app.line(a.x - nrm.x * lane, a.y - nrm.y * lane, b.x - nrm.x * lane, b.y - nrm.y * lane);
+          startB += laneGap;
         }
 
         drawn.add(key);
