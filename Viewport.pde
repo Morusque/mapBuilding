@@ -9,16 +9,8 @@ class Viewport {
     zoom = 600.0f;  // 1x1 world fills a good part of the screen
   }
 
-  void applyTransform(PApplet app) {
-    applyTransform(app.g, app.width, app.height);
-  }
-
   void applyTransform(PGraphics g) {
     applyTransform(g, g.width, g.height);
-  }
-
-  void applyTransform(PApplet app, float canvasWidth, float canvasHeight) {
-    applyTransform(app.g, canvasWidth, canvasHeight);
   }
 
   void applyTransform(PGraphics g, float canvasWidth, float canvasHeight) {

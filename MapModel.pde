@@ -323,12 +323,6 @@ class MapModel {
     return dx * dx + dy * dy;
   }
 
-  float dist2DSq(PVector a, PVector b) {
-    float dx = a.x - b.x;
-    float dy = a.y - b.y;
-    return dx * dx + dy * dy;
-  }
-
   Structure computeSnappedStructure(float wx, float wy, float size) {
     Structure s = new Structure(wx, wy);
     s.name = "Struct " + (structures.size() + 1);
@@ -872,7 +866,7 @@ class MapModel {
     dist.put(kFrom, 0.0f);
     // A* priority = g + h
     PVector target = snapNodes.get(kTo);
-    float hStart = (target != null) ? dist2DSq(snapNodes.get(kFrom), target) : 0;
+    float hStart = (target != null) ? distSq(snapNodes.get(kFrom), target) : 0;
     pq.add(new NodeDist(kFrom, 0.0f, hStart));
 
     // Spatial cull to a loose bounding box around endpoints
@@ -899,7 +893,7 @@ class MapModel {
       if (neighbors == null) continue;
       PVector p = snapNodes.get(nd.k);
       if (p == null) continue;
-      float hCur = (target != null) ? dist2DSq(p, target) : Float.MAX_VALUE;
+      float hCur = (target != null) ? distSq(p, target) : Float.MAX_VALUE;
       if (hCur < bestH) {
         bestH = hCur;
         closest = nd.k;
@@ -931,7 +925,7 @@ class MapModel {
         if (curD == null || ndist < curD - 1e-6f) {
           dist.put(nb, ndist);
           prev.put(nb, nd.k);
-          float h = (target != null) ? dist2DSq(np, target) : 0;
+          float h = (target != null) ? distSq(np, target) : 0;
           pq.add(new NodeDist(nb, ndist, ndist + h * 0.5f)); // squared heuristic, lighter weight
         }
       }
@@ -2611,8 +2605,8 @@ class MapModel {
 
     distF.put(kFrom, 0.0f);
     distB.put(kTo, 0.0f);
-    pqF.add(new NodeDist(kFrom, 0.0f, dist2DSq(startP, target)));
-    pqB.add(new NodeDist(kTo, 0.0f, dist2DSq(target, startP)));
+    pqF.add(new NodeDist(kFrom, 0.0f, distSq(startP, target)));
+    pqB.add(new NodeDist(kTo, 0.0f, distSq(target, startP)));
 
     float bestCost = Float.MAX_VALUE;
     String bestMeet = null;
@@ -2662,7 +2656,7 @@ class MapModel {
         elevCache.put(nd.k, elevA);
         elevCache.put(nb, elevB);
 
-        float w = dist2DSq(p, np);
+        float w = distSq(p, np);
         if (pathAvoidWater) {
           boolean aw = elevA < seaLevel;
           boolean bw = elevB < seaLevel;
@@ -2678,7 +2672,7 @@ class MapModel {
         if (curD == null || ng < curD - 1e-6f) {
           dist.put(nb, ng);
           prev.put(nb, nd.k);
-          float h = expandFront ? dist2DSq(np, target) : dist2DSq(np, startP);
+          float h = expandFront ? distSq(np, target) : distSq(np, startP);
           pq.add(new NodeDist(nb, ng, ng + h * 0.5f));
         }
       }

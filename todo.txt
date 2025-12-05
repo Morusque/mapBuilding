@@ -46,7 +46,7 @@ Rendering :
 (later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed), should be done per-element and single button removed
 (later) Exporting the legend for reference.
 (later) Comments exportable as custom format
-(soon) refine the precise way contours work, especially for water (find example)
+(later) refine the precise way contours work
 (later) take inspiration from real map pictures
 
 Editable types :
