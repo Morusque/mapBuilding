@@ -12,7 +12,7 @@ Elevation :
 (later) use techtonic logic in addition to perlin
 
 Biomes :
-(soon) use selectable generation method for "generate" button : perlin, reset, fill gaps, beaches, mountains, extend, shrink, full
+(soon) use selectable generation method for "generate" button : propagate, reset, fill gaps, beaches, mountains, extend, shrink, full
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
@@ -27,7 +27,7 @@ Paths :
 Struct :
 (later) structures should be groupable
 (later) structure should snap to zones
-(later) there should be checkboxes to what the structures can snap to: water, biomes, underwater biomes, zones, paths, other structures (only show snapping feedback overlay lines when snapping for a given feature is enabled)
+(soon) there should be checkboxes to what the structures can snap to: water, biomes, underwater biomes, zones, paths, other structures (only show snapping feedback overlay lines when snapping for a given feature is enabled)
 (later) option to generate structs
 (later) a way to move already placed structs
 (later) refine the way parameters work (UI, default, selected, etc)
@@ -48,6 +48,7 @@ Rendering :
 (later) Comments exportable as custom format
 (later) refine the precise way contours work
 (later) take inspiration from real map pictures
+(later) add loading bars for long operations (contours)
 
 Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.

@@ -591,6 +591,54 @@ class MapModel {
     }
   }
 
+  PVector[] sharedEdgeBetweenCells(Cell a, Cell b) {
+    if (a == null || b == null || a.vertices == null || b.vertices == null) return null;
+    int va = a.vertices.size();
+    int vb = b.vertices.size();
+    for (int i = 0; i < va; i++) {
+      PVector a0 = a.vertices.get(i);
+      PVector a1 = a.vertices.get((i + 1) % va);
+      for (int j = 0; j < vb; j++) {
+        PVector b0 = b.vertices.get(j);
+        PVector b1 = b.vertices.get((j + 1) % vb);
+        boolean match = (distSq(a0, b0) < 1e-10f && distSq(a1, b1) < 1e-10f) ||
+                        (distSq(a0, b1) < 1e-10f && distSq(a1, b0) < 1e-10f);
+        if (match) return new PVector[] { a0, a1 };
+      }
+    }
+    return null;
+  }
+
+  float cross2d(PVector a, PVector b, PVector c) {
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  }
+
+  boolean onSegment(PVector a, PVector b, PVector p, float eps) {
+    float minx = min(a.x, b.x) - eps;
+    float maxx = max(a.x, b.x) + eps;
+    float miny = min(a.y, b.y) - eps;
+    float maxy = max(a.y, b.y) + eps;
+    return abs(cross2d(a, b, p)) <= eps && p.x >= minx && p.x <= maxx && p.y >= miny && p.y <= maxy;
+  }
+
+  boolean segmentsIntersect(PVector a1, PVector a2, PVector b1, PVector b2, float eps) {
+    float o1 = cross2d(a1, a2, b1);
+    float o2 = cross2d(a1, a2, b2);
+    float o3 = cross2d(b1, b2, a1);
+    float o4 = cross2d(b1, b2, a2);
+
+    if ((o1 > 0 && o2 < 0 || o1 < 0 && o2 > 0) && (o3 > 0 && o4 < 0 || o3 < 0 && o4 > 0)) {
+      return true;
+    }
+
+    if (abs(o1) <= eps && onSegment(a1, a2, b1, eps)) return true;
+    if (abs(o2) <= eps && onSegment(a1, a2, b2, eps)) return true;
+    if (abs(o3) <= eps && onSegment(b1, b2, a1, eps)) return true;
+    if (abs(o4) <= eps && onSegment(b1, b2, a2, eps)) return true;
+
+    return false;
+  }
+
   ArrayList<PVector[]> collectCoastSegments(float seaLevel) {
     ArrayList<PVector[]> segs = new ArrayList<PVector[]>();
     if (cells == null || cells.isEmpty()) return segs;
@@ -1277,6 +1325,48 @@ class MapModel {
     } else {
       return bx + "," + by + "-" + ax + "," + ay;
     }
+  }
+
+  ArrayList<PVector[]> collectAllPathSegments() {
+    ArrayList<PVector[]> segs = new ArrayList<PVector[]>();
+    if (paths == null || paths.isEmpty()) return segs;
+    for (Path p : paths) {
+      if (p == null || p.routes == null) continue;
+      for (ArrayList<PVector> r : p.routes) {
+        if (r == null || r.size() < 2) continue;
+        for (int i = 0; i < r.size() - 1; i++) {
+          PVector a = r.get(i);
+          PVector b = r.get(i + 1);
+          segs.add(new PVector[] { a, b });
+        }
+      }
+    }
+    return segs;
+  }
+
+  boolean edgeCrossesAnyPath(PVector[] edge, ArrayList<PVector[]> pathSegs) {
+    if (edge == null || pathSegs == null || pathSegs.isEmpty()) return false;
+    PVector e0 = edge[0];
+    PVector e1 = edge[1];
+    float minEx = min(e0.x, e1.x);
+    float maxEx = max(e0.x, e1.x);
+    float minEy = min(e0.y, e1.y);
+    float maxEy = max(e0.y, e1.y);
+    float eps = 1e-6f;
+    for (PVector[] seg : pathSegs) {
+      if (seg == null) continue;
+      PVector p0 = seg[0];
+      PVector p1 = seg[1];
+      float minPx = min(p0.x, p1.x);
+      float maxPx = max(p0.x, p1.x);
+      float minPy = min(p0.y, p1.y);
+      float maxPy = max(p0.y, p1.y);
+      if (maxEx + eps < minPx || minEx - eps > maxPx || maxEy + eps < minPy || minEy - eps > maxPy) {
+        continue; // quick reject via AABB
+      }
+      if (segmentsIntersect(e0, e1, p0, p1, eps)) return true;
+    }
+    return false;
   }
 
   void removePathsNear(float wx, float wy, float radius) {
@@ -2183,14 +2273,43 @@ class MapModel {
     ensureCellNeighborsComputed();
 
     int n = cells.size();
-    ArrayDeque<Integer> queue = new ArrayDeque<Integer>();
+    int[] zoneMembership = null;
+    if (zones != null && !zones.isEmpty()) {
+      zoneMembership = new int[n];
+      Arrays.fill(zoneMembership, -1);
+      for (int zi = 0; zi < zones.size(); zi++) {
+        MapZone z = zones.get(zi);
+        if (z == null || z.cells == null) continue;
+        for (int ci : z.cells) {
+          if (ci >= 0 && ci < n) {
+            zoneMembership[ci] = zi;
+          }
+        }
+      }
+    }
+
+    ArrayList<PVector[]> pathSegs = collectAllPathSegments();
+
+    int[] biomeForCell = new int[n];
+    float[] biomeCost = new float[n];
+    Arrays.fill(biomeForCell, -1);
+    Arrays.fill(biomeCost, Float.MAX_VALUE);
+
+    PriorityQueue<Integer> frontier = new PriorityQueue<Integer>(n, new Comparator<Integer>() {
+      public int compare(Integer a, Integer b) {
+        return Float.compare(biomeCost[a], biomeCost[b]);
+      }
+    });
+
     ArrayList<Integer> noneIndices = new ArrayList<Integer>();
 
     // Existing zones become seeds for their own type
     for (int i = 0; i < n; i++) {
       Cell c = cells.get(i);
       if (c.biomeId > 0) {
-        queue.add(i);
+        biomeForCell[i] = c.biomeId;
+        biomeCost[i] = 0.0f;
+        frontier.add(i);
       } else {
         noneIndices.add(i);
       }
@@ -2207,24 +2326,64 @@ class MapModel {
       Cell c = cells.get(idx);
       int biomeId = 1 + (int)random(typeCount);
       c.biomeId = biomeId;
-      queue.add(idx);
+      biomeForCell[idx] = biomeId;
+      biomeCost[idx] = 0.0f;
+      frontier.add(idx);
     }
 
-    // Multi-source BFS to propagate seeds into remaining None cells
-    while (!queue.isEmpty()) {
-      int idx = queue.removeFirst();
+    // Multi-source weighted expansion to propagate seeds into remaining None cells
+    float elevationPenaltyScale = 60.0f;
+    float waterPenalty = 12.0f;
+    float zoneBoundaryPenalty = 6.0f;
+    float pathCrossPenalty = 10.0f;
+
+    while (!frontier.isEmpty()) {
+      int idx = frontier.poll();
       if (idx < 0 || idx >= n) continue;
-      Cell c = cells.get(idx);
-      int biomeId = c.biomeId;
+      int biomeId = biomeForCell[idx];
+      if (biomeId <= 0) continue;
+      float baseCost = biomeCost[idx];
       ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
       if (nbs == null) continue;
+      Cell c = cells.get(idx);
       for (int nb : nbs) {
         if (nb < 0 || nb >= n) continue;
         Cell nc = cells.get(nb);
-        if (nc.biomeId == 0) {
-          nc.biomeId = biomeId;
-          queue.add(nb);
+        float step = 1.0f;
+        if (c != null && nc != null) {
+          float elevDiff = abs(c.elevation - nc.elevation);
+          step += elevDiff * elevationPenaltyScale;
+          boolean waterChange = (c.elevation < seaLevel) != (nc.elevation < seaLevel);
+          if (waterChange) step += waterPenalty;
+          if (zoneMembership != null) {
+            int za = zoneMembership[idx];
+            int zb = zoneMembership[nb];
+            if (za >= 0 && zb >= 0 && za != zb) {
+              step += zoneBoundaryPenalty;
+            }
+          }
+          if (pathSegs != null && !pathSegs.isEmpty()) {
+            PVector[] edge = sharedEdgeBetweenCells(c, nc);
+            if (edge != null && edgeCrossesAnyPath(edge, pathSegs)) {
+              step += pathCrossPenalty;
+            }
+          }
         }
+
+        float newCost = baseCost + step;
+        if (newCost < biomeCost[nb]) {
+          biomeCost[nb] = newCost;
+          biomeForCell[nb] = biomeId;
+          frontier.add(nb);
+        }
+      }
+    }
+
+    // Write back propagated biomes
+    for (int i = 0; i < n; i++) {
+      int biomeId = biomeForCell[i];
+      if (biomeId > 0) {
+        cells.get(i).biomeId = biomeId;
       }
     }
   }
