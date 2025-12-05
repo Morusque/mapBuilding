@@ -99,7 +99,7 @@ boolean handleToolButtonClick(int mx, int my) {
   int margin = 10;
   int buttonW = 90;
 
-  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering", "Export" };
+  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Structures", "Labels", "Rendering", "Export" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
@@ -452,6 +452,39 @@ void paintZoneBrush(float wx, float wy) {
   }
 }
 
+boolean handleSnapSettingsClick(int mx, int my) {
+  SnapSettingsLayout layout = buildSnapSettingsLayout();
+  if (!layout.panel.contains(mx, my)) return false;
+
+  // Checkboxes
+  for (int i = 0; i < layout.checks.size(); i++) {
+    IntRect b = layout.checks.get(i);
+    if (b.contains(mx, my)) {
+      switch (i) {
+        case 0: snapWaterEnabled = !snapWaterEnabled; break;
+        case 1: snapBiomesEnabled = !snapBiomesEnabled; break;
+        case 2: snapUnderwaterBiomesEnabled = !snapUnderwaterBiomesEnabled; break;
+        case 3: snapZonesEnabled = !snapZonesEnabled; break;
+        case 4: snapPathsEnabled = !snapPathsEnabled; break;
+        case 5: snapStructuresEnabled = !snapStructuresEnabled; break;
+        case 6: snapElevationEnabled = !snapElevationEnabled; break;
+      }
+      return true;
+    }
+  }
+
+  // Elevation divisions slider
+  if (layout.elevationSlider.contains(mx, my)) {
+    int divMin = 2;
+    int divMax = 24;
+    float t = constrain((mx - layout.elevationSlider.x) / (float)layout.elevationSlider.w, 0, 1);
+    snapElevationDivisions = round(lerp(divMin, divMax, t));
+    return true;
+  }
+
+  return false;
+}
+
 // ---------- Mouse & keyboard callbacks ----------
 
 void mousePressed() {
@@ -464,6 +497,11 @@ void mousePressed() {
   // Tool buttons
   if (mouseButton == LEFT) {
     if (handleToolButtonClick(mouseX, mouseY)) return;
+  }
+
+  // Snap settings (always active)
+  if (mouseButton == LEFT) {
+    if (handleSnapSettingsClick(mouseX, mouseY)) return;
   }
 
   // Sites panel

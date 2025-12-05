@@ -5,6 +5,91 @@ int hintHeight(int lines) {
   return PANEL_SECTION_GAP + (PANEL_LABEL_H + 2) * lines + 6;
 }
 
+// ----- SNAP SETTINGS (top of left menu) -----
+class SnapSettingsLayout {
+  IntRect panel;
+  ArrayList<IntRect> checks = new ArrayList<IntRect>();
+  IntRect elevationSlider;
+}
+
+SnapSettingsLayout buildSnapSettingsLayout() {
+  SnapSettingsLayout l = new SnapSettingsLayout();
+  l.panel = new IntRect(PANEL_X, snapPanelTop(), PANEL_W, snapSettingsPanelHeight());
+  int innerX = l.panel.x + PANEL_PADDING;
+  int curY = l.panel.y + PANEL_PADDING;
+  String[] labels = {
+    "Water",
+    "Biomes",
+    "Underwater biomes",
+    "Zones",
+    "Paths",
+    "Other structures",
+    "Elevation"
+  };
+  curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+  for (int i = 0; i < labels.length; i++) {
+    l.checks.add(new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE));
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+  }
+  l.elevationSlider = new IntRect(innerX + PANEL_CHECK_SIZE + 8, curY + PANEL_LABEL_H, 160, PANEL_SLIDER_H);
+  return l;
+}
+
+void drawSnapSettingsPanel() {
+  SnapSettingsLayout l = buildSnapSettingsLayout();
+  drawPanelBackground(l.panel);
+
+  int labelX = l.panel.x + PANEL_PADDING;
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Snap targets", labelX, l.panel.y + PANEL_PADDING);
+
+  String[] labels = {
+    "Water",
+    "Biomes",
+    "Underwater biomes",
+    "Zones",
+    "Paths",
+    "Other structures",
+    "Elevation"
+  };
+  boolean[] values = {
+    snapWaterEnabled,
+    snapBiomesEnabled,
+    snapUnderwaterBiomesEnabled,
+    snapZonesEnabled,
+    snapPathsEnabled,
+    snapStructuresEnabled,
+    snapElevationEnabled
+  };
+
+  for (int i = 0; i < labels.length; i++) {
+    IntRect b = l.checks.get(i);
+    drawCheckbox(b.x, b.y, b.w, values[i], labels[i]);
+  }
+
+  // Elevation divisions slider
+  IntRect es = l.elevationSlider;
+  stroke(160);
+  fill(230);
+  rect(es.x, es.y, es.w, es.h, 4);
+  int divMin = 2;
+  int divMax = 24;
+  float t = constrain((snapElevationDivisions - divMin) / (float)(divMax - divMin), 0, 1);
+  float sx = es.x + t * es.w;
+  fill(40);
+  noStroke();
+  ellipse(sx, es.y + es.h / 2.0f, es.h * 0.9f, es.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Elevation divisions: " + snapElevationDivisions, es.x, es.y - 4);
+}
+
+boolean isInSnapSettingsPanel(int mx, int my) {
+  SnapSettingsLayout l = buildSnapSettingsLayout();
+  return l.panel.contains(mx, my);
+}
+
 // ----- SITES PANEL -----
 
 class SitesLayout {
@@ -920,7 +1005,12 @@ void drawPathsPanel() {
   stroke(160);
   fill(230);
   rect(minw.x, minw.y, minw.w, minw.h, 4);
-    float minNorm = constrain(map(active.minWeightPx, 0.5f, active.weightPx, 0, 1), 0, 1);
+    float minNorm;
+    if (abs(active.weightPx - 0.5f) < 1e-6f) {
+      minNorm = 0; // avoid map() divide-by-zero when range collapses
+    } else {
+      minNorm = constrain(map(active.minWeightPx, 0.5f, active.weightPx, 0, 1), 0, 1);
+    }
     float minx = minw.x + minNorm * minw.w;
     fill(40);
     noStroke();
@@ -1503,7 +1593,7 @@ StructuresListLayout buildStructuresListLayout() {
   StructuresListLayout l = new StructuresListLayout();
   int w = RIGHT_PANEL_W;
   int x = width - w - PANEL_PADDING;
-  int y = panelTop();
+  int y = snapPanelTop(); // keep right panel anchored to main panel top even when left snap block is present
   l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
   l.titleY = y + PANEL_PADDING;
   int btnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;

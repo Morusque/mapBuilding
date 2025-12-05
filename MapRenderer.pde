@@ -256,63 +256,61 @@ class MapRenderer {
     app.popStyle();
   }
 
-  void drawStructureSnapGuides(PApplet app, float seaLevel) {
+  void drawStructureSnapGuides(PApplet app,
+                               boolean useWater, boolean useBiomes, boolean useUnderwaterBiomes, boolean useZones,
+                               boolean usePaths, boolean useStructures, boolean useElevation,
+                               int[] zoneMembership, int[] elevBuckets) {
     if (model.cells == null || model.cells.isEmpty()) return;
     model.ensureCellNeighborsComputed();
 
     app.pushStyle();
-    app.stroke(40, 80, 140, 180);
+    int strokeCol = app.color(60, 120, 220, 190);
+    app.stroke(strokeCol);
     app.strokeWeight(2.0f / viewport.zoom);
     app.noFill();
 
-    int n = model.cells.size();
-    for (int i = 0; i < n; i++) {
-      Cell a = model.cells.get(i);
-      ArrayList<Integer> nbs = model.cellNeighbors.get(i);
-      if (nbs == null) continue;
-      for (int nb : nbs) {
-        if (nb <= i) continue; // each pair once
-        Cell b = model.cells.get(nb);
-        if (b == null) continue;
+    if (useWater || useBiomes || useUnderwaterBiomes || useZones || useElevation) {
+      int n = model.cells.size();
+      for (int i = 0; i < n; i++) {
+        Cell a = model.cells.get(i);
+        ArrayList<Integer> nbs = model.cellNeighbors.get(i);
+        if (nbs == null) continue;
+        for (int nb : nbs) {
+          if (nb <= i) continue;
+          Cell b = model.cells.get(nb);
+          if (!model.boundaryActiveForSnapping(a, b, i, nb, zoneMembership, elevBuckets,
+                                               useWater, useBiomes, useUnderwaterBiomes, useZones, useElevation)) {
+            continue;
+          }
 
-        boolean sameBiome = (a.biomeId == b.biomeId);
-        boolean aWater = (a.elevation < seaLevel);
-        boolean bWater = (b.elevation < seaLevel);
-        boolean sameWater = (aWater == bWater);
+          ArrayList<PVector> va = a.vertices;
+          ArrayList<PVector> vb = b.vertices;
+          if (va == null || vb == null || va.size() < 2 || vb.size() < 2) continue;
 
-        // Only draw guides on biome or water frontiers
-        if (sameBiome && sameWater) continue;
-
-        ArrayList<PVector> va = a.vertices;
-        if (va == null || va.size() < 2) continue;
-        ArrayList<PVector> vb = b.vertices;
-        if (vb == null || vb.size() < 2) continue;
-
-        // Build edge sets to avoid duplicate normals and only draw shared frontier
-        HashSet<String> edgesA = new HashSet<String>();
-        int ac = va.size();
-        for (int ai = 0; ai < ac; ai++) {
-          PVector a0 = va.get(ai);
-          PVector a1 = va.get((ai + 1) % ac);
-          edgesA.add(undirectedEdgeKey(a0, a1));
-        }
-        int bc = vb.size();
-        for (int bi = 0; bi < bc; bi++) {
-          PVector b0 = vb.get(bi);
-          PVector b1 = vb.get((bi + 1) % bc);
-          String key = undirectedEdgeKey(b0, b1);
-          if (edgesA.contains(key)) {
-            // Draw only once per shared edge
-            app.line(b0.x, b0.y, b1.x, b1.y);
-            edgesA.remove(key); // avoid drawing twice for same pair
+          HashSet<String> edgesA = new HashSet<String>();
+          int ac = va.size();
+          for (int ai = 0; ai < ac; ai++) {
+            PVector a0 = va.get(ai);
+            PVector a1 = va.get((ai + 1) % ac);
+            edgesA.add(undirectedEdgeKey(a0, a1));
+          }
+          int bc = vb.size();
+          for (int bi = 0; bi < bc; bi++) {
+            PVector b0 = vb.get(bi);
+            PVector b1 = vb.get((bi + 1) % bc);
+            String key = undirectedEdgeKey(b0, b1);
+            if (edgesA.contains(key)) {
+              app.line(b0.x, b0.y, b1.x, b1.y);
+              edgesA.remove(key);
+            }
           }
         }
       }
     }
 
-    // Path segments are also snap targets; overdraw lightly
-    if (model.paths != null) {
-      app.stroke(60, 60, 40, 200);
+    if (usePaths && model.paths != null) {
+      app.stroke(strokeCol);
+      app.strokeWeight(1.0f / viewport.zoom);
       for (Path p : model.paths) {
         if (p == null || p.routes == null) continue;
         for (ArrayList<PVector> seg : p.routes) {
@@ -326,10 +324,9 @@ class MapRenderer {
       }
     }
 
-    // Existing structure outlines as snap hints (outside only)
-    if (model.structures != null && !model.structures.isEmpty()) {
-      app.stroke(80, 80, 60, 180);
-      app.strokeWeight(1.4f / viewport.zoom);
+    if (useStructures && model.structures != null && !model.structures.isEmpty()) {
+      app.stroke(strokeCol);
+      app.strokeWeight(1.1f / viewport.zoom);
       app.noFill();
       for (Structure s : model.structures) {
         app.pushMatrix();
@@ -368,8 +365,9 @@ class MapRenderer {
             break;
           }
           default: {
+            float sHalf = r * 0.5f;
             app.rectMode(CENTER);
-            app.rect(0, 0, r, r);
+            app.rect(0, 0, sHalf * 2, sHalf * 2);
             break;
           }
         }

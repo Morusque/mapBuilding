@@ -27,7 +27,6 @@ Paths :
 Struct :
 (later) structures should be groupable
 (later) structure should snap to zones
-(soon) there should be checkboxes to what the structures can snap to: water, biomes, underwater biomes, zones, paths, other structures (only show snapping feedback overlay lines when snapping for a given feature is enabled)
 (later) option to generate structs
 (later) a way to move already placed structs
 (later) refine the way parameters work (UI, default, selected, etc)
@@ -62,3 +61,4 @@ General :
 (later) investigate caching options
 (later) option to generate details (about everything) for zooming
 (later) Refactor, optimize etc.
+(later) remove comments specific to explain a single commit, add general purpose comments instead

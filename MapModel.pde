@@ -314,13 +314,83 @@ class MapModel {
   }
 
   void drawStructureSnapGuides(PApplet app, float seaLevel) {
-    renderer.drawStructureSnapGuides(app, seaLevel);
+    boolean useWater = snapWaterEnabled;
+    boolean useBiomes = snapBiomesEnabled;
+    boolean useUnderwater = snapUnderwaterBiomesEnabled;
+    boolean useZones = snapZonesEnabled;
+    boolean usePaths = snapPathsEnabled;
+    boolean useStructures = snapStructuresEnabled;
+    boolean useElevation = snapElevationEnabled && snapElevationDivisions > 0;
+    if (!useWater && !useBiomes && !useUnderwater && !useZones && !usePaths && !useStructures && !useElevation) return;
+
+    int[] zoneMembership = useZones ? buildZoneMembershipForSnapping() : null;
+    int[] elevBuckets = useElevation ? buildElevationBucketsForSnapping(snapElevationDivisions) : null;
+    renderer.drawStructureSnapGuides(app, useWater, useBiomes, useUnderwater, useZones,
+                                     usePaths, useStructures, useElevation, zoneMembership, elevBuckets);
   }
 
   float distSq(PVector a, PVector b) {
     float dx = a.x - b.x;
     float dy = a.y - b.y;
     return dx * dx + dy * dy;
+  }
+
+  int[] buildZoneMembershipForSnapping() {
+    if (cells == null || cells.isEmpty() || zones == null || zones.isEmpty()) return null;
+    int n = cells.size();
+    int[] membership = new int[n];
+    Arrays.fill(membership, -1);
+    for (int zi = 0; zi < zones.size(); zi++) {
+      MapZone z = zones.get(zi);
+      if (z == null || z.cells == null) continue;
+      for (int ci : z.cells) {
+        if (ci >= 0 && ci < n) {
+          membership[ci] = zi;
+        }
+      }
+    }
+    return membership;
+  }
+
+  int[] buildElevationBucketsForSnapping(int divisions) {
+    if (cells == null || cells.isEmpty()) return null;
+    int div = max(1, divisions);
+    int n = cells.size();
+    int[] buckets = new int[n];
+    for (int i = 0; i < n; i++) {
+      Cell c = cells.get(i);
+      float t = (c != null) ? (c.elevation + 1.0f) * 0.5f : 0.5f;
+      t = constrain(t, 0, 1);
+      int bucket = min(div - 1, max(0, (int)floor(t * div)));
+      buckets[i] = bucket;
+    }
+    return buckets;
+  }
+
+  boolean boundaryActiveForSnapping(Cell a, Cell b, int idxA, int idxB,
+                                    int[] zoneMembership, int[] elevBuckets,
+                                    boolean useWater, boolean useBiomes, boolean useUnderwaterBiomes,
+                                    boolean useZones, boolean useElevation) {
+    if (a == null || b == null) return false;
+    boolean aWater = (a.elevation < seaLevel);
+    boolean bWater = (b.elevation < seaLevel);
+    if (useWater && aWater != bWater) return true;
+    if (useBiomes && !aWater && !bWater && a.biomeId != b.biomeId) return true;
+    if (useUnderwaterBiomes && aWater && bWater && a.biomeId != b.biomeId) return true;
+    if (useZones && zoneMembership != null &&
+        idxA >= 0 && idxA < zoneMembership.length &&
+        idxB >= 0 && idxB < zoneMembership.length &&
+        zoneMembership[idxA] >= 0 && zoneMembership[idxB] >= 0 &&
+        zoneMembership[idxA] != zoneMembership[idxB]) {
+      return true;
+    }
+    if (useElevation && elevBuckets != null &&
+        idxA >= 0 && idxA < elevBuckets.length &&
+        idxB >= 0 && idxB < elevBuckets.length &&
+        elevBuckets[idxA] != elevBuckets[idxB]) {
+      return true;
+    }
+    return false;
   }
 
   Structure computeSnappedStructure(float wx, float wy, float size) {
@@ -342,8 +412,16 @@ class MapModel {
       return s;
     }
 
+    boolean usePaths = snapPathsEnabled;
+    boolean useFrontiers = snapWaterEnabled || snapBiomesEnabled || snapUnderwaterBiomesEnabled || snapZonesEnabled || (snapElevationEnabled && snapElevationDivisions > 0);
+    boolean useStructures = snapStructuresEnabled;
+    int[] zoneMembership = useFrontiers && snapZonesEnabled ? buildZoneMembershipForSnapping() : null;
+    int[] elevBuckets = (useFrontiers && snapElevationEnabled && snapElevationDivisions > 0)
+                        ? buildElevationBucketsForSnapping(snapElevationDivisions)
+                        : null;
+
     // Snap priority: paths > frontier guides (biome/water) > other structures
-    PVector[] seg = nearestPathSegment(wx, wy, snapRange);
+    PVector[] seg = (usePaths) ? nearestPathSegment(wx, wy, snapRange) : null;
     if (seg != null) {
       PVector a = seg[0];
       PVector b = seg[1];
@@ -369,7 +447,12 @@ class MapModel {
       return s;
     }
 
-    PVector[] guide = nearestFrontierSegment(wx, wy, snapRange);
+    PVector[] guide = (useFrontiers)
+      ? nearestFrontierSegment(wx, wy, snapRange,
+                               snapWaterEnabled, snapBiomesEnabled, snapUnderwaterBiomesEnabled,
+                               snapZonesEnabled, snapElevationEnabled && elevBuckets != null,
+                               zoneMembership, elevBuckets)
+      : null;
     if (guide != null) {
       PVector a = guide[0];
       PVector b = guide[1];
@@ -395,29 +478,31 @@ class MapModel {
     }
 
     // Next: snap to other structures (edge-to-edge)
-    Structure closest = null;
-    float bestD2 = snapRange * snapRange;
-    for (Structure o : structures) {
-      float dx = o.x - wx;
-      float dy = o.y - wy;
-      float d2 = dx * dx + dy * dy;
-      if (d2 < bestD2) {
-        bestD2 = d2;
-        closest = o;
+    if (useStructures) {
+      Structure closest = null;
+      float bestD2 = snapRange * snapRange;
+      for (Structure o : structures) {
+        float dx = o.x - wx;
+        float dy = o.y - wy;
+        float d2 = dx * dx + dy * dy;
+        if (d2 < bestD2) {
+          bestD2 = d2;
+          closest = o;
+        }
       }
-    }
-    if (closest != null) {
-      // Snap edge-to-edge with a small margin so shapes don't overlap visually.
-      float ang = atan2(wy - closest.y, wx - closest.x);
-      float halfA = closest.size * 0.5f;
-      float halfB = s.size * 0.5f;
-      float margin = max(0.003f, min(halfA, halfB) * 0.12f);
-      float targetDist = halfA + halfB + margin;
-      s.x = closest.x + cos(ang) * targetDist;
-      s.y = closest.y + sin(ang) * targetDist;
-      lastStructureSnapAngle = ang;
-      s.angle = ang + structureAngleOffsetRad;
-      return s;
+      if (closest != null) {
+        // Snap edge-to-edge with a small margin so shapes don't overlap visually.
+        float ang = atan2(wy - closest.y, wx - closest.x);
+        float halfA = closest.size * 0.5f;
+        float halfB = s.size * 0.5f;
+        float margin = max(0.003f, min(halfA, halfB) * 0.12f);
+        float targetDist = halfA + halfB + margin;
+        s.x = closest.x + cos(ang) * targetDist;
+        s.y = closest.y + sin(ang) * targetDist;
+        lastStructureSnapAngle = ang;
+        s.angle = ang + structureAngleOffsetRad;
+        return s;
+      }
     }
 
     s.angle = lastStructureSnapAngle + structureAngleOffsetRad;
@@ -1478,8 +1563,12 @@ class MapModel {
     return new PVector(ax + abx * t, ay + aby * t);
   }
 
-  PVector[] nearestFrontierSegment(float wx, float wy, float maxDist) {
+  PVector[] nearestFrontierSegment(float wx, float wy, float maxDist,
+                                   boolean useWater, boolean useBiomes, boolean useUnderwaterBiomes,
+                                   boolean useZones, boolean useElevation,
+                                   int[] zoneMembership, int[] elevBuckets) {
     if (cells == null || cells.isEmpty()) return null;
+    if (!useWater && !useBiomes && !useUnderwaterBiomes && !useZones && !useElevation) return null;
     ensureCellNeighborsComputed();
     float eps = 1e-4f;
     float eps2 = eps * eps;
@@ -1497,11 +1586,10 @@ class MapModel {
         Cell b = cells.get(nb);
         if (b == null) continue;
 
-        boolean sameBiome = (a.biomeId == b.biomeId);
-        boolean aWater = (a.elevation < seaLevel);
-        boolean bWater = (b.elevation < seaLevel);
-        boolean sameWater = (aWater == bWater);
-        if (sameBiome && sameWater) continue;
+        if (!boundaryActiveForSnapping(a, b, i, nb, zoneMembership, elevBuckets,
+                                       useWater, useBiomes, useUnderwaterBiomes, useZones, useElevation)) {
+          continue;
+        }
 
         ArrayList<PVector> va = a.vertices;
         ArrayList<PVector> vb = b.vertices;

@@ -34,6 +34,14 @@ float zonesListScroll = 0;
 float pathsListScroll = 0;
 float structuresListScroll = 0;
 float labelsListScroll = 0;
+boolean snapWaterEnabled = true;
+boolean snapBiomesEnabled = false;
+boolean snapUnderwaterBiomesEnabled = false;
+boolean snapZonesEnabled = true;
+boolean snapPathsEnabled = true;
+boolean snapStructuresEnabled = true;
+boolean snapElevationEnabled = false;
+int snapElevationDivisions = 8;
 
 // UI layout
 final int TOP_BAR_HEIGHT = 30;
@@ -95,7 +103,7 @@ boolean renderShowZoneOutlines = false;
 boolean renderBlackWhite = false;
 boolean renderWaterContours = false;
 boolean renderElevationContours = false;
-float renderLightAzimuthDeg = 135.0f;   // 0..360, 0 = +X (east)
+float renderLightAzimuthDeg = 220.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
 boolean useNewElevationShading = false;
 float flattestSlopeBias = FLATTEST_BIAS_MIN; // slope penalty in PATHFIND mode (min..max, 0 = shortest)
@@ -306,7 +314,6 @@ void draw() {
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
     mapModel.drawCellsRender(this, showBorders, true);
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
-    mapModel.drawStructureSnapGuides(this, seaLevel);
   } else if (currentTool == Tool.EDIT_LABELS) {
     mapModel.drawCellsRender(this, showBorders, true);
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
@@ -401,6 +408,10 @@ void draw() {
   }
 
   // Structures and labels render in all modes
+  if (currentTool == Tool.EDIT_STRUCTURES) {
+    // Snap guides should float above everything except the structures themselves
+    mapModel.drawStructureSnapGuides(this, seaLevel);
+  }
   if (currentTool != Tool.EDIT_RENDER || renderShowStructures) {
     mapModel.drawStructures(this);
   }
@@ -433,6 +444,9 @@ void draw() {
   // ----- UI overlay -----
   drawTopBar();
   drawToolButtons();
+  if (currentTool == Tool.EDIT_STRUCTURES) {
+    drawSnapSettingsPanel();
+  }
   if (currentTool == Tool.EDIT_SITES) {
     drawSitesPanel();
   } else if (currentTool == Tool.EDIT_ELEVATION) {
@@ -480,6 +494,11 @@ void drawRenderView(PApplet app) {
 
   if (renderWaterContours) {
     mapModel.drawCoastContourLines(app, seaLevel, 2, 0.01f);
+  }
+
+  // Snap guides should float above everything except structures
+  if (currentTool == Tool.EDIT_STRUCTURES) {
+    mapModel.drawStructureSnapGuides(app, seaLevel);
   }
 
   if (renderShowStructures) {

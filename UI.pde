@@ -1,7 +1,25 @@
 // ---------- UI DRAWING ----------
 
 int panelTop() {
+  boolean showSnapPanel = (currentTool == Tool.EDIT_STRUCTURES);
+  return snapPanelTop() + (showSnapPanel ? snapSettingsPanelHeight() : 0);
+}
+
+int snapPanelTop() {
   return TOP_BAR_TOTAL + TOOL_BAR_HEIGHT;
+}
+
+int snapSettingsPanelHeight() {
+  // Title + section gap
+  int h = PANEL_PADDING + PANEL_TITLE_H + PANEL_SECTION_GAP;
+  // Seven checkbox rows
+  int rows = 7;
+  h += rows * (PANEL_CHECK_SIZE + PANEL_ROW_GAP);
+  // Elevation divisions slider label + slider + padding
+  h += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+  // Bottom padding
+  h += PANEL_PADDING;
+  return h;
 }
 
 void drawPanelBackground(IntRect frame) {
@@ -165,7 +183,7 @@ void drawToolButtons() {
   line(0, barY + barH - 1, width, barY + barH - 1);
   line(width - 1, barY, width - 1, barY + barH);
 
-  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Struct", "Labels", "Rendering", "Export" };
+  String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Structures", "Labels", "Rendering", "Export" };
   Tool[] tools = {
     Tool.EDIT_SITES,
     Tool.EDIT_ELEVATION,
@@ -190,4 +208,3 @@ void drawToolButtons() {
     text(labels[i], x + buttonW / 2, y + (barH - 4) / 2);
   }
 }
-
