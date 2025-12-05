@@ -17,6 +17,7 @@ Biomes :
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
 (soon) zone-painting brush is currently buggy
+(later) remove/reserve water from zones
 
 Paths :
 (later) width definer similar to water but using pathfinding to define more important roads
