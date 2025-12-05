@@ -6,6 +6,7 @@ import java.util.PriorityQueue;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.Arrays;
+import java.util.Map;
 
 class MapModel {
   // Zone style constants
@@ -19,6 +20,14 @@ class MapModel {
 
   ArrayList<Site> sites = new ArrayList<Site>();
   ArrayList<Cell> cells = new ArrayList<Cell>();
+  // Coast contour cache
+  ContourGrid cachedCoastGrid = null;
+  CoastSpatialIndex cachedCoastIndex = null;
+  float cachedCoastSeaLevel = Float.MAX_VALUE;
+  int cachedCoastCols = 0;
+  int cachedCoastRows = 0;
+  int cachedCoastCellCount = -1;
+  boolean coastCacheValid = false;
 
   // Paths (roads, rivers, etc.)
   ArrayList<Path> paths = new ArrayList<Path>();
@@ -241,6 +250,67 @@ class MapModel {
 
   void drawZoneOutlines(PApplet app) {
     renderer.drawZoneOutlines(app);
+  }
+
+  void drawCoastContourLines(PApplet app, float seaLevel, int lines, float spacingFactor) {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+
+    float worldW = maxX - minX;
+    float worldH = maxY - minY;
+    float desiredSpacing = max(1e-5f, min(worldW, worldH) * max(0.0f, spacingFactor));
+
+    ArrayList<PVector[]> coastSegs = null;
+    ContourGrid g = null;
+    int cols = max(80, min(200, (int)(sqrt(max(1, cells.size())) * 1.0f)));
+    int rows = cols;
+
+    if (coastCacheValid && cachedCoastGrid != null && cachedCoastSeaLevel == seaLevel && cachedCoastCols == cols && cachedCoastRows == rows && cachedCoastCellCount == cells.size()) {
+      g = cachedCoastGrid;
+      coastSegs = (cachedCoastIndex != null) ? cachedCoastIndex.segments : null;
+    } else {
+      coastSegs = collectCoastSegments(seaLevel);
+      if (coastSegs.isEmpty()) { coastCacheValid = false; return; }
+      cachedCoastIndex = new CoastSpatialIndex(minX, minY, maxX, maxY, coastSegs, 80);
+      g = sampleCoastDistanceGrid(cols, rows, seaLevel, cachedCoastIndex);
+      cachedCoastGrid = g;
+      cachedCoastSeaLevel = seaLevel;
+      cachedCoastCols = cols;
+      cachedCoastRows = rows;
+      cachedCoastCellCount = cells.size();
+      coastCacheValid = true;
+    }
+    if (g == null) return;
+
+    float maxWaterDist = g.max;
+    if (maxWaterDist <= 1e-5f) {
+      app.pushStyle();
+      app.stroke(0);
+      if (coastSegs != null) {
+        for (PVector[] seg : coastSegs) app.line(seg[0].x, seg[0].y, seg[1].x, seg[1].y);
+      }
+      app.popStyle();
+      return;
+    }
+    float spacing = min(desiredSpacing, maxWaterDist * 0.9f);
+    spacing = max(spacing, maxWaterDist * 0.2f);
+
+    app.pushStyle();
+    app.stroke(0);
+    app.noFill();
+    float strokeW = 1.5f / max(1e-6f, viewport.zoom);
+    app.strokeWeight(strokeW);
+
+    if (coastSegs != null) {
+      for (PVector[] seg : coastSegs) {
+        app.line(seg[0].x, seg[0].y, seg[1].x, seg[1].y);
+      }
+    }
+
+    if (lines > 1 && spacing > 1e-6f) {
+      drawSignedContourSet(app, g, spacing, spacing, spacing, app.color(0), 1.5f);
+    }
+    app.popStyle();
   }
 
   void drawStructureSnapGuides(PApplet app, float seaLevel) {
@@ -500,6 +570,226 @@ class MapModel {
 
   PVector interpIso(float x0, float y0, float v0, float x1, float y1, float v1, float iso) {
     return renderer.interpIso(x0, y0, v0, x1, y1, v1, iso);
+  }
+
+  HashMap<String, PVector[]> edgeMapForCell(Cell c) {
+    HashMap<String, PVector[]> map = new HashMap<String, PVector[]>();
+    if (c == null || c.vertices == null) return map;
+    int vc = c.vertices.size();
+    for (int i = 0; i < vc; i++) {
+      PVector a = c.vertices.get(i);
+      PVector b = c.vertices.get((i + 1) % vc);
+      map.put(undirectedEdgeKey(a, b), new PVector[] { a, b });
+    }
+    return map;
+  }
+
+  String undirectedEdgeKey(PVector a, PVector b) {
+    int scale = 100000;
+    int ax = round(a.x * scale);
+    int ay = round(a.y * scale);
+    int bx = round(b.x * scale);
+    int by = round(b.y * scale);
+    if (ax < bx || (ax == bx && ay <= by)) {
+      return ax + "," + ay + "-" + bx + "," + by;
+    } else {
+      return bx + "," + by + "-" + ax + "," + ay;
+    }
+  }
+
+  ArrayList<PVector[]> collectCoastSegments(float seaLevel) {
+    ArrayList<PVector[]> segs = new ArrayList<PVector[]>();
+    if (cells == null || cells.isEmpty()) return segs;
+    int n = cells.size();
+    for (int ci = 0; ci < n; ci++) {
+      Cell a = cells.get(ci);
+      if (a == null || a.vertices == null) continue;
+      boolean waterA = a.elevation < seaLevel;
+      ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
+      if (nbs == null) continue;
+      HashSet<String> seen = new HashSet<String>();
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n || nb <= ci) continue;
+        Cell b = cells.get(nb);
+        if (b == null || b.vertices == null) continue;
+        boolean waterB = b.elevation < seaLevel;
+        if (waterA == waterB) continue;
+
+        // find shared edges
+        int va = a.vertices.size();
+        for (int i = 0; i < va; i++) {
+          PVector p0 = a.vertices.get(i);
+          PVector p1 = a.vertices.get((i + 1) % va);
+          String key = undirectedEdgeKey(p0, p1);
+          if (seen.contains(key)) continue;
+          int vb = b.vertices.size();
+          for (int j = 0; j < vb; j++) {
+            PVector q0 = b.vertices.get(j);
+            PVector q1 = b.vertices.get((j + 1) % vb);
+            if (distSq(p0, q0) < 1e-10f && distSq(p1, q1) < 1e-10f ||
+                distSq(p0, q1) < 1e-10f && distSq(p1, q0) < 1e-10f) {
+              segs.add(new PVector[] { p0.copy(), p1.copy() });
+              seen.add(key);
+              break;
+            }
+          }
+        }
+      }
+    }
+    return segs;
+  }
+
+  ContourGrid sampleCoastDistanceGrid(int cols, int rows, float seaLevel, CoastSpatialIndex idx) {
+    if (idx == null) return null;
+    ContourGrid g = new ContourGrid();
+    g.cols = max(2, cols);
+    g.rows = max(2, rows);
+    g.v = new float[g.rows][g.cols];
+    g.ox = minX;
+    g.oy = minY;
+    g.dx = (maxX - minX) / (g.cols - 1);
+    g.dy = (maxY - minY) / (g.rows - 1);
+    g.min = Float.MAX_VALUE;
+    g.max = -Float.MAX_VALUE;
+
+    for (int j = 0; j < g.rows; j++) {
+      float y = g.oy + j * g.dy;
+      for (int i = 0; i < g.cols; i++) {
+        float x = g.ox + i * g.dx;
+        boolean water = sampleElevationAt(x, y, seaLevel) < seaLevel;
+        float d = idx.nearestDist(x, y);
+        float val = water ? d : -d;
+        g.v[j][i] = val;
+        g.min = min(g.min, val);
+        g.max = max(g.max, val);
+      }
+    }
+    return g;
+  }
+
+  void drawSignedContourSet(PApplet app, ContourGrid g, float start, float end, float step, int strokeCol, float strokePx) {
+    if (step == 0) return;
+    if ((step > 0 && start > end) || (step < 0 && start < end)) return;
+    app.pushStyle();
+    app.noFill();
+    app.stroke(strokeCol);
+    app.strokeWeight(strokePx / max(1e-6f, viewport.zoom));
+    if (step > 0) {
+      for (float iso = start; iso <= end + 1e-6f; iso += step) {
+        renderer.drawIsoLine(app, g, iso);
+      }
+    } else {
+      for (float iso = start; iso >= end - 1e-6f; iso += step) {
+        renderer.drawIsoLine(app, g, iso);
+      }
+    }
+    app.popStyle();
+  }
+
+  class CoastSpatialIndex {
+    float ox, oy, dx, dy;
+    int cols, rows;
+    ArrayList<ArrayList<PVector[]>> bins;
+    ArrayList<PVector[]> segments;
+
+    CoastSpatialIndex(float minX, float minY, float maxX, float maxY, ArrayList<PVector[]> segs, int targetBins) {
+      ox = minX;
+      oy = minY;
+      float w = maxX - minX;
+      float h = maxY - minY;
+      float cellsPerDim = max(4, targetBins);
+      cols = max(4, (int)cellsPerDim);
+      rows = cols;
+      dx = w / cols;
+      dy = h / rows;
+      bins = new ArrayList<ArrayList<PVector[]>>(cols * rows);
+      for (int i = 0; i < cols * rows; i++) bins.add(new ArrayList<PVector[]>());
+      segments = segs;
+      indexSegments();
+    }
+
+    void indexSegments() {
+      for (PVector[] seg : segments) {
+        PVector a = seg[0];
+        PVector b = seg[1];
+        float minX = min(a.x, b.x);
+        float maxX = max(a.x, b.x);
+        float minY = min(a.y, b.y);
+        float maxY = max(a.y, b.y);
+        int ix0 = clampBin(floor((minX - ox) / dx), cols);
+        int ix1 = clampBin(floor((maxX - ox) / dx), cols);
+        int iy0 = clampBin(floor((minY - oy) / dy), rows);
+        int iy1 = clampBin(floor((maxY - oy) / dy), rows);
+        for (int iy = iy0; iy <= iy1; iy++) {
+          for (int ix = ix0; ix <= ix1; ix++) {
+            bin(ix, iy).add(seg);
+          }
+        }
+      }
+    }
+
+    int clampBin(int v, int maxVal) {
+      return constrain(v, 0, maxVal - 1);
+    }
+
+    ArrayList<PVector[]> bin(int x, int y) {
+      return bins.get(y * cols + x);
+    }
+
+    float nearestDist(float x, float y) {
+      int ix = clampBin(floor((x - ox) / dx), cols);
+      int iy = clampBin(floor((y - oy) / dy), rows);
+      float best = Float.MAX_VALUE;
+      int maxRing = max(cols, rows);
+      for (int ring = 0; ring < maxRing; ring++) {
+        int x0 = max(0, ix - ring);
+        int x1 = min(cols - 1, ix + ring);
+        int y0 = max(0, iy - ring);
+        int y1 = min(rows - 1, iy + ring);
+        boolean found = false;
+        for (int yy = y0; yy <= y1; yy++) {
+          for (int xx = x0; xx <= x1; xx++) {
+            ArrayList<PVector[]> bucket = bin(xx, yy);
+            for (PVector[] seg : bucket) {
+              float d = pointSegDist(x, y, seg[0], seg[1]);
+              if (d < best) {
+                best = d;
+                found = true;
+              }
+            }
+          }
+        }
+        if (found && best < max(dx, dy) * ring) break;
+      }
+      // Fallback if no bins
+      if (best == Float.MAX_VALUE) {
+        for (PVector[] seg : segments) {
+          best = min(best, pointSegDist(x, y, seg[0], seg[1]));
+        }
+      }
+      return best;
+    }
+
+    float pointSegDist(float px, float py, PVector a, PVector b) {
+      float vx = b.x - a.x;
+      float vy = b.y - a.y;
+      float wx = px - a.x;
+      float wy = py - a.y;
+      float c1 = vx * wx + vy * wy;
+      if (c1 <= 0) return sqrt(wx * wx + wy * wy);
+      float c2 = vx * vx + vy * vy;
+      if (c2 <= c1) {
+        float dx = px - b.x;
+        float dy = py - b.y;
+        return sqrt(dx * dx + dy * dy);
+      }
+      float t = c1 / c2;
+      float projX = a.x + t * vx;
+      float projY = a.y + t * vy;
+      float dx = px - projX;
+      float dy = py - projY;
+      return sqrt(dx * dx + dy * dy);
+    }
   }
 
   // ---------- Snapping graph ----------
@@ -1216,6 +1506,7 @@ class MapModel {
     voronoiDirty = true;
     snapDirty = true;
     voronoiJob = null; // cancel in-flight job
+    coastCacheValid = false;
   }
 
   void ensureVoronoiComputed() {
@@ -1785,6 +2076,7 @@ class MapModel {
       c.elevation = c.elevation + delta * t;
     }
     normalizeElevationsIfOutOfBounds(seaLevel);
+    coastCacheValid = false;
   }
 
   PathType getPathType(int idx) {
@@ -1813,6 +2105,7 @@ class MapModel {
       c.elevation = (n - 0.5f) * 2.0f * amplitude;
     }
     normalizeElevationsIfOutOfBounds(seaLevel);
+    coastCacheValid = false;
   }
 
   void addElevationVariation(float scale, float amplitude, float seaLevel) {
@@ -1830,6 +2123,7 @@ class MapModel {
       c.elevation = c.elevation + delta;
     }
     normalizeElevationsIfOutOfBounds(seaLevel);
+    coastCacheValid = false;
   }
 
   PVector cellCentroid(Cell c) {
@@ -2408,3 +2702,4 @@ class MapModel {
     return result;
   }
 }
+

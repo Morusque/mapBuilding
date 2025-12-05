@@ -40,7 +40,6 @@ Labels :
 (later) text size should be handled better (typo appears blurry)
 
 Rendering :
-(soon) add zones" checbox
 (later) biomes should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
 (later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (already done but disabled, needs refinement)
 (later) LOD rules: hide/show groups vs members depending on zoom, optional merging visually of dense structures.

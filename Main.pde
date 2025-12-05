@@ -465,7 +465,7 @@ void drawRenderView(PApplet app) {
   }
   if (renderShowElevation || renderShowWater || renderElevationContours || renderWaterContours) {
     mapModel.drawElevationOverlay(app, seaLevel, renderElevationContours, renderShowWater, renderShowElevation,
-                                  renderWaterContours, true, renderLightAzimuthDeg, renderLightAltitudeDeg, 0);
+                                  false, true, renderLightAzimuthDeg, renderLightAltitudeDeg, 0);
   }
 
   boolean highlightPaths = false;
@@ -476,6 +476,10 @@ void drawRenderView(PApplet app) {
 
   if (renderShowZoneOutlines) {
     mapModel.drawZoneOutlines(app);
+  }
+
+  if (renderWaterContours) {
+    mapModel.drawCoastContourLines(app, seaLevel, 2, 0.01f);
   }
 
   if (renderShowStructures) {
