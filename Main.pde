@@ -410,7 +410,7 @@ void draw() {
   // Structures and labels render in all modes
   if (currentTool == Tool.EDIT_STRUCTURES) {
     // Snap guides should float above everything except the structures themselves
-    mapModel.drawStructureSnapGuides(this, seaLevel);
+    mapModel.drawStructureSnapGuides(this);
   }
   if (currentTool != Tool.EDIT_RENDER || renderShowStructures) {
     mapModel.drawStructures(this);
@@ -436,6 +436,10 @@ void draw() {
     mapModel.drawDebugWorldBounds(this);
   }
   popMatrix();
+
+  // Ensure UI drawing uses normal coordinate modes (world rendering can change rectMode)
+  rectMode(CORNER);
+  ellipseMode(CENTER);
 
   if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT) {
     drawExportPaddingOverlay();
@@ -498,7 +502,7 @@ void drawRenderView(PApplet app) {
 
   // Snap guides should float above everything except structures
   if (currentTool == Tool.EDIT_STRUCTURES) {
-    mapModel.drawStructureSnapGuides(app, seaLevel);
+    mapModel.drawStructureSnapGuides(app);
   }
 
   if (renderShowStructures) {

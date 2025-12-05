@@ -1,8 +1,8 @@
 // ---------- UI DRAWING ----------
 
 int panelTop() {
-  boolean showSnapPanel = (currentTool == Tool.EDIT_STRUCTURES);
-  return snapPanelTop() + (showSnapPanel ? snapSettingsPanelHeight() : 0);
+  // Base panel top (top bar + tool bar). Snap settings are handled separately in Structures mode.
+  return snapPanelTop();
 }
 
 int snapPanelTop() {
@@ -23,6 +23,8 @@ int snapSettingsPanelHeight() {
 }
 
 void drawPanelBackground(IntRect frame) {
+  rectMode(CORNER);
+  ellipseMode(CENTER);
   noStroke();
   fill(232);
   rect(frame.x, frame.y, frame.w, frame.h);

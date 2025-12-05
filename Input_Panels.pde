@@ -309,6 +309,13 @@ boolean handleZonesPanelClick(int mx, int my) {
   if (mapModel == null || mapModel.zones == null) return false;
 
   ZonesLayout layout = buildZonesLayout();
+  boolean inReset = layout.resetBtn.contains(mx, my);
+  boolean inRegen = layout.regenerateBtn.contains(mx, my);
+  println("ZonesPanelClick dbg mx=" + mx + " my=" + my +
+          " panel=(" + layout.panel.x + "," + layout.panel.y + "," + layout.panel.w + "," + layout.panel.h + ")" +
+          " reset=(" + layout.resetBtn.x + "," + layout.resetBtn.y + "," + layout.resetBtn.w + "," + layout.resetBtn.h + ")" +
+          " regenerate=(" + layout.regenerateBtn.x + "," + layout.regenerateBtn.y + "," + layout.regenerateBtn.w + "," + layout.regenerateBtn.h + ")" +
+          " hitsReset=" + inReset + " hitsRegen=" + inRegen);
 
   if (layout.brushSlider.contains(mx, my)) {
     float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
@@ -321,6 +328,7 @@ boolean handleZonesPanelClick(int mx, int my) {
     mapModel.resetAllZonesToNone();
     activeZoneIndex = -1;
     editingZoneNameIndex = -1;
+    println("Zones reset click accepted at mx=" + mx + " my=" + my);
     return true;
   }
 
@@ -329,6 +337,7 @@ boolean handleZonesPanelClick(int mx, int my) {
     mapModel.regenerateRandomZones(target);
     activeZoneIndex = !mapModel.zones.isEmpty() ? 0 : -1;
     editingZoneNameIndex = -1;
+    println("Zones regenerate click accepted at mx=" + mx + " my=" + my);
     return true;
   }
 
@@ -488,6 +497,7 @@ boolean handleSnapSettingsClick(int mx, int my) {
 // ---------- Mouse & keyboard callbacks ----------
 
 void mousePressed() {
+  println("mousePressed at " + mouseX + "," + mouseY + " button=" + mouseButton + " tool=" + currentTool);
   // Block interactions while generation is running; show notice
   if (mapModel.isVoronoiBuilding() && mouseButton == LEFT) {
     showNotice("Please wait for generation to finish...");
@@ -499,8 +509,8 @@ void mousePressed() {
     if (handleToolButtonClick(mouseX, mouseY)) return;
   }
 
-  // Snap settings (always active)
-  if (mouseButton == LEFT) {
+  // Snap settings (Structures mode only)
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_STRUCTURES) {
     if (handleSnapSettingsClick(mouseX, mouseY)) return;
   }
 
@@ -516,6 +526,12 @@ void mousePressed() {
 
   // Zones panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
+    ZonesLayout dbgLayout = buildZonesLayout();
+    boolean dbgInPanel = dbgLayout.panel.contains(mouseX, mouseY);
+    println("ZonesClick raw mx=" + mouseX + " my=" + mouseY +
+            " panel=(" + dbgLayout.panel.x + "," + dbgLayout.panel.y + "," + dbgLayout.panel.w + "," + dbgLayout.panel.h + ")" +
+            " inPanel=" + dbgInPanel);
+    println("ZonesPanel contains? " + isInZonesPanel(mouseX, mouseY));
     if (handleZonesPanelClick(mouseX, mouseY)) return;
     if (handleZonesListPanelClick(mouseX, mouseY)) return;
     if (isInZonesListPanel(mouseX, mouseY)) return;

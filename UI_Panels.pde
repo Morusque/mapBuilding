@@ -661,6 +661,8 @@ void drawZonesPanel() {
   text("Zones", labelX, layout.titleY);
 
   // Reset and regenerate
+  // Use explicit rectMode(CORNER) to avoid bleed from world draw state
+  rectMode(CORNER);
   drawBevelButton(layout.resetBtn.x, layout.resetBtn.y, layout.resetBtn.w, layout.resetBtn.h, false);
   drawBevelButton(layout.regenerateBtn.x, layout.regenerateBtn.y, layout.regenerateBtn.w, layout.regenerateBtn.h, false);
   fill(10);
@@ -1441,7 +1443,8 @@ class StructuresLayout {
 
 StructuresLayout buildStructuresLayout() {
   StructuresLayout l = new StructuresLayout();
-  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
+  int yTop = snapPanelTop() + snapSettingsPanelHeight(); // leave space for snap settings block
+  l.panel = new IntRect(PANEL_X, yTop, PANEL_W, 0);
   int innerX = l.panel.x + PANEL_PADDING;
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
@@ -1593,7 +1596,7 @@ StructuresListLayout buildStructuresListLayout() {
   StructuresListLayout l = new StructuresListLayout();
   int w = RIGHT_PANEL_W;
   int x = width - w - PANEL_PADDING;
-  int y = snapPanelTop(); // keep right panel anchored to main panel top even when left snap block is present
+  int y = snapPanelTop(); // keep right panel pinned to the top
   l.panel = new IntRect(x, y, w, height - y - PANEL_PADDING);
   l.titleY = y + PANEL_PADDING;
   int btnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
@@ -1976,6 +1979,8 @@ PathRouteMode currentPathRouteMode() {
 }
 
 void drawBevelButton(int x, int y, int w, int h, boolean pressed) {
+  // Guard against world draw state leaking (e.g., rectMode(CENTER))
+  rectMode(CORNER);
   int face = pressed ? color(192) : color(224);
   int hl = color(255);
   int sh = color(96);

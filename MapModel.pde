@@ -313,7 +313,7 @@ class MapModel {
     app.popStyle();
   }
 
-  void drawStructureSnapGuides(PApplet app, float seaLevel) {
+  void drawStructureSnapGuides(PApplet app) {
     boolean useWater = snapWaterEnabled;
     boolean useBiomes = snapBiomesEnabled;
     boolean useUnderwater = snapUnderwaterBiomesEnabled;
