@@ -10,9 +10,21 @@ class Viewport {
   }
 
   void applyTransform(PApplet app) {
-    app.translate(app.width * 0.5f, app.height * 0.5f);
-    app.scale(zoom);
-    app.translate(-centerX, -centerY);
+    applyTransform(app.g, app.width, app.height);
+  }
+
+  void applyTransform(PGraphics g) {
+    applyTransform(g, g.width, g.height);
+  }
+
+  void applyTransform(PApplet app, float canvasWidth, float canvasHeight) {
+    applyTransform(app.g, canvasWidth, canvasHeight);
+  }
+
+  void applyTransform(PGraphics g, float canvasWidth, float canvasHeight) {
+    g.translate(canvasWidth * 0.5f, canvasHeight * 0.5f);
+    g.scale(zoom);
+    g.translate(-centerX, -centerY);
   }
 
   void panScreen(float dxPixels, float dyPixels) {

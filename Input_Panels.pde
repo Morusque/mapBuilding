@@ -832,7 +832,7 @@ boolean handlePathsListPanelClick(int mx, int my) {
 
     if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
       selectedPathIndex = row.index;
-      if (p != null && p.typeId >= 0 && p.typeId < mapModel.pathTypes.size()) {
+      if (p.typeId >= 0 && p.typeId < mapModel.pathTypes.size()) {
         activePathTypeIndex = p.typeId;
         syncActivePathTypeGlobals();
       }
@@ -998,12 +998,24 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (!isInRenderPanel(mx, my)) return false;
   RenderLayout layout = buildRenderLayout();
 
+  int idxBiomes = 0;
+  int idxZones = 1;
+  int idxWater = 2;
+  int idxWaterContours = 3;
+  int idxElevation = 4;
+  int idxElevationContours = 5;
+  int idxPaths = 6;
+  int idxLabels = 7;
+  int idxStructures = 8;
+  int idxBW = 9;
+
   // zones, water, elevation, paths, labels, structures
-  if (layout.checks.get(0).contains(mx, my)) { renderShowZones = !renderShowZones; return true; }
-  if (layout.checks.get(1).contains(mx, my)) { renderShowWater = !renderShowWater; return true; }
-  if (layout.checks.get(2).contains(mx, my)) { renderWaterContours = !renderWaterContours; return true; }
-  if (layout.checks.get(3).contains(mx, my)) { renderShowElevation = !renderShowElevation; return true; }
-  if (layout.checks.get(4).contains(mx, my)) { renderElevationContours = !renderElevationContours; return true; }
+  if (layout.checks.get(idxBiomes).contains(mx, my)) { renderShowZones = !renderShowZones; return true; }
+  if (layout.checks.get(idxZones).contains(mx, my)) { renderShowZoneOutlines = !renderShowZoneOutlines; return true; }
+  if (layout.checks.get(idxWater).contains(mx, my)) { renderShowWater = !renderShowWater; return true; }
+  if (layout.checks.get(idxWaterContours).contains(mx, my)) { renderWaterContours = !renderWaterContours; return true; }
+  if (layout.checks.get(idxElevation).contains(mx, my)) { renderShowElevation = !renderShowElevation; return true; }
+  if (layout.checks.get(idxElevationContours).contains(mx, my)) { renderElevationContours = !renderElevationContours; return true; }
 
   // Lighting sliders under Elevation
   if (layout.lightAzimuthSlider != null && layout.lightAzimuthSlider.contains(mx, my)) {
@@ -1026,16 +1038,33 @@ boolean handleRenderPanelClick(int mx, int my) {
     return true;
   }
 
-  if (layout.checks.get(5).contains(mx, my)) { renderShowPaths = !renderShowPaths; return true; }
-  if (layout.checks.get(6).contains(mx, my)) { renderShowLabels = !renderShowLabels; return true; }
-  if (layout.checks.get(7).contains(mx, my)) { renderShowStructures = !renderShowStructures; return true; }
-  if (layout.checks.size() > 8 && layout.checks.get(8).contains(mx, my)) { renderBlackWhite = !renderBlackWhite; return true; }
+  if (layout.checks.get(idxPaths).contains(mx, my)) { renderShowPaths = !renderShowPaths; return true; }
+  if (layout.checks.get(idxLabels).contains(mx, my)) { renderShowLabels = !renderShowLabels; return true; }
+  if (layout.checks.get(idxStructures).contains(mx, my)) { renderShowStructures = !renderShowStructures; return true; }
+  if (layout.checks.size() > idxBW && layout.checks.get(idxBW).contains(mx, my)) { renderBlackWhite = !renderBlackWhite; return true; }
   return false;
 }
 
 boolean handleExportPanelClick(int mx, int my) {
   if (!isInExportPanel(mx, my)) return false;
-  // Placeholder: export panel will get actionable controls later.
+  ExportLayout layout = buildExportLayout();
+  if (layout.pngBtn.contains(mx, my)) {
+    String path = exportPng();
+    if (path != null && path.length() > 0 && !path.startsWith("Failed")) {
+      lastExportStatus = path;
+      showNotice("Saved PNG: " + path);
+    } else {
+      lastExportStatus = (path != null) ? path : "Export failed";
+      showNotice("Export failed");
+    }
+    return true;
+  }
+  if (layout.scaleSlider != null && layout.scaleSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.scaleSlider.x) / (float)layout.scaleSlider.w, 0, 1);
+    exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);
+    activeSlider = SLIDER_EXPORT_SCALE;
+    return true;
+  }
   return false;
 }
 

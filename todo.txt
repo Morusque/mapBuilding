@@ -7,23 +7,22 @@ Loading bar :
 Sites :
 (later) there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 (later) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
-(later) poisson-disc doesn't seem to work anymore (but unless we can optimize it a lot, it would be ok to remove it)
 
 Elevation :
+(later) use techtonic logic in addition to perlin
 
 Biomes :
-(later) extend or shrink current biome button
-(later) add a "create beaches" using current biome
-(later) use techtonic logic in addition to perlin
+(soon) use selectable generation method for "generate" button : perlin, reset, fill gaps, beaches, mountains, extend, shrink, full
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
-(later) zone-painting brush is currently buggy
+(soon) zone-painting brush is currently buggy
 
 Paths :
 (later) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
-(later) option to generate paths
+(soon) option to generate paths
+(later) when adding a path with selected type different than selected path, create new path with selected type
 
 Struct :
 (later) structures should be groupable
@@ -36,18 +35,19 @@ Struct :
 Labels :
 (later) optionally associate labels with map elements
 (later) have type presets for label styles (like with path types)
-(later) text size should be handled better (typo appears blurry)
 (later) option to generate labels
+(later) find a way to allow for labels text fill color and outline color, also parameters for font used (just a few typical options)
+(later) text size should be handled better (typo appears blurry)
 
 Rendering :
-(later) zones should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
+(soon) add zones" checbox
+(later) biomes should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
 (later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (already done but disabled, needs refinement)
-(later) Respect LOD rules: constant stroke widths, hide/show groups vs members depending on zoom, optional merging visually of dense structures.
-(later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed).
+(later) LOD rules: hide/show groups vs members depending on zoom, optional merging visually of dense structures.
+(later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed), should be done per-element and single button removed
 (later) Exporting the legend for reference.
 (later) Comments exportable as custom format
-(later) refine the precise way contours work
-(later) find a way to allow for labels text fill color and outline color, also parameters for font used (just a few typical options)
+(soon) refine the precise way contours work, especially for water (find example)
 (later) take inspiration from real map pictures
 
 Editable types :
@@ -59,9 +59,6 @@ Export :
 (later) are there existing formats for such tools to handle?
 
 General :
-(later) Refactor, optimize etc.
-(later) Multithreading could be used for cpu intensive tasts such as pathfinding or voronoi.
-(later) option to generate details (about everything) for zooming
-(later) very top panel should have a little bit more padding on the bottom, jus a few px to allow bottom of text to be good visually
 (later) investigate caching options
-(later) "generate" buttons should preferably be on top
+(later) option to generate details (about everything) for zooming
+(later) Refactor, optimize etc.

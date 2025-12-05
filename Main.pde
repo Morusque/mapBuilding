@@ -63,11 +63,11 @@ PlacementMode[] placementModes = {
   PlacementMode.POISSON,
   PlacementMode.HEX
 };
-int placementModeIndex = 2; // 0=GRID, 1=POISSON, 2=HEX
+int placementModeIndex = 1; // 0=GRID, 1=POISSON, 2=HEX
 final int MAX_SITE_COUNT = 20000;
-final int DEFAULT_SITE_COUNT = 5000;
+final int DEFAULT_SITE_COUNT = 10000;
 int siteTargetCount = DEFAULT_SITE_COUNT; // slider maps 0..MAX_SITE_COUNT
-float siteFuzz = 0.03;      // 0..1
+float siteFuzz = 0.0;       // 0..1
 boolean keepPropertiesOnGenerate = false;
 
 // Zones (biomes) painting
@@ -91,6 +91,7 @@ boolean renderShowElevation = true;
 boolean renderShowPaths = true;
 boolean renderShowLabels = true;
 boolean renderShowStructures = true;
+boolean renderShowZoneOutlines = false;
 boolean renderBlackWhite = false;
 boolean renderWaterContours = false;
 boolean renderElevationContours = false;
@@ -107,6 +108,8 @@ boolean PATH_BIDIRECTIONAL = true; // grow paths from both ends
 int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
 float renderPaddingPct = 0.01f; // fraction of min(screenW, screenH) cropped from all sides
+float exportScale = 2.0f; // multiplier for PNG export resolution
+String lastExportStatus = "";
 
 float labelSizeDefault() {
   return labelSizeDefaultVal;
@@ -181,6 +184,7 @@ final int SLIDER_STRUCT_SELECTED_ALPHA = 25;
 final int SLIDER_STRUCT_SELECTED_SAT = 26;
 final int SLIDER_STRUCT_SELECTED_STROKE = 27;
 final int SLIDER_RENDER_PADDING = 28;
+final int SLIDER_EXPORT_SCALE = 29;
 int activeSlider = SLIDER_NONE;
 
 void settings() {
@@ -246,11 +250,12 @@ void drawExportPaddingOverlay() {
   if (mapModel == null) return;
   float worldW = mapModel.maxX - mapModel.minX;
   float worldH = mapModel.maxY - mapModel.minY;
-  float padWorld = max(0, renderPaddingPct) * min(worldW, worldH);
-  float innerWX = mapModel.minX + padWorld;
-  float innerWY = mapModel.minY + padWorld;
-  float innerWW = max(0, worldW - padWorld * 2);
-  float innerWH = max(0, worldH - padWorld * 2);
+  float padX = max(0, renderPaddingPct) * worldW;
+  float padY = max(0, renderPaddingPct) * worldH;
+  float innerWX = mapModel.minX + padX;
+  float innerWY = mapModel.minY + padY;
+  float innerWW = max(0, worldW - padX * 2);
+  float innerWH = max(0, worldH - padY * 2);
   if (innerWW <= 0 || innerWH <= 0) return;
 
   PVector tl = viewport.worldToScreen(innerWX, innerWY);
@@ -290,16 +295,11 @@ void draw() {
   pushMatrix();
   viewport.applyTransform(this);
 
-  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS || currentTool == Tool.EDIT_ZONES);
+  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS || currentTool == Tool.EDIT_ZONES || currentTool == Tool.EDIT_EXPORT);
   boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER && !renderShowZones);
-  if (currentTool == Tool.EDIT_RENDER) {
-    if (renderShowZones) {
-      mapModel.drawCellsRender(this, showBorders);
-    }
-    if (renderShowElevation || renderShowWater || renderElevationContours || renderWaterContours) {
-      mapModel.drawElevationOverlay(this, seaLevel, renderElevationContours, renderShowWater, renderShowElevation,
-                                    renderWaterContours, true, renderLightAzimuthDeg, renderLightAltitudeDeg, 0);
-    }
+  boolean renderView = (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT);
+  if (renderView) {
+    drawRenderView(this);
   } else if (currentTool == Tool.EDIT_PATHS) {
     mapModel.drawCellsRender(this, showBorders, true);
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
@@ -317,7 +317,7 @@ void draw() {
     mapModel.drawCells(this, showBorders);
   }
 
-  if (currentTool == Tool.EDIT_ZONES) {
+  if (currentTool == Tool.EDIT_ZONES && !renderView) {
     mapModel.drawZoneOutlines(this);
   }
 
@@ -421,12 +421,12 @@ void draw() {
     drawZoneBrushPreview();
   } else if (currentTool == Tool.EDIT_PATHS && pathEraserMode) {
     drawPathEraserPreview();
-  } else {
+  } else if (!renderView) {
     mapModel.drawDebugWorldBounds(this);
   }
   popMatrix();
 
-  if (currentTool == Tool.EDIT_RENDER) {
+  if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT) {
     drawExportPaddingOverlay();
   }
 
@@ -456,6 +456,91 @@ void draw() {
   } else if (currentTool == Tool.EDIT_EXPORT) {
     drawExportPanel();
   }
+}
+
+void drawRenderView(PApplet app) {
+  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS || currentTool == Tool.EDIT_ZONES || currentTool == Tool.EDIT_EXPORT);
+  if (renderShowZones) {
+    mapModel.drawCellsRender(app, showBorders);
+  }
+  if (renderShowElevation || renderShowWater || renderElevationContours || renderWaterContours) {
+    mapModel.drawElevationOverlay(app, seaLevel, renderElevationContours, renderShowWater, renderShowElevation,
+                                  renderWaterContours, true, renderLightAzimuthDeg, renderLightAltitudeDeg, 0);
+  }
+
+  boolean highlightPaths = false;
+  int pathCol = renderBlackWhite ? color(50) : color(60, 60, 200);
+  if (renderShowPaths) {
+    mapModel.drawPaths(app, pathCol, highlightPaths, false);
+  }
+
+  if (renderShowZoneOutlines) {
+    mapModel.drawZoneOutlines(app);
+  }
+
+  if (renderShowStructures) {
+    mapModel.drawStructures(app);
+  }
+  if (renderShowLabels) {
+    mapModel.drawLabels(app);
+  }
+}
+
+String exportPng() {
+  // Compute inner world rect from render padding
+  float worldW = mapModel.maxX - mapModel.minX;
+  float worldH = mapModel.maxY - mapModel.minY;
+  float padX = max(0, renderPaddingPct) * worldW;
+  float padY = max(0, renderPaddingPct) * worldH;
+  float innerWX = mapModel.minX + padX;
+  float innerWY = mapModel.minY + padY;
+  float innerWW = max(1e-6f, worldW - padX * 2);
+  float innerWH = max(1e-6f, worldH - padY * 2);
+
+  // Match export buffer aspect to the cropped world so we crop instead of showing letterbox bars.
+  float innerAspect = innerWW / innerWH;
+  int pxH = max(1, round(height * exportScale));
+  int pxW = max(1, round(pxH * innerAspect));
+  PGraphics g = createGraphics(pxW, pxH, P2D);
+  if (g == null) return "Failed to allocate buffer";
+
+  float prevCenterX = viewport.centerX;
+  float prevCenterY = viewport.centerY;
+  float prevZoom = viewport.zoom;
+
+  // Fit inner world rect to buffer while preserving aspect
+  float zoomX = g.width / innerWW;
+  float zoomY = g.height / innerWH;
+  float newZoom = max(zoomX, zoomY); // fill buffer; slight overzoom is fine (cropped)
+  viewport.centerX = innerWX + innerWW * 0.5f;
+  viewport.centerY = innerWY + innerWH * 0.5f;
+  viewport.zoom = newZoom;
+
+  g.beginDraw();
+  g.background(245);
+  // Temporarily redirect drawing to offscreen buffer
+  PGraphics prev = this.g;
+  this.g = g;
+  pushMatrix();
+  viewport.applyTransform(g, g.width, g.height);
+  drawRenderView(this);
+  popMatrix();
+  this.g = prev;
+  g.endDraw();
+
+  // Restore viewport
+  viewport.centerX = prevCenterX;
+  viewport.centerY = prevCenterY;
+  viewport.zoom = prevZoom;
+
+  String dir = "exports";
+  java.io.File folder = new java.io.File(dir);
+  folder.mkdirs();
+  String ts = nf(year(), 4, 0) + nf(month(), 2, 0) + nf(day(), 2, 0) + "_" +
+              nf(hour(), 2, 0) + nf(minute(), 2, 0) + nf(second(), 2, 0);
+  String path = dir + java.io.File.separator + "map_" + ts + ".png";
+  g.save(path);
+  return path;
 }
 
 void drawPathSnappingPoints() {

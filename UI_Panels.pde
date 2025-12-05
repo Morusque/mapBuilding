@@ -1747,7 +1747,7 @@ RenderLayout buildRenderLayout() {
 
   int sliderW = 200;
   l.labels = new String[] {
-    "Biomes", "Water", "Water contours",
+    "Biomes", "Zones", "Water", "Water contours",
     "Elevation", "Elevation contours",
     "Paths", "Labels", "Structures", "Black/White"
   };
@@ -1755,7 +1755,7 @@ RenderLayout buildRenderLayout() {
     l.checks.add(new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE));
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
 
-    if (i == 3) { // after "Elevation"
+    if (i == 4) { // after "Elevation"
       l.lightAzimuthSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
       curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
       l.lightAltitudeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
@@ -1780,12 +1780,24 @@ void drawRenderPanel() {
   textAlign(LEFT, TOP);
   text("Rendering", labelX, layout.titleY);
 
-  drawCheckbox(layout.checks.get(0).x, layout.checks.get(0).y, layout.checks.get(0).w, renderShowZones, "Biomes");
-  drawCheckbox(layout.checks.get(1).x, layout.checks.get(1).y, layout.checks.get(1).w, renderShowWater, "Water");
-  drawCheckbox(layout.checks.get(2).x, layout.checks.get(2).y, layout.checks.get(2).w, renderWaterContours, "Water contours");
-  drawCheckbox(layout.checks.get(3).x, layout.checks.get(3).y, layout.checks.get(3).w, renderShowElevation, "Elevation");
-  drawCheckbox(layout.checks.get(4).x, layout.checks.get(4).y, layout.checks.get(4).w, renderElevationContours, "Elevation contours");
-  drawCheckbox(layout.checks.get(8).x, layout.checks.get(8).y, layout.checks.get(8).w, renderBlackWhite, "Black/White");
+  int idxBiomes = 0;
+  int idxZones = 1;
+  int idxWater = 2;
+  int idxWaterContours = 3;
+  int idxElevation = 4;
+  int idxElevationContours = 5;
+  int idxPaths = 6;
+  int idxLabels = 7;
+  int idxStructures = 8;
+  int idxBW = 9;
+
+  drawCheckbox(layout.checks.get(idxBiomes).x, layout.checks.get(idxBiomes).y, layout.checks.get(idxBiomes).w, renderShowZones, "Biomes");
+  drawCheckbox(layout.checks.get(idxZones).x, layout.checks.get(idxZones).y, layout.checks.get(idxZones).w, renderShowZoneOutlines, "Zones");
+  drawCheckbox(layout.checks.get(idxWater).x, layout.checks.get(idxWater).y, layout.checks.get(idxWater).w, renderShowWater, "Water");
+  drawCheckbox(layout.checks.get(idxWaterContours).x, layout.checks.get(idxWaterContours).y, layout.checks.get(idxWaterContours).w, renderWaterContours, "Water contours");
+  drawCheckbox(layout.checks.get(idxElevation).x, layout.checks.get(idxElevation).y, layout.checks.get(idxElevation).w, renderShowElevation, "Elevation");
+  drawCheckbox(layout.checks.get(idxElevationContours).x, layout.checks.get(idxElevationContours).y, layout.checks.get(idxElevationContours).w, renderElevationContours, "Elevation contours");
+  drawCheckbox(layout.checks.get(idxBW).x, layout.checks.get(idxBW).y, layout.checks.get(idxBW).w, renderBlackWhite, "Black/White");
 
   // Lighting sliders (render mode only)
   if (layout.lightAzimuthSlider != null) {
@@ -1835,10 +1847,10 @@ void drawRenderPanel() {
     text("Export padding (" + nf(renderPaddingPct * 100.0f, 1, 1) + "% of screen)", pad.x, pad.y - 4);
   }
 
-  drawCheckbox(layout.checks.get(5).x, layout.checks.get(5).y, layout.checks.get(5).w, renderShowPaths, "Paths");
-  drawCheckbox(layout.checks.get(6).x, layout.checks.get(6).y, layout.checks.get(6).w, renderShowLabels, "Labels");
-  drawCheckbox(layout.checks.get(7).x, layout.checks.get(7).y, layout.checks.get(7).w, renderShowStructures, "Structures");
-  // Black/white toggle already drawn above with checks[8]
+  drawCheckbox(layout.checks.get(idxPaths).x, layout.checks.get(idxPaths).y, layout.checks.get(idxPaths).w, renderShowPaths, "Paths");
+  drawCheckbox(layout.checks.get(idxLabels).x, layout.checks.get(idxLabels).y, layout.checks.get(idxLabels).w, renderShowLabels, "Labels");
+  drawCheckbox(layout.checks.get(idxStructures).x, layout.checks.get(idxStructures).y, layout.checks.get(idxStructures).w, renderShowStructures, "Structures");
+  // Black/white toggle already drawn above with idxBW
 
   drawControlsHint(layout.panel,
                    "right-click: pan",

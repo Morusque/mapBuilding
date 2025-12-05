@@ -898,7 +898,6 @@ class MapModel {
         return;
       }
       PathType pt = getPathType(sel.typeId);
-      int col = (pt != null) ? pt.col : strokeCol;
       int hi = app.color(255, 230, 80, 180);
       float w = (pt != null) ? pt.weightPx : 2.0f;
       float hw = 5.0f / viewport.zoom; // constant ~5px
@@ -1330,7 +1329,7 @@ class MapModel {
     return fallbackBiome;
   }
 
-  int sampleZoneFromOldCells(ArrayList<Cell> oldCells, float x, float y, int fallbackZone) {
+  int sampleZoneFromOldCells(int fallbackZone) {
     return fallbackZone;
   }
 
@@ -1593,7 +1592,6 @@ class MapModel {
     boolean[] visited = new boolean[n];
     int[] stack = new int[n];
     int stackSize = 0;
-    float eps = 1e-4f;
     stack[stackSize++] = startIndex;
     visited[startIndex] = true;
     while (stackSize > 0) {
@@ -2141,11 +2139,10 @@ class MapModel {
     if (targetCount <= 0) return;
     float w = maxX - minX;
     float h = maxY - minY;
+    float area = max(1e-6f, w * h);
 
-    float minDim = min(w, h);
-    float targetRes = max(1.0f, sqrt(targetCount));
-    float baseSpacing = minDim / targetRes;
-    float r = baseSpacing * 0.5f;
+    // Radius tuned to aim for targetCount with comfortable spacing
+    float r = sqrt(area / max(1, targetCount)) * 0.85f;
 
     float cellSize = r / sqrt(2);
     int gridW = (int)ceil(w / cellSize);
@@ -2158,16 +2155,16 @@ class MapModel {
 
     float x0 = random(minX, maxX);
     float y0 = random(minY, maxY);
-    points.add(new PVector(x0, y0));
-    active.add(0);
+      points.add(new PVector(x0, y0));
+      active.add(0);
 
-    int gx = (int)((x0 - minX) / cellSize);
-    int gy = (int)((y0 - minY) / cellSize);
+      int gx = (int)((x0 - minX) / cellSize);
+      int gy = (int)((y0 - minY) / cellSize);
     if (gx >= 0 && gx < gridW && gy >= 0 && gy < gridH) {
       grid[gy * gridW + gx] = 0;
     }
 
-    int k = 25;
+    int k = 30;
     int maxPoints = max(1, min(targetCount, MAX_SITE_COUNT));
 
     while (!active.isEmpty() && points.size() < maxPoints) {
@@ -2214,6 +2211,12 @@ class MapModel {
       if (!found) {
         active.remove((Integer)idx);
       }
+    }
+
+    // If generation collapses (too few points), fall back to a jittered grid to avoid empty maps.
+    if (points.isEmpty()) {
+      generateGridSites(targetCount);
+      return;
     }
 
     for (int i = 0; i < points.size(); i++) {

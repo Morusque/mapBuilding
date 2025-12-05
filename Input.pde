@@ -40,9 +40,9 @@ void handlePathsMousePressed(float wx, float wy) {
     } else if (mode == PathRouteMode.PATHFIND) {
       ArrayList<PVector> rp = mapModel.findSnapPathFlattest(pendingPathStart, target);
       if (rp != null && rp.size() > 1) route = rp;
-      println("[PATH] route PATHFIND size=" + ((route != null) ? route.size() : 0));
+      println("[PATH] route PATHFIND size=" + route.size());
     }
-    if (route == null || route.isEmpty()) {
+    if (route.isEmpty()) {
       route = new ArrayList<PVector>();
       route.add(pendingPathStart.copy());
       route.add(target.copy());
@@ -54,10 +54,8 @@ void handlePathsMousePressed(float wx, float wy) {
     if (targetPath.routes.isEmpty()) {
       targetPath.typeId = activePathTypeIndex;
     }
-    if (route != null) {
       mapModel.appendRouteToPath(targetPath, route);
       println("[PATH] appended route points=" + route.size() + " to path#" + selectedPathIndex);
-    }
   }
   pendingPathStart = null;
 }
@@ -204,6 +202,17 @@ void mouseDragged() {
       mapModel.erasePathSegments(w.x, w.y, pathEraserRadius);
     }
     return;
+  }
+
+  // Export: slider dragging
+  if (mouseButton == LEFT && currentTool == Tool.EDIT_EXPORT && isInExportPanel(mouseX, mouseY)) {
+    ExportLayout layout = buildExportLayout();
+    if (layout.scaleSlider != null && layout.scaleSlider.contains(mouseX, mouseY)) {
+      float t = constrain((mouseX - layout.scaleSlider.x) / (float)layout.scaleSlider.w, 0, 1);
+      exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);
+      activeSlider = SLIDER_EXPORT_SCALE;
+      return;
+    }
   }
 
   // Ignore world if dragging in UI
@@ -494,6 +503,14 @@ void updateActiveSlider(int mx, int my) {
       renderPaddingPct = constrain(t * 0.10f, 0, 0.10f);
       break;
     }
+    case SLIDER_EXPORT_SCALE: {
+      ExportLayout l = buildExportLayout();
+      if (l.scaleSlider != null) {
+        float t = constrain((mx - l.scaleSlider.x) / (float)l.scaleSlider.w, 0, 1);
+        exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);
+      }
+      break;
+    }
     default:
       break;
   }
@@ -715,6 +732,4 @@ void keyPressed() {
     return;
   }
 }
-
-
 
