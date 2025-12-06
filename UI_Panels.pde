@@ -1890,7 +1890,6 @@ RenderLayout buildRenderLayout() {
 
   int headerW = PANEL_W - 2 * PANEL_PADDING;
   int shortSliderW = 90;
-  int midSliderW = 160;
   int longSliderW = 200;
   int hsbGap = 8;
 

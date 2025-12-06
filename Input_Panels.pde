@@ -309,8 +309,6 @@ boolean handleZonesPanelClick(int mx, int my) {
   if (mapModel == null || mapModel.zones == null) return false;
 
   ZonesLayout layout = buildZonesLayout();
-  boolean inReset = layout.resetBtn.contains(mx, my);
-  boolean inRegen = layout.regenerateBtn.contains(mx, my);
 
   if (layout.brushSlider.contains(mx, my)) {
     float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
@@ -520,8 +518,6 @@ void mousePressed() {
 
   // Zones panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_ZONES) {
-    ZonesLayout dbgLayout = buildZonesLayout();
-    boolean dbgInPanel = dbgLayout.panel.contains(mouseX, mouseY);
     if (handleZonesPanelClick(mouseX, mouseY)) return;
     if (handleZonesListPanelClick(mouseX, mouseY)) return;
     if (isInZonesListPanel(mouseX, mouseY)) return;

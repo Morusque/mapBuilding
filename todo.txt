@@ -69,3 +69,4 @@ General :
 (later) remove obsolete debug prints
 (later) undo states
 (later) rgbToHSB seems to be part of the model class while hsb01ToRGB isnt, also why "01"? can we add more clarity to all this?
+(later) what's the use of passing "PApplet app" as a reference when methods could be called directly?
