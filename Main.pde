@@ -593,8 +593,10 @@ String exportPng() {
 
   // Match export buffer aspect to the cropped world so we crop instead of showing letterbox bars.
   float innerAspect = innerWW / innerWH;
-  int pxH = max(1, round(height * exportScale));
+  float safeScale = constrain(exportScale, 0.1f, 8.0f);
+  int pxH = max(1, round(max(1, height) * safeScale));
   int pxW = max(1, round(pxH * innerAspect));
+  if (pxW <= 0 || pxH <= 0) return "Failed: export size collapsed";
   PGraphics g = createGraphics(pxW, pxH, P2D);
   if (g == null) return "Failed to allocate buffer";
 

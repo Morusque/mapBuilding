@@ -206,7 +206,27 @@ class RenderSettings {
 RenderPreset[] buildDefaultRenderPresets() {
   ArrayList<RenderPreset> list = new ArrayList<RenderPreset>();
 
-  // Vivid Color (baseline)
+  // Simple
+  {
+    RenderSettings s = new RenderSettings();
+    s.landHue01 = 0.08f; s.landSat01 = 0.0f; s.landBri01 = 0.90f;
+    s.waterHue01 = 0.58f; s.waterSat01 = 0.0f; s.waterBri01 = 0.30f;
+    s.biomeFillAlpha01 = 0.0f;
+    s.biomeSatScale01 = 1.0f;
+    s.biomeOutlineSizePx = 0.0f;
+    s.biomeOutlineAlpha01 = 0.0f;
+    s.waterDepthAlpha01 = 0.0f;
+    s.elevationLightAlpha01 = 0.0f;
+    s.waterContourSizePx = 2.0f;
+    s.waterRippleCount = 0;
+    s.waterRippleDistancePx = 5.0f;
+    s.waterContourAlpha01 = 1.0f;
+    s.elevationLinesCount = 0;
+    s.elevationLinesAlpha01 = 1.0f;
+    list.add(new RenderPreset("Simple", s));
+  }
+
+  // Vivid Color
   {
     RenderSettings s = new RenderSettings();
     s.landHue01 = 0.08f; s.landSat01 = 0.05f; s.landBri01 = 0.90f;

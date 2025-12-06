@@ -43,25 +43,23 @@ Labels :
 (later) text size should be handled better (typo appears blurry)
 
 Rendering :
-(later) biomes should have options to be replaced by pattern of items (eg place trees for forest instead of green color).
-(later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (already done but disabled, needs refinement)
+(later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (find examples of this)
 (later) LOD rules: hide/show groups vs members depending on zoom, optional merging visually of dense structures.
-(later) black and white mode should be more of a "bitmap" with no greyscale (replace them with patterns and lines if needed), should be done per-element and single button removed
-(later) Exporting the legend for reference.
-(later) Comments exportable as custom format
-(later) refine the precise way contours work
+(later) Rendering/exporting the legend for reference.
 (later) take inspiration from real map pictures (eg ign maps)
 (later) add loading bars for long operations (contours)
-(later) don't show cell borders unless specified
-(later) some ugly dots appear sometimes between polygones
-
-Editable types :
-(later) Visually show which parameters "belong" to a type or to a more general part of the interface.
+(later) some ugly dots sometimes appear between polygones
+(later) labels outline don't work well
 
 Export :
+(later) Comments exportable as custom format
 (later) JSON export/import (human-readable) with legend, layers, cells, paths, structures, groups, labels, view defaults.
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 (later) are there existing formats for such tools to handle?
+(later) trying to export with labels makes the thing crash with a NullPointerException
+
+Editable types :
+(later) Visually show which parameters "belong" to a type or to a more general part of the interface.
 
 General :
 (later) investigate caching options

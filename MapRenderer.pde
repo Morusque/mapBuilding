@@ -233,7 +233,9 @@ class MapRenderer {
     app.pushStyle();
     for (MapLabel l : list) {
       if (l == null) continue;
-      float pxSize = l.size / viewport.zoom;
+      if (l.text == null) continue;
+      // Keep labels simple for now: fixed screen size (no zoom scaling) to avoid blurry/giant exports.
+      float pxSize = max(6.0f, l.size);
       // Outline
       int outlineCol = app.color(255, 255, 255, constrain(s.labelOutlineAlpha01, 0, 1) * 255);
       app.textAlign(CENTER, CENTER);
@@ -730,6 +732,7 @@ class MapRenderer {
 
   private void drawPatternPoly(PApplet app, ArrayList<PVector> verts, PImage pattern, int tintCol, float alpha01) {
     if (verts == null || verts.size() < 3 || pattern == null) return;
+    if (pattern.width <= 0 || pattern.height <= 0) return;
     app.pushStyle();
     app.noStroke();
     app.textureMode(app.NORMAL);
@@ -756,7 +759,18 @@ class MapRenderer {
     if (patternCache.containsKey(name)) return patternCache.get(name);
     String path = "patterns/" + name;
     PImage img = app.loadImage(path);
-    if (img != null) {
+    if (img != null && img.width > 0 && img.height > 0) {
+      img.loadPixels();
+      for (int i = 0; i < img.pixels.length; i++) {
+        int c = img.pixels[i];
+        int r = (c >> 16) & 0xFF;
+        int g = (c >> 8) & 0xFF;
+        int b = c & 0xFF;
+        int gray = (r + g + b) / 3;
+        int a = 255 - gray; // black -> opaque, white -> transparent
+        img.pixels[i] = app.color(255, 255, 255, a);
+      }
+      img.updatePixels();
       patternCache.put(name, img);
     }
     return img;
