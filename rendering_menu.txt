@@ -1,0 +1,78 @@
+
+notes :
+- for now color pickers should be three horizontally aligned HSB sliders
+- "----" menu groups should be closable or expandable
+- when alpha is 0 or weight is 0px, simply disable the whole rendering to optimize
+- drawing order is overall similar to menu order from top to bottom, unless specified otherwise
+
+menu :
+---- base
+-- color picker : land base
+   default : bright grey
+-- color picker : water base
+   default : dark grey, slighly blue
+-- slider : cell borders alpha
+   default 0
+   this is individual cells borders
+   should be drawn over biomes fillings but under biomed outlines
+---- biomes
+-- slider : biomes alpha
+   don't show cell borders
+-- slider : biomes saturation
+   affects fill and outline
+-- selector : fill type
+   values : color (default), pattern (replace color by dither patterns to be defined)
+-- slider : biomes outlines size
+   color is a darker version of biome color, default 0px, max 5px
+   this should be the outline of whole biome areas (computed, cached), not individual cells
+---- shading
+-- slider : water depth alpha
+   darkens deeper water (already implemented)
+-- slider : elevation light alpha
+   default 0
+-- slider : elevation light azimuth
+   default 220°
+-- slider : elevation light altitude
+   default 45°
+---- contours
+-- slider : water contour size
+   this is only the single line following closely segments on the coast (already implemented)
+   from 0px to 5px
+   default 2px
+   black
+-- int slider : number of ripples
+   this is about the number of additional distance-field contour lines in water
+-- slider : ripple distance
+   this is the distance in px between each water ripple
+-- int slider : elevation lines
+   this is the number of levels in the discretisation of elevation contour lines on emerged land only
+-- slider : elevation lines alpha
+---- paths
+-- checkbox : show
+-- slider : saturation
+   default 100%
+---- zones
+-- slider : alpha
+   default 100%
+-- slider : saturation
+   default 100%
+---- structures
+-- checkbox : show
+-- checkbox : merge
+   not implemented yet
+---- labels
+-- checkbox : show arbitrary
+   those are the labels added in the dedicated "label" mode
+-- checkbox : show zones
+   zones names placed in the middle of them
+-- checkbox : show paths
+   paths names following their angle and size as is done for streets or rivers on a city map
+-- checkbox : show structures
+   structure names shown either next to them or on them depending if space allows it
+---- general
+-- slider : export padding
+   as currently implemented
+   when in "export" mode should be cropped completely instead of just grayed out
+-- checkbox : antialiasing
+   mostly for line smoothing
+

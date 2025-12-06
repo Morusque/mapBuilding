@@ -24,7 +24,7 @@ Paths :
 (later) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
 (later) option to generate paths
-(later) when adding a path with selected type different than selected path, create new path with selected type
+(soon) when switchg path type on the left menu, desselect the path (on the right menu)
 
 Struct :
 (later) structures should be groupable
@@ -67,3 +67,4 @@ General :
 (later) Refactor, optimize etc.
 (later) remove comments specific to explain a single commit, add general purpose comments instead
 (later) remove obsolete debug prints
+(later) undo states
