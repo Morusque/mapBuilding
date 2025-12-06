@@ -543,38 +543,27 @@ void draw() {
 }
 
 void drawRenderView(PApplet app) {
-  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS || currentTool == Tool.EDIT_ZONES || currentTool == Tool.EDIT_EXPORT);
-  if (renderShowZones) {
-    mapModel.drawCellsRender(app, showBorders);
-  }
-  if (renderShowElevation || renderShowWater || renderElevationContours || renderWaterContours) {
-    mapModel.drawElevationOverlay(app, seaLevel, renderElevationContours, renderShowWater, renderShowElevation,
-                                  false, true, renderLightAzimuthDeg, renderLightAltitudeDeg, 0);
-  }
+  mapModel.drawRenderAdvanced(app, renderSettings, seaLevel);
 
-  boolean highlightPaths = false;
-  int pathCol = renderBlackWhite ? color(50) : color(60, 60, 200);
-  if (renderShowPaths) {
-    mapModel.drawPaths(app, pathCol, highlightPaths, false);
-  }
-
-  if (renderShowZoneOutlines) {
+  // Zone outlines (stroke-only, no fill)
+  if (renderSettings.zoneStrokeAlpha01 > 1e-4f && renderSettings.showZones) {
     mapModel.drawZoneOutlines(app);
   }
 
-  if (renderWaterContours) {
-    mapModel.drawCoastContourLines(app, seaLevel, 2, 0.01f);
+  // Paths
+  if (renderSettings.showPaths) {
+    int pathCol = color(60, 60, 200);
+    boolean highlightPaths = false;
+    mapModel.drawPaths(app, pathCol, highlightPaths, false);
   }
 
-  // Snap guides should float above everything except structures
-  if (currentTool == Tool.EDIT_STRUCTURES) {
-    mapModel.drawStructureSnapGuides(app);
-  }
-
-  if (renderShowStructures) {
+  // Structures
+  if (renderSettings.showStructures) {
     mapModel.drawStructures(app);
   }
-  if (renderShowLabels) {
+
+  // Labels (all types for now)
+  if (renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures) {
     mapModel.drawLabels(app);
   }
 }

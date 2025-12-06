@@ -368,6 +368,228 @@ class MapRenderer {
     app.popStyle();
   }
 
+  // New render view pipeline driven by RenderSettings
+  void drawRenderAdvanced(PApplet app, RenderSettings s, float seaLevel) {
+    if (model == null || model.cells == null) return;
+    app.pushStyle();
+    if (s.antialiasing) app.smooth(); else app.noSmooth();
+
+    int landBase = hsbColor(app, s.landHue01, s.landSat01, s.landBri01, 1.0f);
+    int waterBase = hsbColor(app, s.waterHue01, s.waterSat01, s.waterBri01, 1.0f);
+
+    // Base fills
+    app.noStroke();
+    app.fill(landBase);
+    app.rect(model.minX, model.minY, model.maxX - model.minX, model.maxY - model.minY);
+    for (Cell c : model.cells) {
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      if (c.elevation < seaLevel) {
+        app.fill(waterBase);
+        drawPoly(app, c.vertices);
+      }
+    }
+
+    // Biome fills
+    if (s.biomeFillAlpha01 > 1e-4f) {
+      app.noStroke();
+      for (Cell c : model.cells) {
+        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+        boolean isWater = c.elevation < seaLevel;
+        if (isWater && !s.biomeShowUnderwater) continue;
+        int col = landBase;
+        if (model.biomeTypes != null && c.biomeId >= 0 && c.biomeId < model.biomeTypes.size()) {
+          ZoneType zt = model.biomeTypes.get(c.biomeId);
+          float[] hsb = model.rgbToHSB(zt.col);
+          hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
+          col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+        }
+        int a = (int)(255 * s.biomeFillAlpha01);
+        app.fill(col, a);
+        drawPoly(app, c.vertices);
+      }
+    }
+
+    // Cell borders
+    if (s.cellBorderAlpha01 > 1e-4f) {
+      app.stroke(0, 0, 0, s.cellBorderAlpha01 * 255);
+      app.strokeWeight(1.0f / viewport.zoom);
+      app.noFill();
+      for (Cell c : model.cells) {
+        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+        drawPoly(app, c.vertices, true);
+      }
+    }
+
+    // Biome outlines (boundary edges between biomes)
+    if (s.biomeOutlineSizePx > 1e-4f && s.biomeOutlineAlpha01 > 1e-4f) {
+      HashSet<String> drawn = new HashSet<String>();
+      app.noFill();
+      app.strokeWeight(max(0.1f, s.biomeOutlineSizePx) / viewport.zoom);
+      for (int ci = 0; ci < model.cells.size(); ci++) {
+        Cell c = model.cells.get(ci);
+        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+        int biomeId = c.biomeId;
+        int vc = c.vertices.size();
+        for (int e = 0; e < vc; e++) {
+          PVector a = c.vertices.get(e);
+          PVector b = c.vertices.get((e + 1) % vc);
+          String key = undirectedEdgeKey(a, b);
+          if (drawn.contains(key)) continue;
+          drawn.add(key);
+
+          int nbBiome = biomeId;
+          boolean boundary = true;
+          ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
+          if (nbs != null) {
+            for (int nbIdx : nbs) {
+              if (nbIdx < 0 || nbIdx >= model.cells.size()) continue;
+              Cell nb = model.cells.get(nbIdx);
+              if (nb == null || nb.vertices == null) continue;
+              int nv = nb.vertices.size();
+              boolean match = false;
+              for (int j = 0; j < nv; j++) {
+                PVector na = nb.vertices.get(j);
+                PVector nbp = nb.vertices.get((j + 1) % nv);
+                if ((model.distSq(a, na) < 1e-6f && model.distSq(b, nbp) < 1e-6f) ||
+                    (model.distSq(a, nbp) < 1e-6f && model.distSq(b, na) < 1e-6f)) {
+                  nbBiome = nb.biomeId;
+                  match = true;
+                  break;
+                }
+              }
+              if (match) {
+                if (nbBiome == biomeId) boundary = false;
+                break;
+              }
+            }
+          }
+          if (boundary) {
+            int col = landBase;
+            if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size()) {
+              ZoneType zt = model.biomeTypes.get(biomeId);
+              float[] hsb = model.rgbToHSB(zt.col);
+              hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
+              col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+            }
+            app.stroke(col, s.biomeOutlineAlpha01 * 255);
+            app.line(a.x, a.y, b.x, b.y);
+          }
+        }
+      }
+    }
+
+    // Water depth shading
+    if (s.waterDepthAlpha01 > 1e-4f) {
+      app.noStroke();
+      for (Cell c : model.cells) {
+        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+        if (c.elevation < seaLevel) {
+          float depth = seaLevel - c.elevation;
+          float t = constrain(depth, 0, 1);
+          float a = s.waterDepthAlpha01 * t;
+          app.fill(0, 0, 0, a * 200);
+          drawPoly(app, c.vertices);
+        }
+      }
+    }
+
+    // Elevation shading (land only)
+    if (s.elevationLightAlpha01 > 1e-4f) {
+      float az = radians(s.elevationLightAzimuthDeg);
+      float alt = radians(s.elevationLightAltitudeDeg);
+      PVector lightDir = new PVector(cos(alt) * cos(az), cos(alt) * sin(az), sin(alt));
+      lightDir.normalize();
+      app.noStroke();
+      for (int ci = 0; ci < model.cells.size(); ci++) {
+        Cell c = model.cells.get(ci);
+        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+        if (c.elevation < seaLevel) continue;
+        float light = ElevationRenderer.computeLightForCell(model, ci, lightDir);
+        float a = s.elevationLightAlpha01 * (1.0f - light);
+        if (a <= 1e-4f) continue;
+        app.fill(0, 0, 0, a * 200);
+        drawPoly(app, c.vertices);
+      }
+    }
+
+    // Coast outline
+    if (s.waterContourSizePx > 1e-4f && s.waterContourAlpha01 > 1e-4f) {
+      HashSet<String> drawn = new HashSet<String>();
+      int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterContourAlpha01);
+      app.stroke(strokeCol);
+      app.strokeWeight(max(0.1f, s.waterContourSizePx) / viewport.zoom);
+      app.noFill();
+      for (int ci = 0; ci < model.cells.size(); ci++) {
+        Cell c = model.cells.get(ci);
+        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+        boolean isWater = c.elevation < seaLevel;
+        int vc = c.vertices.size();
+        for (int e = 0; e < vc; e++) {
+          PVector a = c.vertices.get(e);
+          PVector b = c.vertices.get((e + 1) % vc);
+          String key = undirectedEdgeKey(a, b);
+          if (drawn.contains(key)) continue;
+          drawn.add(key);
+          boolean boundary = false;
+          ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
+          if (nbs != null) {
+            for (int nbIdx : nbs) {
+              if (nbIdx < 0 || nbIdx >= model.cells.size()) continue;
+              Cell nb = model.cells.get(nbIdx);
+              if (nb == null || nb.vertices == null) continue;
+              int nv = nb.vertices.size();
+              boolean match = false;
+              for (int j = 0; j < nv; j++) {
+                PVector na = nb.vertices.get(j);
+                PVector nbp = nb.vertices.get((j + 1) % nv);
+                if ((model.distSq(a, na) < 1e-6f && model.distSq(b, nbp) < 1e-6f) ||
+                    (model.distSq(a, nbp) < 1e-6f && model.distSq(b, na) < 1e-6f)) {
+                  boundary = isWater != (nb.elevation < seaLevel);
+                  match = true;
+                  break;
+                }
+              }
+              if (match) break;
+            }
+          }
+          if (boundary && isWater) {
+            app.line(a.x, a.y, b.x, b.y);
+          }
+        }
+      }
+    }
+
+    app.popStyle();
+  }
+
+  private void drawPoly(PApplet app, ArrayList<PVector> verts) {
+    drawPoly(app, verts, false);
+  }
+
+  private void drawPoly(PApplet app, ArrayList<PVector> verts, boolean outlineOnly) {
+    if (verts == null || verts.size() < 3) return;
+    if (outlineOnly) {
+      int n = verts.size();
+      for (int i = 0; i < n; i++) {
+        PVector a = verts.get(i);
+        PVector b = verts.get((i + 1) % n);
+        app.line(a.x, a.y, b.x, b.y);
+      }
+      return;
+    }
+    app.beginShape();
+    for (PVector v : verts) app.vertex(v.x, v.y);
+    app.endShape(CLOSE);
+  }
+
+  private int hsbColor(PApplet app, float h, float s, float b, float a) {
+    app.pushStyle();
+    app.colorMode(app.HSB, 1.0f, 1.0f, 1.0f, 1.0f);
+    int c = app.color(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1), constrain(a, 0, 1));
+    app.popStyle();
+    return c;
+  }
+
   MapModel.ContourGrid sampleElevationGrid(int cols, int rows, float fallback) {
     MapModel.ContourGrid g = model.new ContourGrid();
     g.cols = max(2, cols);

@@ -248,6 +248,10 @@ class MapModel {
     renderer.drawLabels(app);
   }
 
+  void drawRenderAdvanced(PApplet app, RenderSettings settings, float seaLevel) {
+    renderer.drawRenderAdvanced(app, settings, seaLevel);
+  }
+
   void drawZoneOutlines(PApplet app) {
     renderer.drawZoneOutlines(app);
   }
