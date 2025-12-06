@@ -810,6 +810,33 @@ class MapModel {
     return g;
   }
 
+  ContourGrid getCoastDistanceGrid(int cols, int rows, float seaLevel) {
+    if (cells == null || cells.isEmpty()) return null;
+    if (coastCacheValid &&
+        cachedCoastGrid != null &&
+        cachedCoastSeaLevel == seaLevel &&
+        cachedCoastCols == cols &&
+        cachedCoastRows == rows &&
+        cachedCoastCellCount == cells.size()) {
+      return cachedCoastGrid;
+    }
+
+    ArrayList<PVector[]> coastSegs = collectCoastSegments(seaLevel);
+    if (coastSegs == null || coastSegs.isEmpty()) {
+      coastCacheValid = false;
+      return null;
+    }
+    cachedCoastIndex = new CoastSpatialIndex(minX, minY, maxX, maxY, coastSegs, 80);
+    ContourGrid g = sampleCoastDistanceGrid(cols, rows, seaLevel, cachedCoastIndex);
+    cachedCoastGrid = g;
+    cachedCoastSeaLevel = seaLevel;
+    cachedCoastCols = cols;
+    cachedCoastRows = rows;
+    cachedCoastCellCount = cells.size();
+    coastCacheValid = (g != null);
+    return g;
+  }
+
   void drawSignedContourSet(PApplet app, ContourGrid g, float start, float end, float step, int strokeCol, float strokePx) {
     if (step == 0) return;
     if ((step > 0 && start > end) || (step < 0 && start < end)) return;

@@ -697,19 +697,15 @@ class MapRenderer {
 
     // Water ripples (distance-field contours)
     if (s.waterRippleCount > 0 && s.waterRippleDistancePx > 1e-4f) {
-      ArrayList<PVector[]> coastSegs = model.collectCoastSegments(seaLevel);
-      if (coastSegs != null && !coastSegs.isEmpty()) {
-        MapModel.CoastSpatialIndex idx = model.new CoastSpatialIndex(model.minX, model.minY, model.maxX, model.maxY, coastSegs, 80);
-        int cols = max(80, min(200, (int)(sqrt(max(1, model.cells.size())) * 1.0f)));
-        int rows = cols;
-        MapModel.ContourGrid g = model.sampleCoastDistanceGrid(cols, rows, seaLevel, idx);
-        if (g != null) {
-          float spacingWorld = s.waterRippleDistancePx / max(1e-6f, viewport.zoom);
-          float maxIso = spacingWorld * s.waterRippleCount;
-          int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterContourAlpha01);
-          for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
-            model.drawSignedContourSet(app, g, iso, maxIso, spacingWorld, strokeCol, max(0.8f, s.waterContourSizePx));
-          }
+      int cols = max(80, min(200, (int)(sqrt(max(1, model.cells.size())) * 1.0f)));
+      int rows = cols;
+      MapModel.ContourGrid g = model.getCoastDistanceGrid(cols, rows, seaLevel);
+      if (g != null) {
+        float spacingWorld = s.waterRippleDistancePx / max(1e-6f, viewport.zoom);
+        float maxIso = spacingWorld * s.waterRippleCount;
+        int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterContourAlpha01);
+        for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
+          model.drawSignedContourSet(app, g, iso, maxIso, spacingWorld, strokeCol, max(0.8f, s.waterContourSizePx));
         }
       }
     }
