@@ -32,6 +32,7 @@ Struct :
 (later) option to generate structs
 (later) a way to move already placed structs
 (later) refine the way parameters work (UI, default, selected, etc)
+(later) structures light shading on rendering mode
 
 Labels :
 (later) optionally associate labels with map elements

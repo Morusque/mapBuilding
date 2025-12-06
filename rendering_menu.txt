@@ -12,19 +12,24 @@ menu :
 -- color picker : water base
    default : dark grey, slighly blue
 -- slider : cell borders alpha
-   default 0
+   default 0%
    this is individual cells borders
    should be drawn over biomes fillings but under biomed outlines
 ---- biomes
--- slider : biomes alpha
+-- slider : biomes fill alpha
+   default 50%
    don't show cell borders
 -- slider : biomes saturation
    affects fill and outline
 -- selector : fill type
    values : color (default), pattern (replace color by dither patterns to be defined)
 -- slider : biomes outlines size
-   color is a darker version of biome color, default 0px, max 5px
+   color is same than biome color, default 0px, max 5px
    this should be the outline of whole biome areas (computed, cached), not individual cells
+-- slider : biomes outlines alpha
+   default 100%
+-- checkbox : show underwater biomes
+   default off
 ---- shading
 -- slider : water depth alpha
    darkens deeper water (already implemented)
@@ -37,16 +42,25 @@ menu :
 ---- contours
 -- slider : water contour size
    this is only the single line following closely segments on the coast (already implemented)
-   from 0px to 5px
-   default 2px
-   black
+   from 0px to 5px, default 2px
 -- int slider : number of ripples
    this is about the number of additional distance-field contour lines in water
+   default 0, max 5
 -- slider : ripple distance
    this is the distance in px between each water ripple
+-- color picker : water contours color
+   defines contour and ripples
+   black by default
+-- slider : water contours alpha
+   defines contour and ripples
 -- int slider : elevation lines
    this is the number of levels in the discretisation of elevation contour lines on emerged land only
+   default 0
+   max 24
+-- selector : elevation lines style
+   to be implemented later
 -- slider : elevation lines alpha
+   default 25%
 ---- paths
 -- checkbox : show
 -- slider : saturation
@@ -69,10 +83,14 @@ menu :
    paths names following their angle and size as is done for streets or rivers on a city map
 -- checkbox : show structures
    structure names shown either next to them or on them depending if space allows it
+-- slider : outline alpha
+   white outline around the text
 ---- general
 -- slider : export padding
    as currently implemented
    when in "export" mode should be cropped completely instead of just grayed out
 -- checkbox : antialiasing
    mostly for line smoothing
-
+-- selector : preset
+   collection of default value for this whole menu including some black and white ones
+-- button : apply preset
