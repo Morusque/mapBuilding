@@ -33,6 +33,7 @@ class RenderSettings {
   float biomeFillAlpha01 = 0.5f;
   float biomeSatScale01 = 1.0f;
   RenderFillType biomeFillType = RenderFillType.RENDER_FILL_COLOR;
+  String biomePatternName = "dots01.png";
   float biomeOutlineSizePx = 0.0f;
   float biomeOutlineAlpha01 = 1.0f;
   boolean biomeShowUnderwater = false;

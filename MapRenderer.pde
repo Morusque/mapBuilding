@@ -559,6 +559,39 @@ class MapRenderer {
       }
     }
 
+    // Water ripples (distance-field contours)
+    if (s.waterRippleCount > 0 && s.waterRippleDistancePx > 1e-4f) {
+      ArrayList<PVector[]> coastSegs = model.collectCoastSegments(seaLevel);
+      if (coastSegs != null && !coastSegs.isEmpty()) {
+        MapModel.CoastSpatialIndex idx = model.new CoastSpatialIndex(model.minX, model.minY, model.maxX, model.maxY, coastSegs, 80);
+        int cols = max(80, min(200, (int)(sqrt(max(1, model.cells.size())) * 1.0f)));
+        int rows = cols;
+        MapModel.ContourGrid g = model.sampleCoastDistanceGrid(cols, rows, seaLevel, idx);
+        if (g != null) {
+          float spacingWorld = s.waterRippleDistancePx / max(1e-6f, viewport.zoom);
+          float maxIso = spacingWorld * s.waterRippleCount;
+          int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterContourAlpha01);
+          for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
+            model.drawSignedContourSet(app, g, iso, maxIso, spacingWorld, strokeCol, max(0.8f, s.waterContourSizePx));
+          }
+        }
+      }
+    }
+
+    // Elevation contour lines (land only)
+    if (s.elevationLinesCount > 0 && s.elevationLinesAlpha01 > 1e-4f) {
+      int cols = 90;
+      int rows = 90;
+      MapModel.ContourGrid grid = model.sampleElevationGrid(cols, rows, seaLevel);
+      if (grid != null) {
+        float range = max(1e-4f, grid.max - seaLevel);
+        float step = range / max(1, s.elevationLinesCount);
+        float start = seaLevel + step;
+        int strokeCol = app.color(0, 0, 0, s.elevationLinesAlpha01 * 255);
+        drawContourSet(app, grid, start, grid.max, step, strokeCol);
+      }
+    }
+
     app.popStyle();
   }
 
@@ -588,6 +621,20 @@ class MapRenderer {
     int c = app.color(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1), constrain(a, 0, 1));
     app.popStyle();
     return c;
+  }
+
+  // ------- Pattern cache -------
+  private HashMap<String, PImage> patternCache = new HashMap<String, PImage>();
+
+  PImage getPattern(PApplet app, String name) {
+    if (name == null || name.length() == 0) return null;
+    if (patternCache.containsKey(name)) return patternCache.get(name);
+    String path = "patterns/" + name;
+    PImage img = app.loadImage(path);
+    if (img != null) {
+      patternCache.put(name, img);
+    }
+    return img;
   }
 
   MapModel.ContourGrid sampleElevationGrid(int cols, int rows, float fallback) {
