@@ -38,15 +38,15 @@ float labelsListScroll = 0;
 // Rendering configuration
 RenderSettings renderSettings = new RenderSettings();
 RenderPreset[] renderPresets = buildDefaultRenderPresets();
-boolean renderSectionBaseOpen = true;
-boolean renderSectionBiomesOpen = true;
-boolean renderSectionShadingOpen = true;
-boolean renderSectionContoursOpen = true;
-boolean renderSectionPathsOpen = true;
-boolean renderSectionZonesOpen = true;
-boolean renderSectionStructuresOpen = true;
-boolean renderSectionLabelsOpen = true;
-boolean renderSectionGeneralOpen = true;
+boolean renderSectionBaseOpen = false;
+boolean renderSectionBiomesOpen = false;
+boolean renderSectionShadingOpen = false;
+boolean renderSectionContoursOpen = false;
+boolean renderSectionPathsOpen = false;
+boolean renderSectionZonesOpen = false;
+boolean renderSectionStructuresOpen = false;
+boolean renderSectionLabelsOpen = false;
+boolean renderSectionGeneralOpen = false;
 
 boolean snapWaterEnabled = true;
 boolean snapBiomesEnabled = false;
@@ -580,12 +580,16 @@ String exportPng() {
   // Compute inner world rect from render padding
   float worldW = mapModel.maxX - mapModel.minX;
   float worldH = mapModel.maxY - mapModel.minY;
-  float padX = max(0, renderPaddingPct) * worldW;
-  float padY = max(0, renderPaddingPct) * worldH;
+  if (worldW <= 0 || worldH <= 0) return "Failed: invalid world bounds";
+
+  float safePad = constrain(renderPaddingPct, 0, 0.49f); // avoid collapsing to zero
+  float padX = max(0, safePad) * worldW;
+  float padY = max(0, safePad) * worldH;
   float innerWX = mapModel.minX + padX;
   float innerWY = mapModel.minY + padY;
-  float innerWW = max(1e-6f, worldW - padX * 2);
-  float innerWH = max(1e-6f, worldH - padY * 2);
+  float innerWW = worldW - padX * 2;
+  float innerWH = worldH - padY * 2;
+  if (innerWW <= 1e-6f || innerWH <= 1e-6f) return "Failed: export padding too large";
 
   // Match export buffer aspect to the cropped world so we crop instead of showing letterbox bars.
   float innerAspect = innerWW / innerWH;

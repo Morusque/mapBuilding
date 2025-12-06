@@ -498,7 +498,7 @@ class MapRenderer {
   void drawRenderAdvanced(PApplet app, RenderSettings s, float seaLevel) {
     if (model == null || model.cells == null) return;
     app.pushStyle();
-    if (s.antialiasing) app.smooth(); else app.noSmooth();
+    if (s.antialiasing) app.smooth();
 
     int landBase = hsbColor(app, s.landHue01, s.landSat01, s.landBri01, 1.0f);
     int waterBase = hsbColor(app, s.waterHue01, s.waterSat01, s.waterBri01, 1.0f);
@@ -518,6 +518,12 @@ class MapRenderer {
     // Biome fills
     if (s.biomeFillAlpha01 > 1e-4f) {
       app.noStroke();
+      boolean usePattern = (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN);
+      PImage pattern = null;
+      if (usePattern) {
+        pattern = getPattern(app, s.biomePatternName);
+        usePattern = (pattern != null);
+      }
       for (Cell c : model.cells) {
         if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
         boolean isWater = c.elevation < seaLevel;
@@ -529,9 +535,13 @@ class MapRenderer {
           hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
           col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
         }
-        int a = (int)(255 * s.biomeFillAlpha01);
-        app.fill(col, a);
-        drawPoly(app, c.vertices);
+        float a = s.biomeFillAlpha01;
+        if (usePattern && pattern != null) {
+          drawPatternPoly(app, c.vertices, pattern, col, a);
+        } else {
+          app.fill(col, a * 255);
+          drawPoly(app, c.vertices);
+        }
       }
     }
 
@@ -747,6 +757,31 @@ class MapRenderer {
     int c = app.color(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1), constrain(a, 0, 1));
     app.popStyle();
     return c;
+  }
+
+  private float wrap01(float t) {
+    float f = t - floor(t);
+    return (f < 0) ? f + 1.0f : f;
+  }
+
+  private void drawPatternPoly(PApplet app, ArrayList<PVector> verts, PImage pattern, int tintCol, float alpha01) {
+    if (verts == null || verts.size() < 3 || pattern == null) return;
+    app.pushStyle();
+    app.noStroke();
+    app.textureMode(app.NORMAL);
+    app.textureWrap(app.REPEAT);
+    app.tint(tintCol, constrain(alpha01, 0, 1) * 255);
+    app.beginShape();
+    app.texture(pattern);
+    float pw = max(1, pattern.width);
+    float ph = max(1, pattern.height);
+    for (PVector v : verts) {
+      float u = wrap01(v.x / pw);
+      float vv = wrap01(v.y / ph);
+      app.vertex(v.x, v.y, u, vv);
+    }
+    app.endShape(app.CLOSE);
+    app.popStyle();
   }
 
   // ------- Pattern cache -------

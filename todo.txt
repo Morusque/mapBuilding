@@ -10,6 +10,7 @@ Sites :
 
 Elevation :
 (later) use techtonic logic in addition to perlin
+(later) extend water slider range so we can completely make water disappear or fill the whole screen
 
 Biomes :
 (soon) use selectable generation method for "generate" button : propagation, reset, fill gaps, beaches, mountains, extend, shrink, full
