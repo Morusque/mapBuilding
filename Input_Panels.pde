@@ -404,6 +404,7 @@ void fillBiomeAt(float wx, float wy) {
   Cell c = mapModel.findCellContaining(wx, wy);
   if (c != null) {
     mapModel.floodFillBiomeFromCell(c, activeBiomeIndex);
+    mapModel.renderer.invalidateBiomeOutlineCache();
   }
 }
 
@@ -419,6 +420,7 @@ void paintBiomeBrush(float wx, float wy) {
       c.biomeId = activeBiomeIndex;
     }
   }
+  mapModel.renderer.invalidateBiomeOutlineCache();
 }
 
 void paintZoneAt(float wx, float wy) {

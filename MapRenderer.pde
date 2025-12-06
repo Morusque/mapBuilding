@@ -3,6 +3,12 @@ import java.util.*;
 class MapRenderer {
   private final MapModel model;
 
+  // Cached biome outline edges
+  private ArrayList<PVector[]> cachedBiomeOutlineEdges = new ArrayList<PVector[]>();
+  private ArrayList<Integer> cachedBiomeOutlineBiomes = new ArrayList<Integer>();
+  private int cachedBiomeOutlineCellCount = -1;
+  private int cachedBiomeOutlineChecksum = 0;
+
   MapRenderer(MapModel model) {
     this.model = model;
   }
@@ -558,59 +564,21 @@ class MapRenderer {
 
     // Biome outlines (boundary edges between biomes)
     if (s.biomeOutlineSizePx > 1e-4f && s.biomeOutlineAlpha01 > 1e-4f) {
-      HashSet<String> drawn = new HashSet<String>();
+      ensureBiomeOutlineCache();
       app.noFill();
       app.strokeWeight(max(0.1f, s.biomeOutlineSizePx) / viewport.zoom);
-      for (int ci = 0; ci < model.cells.size(); ci++) {
-        Cell c = model.cells.get(ci);
-        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
-        int biomeId = c.biomeId;
-        int vc = c.vertices.size();
-        for (int e = 0; e < vc; e++) {
-          PVector a = c.vertices.get(e);
-          PVector b = c.vertices.get((e + 1) % vc);
-          String key = undirectedEdgeKey(a, b);
-          if (drawn.contains(key)) continue;
-          drawn.add(key);
-
-          int nbBiome = biomeId;
-          boolean boundary = true;
-          ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
-          if (nbs != null) {
-            for (int nbIdx : nbs) {
-              if (nbIdx < 0 || nbIdx >= model.cells.size()) continue;
-              Cell nb = model.cells.get(nbIdx);
-              if (nb == null || nb.vertices == null) continue;
-              int nv = nb.vertices.size();
-              boolean match = false;
-              for (int j = 0; j < nv; j++) {
-                PVector na = nb.vertices.get(j);
-                PVector nbp = nb.vertices.get((j + 1) % nv);
-                if ((model.distSq(a, na) < 1e-6f && model.distSq(b, nbp) < 1e-6f) ||
-                    (model.distSq(a, nbp) < 1e-6f && model.distSq(b, na) < 1e-6f)) {
-                  nbBiome = nb.biomeId;
-                  match = true;
-                  break;
-                }
-              }
-              if (match) {
-                if (nbBiome == biomeId) boundary = false;
-                break;
-              }
-            }
-          }
-          if (boundary) {
-            int col = landBase;
-            if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size()) {
-              ZoneType zt = model.biomeTypes.get(biomeId);
-              float[] hsb = model.rgbToHSB(zt.col);
-              hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
-              col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
-            }
-            app.stroke(col, s.biomeOutlineAlpha01 * 255);
-            app.line(a.x, a.y, b.x, b.y);
-          }
+      for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
+        PVector[] seg = cachedBiomeOutlineEdges.get(i);
+        int biomeId = (i < cachedBiomeOutlineBiomes.size()) ? cachedBiomeOutlineBiomes.get(i) : -1;
+        int col = landBase;
+        if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size()) {
+          ZoneType zt = model.biomeTypes.get(biomeId);
+          float[] hsb = model.rgbToHSB(zt.col);
+          hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
+          col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
         }
+        app.stroke(col, s.biomeOutlineAlpha01 * 255);
+        app.line(seg[0].x, seg[0].y, seg[1].x, seg[1].y);
       }
     }
 
@@ -792,6 +760,86 @@ class MapRenderer {
       patternCache.put(name, img);
     }
     return img;
+  }
+
+  private void ensureBiomeOutlineCache() {
+    if (model == null || model.cells == null) return;
+    int cellCount = model.cells.size();
+    int checksum = biomeChecksum();
+    if (cellCount == cachedBiomeOutlineCellCount && checksum == cachedBiomeOutlineChecksum) {
+      return;
+    }
+
+    cachedBiomeOutlineEdges.clear();
+    cachedBiomeOutlineBiomes.clear();
+    HashSet<String> drawn = new HashSet<String>();
+    float eps2 = 1e-6f;
+
+    for (int ci = 0; ci < model.cells.size(); ci++) {
+      Cell c = model.cells.get(ci);
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      int biomeId = c.biomeId;
+      int vc = c.vertices.size();
+      for (int e = 0; e < vc; e++) {
+        PVector a = c.vertices.get(e);
+        PVector b = c.vertices.get((e + 1) % vc);
+        String key = undirectedEdgeKey(a, b);
+        if (drawn.contains(key)) continue;
+        drawn.add(key);
+
+        int nbBiome = biomeId;
+        boolean boundary = true;
+        ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
+        if (nbs != null) {
+          for (int nbIdx : nbs) {
+            if (nbIdx < 0 || nbIdx >= model.cells.size()) continue;
+            Cell nb = model.cells.get(nbIdx);
+            if (nb == null || nb.vertices == null) continue;
+            int nv = nb.vertices.size();
+            boolean match = false;
+            for (int j = 0; j < nv; j++) {
+              PVector na = nb.vertices.get(j);
+              PVector nbp = nb.vertices.get((j + 1) % nv);
+              if ((model.distSq(a, na) < eps2 && model.distSq(b, nbp) < eps2) ||
+                  (model.distSq(a, nbp) < eps2 && model.distSq(b, na) < eps2)) {
+                nbBiome = nb.biomeId;
+                match = true;
+                break;
+              }
+            }
+            if (match) {
+              if (nbBiome == biomeId) boundary = false;
+              break;
+            }
+          }
+        }
+
+        if (boundary) {
+          cachedBiomeOutlineEdges.add(new PVector[] { a.copy(), b.copy() });
+          cachedBiomeOutlineBiomes.add(biomeId);
+        }
+      }
+    }
+
+    cachedBiomeOutlineCellCount = cellCount;
+    cachedBiomeOutlineChecksum = checksum;
+  }
+
+  private int biomeChecksum() {
+    if (model == null || model.cells == null) return 0;
+    int sum = 0;
+    for (int i = 0; i < model.cells.size(); i++) {
+      Cell c = model.cells.get(i);
+      sum = 31 * sum + ((c != null) ? c.biomeId : -1);
+    }
+    return sum;
+  }
+
+  void invalidateBiomeOutlineCache() {
+    cachedBiomeOutlineEdges.clear();
+    cachedBiomeOutlineBiomes.clear();
+    cachedBiomeOutlineCellCount = -1;
+    cachedBiomeOutlineChecksum = 0;
   }
 
   MapModel.ContourGrid sampleElevationGrid(int cols, int rows, float fallback) {

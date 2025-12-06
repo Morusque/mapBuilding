@@ -1753,6 +1753,7 @@ class MapModel {
     snapDirty = true;
     voronoiJob = null; // cancel in-flight job
     coastCacheValid = false;
+    renderer.invalidateBiomeOutlineCache();
   }
 
   void ensureVoronoiComputed() {
@@ -2900,11 +2901,17 @@ class MapModel {
         c.biomeId -= 1;
       }
     }
+    renderer.invalidateBiomeOutlineCache();
   }
 
   void removeZone(int index) {
     if (index < 0 || index >= zones.size()) return;
     zones.remove(index);
+  }
+
+  void markRenderCacheDirty() {
+    renderer.invalidateBiomeOutlineCache();
+    coastCacheValid = false;
   }
 
   ArrayList<PVector> findSnapPathBidirectional(String kFrom, String kTo, boolean favorFlat,
