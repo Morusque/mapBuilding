@@ -34,6 +34,20 @@ float zonesListScroll = 0;
 float pathsListScroll = 0;
 float structuresListScroll = 0;
 float labelsListScroll = 0;
+
+// Rendering configuration
+RenderSettings renderSettings = new RenderSettings();
+RenderPreset[] renderPresets = buildDefaultRenderPresets();
+boolean renderSectionBaseOpen = true;
+boolean renderSectionBiomesOpen = true;
+boolean renderSectionShadingOpen = true;
+boolean renderSectionContoursOpen = true;
+boolean renderSectionPathsOpen = true;
+boolean renderSectionZonesOpen = true;
+boolean renderSectionStructuresOpen = true;
+boolean renderSectionLabelsOpen = true;
+boolean renderSectionGeneralOpen = true;
+
 boolean snapWaterEnabled = true;
 boolean snapBiomesEnabled = false;
 boolean snapUnderwaterBiomesEnabled = false;
@@ -193,7 +207,58 @@ final int SLIDER_STRUCT_SELECTED_SAT = 26;
 final int SLIDER_STRUCT_SELECTED_STROKE = 27;
 final int SLIDER_RENDER_PADDING = 28;
 final int SLIDER_EXPORT_SCALE = 29;
+final int SLIDER_RENDER_LAND_H = 30;
+final int SLIDER_RENDER_LAND_S = 31;
+final int SLIDER_RENDER_LAND_B = 32;
+final int SLIDER_RENDER_WATER_H = 33;
+final int SLIDER_RENDER_WATER_S = 34;
+final int SLIDER_RENDER_WATER_B = 35;
+final int SLIDER_RENDER_CELL_BORDER_ALPHA = 36;
+final int SLIDER_RENDER_BIOME_FILL_ALPHA = 37;
+final int SLIDER_RENDER_BIOME_SAT = 38;
+final int SLIDER_RENDER_BIOME_OUTLINE_SIZE = 39;
+final int SLIDER_RENDER_BIOME_OUTLINE_ALPHA = 40;
+final int SLIDER_RENDER_WATER_DEPTH_ALPHA = 41;
+final int SLIDER_RENDER_LIGHT_ALPHA = 42;
+final int SLIDER_RENDER_WATER_CONTOUR_SIZE = 43;
+final int SLIDER_RENDER_WATER_RIPPLE_COUNT = 44;
+final int SLIDER_RENDER_WATER_RIPPLE_DIST = 45;
+final int SLIDER_RENDER_WATER_CONTOUR_H = 46;
+final int SLIDER_RENDER_WATER_CONTOUR_S = 47;
+final int SLIDER_RENDER_WATER_CONTOUR_B = 48;
+final int SLIDER_RENDER_WATER_CONTOUR_ALPHA = 49;
+final int SLIDER_RENDER_ELEV_LINES_COUNT = 50;
+final int SLIDER_RENDER_ELEV_LINES_ALPHA = 51;
+final int SLIDER_RENDER_PATH_SAT = 52;
+final int SLIDER_RENDER_ZONE_ALPHA = 53;
+final int SLIDER_RENDER_ZONE_SAT = 54;
+final int SLIDER_RENDER_LABEL_OUTLINE_ALPHA = 55;
+final int SLIDER_RENDER_LABEL_MIN_SIZE = 56;
+final int SLIDER_RENDER_PRESET_SELECT = 57;
 int activeSlider = SLIDER_NONE;
+
+void applyRenderPreset(int idx) {
+  if (renderPresets == null || renderPresets.length == 0) return;
+  int clamped = constrain(idx, 0, renderPresets.length - 1);
+  RenderPreset p = renderPresets[clamped];
+  if (p == null || p.values == null) return;
+  renderSettings.applyFrom(p.values);
+  renderSettings.activePresetIndex = clamped;
+  // Keep legacy padding in sync until full migration
+  renderPaddingPct = renderSettings.exportPaddingPct;
+  renderShowPaths = renderSettings.showPaths;
+  renderShowStructures = renderSettings.showStructures;
+  renderShowZoneOutlines = renderSettings.zoneStrokeAlpha01 > 0.001f;
+  renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones ||
+                     renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+}
+
+color hsb01ToColor(float h, float s, float b) {
+  colorMode(HSB, 1.0f);
+  int c = color(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1));
+  colorMode(RGB, 255);
+  return c;
+}
 
 void settings() {
   size(1200, 800, P2D);
@@ -203,6 +268,7 @@ void setup() {
   surface.setTitle("Map Editor - Cells + Zones + Paths");
   viewport = new Viewport();
   mapModel = new MapModel();
+  applyRenderPreset(0);
   initBiomeTypes();
   initZones();
   initPathTypes();

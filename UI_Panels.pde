@@ -1823,11 +1823,61 @@ void drawStructuresListPanel() {
 class RenderLayout {
   IntRect panel;
   int titleY;
-  ArrayList<IntRect> checks = new ArrayList<IntRect>();
-  String[] labels;
+  IntRect headerBase;
+  IntRect headerBiomes;
+  IntRect headerShading;
+  IntRect headerContours;
+  IntRect headerPaths;
+  IntRect headerZones;
+  IntRect headerStructures;
+  IntRect headerLabels;
+  IntRect headerGeneral;
+
+  IntRect[] landHSB = new IntRect[3];
+  IntRect[] waterHSB = new IntRect[3];
+  IntRect cellBordersAlphaSlider;
+
+  IntRect biomeFillAlphaSlider;
+  IntRect biomeSatSlider;
+  ArrayList<IntRect> biomeFillTypeButtons = new ArrayList<IntRect>();
+  IntRect biomeOutlineSizeSlider;
+  IntRect biomeOutlineAlphaSlider;
+  IntRect biomeUnderwaterCheckbox;
+
+  IntRect waterDepthAlphaSlider;
+  IntRect lightAlphaSlider;
   IntRect lightAzimuthSlider;
   IntRect lightAltitudeSlider;
-  IntRect paddingSlider;
+
+  IntRect waterContourSizeSlider;
+  IntRect waterRippleCountSlider;
+  IntRect waterRippleDistanceSlider;
+  IntRect[] waterContourHSB = new IntRect[3];
+  IntRect waterContourAlphaSlider;
+  IntRect elevationLinesCountSlider;
+  ArrayList<IntRect> elevationLineStyleButtons = new ArrayList<IntRect>();
+  IntRect elevationLinesAlphaSlider;
+
+  IntRect pathsShowCheckbox;
+  IntRect pathSatSlider;
+
+  IntRect zoneAlphaSlider;
+  IntRect zoneSatSlider;
+
+  IntRect structuresShowCheckbox;
+  IntRect structuresMergeCheckbox;
+
+  IntRect labelsArbitraryCheckbox;
+  IntRect labelsZonesCheckbox;
+  IntRect labelsPathsCheckbox;
+  IntRect labelsStructuresCheckbox;
+  IntRect labelsOutlineAlphaSlider;
+  IntRect labelsMinSizeSlider;
+
+  IntRect exportPaddingSlider;
+  IntRect antialiasCheckbox;
+  IntRect presetSelector;
+  IntRect presetApplyBtn;
 }
 
 RenderLayout buildRenderLayout() {
@@ -1838,26 +1888,169 @@ RenderLayout buildRenderLayout() {
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
-  int sliderW = 200;
-  l.labels = new String[] {
-    "Biomes", "Zones", "Water", "Water contours",
-    "Elevation", "Elevation contours",
-    "Paths", "Labels", "Structures", "Black/White"
-  };
-  for (int i = 0; i < l.labels.length; i++) {
-    l.checks.add(new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE));
-    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+  int headerW = PANEL_W - 2 * PANEL_PADDING;
+  int shortSliderW = 90;
+  int midSliderW = 160;
+  int longSliderW = 200;
+  int hsbGap = 8;
 
-    if (i == 4) { // after "Elevation"
-      l.lightAzimuthSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
-      curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-      l.lightAltitudeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
-      curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
-    }
+  // ----- Base -----
+  l.headerBase = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionBaseOpen) {
+    int yHue = curY;
+    l.landHSB[0] = new IntRect(innerX, yHue + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    l.landHSB[1] = new IntRect(innerX + (shortSliderW + hsbGap), yHue + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    l.landHSB[2] = new IntRect(innerX + 2 * (shortSliderW + hsbGap), yHue + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    int yWater = curY;
+    l.waterHSB[0] = new IntRect(innerX, yWater + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    l.waterHSB[1] = new IntRect(innerX + (shortSliderW + hsbGap), yWater + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    l.waterHSB[2] = new IntRect(innerX + 2 * (shortSliderW + hsbGap), yWater + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.cellBordersAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
-  l.paddingSlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  // ----- Biomes -----
+  l.headerBiomes = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionBiomesOpen) {
+    l.biomeFillAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.biomeSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    int btnW = 90;
+    for (int i = 0; i < 2; i++) {
+      l.biomeFillTypeButtons.add(new IntRect(innerX + i * (btnW + 8), curY, btnW, PANEL_BUTTON_H));
+    }
+    curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+    l.biomeOutlineSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.biomeOutlineAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.biomeUnderwaterCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
+  }
+
+  // ----- Shading -----
+  l.headerShading = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionShadingOpen) {
+    l.waterDepthAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.lightAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.lightAzimuthSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.lightAltitudeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  }
+
+  // ----- Contours -----
+  l.headerContours = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionContoursOpen) {
+    l.waterContourSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterRippleCountSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterRippleDistanceSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    int yColor = curY;
+    l.waterContourHSB[0] = new IntRect(innerX, yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    l.waterContourHSB[1] = new IntRect(innerX + (shortSliderW + hsbGap), yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    l.waterContourHSB[2] = new IntRect(innerX + 2 * (shortSliderW + hsbGap), yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterContourAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.elevationLinesCountSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    int styleBtnW = 110;
+    l.elevationLineStyleButtons.add(new IntRect(innerX, curY, styleBtnW, PANEL_BUTTON_H));
+    curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+    l.elevationLinesAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  }
+
+  // ----- Paths -----
+  l.headerPaths = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionPathsOpen) {
+    l.pathsShowCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.pathSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  }
+
+  // ----- Zones -----
+  l.headerZones = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionZonesOpen) {
+    l.zoneAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.zoneSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  }
+
+  // ----- Structures -----
+  l.headerStructures = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionStructuresOpen) {
+    l.structuresShowCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.structuresMergeCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
+  }
+
+  // ----- Labels -----
+  l.headerLabels = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionLabelsOpen) {
+    l.labelsArbitraryCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.labelsZonesCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.labelsPathsCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.labelsStructuresCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.labelsOutlineAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.labelsMinSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  }
+
+  // ----- General -----
+  l.headerGeneral = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionGeneralOpen) {
+    l.exportPaddingSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.antialiasCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.presetSelector = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.presetApplyBtn = new IntRect(innerX, curY, 110, PANEL_BUTTON_H);
+    curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
+  }
 
   curY += PANEL_PADDING + hintHeight(2);
   l.panel.h = curY - l.panel.y;
@@ -1872,82 +2065,161 @@ void drawRenderPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Rendering", labelX, layout.titleY);
+  textAlign(LEFT, CENTER);
+  drawControlsHint(layout.panel, "right-click: pan", "wheel: zoom");
 
-  int idxBiomes = 0;
-  int idxZones = 1;
-  int idxWater = 2;
-  int idxWaterContours = 3;
-  int idxElevation = 4;
-  int idxElevationContours = 5;
-  int idxPaths = 6;
-  int idxLabels = 7;
-  int idxStructures = 8;
-  int idxBW = 9;
-
-  drawCheckbox(layout.checks.get(idxBiomes).x, layout.checks.get(idxBiomes).y, layout.checks.get(idxBiomes).w, renderShowZones, "Biomes");
-  drawCheckbox(layout.checks.get(idxZones).x, layout.checks.get(idxZones).y, layout.checks.get(idxZones).w, renderShowZoneOutlines, "Zones");
-  drawCheckbox(layout.checks.get(idxWater).x, layout.checks.get(idxWater).y, layout.checks.get(idxWater).w, renderShowWater, "Water");
-  drawCheckbox(layout.checks.get(idxWaterContours).x, layout.checks.get(idxWaterContours).y, layout.checks.get(idxWaterContours).w, renderWaterContours, "Water contours");
-  drawCheckbox(layout.checks.get(idxElevation).x, layout.checks.get(idxElevation).y, layout.checks.get(idxElevation).w, renderShowElevation, "Elevation");
-  drawCheckbox(layout.checks.get(idxElevationContours).x, layout.checks.get(idxElevationContours).y, layout.checks.get(idxElevationContours).w, renderElevationContours, "Elevation contours");
-  drawCheckbox(layout.checks.get(idxBW).x, layout.checks.get(idxBW).y, layout.checks.get(idxBW).w, renderBlackWhite, "Black/White");
-
-  // Lighting sliders (render mode only)
-  if (layout.lightAzimuthSlider != null) {
-    IntRect az = layout.lightAzimuthSlider;
-    stroke(160);
-    fill(230);
-    rect(az.x, az.y, az.w, az.h, 4);
-    float tAz = constrain(renderLightAzimuthDeg / 360.0f, 0, 1);
-    float ax = az.x + tAz * az.w;
-    fill(40);
-    noStroke();
-    ellipse(ax, az.y + az.h / 2.0f, az.h * 0.9f, az.h * 0.9f);
-    fill(0);
-    textAlign(LEFT, BOTTOM);
-    text("Light azimuth (" + nf(renderLightAzimuthDeg, 1, 0) + " deg)", az.x, az.y - 4);
+  drawSectionHeader(layout.headerBase, "Base", renderSectionBaseOpen);
+  if (renderSectionBaseOpen) {
+    drawHSBRow(layout.landHSB, "Land base H / S / B", renderSettings.landHue01, renderSettings.landSat01, renderSettings.landBri01);
+    drawHSBRow(layout.waterHSB, "Water base H / S / B", renderSettings.waterHue01, renderSettings.waterSat01, renderSettings.waterBri01);
+    drawSlider(layout.cellBordersAlphaSlider, renderSettings.cellBorderAlpha01, "Cell borders alpha (" + nf(renderSettings.cellBorderAlpha01 * 100, 1, 0) + "%)");
   }
 
-  if (layout.lightAltitudeSlider != null) {
-    IntRect alt = layout.lightAltitudeSlider;
-    stroke(160);
-    fill(230);
-    rect(alt.x, alt.y, alt.w, alt.h, 4);
-    float tAlt = constrain(map(renderLightAltitudeDeg, 5.0f, 80.0f, 0, 1), 0, 1);
-    float altHandleX = alt.x + tAlt * alt.w;
-    fill(40);
-    noStroke();
-    ellipse(altHandleX, alt.y + alt.h / 2.0f, alt.h * 0.9f, alt.h * 0.9f);
-    fill(0);
-    textAlign(LEFT, BOTTOM);
-    text("Light altitude (" + nf(renderLightAltitudeDeg, 1, 0) + " deg)", alt.x, alt.y - 4);
-    textAlign(LEFT, TOP);
+  drawSectionHeader(layout.headerBiomes, "Biomes", renderSectionBiomesOpen);
+  if (renderSectionBiomesOpen) {
+    drawSlider(layout.biomeFillAlphaSlider, renderSettings.biomeFillAlpha01, "Biomes fill alpha (" + nf(renderSettings.biomeFillAlpha01 * 100, 1, 0) + "%)");
+    drawSlider(layout.biomeSatSlider, renderSettings.biomeSatScale01, "Biomes saturation (" + nf(renderSettings.biomeSatScale01 * 100, 1, 0) + "%)");
+    String[] fillLabels = { "Color", "Pattern" };
+    for (int i = 0; i < layout.biomeFillTypeButtons.size(); i++) {
+      IntRect b = layout.biomeFillTypeButtons.get(i);
+      boolean active = (renderSettings.biomeFillType == ((i == 0) ? RenderFillType.RENDER_FILL_COLOR : RenderFillType.RENDER_FILL_PATTERN));
+      drawBevelButton(b.x, b.y, b.w, b.h, active);
+      fill(10);
+      textAlign(CENTER, CENTER);
+      text(fillLabels[i], b.x + b.w / 2, b.y + b.h / 2);
+    }
+    drawSlider(layout.biomeOutlineSizeSlider, constrain(renderSettings.biomeOutlineSizePx / 5.0f, 0, 1), "Biomes outlines size (" + nf(renderSettings.biomeOutlineSizePx, 1, 1) + " px)");
+    drawSlider(layout.biomeOutlineAlphaSlider, renderSettings.biomeOutlineAlpha01, "Biomes outlines alpha (" + nf(renderSettings.biomeOutlineAlpha01 * 100, 1, 0) + "%)");
+    drawCheckbox(layout.biomeUnderwaterCheckbox.x, layout.biomeUnderwaterCheckbox.y, layout.biomeUnderwaterCheckbox.w, renderSettings.biomeShowUnderwater, "Show underwater biomes");
   }
 
-  // Export padding slider
-  if (layout.paddingSlider != null) {
-    IntRect pad = layout.paddingSlider;
-    stroke(160);
-    fill(230);
-    rect(pad.x, pad.y, pad.w, pad.h, 4);
-    float padNorm = constrain(map(renderPaddingPct, 0.0f, 0.10f, 0, 1), 0, 1);
-    float px = pad.x + padNorm * pad.w;
-    fill(40);
-    noStroke();
-    ellipse(px, pad.y + pad.h / 2.0f, pad.h * 0.9f, pad.h * 0.9f);
-    fill(0);
-    textAlign(LEFT, BOTTOM);
-    text("Export padding (" + nf(renderPaddingPct * 100.0f, 1, 1) + "% of screen)", pad.x, pad.y - 4);
+  drawSectionHeader(layout.headerShading, "Shading", renderSectionShadingOpen);
+  if (renderSectionShadingOpen) {
+    drawSlider(layout.waterDepthAlphaSlider, renderSettings.waterDepthAlpha01, "Water depth alpha (" + nf(renderSettings.waterDepthAlpha01 * 100, 1, 0) + "%)");
+    drawSlider(layout.lightAlphaSlider, renderSettings.elevationLightAlpha01, "Elevation light alpha (" + nf(renderSettings.elevationLightAlpha01 * 100, 1, 0) + "%)");
+    float tAz = constrain(renderSettings.elevationLightAzimuthDeg / 360.0f, 0, 1);
+    drawSlider(layout.lightAzimuthSlider, tAz, "Light azimuth (" + nf(renderSettings.elevationLightAzimuthDeg, 1, 0) + " deg)");
+    float tAlt = constrain(map(renderSettings.elevationLightAltitudeDeg, 5.0f, 80.0f, 0, 1), 0, 1);
+    drawSlider(layout.lightAltitudeSlider, tAlt, "Light altitude (" + nf(renderSettings.elevationLightAltitudeDeg, 1, 0) + " deg)");
   }
 
-  drawCheckbox(layout.checks.get(idxPaths).x, layout.checks.get(idxPaths).y, layout.checks.get(idxPaths).w, renderShowPaths, "Paths");
-  drawCheckbox(layout.checks.get(idxLabels).x, layout.checks.get(idxLabels).y, layout.checks.get(idxLabels).w, renderShowLabels, "Labels");
-  drawCheckbox(layout.checks.get(idxStructures).x, layout.checks.get(idxStructures).y, layout.checks.get(idxStructures).w, renderShowStructures, "Structures");
-  // Black/white toggle already drawn above with idxBW
+  drawSectionHeader(layout.headerContours, "Contours", renderSectionContoursOpen);
+  if (renderSectionContoursOpen) {
+    drawSlider(layout.waterContourSizeSlider, constrain(renderSettings.waterContourSizePx / 5.0f, 0, 1), "Water contour size (" + nf(renderSettings.waterContourSizePx, 1, 1) + " px)");
+    drawSlider(layout.waterRippleCountSlider, constrain(renderSettings.waterRippleCount / 5.0f, 0, 1), "Number of ripples (" + renderSettings.waterRippleCount + ")");
+    drawSlider(layout.waterRippleDistanceSlider, constrain(renderSettings.waterRippleDistancePx / 40.0f, 0, 1), "Ripple distance (" + nf(renderSettings.waterRippleDistancePx, 1, 1) + " px)");
+    drawHSBRow(layout.waterContourHSB, "Water contours H / S / B", renderSettings.waterContourHue01, renderSettings.waterContourSat01, renderSettings.waterContourBri01);
+    drawSlider(layout.waterContourAlphaSlider, renderSettings.waterContourAlpha01, "Water contours alpha (" + nf(renderSettings.waterContourAlpha01 * 100, 1, 0) + "%)");
+    float elevCountNorm = constrain(renderSettings.elevationLinesCount / 24.0f, 0, 1);
+    drawSlider(layout.elevationLinesCountSlider, elevCountNorm, "Elevation lines (" + renderSettings.elevationLinesCount + ")");
+    if (!layout.elevationLineStyleButtons.isEmpty()) {
+      IntRect b = layout.elevationLineStyleButtons.get(0);
+      drawBevelButton(b.x, b.y, b.w, b.h, true);
+      fill(10);
+      textAlign(CENTER, CENTER);
+      text("Style: Basic", b.x + b.w / 2, b.y + b.h / 2);
+    }
+    drawSlider(layout.elevationLinesAlphaSlider, renderSettings.elevationLinesAlpha01, "Elevation lines alpha (" + nf(renderSettings.elevationLinesAlpha01 * 100, 1, 0) + "%)");
+  }
 
-  drawControlsHint(layout.panel,
-                   "right-click: pan",
-                   "wheel: zoom");
+  drawSectionHeader(layout.headerPaths, "Paths", renderSectionPathsOpen);
+  if (renderSectionPathsOpen) {
+    drawCheckbox(layout.pathsShowCheckbox.x, layout.pathsShowCheckbox.y, layout.pathsShowCheckbox.w, renderSettings.showPaths, "Show paths");
+    drawSlider(layout.pathSatSlider, renderSettings.pathSatScale01, "Paths saturation (" + nf(renderSettings.pathSatScale01 * 100, 1, 0) + "%)");
+  }
+
+  drawSectionHeader(layout.headerZones, "Zones", renderSectionZonesOpen);
+  if (renderSectionZonesOpen) {
+    drawSlider(layout.zoneAlphaSlider, renderSettings.zoneStrokeAlpha01, "Zone lines alpha (" + nf(renderSettings.zoneStrokeAlpha01 * 100, 1, 0) + "%)");
+    drawSlider(layout.zoneSatSlider, renderSettings.zoneStrokeSatScale01, "Zone lines saturation (" + nf(renderSettings.zoneStrokeSatScale01 * 100, 1, 0) + "%)");
+  }
+
+  drawSectionHeader(layout.headerStructures, "Structures", renderSectionStructuresOpen);
+  if (renderSectionStructuresOpen) {
+    drawCheckbox(layout.structuresShowCheckbox.x, layout.structuresShowCheckbox.y, layout.structuresShowCheckbox.w, renderSettings.showStructures, "Show structures");
+    drawCheckbox(layout.structuresMergeCheckbox.x, layout.structuresMergeCheckbox.y, layout.structuresMergeCheckbox.w, renderSettings.mergeStructures, "Merge structures (later)");
+  }
+
+  drawSectionHeader(layout.headerLabels, "Labels", renderSectionLabelsOpen);
+  if (renderSectionLabelsOpen) {
+    drawCheckbox(layout.labelsArbitraryCheckbox.x, layout.labelsArbitraryCheckbox.y, layout.labelsArbitraryCheckbox.w, renderSettings.showLabelsArbitrary, "Show arbitrary");
+    drawCheckbox(layout.labelsZonesCheckbox.x, layout.labelsZonesCheckbox.y, layout.labelsZonesCheckbox.w, renderSettings.showLabelsZones, "Show zones");
+    drawCheckbox(layout.labelsPathsCheckbox.x, layout.labelsPathsCheckbox.y, layout.labelsPathsCheckbox.w, renderSettings.showLabelsPaths, "Show paths");
+    drawCheckbox(layout.labelsStructuresCheckbox.x, layout.labelsStructuresCheckbox.y, layout.labelsStructuresCheckbox.w, renderSettings.showLabelsStructures, "Show structures");
+    drawSlider(layout.labelsOutlineAlphaSlider, renderSettings.labelOutlineAlpha01, "Label outline alpha (" + nf(renderSettings.labelOutlineAlpha01 * 100, 1, 0) + "%)");
+    float labelMinNorm = constrain((renderSettings.labelMinFontPx - 6.0f) / (32.0f - 6.0f), 0, 1);
+    drawSlider(layout.labelsMinSizeSlider, labelMinNorm, "Label min size (" + nf(renderSettings.labelMinFontPx, 1, 1) + " px)");
+  }
+
+  drawSectionHeader(layout.headerGeneral, "General", renderSectionGeneralOpen);
+  if (renderSectionGeneralOpen) {
+    drawSlider(layout.exportPaddingSlider, constrain(renderSettings.exportPaddingPct / 0.10f, 0, 1), "Export padding (" + nf(renderSettings.exportPaddingPct * 100.0f, 1, 1) + "%)");
+    drawCheckbox(layout.antialiasCheckbox.x, layout.antialiasCheckbox.y, layout.antialiasCheckbox.w, renderSettings.antialiasing, "Antialiasing");
+
+    // Preset selector
+    if (renderPresets != null && renderPresets.length > 0) {
+      IntRect ps = layout.presetSelector;
+      stroke(160);
+      fill(230);
+      rect(ps.x, ps.y, ps.w, ps.h, 4);
+      int n = renderPresets.length;
+      int maxIdx = max(1, n - 1);
+      float t = constrain(renderSettings.activePresetIndex / (float)maxIdx, 0, 1);
+      float handleX = ps.x + t * ps.w;
+      fill(40);
+      noStroke();
+      ellipse(handleX, ps.y + ps.h / 2.0f, ps.h * 0.9f, ps.h * 0.9f);
+      fill(0);
+      textAlign(LEFT, BOTTOM);
+      String presetName = renderPresets[renderSettings.activePresetIndex].name;
+      text("Preset: " + presetName, ps.x, ps.y - 4);
+    }
+
+    if (layout.presetApplyBtn != null) {
+      drawBevelButton(layout.presetApplyBtn.x, layout.presetApplyBtn.y, layout.presetApplyBtn.w, layout.presetApplyBtn.h, false);
+      fill(10);
+      textAlign(CENTER, CENTER);
+      text("Apply preset", layout.presetApplyBtn.x + layout.presetApplyBtn.w / 2, layout.presetApplyBtn.y + layout.presetApplyBtn.h / 2);
+    }
+  }
+}
+
+void drawSectionHeader(IntRect header, String label, boolean isOpen) {
+  if (header == null) return;
+  drawBevelButton(header.x, header.y, header.w, header.h, false);
+  fill(10);
+  textAlign(LEFT, CENTER);
+  String caret = isOpen ? "-" : "+";
+  text(caret + " " + label, header.x + 8, header.y + header.h / 2);
+}
+
+void drawSlider(IntRect r, float tNorm, String label) {
+  if (r == null) return;
+  stroke(160);
+  fill(230);
+  rect(r.x, r.y, r.w, r.h, 4);
+  float t = constrain(tNorm, 0, 1);
+  float sx = r.x + t * r.w;
+  fill(40);
+  noStroke();
+  ellipse(sx, r.y + r.h / 2.0f, r.h * 0.9f, r.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text(label, r.x, r.y - 4);
+}
+
+void drawHSBRow(IntRect[] sliders, String label, float h, float s, float b) {
+  if (sliders == null || sliders.length < 3) return;
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text(label, sliders[0].x, sliders[0].y - 4);
+  String[] names = { "H", "S", "B" };
+  float[] vals = { h, s, b };
+  for (int i = 0; i < 3; i++) {
+    IntRect r = sliders[i];
+    if (r == null) continue;
+    drawSlider(r, vals[i], names[i]);
+  }
 }
 
 // ---------- UI helpers ----------

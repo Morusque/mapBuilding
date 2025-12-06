@@ -1051,51 +1051,256 @@ boolean handleStructuresListPanelClick(int mx, int my) {
 boolean handleRenderPanelClick(int mx, int my) {
   if (!isInRenderPanel(mx, my)) return false;
   RenderLayout layout = buildRenderLayout();
+  // Section toggles
+  if (layout.headerBase.contains(mx, my)) { renderSectionBaseOpen = !renderSectionBaseOpen; return true; }
+  if (layout.headerBiomes.contains(mx, my)) { renderSectionBiomesOpen = !renderSectionBiomesOpen; return true; }
+  if (layout.headerShading.contains(mx, my)) { renderSectionShadingOpen = !renderSectionShadingOpen; return true; }
+  if (layout.headerContours.contains(mx, my)) { renderSectionContoursOpen = !renderSectionContoursOpen; return true; }
+  if (layout.headerPaths.contains(mx, my)) { renderSectionPathsOpen = !renderSectionPathsOpen; return true; }
+  if (layout.headerZones.contains(mx, my)) { renderSectionZonesOpen = !renderSectionZonesOpen; return true; }
+  if (layout.headerStructures.contains(mx, my)) { renderSectionStructuresOpen = !renderSectionStructuresOpen; return true; }
+  if (layout.headerLabels.contains(mx, my)) { renderSectionLabelsOpen = !renderSectionLabelsOpen; return true; }
+  if (layout.headerGeneral.contains(mx, my)) { renderSectionGeneralOpen = !renderSectionGeneralOpen; return true; }
 
-  int idxBiomes = 0;
-  int idxZones = 1;
-  int idxWater = 2;
-  int idxWaterContours = 3;
-  int idxElevation = 4;
-  int idxElevationContours = 5;
-  int idxPaths = 6;
-  int idxLabels = 7;
-  int idxStructures = 8;
-  int idxBW = 9;
-
-  // zones, water, elevation, paths, labels, structures
-  if (layout.checks.get(idxBiomes).contains(mx, my)) { renderShowZones = !renderShowZones; return true; }
-  if (layout.checks.get(idxZones).contains(mx, my)) { renderShowZoneOutlines = !renderShowZoneOutlines; return true; }
-  if (layout.checks.get(idxWater).contains(mx, my)) { renderShowWater = !renderShowWater; return true; }
-  if (layout.checks.get(idxWaterContours).contains(mx, my)) { renderWaterContours = !renderWaterContours; return true; }
-  if (layout.checks.get(idxElevation).contains(mx, my)) { renderShowElevation = !renderShowElevation; return true; }
-  if (layout.checks.get(idxElevationContours).contains(mx, my)) { renderElevationContours = !renderElevationContours; return true; }
-
-  // Lighting sliders under Elevation
-  if (layout.lightAzimuthSlider != null && layout.lightAzimuthSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.lightAzimuthSlider.x) / (float)layout.lightAzimuthSlider.w, 0, 1);
-    renderLightAzimuthDeg = constrain(t * 360.0f, 0, 360);
-    activeSlider = SLIDER_RENDER_LIGHT_AZIMUTH;
-    return true;
-  }
-  if (layout.lightAltitudeSlider != null && layout.lightAltitudeSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.lightAltitudeSlider.x) / (float)layout.lightAltitudeSlider.w, 0, 1);
-    renderLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
-    activeSlider = SLIDER_RENDER_LIGHT_ALTITUDE;
-    return true;
+  // Base
+  if (renderSectionBaseOpen) {
+    if (layout.landHSB[0].contains(mx, my)) { renderSettings.landHue01 = constrain((mx - layout.landHSB[0].x) / (float)layout.landHSB[0].w, 0, 1); activeSlider = SLIDER_RENDER_LAND_H; return true; }
+    if (layout.landHSB[1].contains(mx, my)) { renderSettings.landSat01 = constrain((mx - layout.landHSB[1].x) / (float)layout.landHSB[1].w, 0, 1); activeSlider = SLIDER_RENDER_LAND_S; return true; }
+    if (layout.landHSB[2].contains(mx, my)) { renderSettings.landBri01 = constrain((mx - layout.landHSB[2].x) / (float)layout.landHSB[2].w, 0, 1); activeSlider = SLIDER_RENDER_LAND_B; return true; }
+    if (layout.waterHSB[0].contains(mx, my)) { renderSettings.waterHue01 = constrain((mx - layout.waterHSB[0].x) / (float)layout.waterHSB[0].w, 0, 1); activeSlider = SLIDER_RENDER_WATER_H; return true; }
+    if (layout.waterHSB[1].contains(mx, my)) { renderSettings.waterSat01 = constrain((mx - layout.waterHSB[1].x) / (float)layout.waterHSB[1].w, 0, 1); activeSlider = SLIDER_RENDER_WATER_S; return true; }
+    if (layout.waterHSB[2].contains(mx, my)) { renderSettings.waterBri01 = constrain((mx - layout.waterHSB[2].x) / (float)layout.waterHSB[2].w, 0, 1); activeSlider = SLIDER_RENDER_WATER_B; return true; }
+    if (layout.cellBordersAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.cellBordersAlphaSlider.x) / (float)layout.cellBordersAlphaSlider.w, 0, 1);
+      renderSettings.cellBorderAlpha01 = t;
+      activeSlider = SLIDER_RENDER_CELL_BORDER_ALPHA;
+      return true;
+    }
   }
 
-  if (layout.paddingSlider != null && layout.paddingSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.paddingSlider.x) / (float)layout.paddingSlider.w, 0, 1);
-    renderPaddingPct = constrain(t * 0.10f, 0, 0.10f);
-    activeSlider = SLIDER_RENDER_PADDING;
-    return true;
+  // Biomes
+  if (renderSectionBiomesOpen) {
+    if (layout.biomeFillAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.biomeFillAlphaSlider.x) / (float)layout.biomeFillAlphaSlider.w, 0, 1);
+      renderSettings.biomeFillAlpha01 = t;
+      activeSlider = SLIDER_RENDER_BIOME_FILL_ALPHA;
+      return true;
+    }
+    if (layout.biomeSatSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.biomeSatSlider.x) / (float)layout.biomeSatSlider.w, 0, 1);
+      renderSettings.biomeSatScale01 = t;
+      activeSlider = SLIDER_RENDER_BIOME_SAT;
+      return true;
+    }
+    for (int i = 0; i < layout.biomeFillTypeButtons.size(); i++) {
+      IntRect b = layout.biomeFillTypeButtons.get(i);
+      if (b.contains(mx, my)) {
+        renderSettings.biomeFillType = (i == 0) ? RenderFillType.RENDER_FILL_COLOR : RenderFillType.RENDER_FILL_PATTERN;
+        return true;
+      }
+    }
+    if (layout.biomeOutlineSizeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.biomeOutlineSizeSlider.x) / (float)layout.biomeOutlineSizeSlider.w, 0, 1);
+      renderSettings.biomeOutlineSizePx = constrain(t * 5.0f, 0, 5.0f);
+      activeSlider = SLIDER_RENDER_BIOME_OUTLINE_SIZE;
+      return true;
+    }
+    if (layout.biomeOutlineAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.biomeOutlineAlphaSlider.x) / (float)layout.biomeOutlineAlphaSlider.w, 0, 1);
+      renderSettings.biomeOutlineAlpha01 = t;
+      activeSlider = SLIDER_RENDER_BIOME_OUTLINE_ALPHA;
+      return true;
+    }
+    if (layout.biomeUnderwaterCheckbox.contains(mx, my)) {
+      renderSettings.biomeShowUnderwater = !renderSettings.biomeShowUnderwater;
+      return true;
+    }
   }
 
-  if (layout.checks.get(idxPaths).contains(mx, my)) { renderShowPaths = !renderShowPaths; return true; }
-  if (layout.checks.get(idxLabels).contains(mx, my)) { renderShowLabels = !renderShowLabels; return true; }
-  if (layout.checks.get(idxStructures).contains(mx, my)) { renderShowStructures = !renderShowStructures; return true; }
-  if (layout.checks.size() > idxBW && layout.checks.get(idxBW).contains(mx, my)) { renderBlackWhite = !renderBlackWhite; return true; }
+  // Shading
+  if (renderSectionShadingOpen) {
+    if (layout.waterDepthAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterDepthAlphaSlider.x) / (float)layout.waterDepthAlphaSlider.w, 0, 1);
+      renderSettings.waterDepthAlpha01 = t;
+      activeSlider = SLIDER_RENDER_WATER_DEPTH_ALPHA;
+      return true;
+    }
+    if (layout.lightAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.lightAlphaSlider.x) / (float)layout.lightAlphaSlider.w, 0, 1);
+      renderSettings.elevationLightAlpha01 = t;
+      activeSlider = SLIDER_RENDER_LIGHT_ALPHA;
+      return true;
+    }
+    if (layout.lightAzimuthSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.lightAzimuthSlider.x) / (float)layout.lightAzimuthSlider.w, 0, 1);
+      renderSettings.elevationLightAzimuthDeg = constrain(t * 360.0f, 0, 360.0f);
+      activeSlider = SLIDER_RENDER_LIGHT_AZIMUTH;
+      return true;
+    }
+    if (layout.lightAltitudeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.lightAltitudeSlider.x) / (float)layout.lightAltitudeSlider.w, 0, 1);
+      renderSettings.elevationLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
+      activeSlider = SLIDER_RENDER_LIGHT_ALTITUDE;
+      return true;
+    }
+  }
+
+  // Contours
+  if (renderSectionContoursOpen) {
+    if (layout.waterContourSizeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterContourSizeSlider.x) / (float)layout.waterContourSizeSlider.w, 0, 1);
+      renderSettings.waterContourSizePx = constrain(t * 5.0f, 0, 5.0f);
+      activeSlider = SLIDER_RENDER_WATER_CONTOUR_SIZE;
+      return true;
+    }
+    if (layout.waterRippleCountSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterRippleCountSlider.x) / (float)layout.waterRippleCountSlider.w, 0, 1);
+      renderSettings.waterRippleCount = constrain(round(t * 5.0f), 0, 5);
+      activeSlider = SLIDER_RENDER_WATER_RIPPLE_COUNT;
+      return true;
+    }
+    if (layout.waterRippleDistanceSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterRippleDistanceSlider.x) / (float)layout.waterRippleDistanceSlider.w, 0, 1);
+      renderSettings.waterRippleDistancePx = constrain(4.0f + t * (40.0f - 4.0f), 4.0f, 40.0f);
+      activeSlider = SLIDER_RENDER_WATER_RIPPLE_DIST;
+      return true;
+    }
+    if (layout.waterContourHSB[0].contains(mx, my)) { renderSettings.waterContourHue01 = constrain((mx - layout.waterContourHSB[0].x) / (float)layout.waterContourHSB[0].w, 0, 1); activeSlider = SLIDER_RENDER_WATER_CONTOUR_H; return true; }
+    if (layout.waterContourHSB[1].contains(mx, my)) { renderSettings.waterContourSat01 = constrain((mx - layout.waterContourHSB[1].x) / (float)layout.waterContourHSB[1].w, 0, 1); activeSlider = SLIDER_RENDER_WATER_CONTOUR_S; return true; }
+    if (layout.waterContourHSB[2].contains(mx, my)) { renderSettings.waterContourBri01 = constrain((mx - layout.waterContourHSB[2].x) / (float)layout.waterContourHSB[2].w, 0, 1); activeSlider = SLIDER_RENDER_WATER_CONTOUR_B; return true; }
+    if (layout.waterContourAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterContourAlphaSlider.x) / (float)layout.waterContourAlphaSlider.w, 0, 1);
+      renderSettings.waterContourAlpha01 = t;
+      activeSlider = SLIDER_RENDER_WATER_CONTOUR_ALPHA;
+      return true;
+    }
+    if (layout.elevationLinesCountSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.elevationLinesCountSlider.x) / (float)layout.elevationLinesCountSlider.w, 0, 1);
+      renderSettings.elevationLinesCount = constrain(round(t * 24.0f), 0, 24);
+      activeSlider = SLIDER_RENDER_ELEV_LINES_COUNT;
+      return true;
+    }
+    if (layout.elevationLinesAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.elevationLinesAlphaSlider.x) / (float)layout.elevationLinesAlphaSlider.w, 0, 1);
+      renderSettings.elevationLinesAlpha01 = t;
+      activeSlider = SLIDER_RENDER_ELEV_LINES_ALPHA;
+      return true;
+    }
+    for (IntRect b : layout.elevationLineStyleButtons) {
+      if (b.contains(mx, my)) {
+        showNotice("Elevation line styles will come later.");
+        return true;
+      }
+    }
+  }
+
+  // Paths
+  if (renderSectionPathsOpen) {
+    if (layout.pathsShowCheckbox.contains(mx, my)) {
+      renderSettings.showPaths = !renderSettings.showPaths;
+      renderShowPaths = renderSettings.showPaths;
+      return true;
+    }
+    if (layout.pathSatSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.pathSatSlider.x) / (float)layout.pathSatSlider.w, 0, 1);
+      renderSettings.pathSatScale01 = t;
+      activeSlider = SLIDER_RENDER_PATH_SAT;
+      return true;
+    }
+  }
+
+  // Zones
+  if (renderSectionZonesOpen) {
+    if (layout.zoneAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.zoneAlphaSlider.x) / (float)layout.zoneAlphaSlider.w, 0, 1);
+      renderSettings.zoneStrokeAlpha01 = t;
+      renderShowZoneOutlines = t > 0.001f;
+      activeSlider = SLIDER_RENDER_ZONE_ALPHA;
+      return true;
+    }
+    if (layout.zoneSatSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.zoneSatSlider.x) / (float)layout.zoneSatSlider.w, 0, 1);
+      renderSettings.zoneStrokeSatScale01 = t;
+      activeSlider = SLIDER_RENDER_ZONE_SAT;
+      return true;
+    }
+  }
+
+  // Structures
+  if (renderSectionStructuresOpen) {
+    if (layout.structuresShowCheckbox.contains(mx, my)) {
+      renderSettings.showStructures = !renderSettings.showStructures;
+      renderShowStructures = renderSettings.showStructures;
+      return true;
+    }
+    if (layout.structuresMergeCheckbox.contains(mx, my)) {
+      renderSettings.mergeStructures = !renderSettings.mergeStructures;
+      return true;
+    }
+  }
+
+  // Labels
+  if (renderSectionLabelsOpen) {
+    if (layout.labelsArbitraryCheckbox.contains(mx, my)) {
+      renderSettings.showLabelsArbitrary = !renderSettings.showLabelsArbitrary;
+      renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+      return true;
+    }
+    if (layout.labelsZonesCheckbox.contains(mx, my)) {
+      renderSettings.showLabelsZones = !renderSettings.showLabelsZones;
+      renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+      return true;
+    }
+    if (layout.labelsPathsCheckbox.contains(mx, my)) {
+      renderSettings.showLabelsPaths = !renderSettings.showLabelsPaths;
+      renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+      return true;
+    }
+    if (layout.labelsStructuresCheckbox.contains(mx, my)) {
+      renderSettings.showLabelsStructures = !renderSettings.showLabelsStructures;
+      renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+      return true;
+    }
+    if (layout.labelsOutlineAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.labelsOutlineAlphaSlider.x) / (float)layout.labelsOutlineAlphaSlider.w, 0, 1);
+      renderSettings.labelOutlineAlpha01 = t;
+      activeSlider = SLIDER_RENDER_LABEL_OUTLINE_ALPHA;
+      return true;
+    }
+    if (layout.labelsMinSizeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.labelsMinSizeSlider.x) / (float)layout.labelsMinSizeSlider.w, 0, 1);
+      renderSettings.labelMinFontPx = constrain(6.0f + t * (32.0f - 6.0f), 6.0f, 32.0f);
+      activeSlider = SLIDER_RENDER_LABEL_MIN_SIZE;
+      return true;
+    }
+  }
+
+  // General
+  if (renderSectionGeneralOpen) {
+    if (layout.exportPaddingSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.exportPaddingSlider.x) / (float)layout.exportPaddingSlider.w, 0, 1);
+      renderSettings.exportPaddingPct = constrain(t * 0.10f, 0, 0.10f);
+      renderPaddingPct = renderSettings.exportPaddingPct;
+      activeSlider = SLIDER_RENDER_PADDING;
+      return true;
+    }
+    if (layout.antialiasCheckbox.contains(mx, my)) {
+      renderSettings.antialiasing = !renderSettings.antialiasing;
+      return true;
+    }
+    if (layout.presetSelector.contains(mx, my) && renderPresets != null && renderPresets.length > 0) {
+      int n = max(1, renderPresets.length - 1);
+      float t = constrain((mx - layout.presetSelector.x) / (float)layout.presetSelector.w, 0, 1);
+      int idx = constrain(round(t * n), 0, renderPresets.length - 1);
+      renderSettings.activePresetIndex = idx;
+      activeSlider = SLIDER_RENDER_PRESET_SELECT;
+      return true;
+    }
+    if (layout.presetApplyBtn.contains(mx, my)) {
+      applyRenderPreset(renderSettings.activePresetIndex);
+      return true;
+    }
+  }
   return false;
 }
 

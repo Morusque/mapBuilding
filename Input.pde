@@ -484,23 +484,197 @@ void updateActiveSlider(int mx, int my) {
       }
       break;
     }
+    case SLIDER_RENDER_LAND_H: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.landHSB[0].x) / (float)l.landHSB[0].w, 0, 1);
+      renderSettings.landHue01 = t;
+      break;
+    }
+    case SLIDER_RENDER_LAND_S: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.landHSB[1].x) / (float)l.landHSB[1].w, 0, 1);
+      renderSettings.landSat01 = t;
+      break;
+    }
+    case SLIDER_RENDER_LAND_B: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.landHSB[2].x) / (float)l.landHSB[2].w, 0, 1);
+      renderSettings.landBri01 = t;
+      break;
+    }
+    case SLIDER_RENDER_WATER_H: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterHSB[0].x) / (float)l.waterHSB[0].w, 0, 1);
+      renderSettings.waterHue01 = t;
+      break;
+    }
+    case SLIDER_RENDER_WATER_S: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterHSB[1].x) / (float)l.waterHSB[1].w, 0, 1);
+      renderSettings.waterSat01 = t;
+      break;
+    }
+    case SLIDER_RENDER_WATER_B: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterHSB[2].x) / (float)l.waterHSB[2].w, 0, 1);
+      renderSettings.waterBri01 = t;
+      break;
+    }
+    case SLIDER_RENDER_CELL_BORDER_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.cellBordersAlphaSlider.x) / (float)l.cellBordersAlphaSlider.w, 0, 1);
+      renderSettings.cellBorderAlpha01 = t;
+      break;
+    }
+    case SLIDER_RENDER_BIOME_FILL_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.biomeFillAlphaSlider.x) / (float)l.biomeFillAlphaSlider.w, 0, 1);
+      renderSettings.biomeFillAlpha01 = t;
+      break;
+    }
+    case SLIDER_RENDER_BIOME_SAT: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.biomeSatSlider.x) / (float)l.biomeSatSlider.w, 0, 1);
+      renderSettings.biomeSatScale01 = t;
+      break;
+    }
+    case SLIDER_RENDER_BIOME_OUTLINE_SIZE: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.biomeOutlineSizeSlider.x) / (float)l.biomeOutlineSizeSlider.w, 0, 1);
+      renderSettings.biomeOutlineSizePx = constrain(t * 5.0f, 0, 5.0f);
+      break;
+    }
+    case SLIDER_RENDER_BIOME_OUTLINE_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.biomeOutlineAlphaSlider.x) / (float)l.biomeOutlineAlphaSlider.w, 0, 1);
+      renderSettings.biomeOutlineAlpha01 = t;
+      break;
+    }
+    case SLIDER_RENDER_WATER_DEPTH_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterDepthAlphaSlider.x) / (float)l.waterDepthAlphaSlider.w, 0, 1);
+      renderSettings.waterDepthAlpha01 = t;
+      break;
+    }
+    case SLIDER_RENDER_LIGHT_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.lightAlphaSlider.x) / (float)l.lightAlphaSlider.w, 0, 1);
+      renderSettings.elevationLightAlpha01 = t;
+      break;
+    }
     case SLIDER_RENDER_LIGHT_AZIMUTH: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.lightAzimuthSlider.x) / (float)l.lightAzimuthSlider.w, 0, 1);
-      renderLightAzimuthDeg = constrain(t * 360.0f, 0, 360);
+      renderSettings.elevationLightAzimuthDeg = constrain(t * 360.0f, 0, 360);
       break;
     }
     case SLIDER_RENDER_LIGHT_ALTITUDE: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.lightAltitudeSlider.x) / (float)l.lightAltitudeSlider.w, 0, 1);
-      renderLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
+      renderSettings.elevationLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
+      break;
+    }
+    case SLIDER_RENDER_WATER_CONTOUR_SIZE: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterContourSizeSlider.x) / (float)l.waterContourSizeSlider.w, 0, 1);
+      renderSettings.waterContourSizePx = constrain(t * 5.0f, 0, 5.0f);
+      break;
+    }
+    case SLIDER_RENDER_WATER_RIPPLE_COUNT: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterRippleCountSlider.x) / (float)l.waterRippleCountSlider.w, 0, 1);
+      renderSettings.waterRippleCount = constrain(round(t * 5.0f), 0, 5);
+      break;
+    }
+    case SLIDER_RENDER_WATER_RIPPLE_DIST: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterRippleDistanceSlider.x) / (float)l.waterRippleDistanceSlider.w, 0, 1);
+      renderSettings.waterRippleDistancePx = constrain(4.0f + t * (40.0f - 4.0f), 4.0f, 40.0f);
+      break;
+    }
+    case SLIDER_RENDER_WATER_CONTOUR_H: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterContourHSB[0].x) / (float)l.waterContourHSB[0].w, 0, 1);
+      renderSettings.waterContourHue01 = t;
+      break;
+    }
+    case SLIDER_RENDER_WATER_CONTOUR_S: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterContourHSB[1].x) / (float)l.waterContourHSB[1].w, 0, 1);
+      renderSettings.waterContourSat01 = t;
+      break;
+    }
+    case SLIDER_RENDER_WATER_CONTOUR_B: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterContourHSB[2].x) / (float)l.waterContourHSB[2].w, 0, 1);
+      renderSettings.waterContourBri01 = t;
+      break;
+    }
+    case SLIDER_RENDER_WATER_CONTOUR_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterContourAlphaSlider.x) / (float)l.waterContourAlphaSlider.w, 0, 1);
+      renderSettings.waterContourAlpha01 = t;
+      break;
+    }
+    case SLIDER_RENDER_ELEV_LINES_COUNT: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.elevationLinesCountSlider.x) / (float)l.elevationLinesCountSlider.w, 0, 1);
+      renderSettings.elevationLinesCount = constrain(round(t * 24.0f), 0, 24);
+      break;
+    }
+    case SLIDER_RENDER_ELEV_LINES_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.elevationLinesAlphaSlider.x) / (float)l.elevationLinesAlphaSlider.w, 0, 1);
+      renderSettings.elevationLinesAlpha01 = t;
+      break;
+    }
+    case SLIDER_RENDER_PATH_SAT: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.pathSatSlider.x) / (float)l.pathSatSlider.w, 0, 1);
+      renderSettings.pathSatScale01 = t;
+      break;
+    }
+    case SLIDER_RENDER_ZONE_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.zoneAlphaSlider.x) / (float)l.zoneAlphaSlider.w, 0, 1);
+      renderSettings.zoneStrokeAlpha01 = t;
+      renderShowZoneOutlines = t > 0.001f;
+      break;
+    }
+    case SLIDER_RENDER_ZONE_SAT: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.zoneSatSlider.x) / (float)l.zoneSatSlider.w, 0, 1);
+      renderSettings.zoneStrokeSatScale01 = t;
+      break;
+    }
+    case SLIDER_RENDER_LABEL_OUTLINE_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.labelsOutlineAlphaSlider.x) / (float)l.labelsOutlineAlphaSlider.w, 0, 1);
+      renderSettings.labelOutlineAlpha01 = t;
+      break;
+    }
+    case SLIDER_RENDER_LABEL_MIN_SIZE: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.labelsMinSizeSlider.x) / (float)l.labelsMinSizeSlider.w, 0, 1);
+      renderSettings.labelMinFontPx = constrain(6.0f + t * (32.0f - 6.0f), 6.0f, 32.0f);
       break;
     }
     case SLIDER_RENDER_PADDING: {
       RenderLayout l = buildRenderLayout();
-      float t = (mx - l.paddingSlider.x) / (float)l.paddingSlider.w;
+      float t = (mx - l.exportPaddingSlider.x) / (float)l.exportPaddingSlider.w;
       t = constrain(t, 0, 1);
-      renderPaddingPct = constrain(t * 0.10f, 0, 0.10f);
+      renderSettings.exportPaddingPct = constrain(t * 0.10f, 0, 0.10f);
+      renderPaddingPct = renderSettings.exportPaddingPct;
+      break;
+    }
+    case SLIDER_RENDER_PRESET_SELECT: {
+      RenderLayout l = buildRenderLayout();
+      if (renderPresets != null && renderPresets.length > 0) {
+        int n = max(1, renderPresets.length - 1);
+        float t = constrain((mx - l.presetSelector.x) / (float)l.presetSelector.w, 0, 1);
+        int idx = constrain(round(t * n), 0, renderPresets.length - 1);
+        renderSettings.activePresetIndex = idx;
+      }
       break;
     }
     case SLIDER_EXPORT_SCALE: {
@@ -732,4 +906,3 @@ void keyPressed() {
     return;
   }
 }
-
