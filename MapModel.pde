@@ -248,6 +248,18 @@ class MapModel {
     renderer.drawLabels(app);
   }
 
+  void drawLabelsRender(PApplet app, RenderSettings s) {
+    renderer.drawLabelsRender(app, s);
+  }
+
+  void drawZoneOutlinesRender(PApplet app, RenderSettings s) {
+    renderer.drawZoneOutlinesRender(app, s);
+  }
+
+  void drawStructuresRender(PApplet app, RenderSettings s) {
+    renderer.drawStructuresRender(app, s);
+  }
+
   void drawRenderAdvanced(PApplet app, RenderSettings settings, float seaLevel) {
     renderer.drawRenderAdvanced(app, settings, seaLevel);
   }
@@ -1337,6 +1349,37 @@ class MapModel {
       sel.draw(app, w, taperOn, taperW, selectedPathIndex, showNodes);
     }
 
+    app.popStyle();
+  }
+
+  void drawPathsRender(PApplet app, RenderSettings s) {
+    if (paths.isEmpty() || s == null) return;
+    app.pushStyle();
+    app.noFill();
+    HashMap<Integer, HashMap<String, Float>> taperCache = new HashMap<Integer, HashMap<String, Float>>();
+
+    for (int i = 0; i < paths.size(); i++) {
+      Path p = paths.get(i);
+      if (p.routes.isEmpty()) continue;
+      PathType pt = getPathType(p.typeId);
+      int baseCol = (pt != null) ? pt.col : app.color(80);
+      float[] hsb = rgbToHSB(baseCol);
+      hsb[1] = constrain(hsb[1] * s.pathSatScale01, 0, 1);
+      int col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+      float w = (pt != null) ? pt.weightPx : 2.0f;
+      app.stroke(col);
+      boolean taperOn = (pt != null && pt.taperOn);
+      HashMap<String, Float> taperW = null;
+      if (taperOn) {
+        taperW = taperCache.get(p.typeId);
+        if (taperW == null) {
+          float minW = (pt != null) ? pt.minWeightPx : max(1.0f, w * 0.4f);
+          taperW = computeTaperWeightsForType(p.typeId, w, minW);
+          taperCache.put(p.typeId, taperW);
+        }
+      }
+      p.draw(app, w, taperOn, taperW, i, false);
+    }
     app.popStyle();
   }
 

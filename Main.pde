@@ -503,6 +503,16 @@ void draw() {
   }
   popMatrix();
 
+  // Screen-space border for render/export view
+  if (renderView) {
+    pushStyle();
+    noFill();
+    stroke(0);
+    strokeWeight(2);
+    rect(1, 1, width - 2, height - 2);
+    popStyle();
+  }
+
   // Ensure UI drawing uses normal coordinate modes (world rendering can change rectMode)
   rectMode(CORNER);
   ellipseMode(CENTER);
@@ -547,24 +557,22 @@ void drawRenderView(PApplet app) {
 
   // Zone outlines (stroke-only, no fill)
   if (renderSettings.zoneStrokeAlpha01 > 1e-4f && renderSettings.showZones) {
-    mapModel.drawZoneOutlines(app);
+    mapModel.drawZoneOutlinesRender(app, renderSettings);
   }
 
   // Paths
   if (renderSettings.showPaths) {
-    int pathCol = color(60, 60, 200);
-    boolean highlightPaths = false;
-    mapModel.drawPaths(app, pathCol, highlightPaths, false);
+    mapModel.drawPathsRender(app, renderSettings);
   }
 
   // Structures
   if (renderSettings.showStructures) {
-    mapModel.drawStructures(app);
+    mapModel.drawStructuresRender(app, renderSettings);
   }
 
-  // Labels (all types for now)
+  // Labels
   if (renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures) {
-    mapModel.drawLabels(app);
+    mapModel.drawLabelsRender(app, renderSettings);
   }
 }
 

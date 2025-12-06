@@ -69,3 +69,4 @@ General :
 (later) remove comments specific to explain a single commit, add general purpose comments instead
 (later) remove obsolete debug prints
 (later) undo states
+(later) rgbToHSB seems to be part of the model class while hsb01ToRGB isnt, also why "01"? can we add more clarity to all this?

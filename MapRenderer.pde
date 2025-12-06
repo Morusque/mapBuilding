@@ -1,3 +1,5 @@
+import java.util.*;
+
 class MapRenderer {
   private final MapModel model;
 
@@ -120,6 +122,69 @@ class MapRenderer {
     app.popStyle();
   }
 
+  void drawStructuresRender(PApplet app, RenderSettings s) {
+    if (model.structures == null || s == null) return;
+    app.pushStyle();
+    for (int i = 0; i < model.structures.size(); i++) {
+      Structure st = model.structures.get(i);
+      if (st == null) continue;
+      float baseAlpha = st.alpha01 * s.structureAlphaScale01;
+      if (baseAlpha <= 1e-4f) continue;
+      float[] hsb = model.rgbToHSB(st.fillCol);
+      float sat = constrain(hsb[1] * s.structureSatScale01, 0, 1);
+      int col = hsb01ToRGB(hsb[0], sat, hsb[2]);
+
+      app.pushMatrix();
+      app.translate(st.x, st.y);
+      app.rotate(st.angle);
+      app.stroke(0, 0, 0, baseAlpha * 255);
+      app.strokeWeight(st.strokeWeightPx / viewport.zoom);
+      app.fill(col, baseAlpha * 255);
+
+      float r = st.size;
+      switch (st.shape) {
+        case RECTANGLE: {
+          float w = r;
+          float h = (st.aspect != 0) ? (r / max(0.1f, st.aspect)) : r;
+          app.rectMode(CENTER);
+          app.rect(0, 0, w, h);
+          break;
+        }
+        case CIRCLE: {
+          app.ellipse(0, 0, r, r);
+          break;
+        }
+        case TRIANGLE: {
+          float h = r * 0.866f;
+          app.beginShape();
+          app.vertex(-r * 0.5f, h * 0.333f);
+          app.vertex(r * 0.5f, h * 0.333f);
+          app.vertex(0, -h * 0.666f);
+          app.endShape(CLOSE);
+          break;
+        }
+        case HEXAGON: {
+          float rad = r * 0.5f;
+          app.beginShape();
+          for (int v = 0; v < 6; v++) {
+            float a = radians(60 * v);
+            app.vertex(cos(a) * rad, sin(a) * rad);
+          }
+          app.endShape(CLOSE);
+          break;
+        }
+        default: {
+          float sHalf = r * 0.5f;
+          app.rectMode(CENTER);
+          app.rect(0, 0, sHalf * 2, sHalf * 2);
+          break;
+        }
+      }
+      app.popMatrix();
+    }
+    app.popStyle();
+  }
+
   void drawLabels(PApplet app) {
     if (model.labels == null) return;
     app.pushStyle();
@@ -127,6 +192,67 @@ class MapRenderer {
       l.draw(app);
     }
     app.popStyle();
+  }
+
+  void drawLabelsRender(PApplet app, RenderSettings s) {
+    if (model.labels == null || s == null) return;
+    ArrayList<MapLabel> list = new ArrayList<MapLabel>();
+    for (MapLabel l : model.labels) {
+      if (l == null) continue;
+      boolean allowed = false;
+      switch (l.target) {
+        case ZONE: allowed = s.showLabelsZones; break;
+        case PATH: allowed = s.showLabelsPaths; break;
+        case STRUCTURE: allowed = s.showLabelsStructures; break;
+        case FREE:
+        default: allowed = s.showLabelsArbitrary; break;
+      }
+      if (!allowed) continue;
+      if (l.size < s.labelMinFontPx) continue;
+      list.add(l);
+    }
+    // Sort by size desc, then type priority (ZONE > PATH > STRUCTURE > FREE)
+    Collections.sort(list, new Comparator<MapLabel>() {
+      public int compare(MapLabel a, MapLabel b) {
+        if (a == null && b == null) return 0;
+        if (a == null) return 1;
+        if (b == null) return -1;
+        if (a.size != b.size) return (b.size > a.size) ? 1 : -1;
+        int pa = labelPriority(a.target);
+        int pb = labelPriority(b.target);
+        return pb - pa;
+      }
+    });
+
+    app.pushStyle();
+    for (MapLabel l : list) {
+      if (l == null) continue;
+      float pxSize = l.size / viewport.zoom;
+      // Outline
+      int outlineCol = app.color(255, 255, 255, constrain(s.labelOutlineAlpha01, 0, 1) * 255);
+      app.textAlign(CENTER, CENTER);
+      app.textSize(pxSize);
+      app.fill(outlineCol);
+      float off = max(1.0f, pxSize * 0.07f);
+      app.text(l.text, l.x + off, l.y);
+      app.text(l.text, l.x - off, l.y);
+      app.text(l.text, l.x, l.y + off);
+      app.text(l.text, l.x, l.y - off);
+      // Main text
+      app.fill(0);
+      app.text(l.text, l.x, l.y);
+    }
+    app.popStyle();
+  }
+
+  int labelPriority(LabelTarget t) {
+    switch (t) {
+      case ZONE: return 4;
+      case PATH: return 3;
+      case STRUCTURE: return 2;
+      case FREE:
+      default: return 1;
+    }
   }
 
   void drawZoneOutlines(PApplet app) {
@@ -724,6 +850,96 @@ class MapRenderer {
         }
       }
     }
+  }
+
+  void drawZoneOutlinesRender(PApplet app, RenderSettings s) {
+    if (s == null || s.zoneStrokeAlpha01 <= 1e-4f) return;
+    app.pushStyle();
+    app.strokeWeight(2.0f / viewport.zoom);
+    if (model.cells == null || model.zones == null) { app.popStyle(); return; }
+    model.ensureCellNeighborsComputed();
+    int n = model.cells.size();
+    if (n == 0 || model.zones.isEmpty()) { app.popStyle(); return; }
+
+    ArrayList<ArrayList<Integer>> zoneForCell = new ArrayList<ArrayList<Integer>>(n);
+    for (int i = 0; i < n; i++) zoneForCell.add(new ArrayList<Integer>());
+    for (int zi = 0; zi < model.zones.size(); zi++) {
+      MapModel.MapZone z = model.zones.get(zi);
+      if (z == null || z.cells == null) continue;
+      for (int ci : z.cells) {
+        if (ci < 0 || ci >= n) continue;
+        ArrayList<Integer> list = zoneForCell.get(ci);
+        if (!list.contains(zi)) list.add(zi);
+      }
+    }
+
+    float eps2 = 1e-6f;
+    HashSet<String> drawn = new HashSet<String>();
+    for (int ci = 0; ci < n; ci++) {
+      Cell c = model.cells.get(ci);
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      ArrayList<Integer> zonesA = zoneForCell.get(ci);
+      if (zonesA == null || zonesA.isEmpty()) continue;
+      int vc = c.vertices.size();
+      for (int e = 0; e < vc; e++) {
+        PVector a = c.vertices.get(e);
+        PVector b = c.vertices.get((e + 1) % vc);
+        String key = undirectedEdgeKey(a, b);
+        if (drawn.contains(key)) continue;
+
+        ArrayList<Integer> zonesB = null;
+        ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
+        if (nbs != null) {
+          for (int nbIdx : nbs) {
+            if (nbIdx < 0 || nbIdx >= n) continue;
+            Cell nb = model.cells.get(nbIdx);
+            if (nb == null || nb.vertices == null) continue;
+            int nv = nb.vertices.size();
+            boolean matched = false;
+            for (int j = 0; j < nv; j++) {
+              PVector na = nb.vertices.get(j);
+              PVector nbp = nb.vertices.get((j + 1) % nv);
+              boolean match = model.distSq(a, na) < eps2 && model.distSq(b, nbp) < eps2;
+              boolean matchRev = model.distSq(a, nbp) < eps2 && model.distSq(b, na) < eps2;
+              if (match || matchRev) {
+                zonesB = zoneForCell.get(nbIdx);
+                matched = true;
+                break;
+              }
+            }
+            if (matched) break;
+          }
+        }
+
+        HashSet<Integer> setA = new HashSet<Integer>(zonesA);
+        HashSet<Integer> setB = (zonesB != null) ? new HashSet<Integer>(zonesB) : new HashSet<Integer>();
+        HashSet<Integer> uniqueA = new HashSet<Integer>(setA);
+        uniqueA.removeAll(setB);
+        HashSet<Integer> uniqueB = new HashSet<Integer>(setB);
+        uniqueB.removeAll(setA);
+        if (uniqueA.isEmpty() && uniqueB.isEmpty()) {
+          drawn.add(key);
+          continue;
+        }
+
+        // Pick stroke color from first unique zone in A or B
+        int zoneIdx = !uniqueA.isEmpty() ? uniqueA.iterator().next() : uniqueB.iterator().next();
+        int strokeCol = app.color(0);
+        if (zoneIdx >= 0 && zoneIdx < model.zones.size()) {
+          MapModel.MapZone z = model.zones.get(zoneIdx);
+          if (z != null) {
+            float[] hsb = model.rgbToHSB(z.col);
+            hsb[1] = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
+            strokeCol = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+          }
+        }
+        app.stroke(strokeCol, s.zoneStrokeAlpha01 * 255);
+        app.line(a.x, a.y, b.x, b.y);
+        drawn.add(key);
+      }
+    }
+
+    app.popStyle();
   }
 
   void drawSeg(PApplet app, PVector a, PVector b) {

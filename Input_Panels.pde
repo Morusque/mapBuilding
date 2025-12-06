@@ -846,7 +846,7 @@ LabelTarget nextLabelTarget(LabelTarget lt) {
   switch (lt) {
     case FREE: return LabelTarget.BIOME;
     case BIOME: return LabelTarget.ZONE;
-    case ZONE: return LabelTarget.STRUCT;
+    case ZONE: return LabelTarget.STRUCTURE;
     default: return LabelTarget.FREE;
   }
 }

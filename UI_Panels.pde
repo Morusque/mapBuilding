@@ -1415,7 +1415,7 @@ String labelTargetShort(LabelTarget lt) {
   switch (lt) {
     case BIOME: return "B";
     case ZONE: return "Z";
-    case STRUCT: return "S";
+    case STRUCTURE: return "S";
     default: return "F";
   }
 }

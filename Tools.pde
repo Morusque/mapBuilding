@@ -44,5 +44,6 @@ enum LabelTarget {
   FREE,
   BIOME,
   ZONE,
-  STRUCT
+  PATH,
+  STRUCTURE
 }
