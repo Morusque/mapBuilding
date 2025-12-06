@@ -15,11 +15,9 @@ void handlePathsMousePressed(float wx, float wy) {
   PVector snapped = findNearestSnappingPoint(wx, wy, Float.MAX_VALUE);
   if (snapped == null) return;
   PVector target = snapped;
-  println("[PATH] click at (" + wx + "," + wy + ") snapped to (" + target.x + "," + target.y + ")");
 
   if (pendingPathStart == null) {
     pendingPathStart = target;
-    println("[PATH] start set at (" + target.x + "," + target.y + ")");
     return;
   }
 
@@ -36,17 +34,14 @@ void handlePathsMousePressed(float wx, float wy) {
     if (mode == PathRouteMode.ENDS) {
       route.add(pendingPathStart.copy());
       route.add(target.copy());
-      println("[PATH] route ENDS size=" + route.size());
     } else if (mode == PathRouteMode.PATHFIND) {
       ArrayList<PVector> rp = mapModel.findSnapPathFlattest(pendingPathStart, target);
       if (rp != null && rp.size() > 1) route = rp;
-      println("[PATH] route PATHFIND size=" + route.size());
     }
     if (route.isEmpty()) {
       route = new ArrayList<PVector>();
       route.add(pendingPathStart.copy());
       route.add(target.copy());
-      println("[PATH] fallback route size=" + route.size());
     }
   }
 
@@ -55,7 +50,6 @@ void handlePathsMousePressed(float wx, float wy) {
       targetPath.typeId = activePathTypeIndex;
     }
       mapModel.appendRouteToPath(targetPath, route);
-      println("[PATH] appended route points=" + route.size() + " to path#" + selectedPathIndex);
   }
   pendingPathStart = null;
 }

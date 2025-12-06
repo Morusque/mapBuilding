@@ -1394,6 +1394,7 @@ class MapModel {
       hsb[1] = constrain(hsb[1] * s.pathSatScale01, 0, 1);
       int col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
       float w = (pt != null) ? pt.weightPx : 2.0f;
+      if (w <= 0.01f) continue;
       app.stroke(col);
       boolean taperOn = (pt != null && pt.taperOn);
       HashMap<String, Float> taperW = null;
@@ -2093,6 +2094,7 @@ class MapModel {
         stack[stackSize++] = j;
       }
     }
+    renderer.invalidateBiomeOutlineCache();
   }
 
   void addCellToZone(int cellIdx, int zoneIdx) {
@@ -2907,6 +2909,7 @@ class MapModel {
   void removeZone(int index) {
     if (index < 0 || index >= zones.size()) return;
     zones.remove(index);
+    renderer.invalidateBiomeOutlineCache();
   }
 
   void markRenderCacheDirty() {

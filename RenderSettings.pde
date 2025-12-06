@@ -246,7 +246,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     list.add(new RenderPreset("Muted Terrain", s));
   }
 
-  // Print / BW
+  // Paper BW
   {
     RenderSettings s = new RenderSettings();
     s.landHue01 = 0.0f; s.landSat01 = 0.0f; s.landBri01 = 0.92f;
@@ -264,7 +264,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLinesCount = 10;
     s.elevationLinesAlpha01 = 0.25f;
     s.antialiasing = false;
-    list.add(new RenderPreset("Print / BW", s));
+    list.add(new RenderPreset("Paper BW", s));
   }
 
   // Water Focus
