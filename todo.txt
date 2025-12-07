@@ -56,6 +56,8 @@ Rendering :
 (later) choosing biomes "pattern" option yields "The file patterns/dots01.png contains bad image data, or may not be an image." while file is seems ok.
 (later) contour lines (or other computationally intensive tasks) should trigger a progress bar and be made to not freeze the rest of the ui (like we did for cell placements and voronoi).
 (later) labels are wrong in many ways, rework no this
+(later) changing preset should trigger computation of required features such as contour lines if needed
+(later) a "save preset" button
 
 Export :
 (later) Comments exportable as custom format
