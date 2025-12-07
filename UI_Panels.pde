@@ -1855,7 +1855,7 @@ class RenderLayout {
   IntRect[] waterContourHSB = new IntRect[3];
   IntRect waterContourAlphaSlider;
   IntRect elevationLinesCountSlider;
-  ArrayList<IntRect> elevationLineStyleButtons = new ArrayList<IntRect>();
+  IntRect elevationLineStyleSelector;
   IntRect elevationLinesAlphaSlider;
 
   IntRect pathsShowCheckbox;
@@ -1863,6 +1863,7 @@ class RenderLayout {
 
   IntRect zoneAlphaSlider;
   IntRect zoneSatSlider;
+  IntRect zoneBriSlider;
 
   IntRect structuresShowCheckbox;
   IntRect structuresMergeCheckbox;
@@ -1872,7 +1873,6 @@ class RenderLayout {
   IntRect labelsPathsCheckbox;
   IntRect labelsStructuresCheckbox;
   IntRect labelsOutlineAlphaSlider;
-  IntRect labelsMinSizeSlider;
 
   IntRect exportPaddingSlider;
   IntRect antialiasCheckbox;
@@ -1982,9 +1982,8 @@ RenderLayout buildRenderLayout() {
     l.elevationLinesCountSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-    int styleBtnW = 110;
-    l.elevationLineStyleButtons.add(new IntRect(innerX, curY, styleBtnW, PANEL_BUTTON_H));
-    curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+    l.elevationLineStyleSelector = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.elevationLinesAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
@@ -2007,6 +2006,8 @@ RenderLayout buildRenderLayout() {
     l.zoneAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.zoneSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.zoneBriSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
@@ -2033,8 +2034,6 @@ RenderLayout buildRenderLayout() {
     l.labelsStructuresCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
     l.labelsOutlineAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-    l.labelsMinSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
@@ -2112,12 +2111,20 @@ void drawRenderPanel() {
     drawSlider(layout.waterContourAlphaSlider, renderSettings.waterContourAlpha01, "Water contours alpha (" + nf(renderSettings.waterContourAlpha01 * 100, 1, 0) + "%)");
     float elevCountNorm = constrain(renderSettings.elevationLinesCount / 24.0f, 0, 1);
     drawSlider(layout.elevationLinesCountSlider, elevCountNorm, "Elevation lines (" + renderSettings.elevationLinesCount + ")");
-    if (!layout.elevationLineStyleButtons.isEmpty()) {
-      IntRect b = layout.elevationLineStyleButtons.get(0);
-      drawBevelButton(b.x, b.y, b.w, b.h, true);
-      fill(10);
-      textAlign(CENTER, CENTER);
-      text("Style: Basic", b.x + b.w / 2, b.y + b.h / 2);
+    if (layout.elevationLineStyleSelector != null) {
+      IntRect b = layout.elevationLineStyleSelector;
+      stroke(160);
+      fill(230);
+      rect(b.x, b.y, b.w, b.h, 4);
+      float knobX = b.x;
+      float knobY = b.y + b.h / 2.0f;
+      float knobR = b.h * 0.9f;
+      fill(40);
+      noStroke();
+      ellipse(knobX, knobY, knobR, knobR);
+      fill(0);
+      textAlign(LEFT, BOTTOM);
+      text("Style: Basic", b.x, b.y - 4);
     }
     drawSlider(layout.elevationLinesAlphaSlider, renderSettings.elevationLinesAlpha01, "Elevation lines alpha (" + nf(renderSettings.elevationLinesAlpha01 * 100, 1, 0) + "%)");
   }
@@ -2132,6 +2139,7 @@ void drawRenderPanel() {
   if (renderSectionZonesOpen) {
     drawSlider(layout.zoneAlphaSlider, renderSettings.zoneStrokeAlpha01, "Zone lines alpha (" + nf(renderSettings.zoneStrokeAlpha01 * 100, 1, 0) + "%)");
     drawSlider(layout.zoneSatSlider, renderSettings.zoneStrokeSatScale01, "Zone lines saturation (" + nf(renderSettings.zoneStrokeSatScale01 * 100, 1, 0) + "%)");
+    drawSlider(layout.zoneBriSlider, renderSettings.zoneStrokeBriScale01, "Zone lines brightness (" + nf(renderSettings.zoneStrokeBriScale01 * 100, 1, 0) + "%)");
   }
 
   drawSectionHeader(layout.headerStructures, "Structures", renderSectionStructuresOpen);
@@ -2147,8 +2155,6 @@ void drawRenderPanel() {
     drawCheckbox(layout.labelsPathsCheckbox.x, layout.labelsPathsCheckbox.y, layout.labelsPathsCheckbox.w, renderSettings.showLabelsPaths, "Show paths");
     drawCheckbox(layout.labelsStructuresCheckbox.x, layout.labelsStructuresCheckbox.y, layout.labelsStructuresCheckbox.w, renderSettings.showLabelsStructures, "Show structures");
     drawSlider(layout.labelsOutlineAlphaSlider, renderSettings.labelOutlineAlpha01, "Label outline alpha (" + nf(renderSettings.labelOutlineAlpha01 * 100, 1, 0) + "%)");
-    float labelMinNorm = constrain((renderSettings.labelMinFontPx - 6.0f) / (32.0f - 6.0f), 0, 1);
-    drawSlider(layout.labelsMinSizeSlider, labelMinNorm, "Label min size (" + nf(renderSettings.labelMinFontPx, 1, 1) + " px)");
   }
 
   drawSectionHeader(layout.headerGeneral, "General", renderSectionGeneralOpen);

@@ -233,8 +233,9 @@ final int SLIDER_RENDER_PATH_SAT = 52;
 final int SLIDER_RENDER_ZONE_ALPHA = 53;
 final int SLIDER_RENDER_ZONE_SAT = 54;
 final int SLIDER_RENDER_LABEL_OUTLINE_ALPHA = 55;
-final int SLIDER_RENDER_LABEL_MIN_SIZE = 56;
-final int SLIDER_RENDER_PRESET_SELECT = 57;
+final int SLIDER_RENDER_ELEV_LINES_STYLE = 56;
+final int SLIDER_RENDER_ZONE_BRI = 57;
+final int SLIDER_RENDER_PRESET_SELECT = 58;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -249,8 +250,7 @@ void applyRenderPreset(int idx) {
   renderShowPaths = renderSettings.showPaths;
   renderShowStructures = renderSettings.showStructures;
   renderShowZoneOutlines = renderSettings.zoneStrokeAlpha01 > 0.001f;
-  renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones ||
-                     renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+  renderShowLabels = renderSettings.showLabelsArbitrary;
 }
 
 color hsb01ToColor(float h, float s, float b) {
@@ -356,10 +356,16 @@ void draw() {
 
   // Drive incremental Voronoi rebuilds; loading state follows the job
   mapModel.ensureVoronoiComputed();
-  boolean building = mapModel.isVoronoiBuilding();
+  mapModel.stepContourJobs(6);
+  boolean buildingVoronoi = mapModel.isVoronoiBuilding();
+  boolean buildingContours = mapModel.isContourJobRunning();
+  boolean building = buildingVoronoi || buildingContours;
+  float pctVoronoi = mapModel.getVoronoiProgress();
+  float pctContours = mapModel.getContourJobProgress();
+  float combinedPct = buildingContours ? min(pctVoronoi, pctContours) : pctVoronoi;
   if (building) {
     if (!isLoading) startLoading();
-    loadingPct = mapModel.getVoronoiProgress();
+    loadingPct = combinedPct;
   } else {
     if (isLoading) stopLoading();
     loadingPct = 1.0f;
@@ -481,7 +487,7 @@ void draw() {
   if (currentTool != Tool.EDIT_RENDER || renderShowStructures) {
     mapModel.drawStructures(this);
   }
-  if (currentTool != Tool.EDIT_RENDER || renderShowLabels) {
+  if (currentTool != Tool.EDIT_RENDER && renderShowLabels) {
     mapModel.drawLabels(this);
   }
 
@@ -571,7 +577,7 @@ void drawRenderView(PApplet app) {
   }
 
   // Labels
-  if (renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures) {
+  if (renderSettings.showLabelsArbitrary) {
     mapModel.drawLabelsRender(app, renderSettings);
   }
 }
@@ -623,6 +629,25 @@ String exportPng() {
   popMatrix();
   this.g = prev;
   g.endDraw();
+
+  // If contour jobs were triggered during the first pass, finish them and redraw
+  if (mapModel.isContourJobRunning()) {
+    int safety = 0;
+    while (mapModel.isContourJobRunning() && safety < 80) {
+      mapModel.stepContourJobs(16);
+      safety++;
+    }
+    g.beginDraw();
+    g.background(245);
+    PGraphics prev2 = this.g;
+    this.g = g;
+    pushMatrix();
+    viewport.applyTransform(g, g.width, g.height);
+    drawRenderView(this);
+    popMatrix();
+    this.g = prev2;
+    g.endDraw();
+  }
 
   // Restore viewport
   viewport.centerX = prevCenterX;

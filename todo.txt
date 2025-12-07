@@ -51,6 +51,11 @@ Rendering :
 (later) add loading bars for long operations (contours)
 (later) some ugly dots sometimes appear between polygones
 (later) labels outline don't work well
+(later) ripple lines are approximative, so either we optimize them or we make tem display below lands
+(later) we need to work on a reliable method to be used when two outlines share the same border (should be always distinct, placed on a right that makes sense, take weight into account) and use it for
+(later) choosing biomes "pattern" option yields "The file patterns/dots01.png contains bad image data, or may not be an image." while file is seems ok.
+(later) contour lines (or other computationally intensive tasks) should trigger a progress bar and be made to not freeze the rest of the ui (like we did for cell placements and voronoi).
+(later) labels are wrong in many ways, rework no this
 
 Export :
 (later) Comments exportable as custom format

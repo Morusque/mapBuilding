@@ -1147,7 +1147,7 @@ boolean handleRenderPanelClick(int mx, int my) {
     }
     if (layout.waterRippleDistanceSlider.contains(mx, my)) {
       float t = constrain((mx - layout.waterRippleDistanceSlider.x) / (float)layout.waterRippleDistanceSlider.w, 0, 1);
-      renderSettings.waterRippleDistancePx = constrain(4.0f + t * (40.0f - 4.0f), 4.0f, 40.0f);
+      renderSettings.waterRippleDistancePx = constrain(t * 40.0f, 0.0f, 40.0f);
       activeSlider = SLIDER_RENDER_WATER_RIPPLE_DIST;
       return true;
     }
@@ -1166,17 +1166,16 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_ELEV_LINES_COUNT;
       return true;
     }
+    if (layout.elevationLineStyleSelector.contains(mx, my)) {
+      renderSettings.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
+      activeSlider = SLIDER_RENDER_ELEV_LINES_STYLE;
+      return true;
+    }
     if (layout.elevationLinesAlphaSlider.contains(mx, my)) {
       float t = constrain((mx - layout.elevationLinesAlphaSlider.x) / (float)layout.elevationLinesAlphaSlider.w, 0, 1);
       renderSettings.elevationLinesAlpha01 = t;
       activeSlider = SLIDER_RENDER_ELEV_LINES_ALPHA;
       return true;
-    }
-    for (IntRect b : layout.elevationLineStyleButtons) {
-      if (b.contains(mx, my)) {
-        showNotice("Elevation line styles will come later.");
-        return true;
-      }
     }
   }
 
@@ -1210,6 +1209,12 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_ZONE_SAT;
       return true;
     }
+    if (layout.zoneBriSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.zoneBriSlider.x) / (float)layout.zoneBriSlider.w, 0, 1);
+      renderSettings.zoneStrokeBriScale01 = t;
+      activeSlider = SLIDER_RENDER_ZONE_BRI;
+      return true;
+    }
   }
 
   // Structures
@@ -1229,34 +1234,28 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (renderSectionLabelsOpen) {
     if (layout.labelsArbitraryCheckbox.contains(mx, my)) {
       renderSettings.showLabelsArbitrary = !renderSettings.showLabelsArbitrary;
-      renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+      renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
     if (layout.labelsZonesCheckbox.contains(mx, my)) {
       renderSettings.showLabelsZones = !renderSettings.showLabelsZones;
-      renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+      renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
     if (layout.labelsPathsCheckbox.contains(mx, my)) {
       renderSettings.showLabelsPaths = !renderSettings.showLabelsPaths;
-      renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+      renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
     if (layout.labelsStructuresCheckbox.contains(mx, my)) {
       renderSettings.showLabelsStructures = !renderSettings.showLabelsStructures;
-      renderShowLabels = renderSettings.showLabelsArbitrary || renderSettings.showLabelsZones || renderSettings.showLabelsPaths || renderSettings.showLabelsStructures;
+      renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
     if (layout.labelsOutlineAlphaSlider.contains(mx, my)) {
       float t = constrain((mx - layout.labelsOutlineAlphaSlider.x) / (float)layout.labelsOutlineAlphaSlider.w, 0, 1);
       renderSettings.labelOutlineAlpha01 = t;
       activeSlider = SLIDER_RENDER_LABEL_OUTLINE_ALPHA;
-      return true;
-    }
-    if (layout.labelsMinSizeSlider.contains(mx, my)) {
-      float t = constrain((mx - layout.labelsMinSizeSlider.x) / (float)layout.labelsMinSizeSlider.w, 0, 1);
-      renderSettings.labelMinFontPx = constrain(6.0f + t * (32.0f - 6.0f), 6.0f, 32.0f);
-      activeSlider = SLIDER_RENDER_LABEL_MIN_SIZE;
       return true;
     }
   }

@@ -8,6 +8,12 @@ import java.util.Collections;
 import java.util.Arrays;
 import java.util.Map;
 
+// Shared contour job types (must be top-level for Processing)
+enum ContourJobType {
+  COAST_DISTANCE,
+  ELEVATION_SAMPLE
+}
+
 class MapModel {
   // Zone style constants
   final float ZONE_BASE_SAT = 0.78f;
@@ -28,6 +34,15 @@ class MapModel {
   int cachedCoastRows = 0;
   int cachedCoastCellCount = -1;
   boolean coastCacheValid = false;
+  ContourGrid cachedElevationGrid = null;
+  float cachedElevationSeaLevel = Float.MAX_VALUE;
+  int cachedElevationCols = 0;
+  int cachedElevationRows = 0;
+  int cachedElevationCellCount = -1;
+  boolean elevationCacheValid = false;
+
+  ContourJob coastJob = null;
+  ContourJob elevationJob = null;
 
   // Paths (roads, rivers, etc.)
   ArrayList<Path> paths = new ArrayList<Path>();
@@ -276,26 +291,11 @@ class MapModel {
     float worldH = maxY - minY;
     float desiredSpacing = max(1e-5f, min(worldW, worldH) * max(0.0f, spacingFactor));
 
-    ArrayList<PVector[]> coastSegs = null;
-    ContourGrid g = null;
     int cols = max(80, min(200, (int)(sqrt(max(1, cells.size())) * 1.0f)));
     int rows = cols;
 
-    if (coastCacheValid && cachedCoastGrid != null && cachedCoastSeaLevel == seaLevel && cachedCoastCols == cols && cachedCoastRows == rows && cachedCoastCellCount == cells.size()) {
-      g = cachedCoastGrid;
-      coastSegs = (cachedCoastIndex != null) ? cachedCoastIndex.segments : null;
-    } else {
-      coastSegs = collectCoastSegments(seaLevel);
-      if (coastSegs.isEmpty()) { coastCacheValid = false; return; }
-      cachedCoastIndex = new CoastSpatialIndex(minX, minY, maxX, maxY, coastSegs, 80);
-      g = sampleCoastDistanceGrid(cols, rows, seaLevel, cachedCoastIndex);
-      cachedCoastGrid = g;
-      cachedCoastSeaLevel = seaLevel;
-      cachedCoastCols = cols;
-      cachedCoastRows = rows;
-      cachedCoastCellCount = cells.size();
-      coastCacheValid = true;
-    }
+    ContourGrid g = getCoastDistanceGrid(cols, rows, seaLevel);
+    ArrayList<PVector[]> coastSegs = (cachedCoastIndex != null) ? cachedCoastIndex.segments : null;
     if (g == null) return;
 
     float maxWaterDist = g.max;
@@ -647,6 +647,90 @@ class MapModel {
     float max;
   }
 
+  class ContourJob {
+    ContourJobType type;
+    ContourGrid grid;
+    CoastSpatialIndex coastIndex;
+    float seaLevel;
+    int cols;
+    int rows;
+    int nextRow = 0;
+    int cellCountSnapshot = 0;
+    boolean done = false;
+    boolean failed = false;
+
+    ContourJob(ContourJobType type, int cols, int rows, float seaLevel) {
+      this.type = type;
+      this.cols = max(2, cols);
+      this.rows = max(2, rows);
+      this.seaLevel = seaLevel;
+      this.cellCountSnapshot = (cells != null) ? cells.size() : 0;
+
+      grid = new ContourGrid();
+      grid.cols = this.cols;
+      grid.rows = this.rows;
+      grid.v = new float[grid.rows][grid.cols];
+      grid.ox = minX;
+      grid.oy = minY;
+      grid.dx = (maxX - minX) / (grid.cols - 1);
+      grid.dy = (maxY - minY) / (grid.rows - 1);
+      grid.min = Float.MAX_VALUE;
+      grid.max = -Float.MAX_VALUE;
+
+      if (type == ContourJobType.COAST_DISTANCE) {
+        ensureCellNeighborsComputed();
+        ArrayList<PVector[]> segs = collectCoastSegments(seaLevel);
+        if (segs == null || segs.isEmpty()) {
+          failed = true;
+          done = true;
+          return;
+        }
+        coastIndex = new CoastSpatialIndex(minX, minY, maxX, maxY, segs, 80);
+      }
+    }
+
+    boolean matches(ContourJobType t, int c, int r, float sl) {
+      return type == t && cols == max(2, c) && rows == max(2, r) && abs(sl - seaLevel) < 1e-6f;
+    }
+
+    float progress() {
+      if (grid == null || grid.rows <= 0) return 0;
+      return constrain(nextRow / max(1.0f, (float)grid.rows), 0, 1);
+    }
+
+    void step(int maxMillis) {
+      if (done || grid == null) return;
+      long deadline = System.nanoTime() + max(1, maxMillis) * 1_000_000L;
+      while (nextRow < grid.rows && System.nanoTime() < deadline) {
+        float y = grid.oy + nextRow * grid.dy;
+        if (type == ContourJobType.COAST_DISTANCE) {
+          if (coastIndex == null) { failed = true; done = true; break; }
+          for (int i = 0; i < grid.cols; i++) {
+            float x = grid.ox + i * grid.dx;
+            boolean water = sampleElevationAt(x, y, seaLevel) < seaLevel;
+            float d = coastIndex.nearestDist(x, y);
+            float val = water ? d : -d;
+            grid.v[nextRow][i] = val;
+            grid.min = min(grid.min, val);
+            grid.max = max(grid.max, val);
+          }
+        } else {
+          for (int i = 0; i < grid.cols; i++) {
+            float x = grid.ox + i * grid.dx;
+            float val = sampleElevationAt(x, y, seaLevel);
+            grid.v[nextRow][i] = val;
+            grid.min = min(grid.min, val);
+            grid.max = max(grid.max, val);
+          }
+        }
+        nextRow++;
+      }
+      if (nextRow >= grid.rows) {
+        done = true;
+      }
+    }
+  }
+
   ContourGrid sampleElevationGrid(int cols, int rows, float fallback) {
     return renderer.sampleElevationGrid(cols, rows, fallback);
   }
@@ -813,28 +897,98 @@ class MapModel {
   ContourGrid getCoastDistanceGrid(int cols, int rows, float seaLevel) {
     if (cells == null || cells.isEmpty()) return null;
     if (coastCacheValid &&
-        cachedCoastGrid != null &&
         cachedCoastSeaLevel == seaLevel &&
         cachedCoastCols == cols &&
         cachedCoastRows == rows &&
         cachedCoastCellCount == cells.size()) {
       return cachedCoastGrid;
     }
-
-    ArrayList<PVector[]> coastSegs = collectCoastSegments(seaLevel);
-    if (coastSegs == null || coastSegs.isEmpty()) {
-      coastCacheValid = false;
+    if (coastJob != null && coastJob.matches(ContourJobType.COAST_DISTANCE, cols, rows, seaLevel)) {
       return null;
     }
-    cachedCoastIndex = new CoastSpatialIndex(minX, minY, maxX, maxY, coastSegs, 80);
-    ContourGrid g = sampleCoastDistanceGrid(cols, rows, seaLevel, cachedCoastIndex);
-    cachedCoastGrid = g;
-    cachedCoastSeaLevel = seaLevel;
-    cachedCoastCols = cols;
-    cachedCoastRows = rows;
-    cachedCoastCellCount = cells.size();
-    coastCacheValid = (g != null);
-    return g;
+    coastJob = new ContourJob(ContourJobType.COAST_DISTANCE, cols, rows, seaLevel);
+    return null;
+  }
+
+  ContourGrid getElevationGridForRender(int cols, int rows, float seaLevel) {
+    if (cells == null || cells.isEmpty()) return null;
+    if (elevationCacheValid &&
+        cachedElevationSeaLevel == seaLevel &&
+        cachedElevationCols == cols &&
+        cachedElevationRows == rows &&
+        cachedElevationCellCount == cells.size()) {
+      return cachedElevationGrid;
+    }
+    if (elevationJob != null && elevationJob.matches(ContourJobType.ELEVATION_SAMPLE, cols, rows, seaLevel)) {
+      return null;
+    }
+    elevationJob = new ContourJob(ContourJobType.ELEVATION_SAMPLE, cols, rows, seaLevel);
+    return null;
+  }
+
+  void stepContourJobs(int maxMillis) {
+    int budget = max(1, maxMillis);
+    if (coastJob != null) {
+      coastJob.step(budget);
+      if (coastJob.done) finalizeCoastJob();
+    }
+    if (elevationJob != null) {
+      elevationJob.step(budget);
+      if (elevationJob.done) finalizeElevationJob();
+    }
+  }
+
+  boolean isContourJobRunning() {
+    return (coastJob != null && !coastJob.done) || (elevationJob != null && !elevationJob.done);
+  }
+
+  float getContourJobProgress() {
+    float p = 1.0f;
+    if (coastJob != null && !coastJob.done) p = min(p, coastJob.progress());
+    if (elevationJob != null && !elevationJob.done) p = min(p, elevationJob.progress());
+    return p;
+  }
+
+  private void finalizeCoastJob() {
+    if (coastJob == null) return;
+    if (coastJob.failed || coastJob.grid == null || coastJob.cellCountSnapshot != ((cells != null) ? cells.size() : 0)) {
+      cachedCoastGrid = null;
+      cachedCoastIndex = null;
+      coastCacheValid = true;
+      cachedCoastSeaLevel = coastJob.seaLevel;
+      cachedCoastCols = coastJob.cols;
+      cachedCoastRows = coastJob.rows;
+      cachedCoastCellCount = coastJob.cellCountSnapshot;
+    } else {
+      cachedCoastGrid = coastJob.grid;
+      cachedCoastIndex = coastJob.coastIndex;
+      cachedCoastSeaLevel = coastJob.seaLevel;
+      cachedCoastCols = coastJob.cols;
+      cachedCoastRows = coastJob.rows;
+      cachedCoastCellCount = coastJob.cellCountSnapshot;
+      coastCacheValid = true;
+    }
+    coastJob = null;
+  }
+
+  private void finalizeElevationJob() {
+    if (elevationJob == null) return;
+    if (elevationJob.failed || elevationJob.grid == null || elevationJob.cellCountSnapshot != ((cells != null) ? cells.size() : 0)) {
+      cachedElevationGrid = null;
+      elevationCacheValid = true;
+      cachedElevationSeaLevel = elevationJob.seaLevel;
+      cachedElevationCols = elevationJob.cols;
+      cachedElevationRows = elevationJob.rows;
+      cachedElevationCellCount = elevationJob.cellCountSnapshot;
+    } else {
+      cachedElevationGrid = elevationJob.grid;
+      cachedElevationSeaLevel = elevationJob.seaLevel;
+      cachedElevationCols = elevationJob.cols;
+      cachedElevationRows = elevationJob.rows;
+      cachedElevationCellCount = elevationJob.cellCountSnapshot;
+      elevationCacheValid = true;
+    }
+    elevationJob = null;
   }
 
   void drawSignedContourSet(PApplet app, ContourGrid g, float start, float end, float step, int strokeCol, float strokePx) {
@@ -1753,8 +1907,27 @@ class MapModel {
     voronoiDirty = true;
     snapDirty = true;
     voronoiJob = null; // cancel in-flight job
-    coastCacheValid = false;
+    invalidateContourCaches();
     renderer.invalidateBiomeOutlineCache();
+  }
+
+  void invalidateContourCaches() {
+    coastCacheValid = false;
+    cachedCoastGrid = null;
+    cachedCoastIndex = null;
+    cachedCoastSeaLevel = Float.MAX_VALUE;
+    cachedCoastCols = 0;
+    cachedCoastRows = 0;
+    cachedCoastCellCount = -1;
+    coastJob = null;
+
+    elevationCacheValid = false;
+    cachedElevationGrid = null;
+    cachedElevationSeaLevel = Float.MAX_VALUE;
+    cachedElevationCols = 0;
+    cachedElevationRows = 0;
+    cachedElevationCellCount = -1;
+    elevationJob = null;
   }
 
   void ensureVoronoiComputed() {
@@ -2325,7 +2498,7 @@ class MapModel {
       c.elevation = c.elevation + delta * t;
     }
     normalizeElevationsIfOutOfBounds(seaLevel);
-    coastCacheValid = false;
+    invalidateContourCaches();
   }
 
   PathType getPathType(int idx) {
@@ -2354,7 +2527,7 @@ class MapModel {
       c.elevation = (n - 0.5f) * 2.0f * amplitude;
     }
     normalizeElevationsIfOutOfBounds(seaLevel);
-    coastCacheValid = false;
+    invalidateContourCaches();
   }
 
   void addElevationVariation(float scale, float amplitude, float seaLevel) {
@@ -2372,7 +2545,7 @@ class MapModel {
       c.elevation = c.elevation + delta;
     }
     normalizeElevationsIfOutOfBounds(seaLevel);
-    coastCacheValid = false;
+    invalidateContourCaches();
   }
 
   PVector cellCentroid(Cell c) {
@@ -2914,7 +3087,7 @@ class MapModel {
 
   void markRenderCacheDirty() {
     renderer.invalidateBiomeOutlineCache();
-    coastCacheValid = false;
+    invalidateContourCaches();
   }
 
   ArrayList<PVector> findSnapPathBidirectional(String kFrom, String kTo, boolean favorFlat,

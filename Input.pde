@@ -583,7 +583,7 @@ void updateActiveSlider(int mx, int my) {
     case SLIDER_RENDER_WATER_RIPPLE_DIST: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.waterRippleDistanceSlider.x) / (float)l.waterRippleDistanceSlider.w, 0, 1);
-      renderSettings.waterRippleDistancePx = constrain(4.0f + t * (40.0f - 4.0f), 4.0f, 40.0f);
+      renderSettings.waterRippleDistancePx = constrain(t * 40.0f, 0.0f, 40.0f);
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_H: {
@@ -641,16 +641,21 @@ void updateActiveSlider(int mx, int my) {
       renderSettings.zoneStrokeSatScale01 = t;
       break;
     }
+    case SLIDER_RENDER_ZONE_BRI: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.zoneBriSlider.x) / (float)l.zoneBriSlider.w, 0, 1);
+      renderSettings.zoneStrokeBriScale01 = t;
+      break;
+    }
     case SLIDER_RENDER_LABEL_OUTLINE_ALPHA: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.labelsOutlineAlphaSlider.x) / (float)l.labelsOutlineAlphaSlider.w, 0, 1);
       renderSettings.labelOutlineAlpha01 = t;
       break;
     }
-    case SLIDER_RENDER_LABEL_MIN_SIZE: {
-      RenderLayout l = buildRenderLayout();
-      float t = constrain((mx - l.labelsMinSizeSlider.x) / (float)l.labelsMinSizeSlider.w, 0, 1);
-      renderSettings.labelMinFontPx = constrain(6.0f + t * (32.0f - 6.0f), 6.0f, 32.0f);
+    case SLIDER_RENDER_ELEV_LINES_STYLE: {
+      // Only one style for now; keep the slider responsive for consistency.
+      renderSettings.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
       break;
     }
     case SLIDER_RENDER_PADDING: {

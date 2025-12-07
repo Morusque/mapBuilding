@@ -63,6 +63,7 @@ class RenderSettings {
   // Zones (strokes only)
   float zoneStrokeAlpha01 = 0.5f;
   float zoneStrokeSatScale01 = 0.5f;
+  float zoneStrokeBriScale01 = 1.0f;
   boolean showZones = true;
 
   // Structures
@@ -77,7 +78,6 @@ class RenderSettings {
   boolean showLabelsPaths = true;
   boolean showLabelsStructures = true;
   float labelOutlineAlpha01 = 0.0f;
-  float labelMinFontPx = 13.0f;
 
   // General
   float exportPaddingPct = 0.015f;
@@ -98,6 +98,7 @@ class RenderSettings {
     c.biomeFillAlpha01 = biomeFillAlpha01;
     c.biomeSatScale01 = biomeSatScale01;
     c.biomeFillType = biomeFillType;
+    c.biomePatternName = biomePatternName;
     c.biomeOutlineSizePx = biomeOutlineSizePx;
     c.biomeOutlineAlpha01 = biomeOutlineAlpha01;
     c.biomeShowUnderwater = biomeShowUnderwater;
@@ -123,6 +124,7 @@ class RenderSettings {
     // Zones
     c.zoneStrokeAlpha01 = zoneStrokeAlpha01;
     c.zoneStrokeSatScale01 = zoneStrokeSatScale01;
+    c.zoneStrokeBriScale01 = zoneStrokeBriScale01;
     c.showZones = showZones;
     // Structures
     c.showStructures = showStructures;
@@ -135,7 +137,6 @@ class RenderSettings {
     c.showLabelsPaths = showLabelsPaths;
     c.showLabelsStructures = showLabelsStructures;
     c.labelOutlineAlpha01 = labelOutlineAlpha01;
-    c.labelMinFontPx = labelMinFontPx;
     // General
     c.exportPaddingPct = exportPaddingPct;
     c.antialiasing = antialiasing;
@@ -158,6 +159,7 @@ class RenderSettings {
     biomeFillAlpha01 = o.biomeFillAlpha01;
     biomeSatScale01 = o.biomeSatScale01;
     biomeFillType = o.biomeFillType;
+    biomePatternName = o.biomePatternName;
     biomeOutlineSizePx = o.biomeOutlineSizePx;
     biomeOutlineAlpha01 = o.biomeOutlineAlpha01;
     biomeShowUnderwater = o.biomeShowUnderwater;
@@ -183,6 +185,7 @@ class RenderSettings {
     // Zones
     zoneStrokeAlpha01 = o.zoneStrokeAlpha01;
     zoneStrokeSatScale01 = o.zoneStrokeSatScale01;
+    zoneStrokeBriScale01 = o.zoneStrokeBriScale01;
     showZones = o.showZones;
     // Structures
     showStructures = o.showStructures;
@@ -195,7 +198,6 @@ class RenderSettings {
     showLabelsPaths = o.showLabelsPaths;
     showLabelsStructures = o.showLabelsStructures;
     labelOutlineAlpha01 = o.labelOutlineAlpha01;
-    labelMinFontPx = o.labelMinFontPx;
     // General
     exportPaddingPct = o.exportPaddingPct;
     antialiasing = o.antialiasing;

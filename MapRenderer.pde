@@ -7,8 +7,10 @@ class MapRenderer {
   // Cached biome outline edges
   private ArrayList<PVector[]> cachedBiomeOutlineEdges = new ArrayList<PVector[]>();
   private ArrayList<Integer> cachedBiomeOutlineBiomes = new ArrayList<Integer>();
+  private ArrayList<Boolean> cachedBiomeOutlineUnderwater = new ArrayList<Boolean>();
   private int cachedBiomeOutlineCellCount = -1;
   private int cachedBiomeOutlineChecksum = 0;
+  private float cachedBiomeOutlineSeaLevel = Float.MAX_VALUE;
 
   MapRenderer(MapModel model) {
     this.model = model;
@@ -203,53 +205,11 @@ class MapRenderer {
 
   void drawLabelsRender(PApplet app, RenderSettings s) {
     if (model.labels == null || s == null) return;
-    ArrayList<MapLabel> list = new ArrayList<MapLabel>();
+    if (!s.showLabelsArbitrary) return;
+    app.pushStyle();
     for (MapLabel l : model.labels) {
       if (l == null) continue;
-      boolean allowed = false;
-      switch (l.target) {
-        case ZONE: allowed = s.showLabelsZones; break;
-        case PATH: allowed = s.showLabelsPaths; break;
-        case STRUCTURE: allowed = s.showLabelsStructures; break;
-        case FREE:
-        default: allowed = s.showLabelsArbitrary; break;
-      }
-      if (!allowed) continue;
-      if (l.size < s.labelMinFontPx) continue;
-      list.add(l);
-    }
-    // Sort by size desc, then type priority (ZONE > PATH > STRUCTURE > FREE)
-    Collections.sort(list, new Comparator<MapLabel>() {
-      public int compare(MapLabel a, MapLabel b) {
-        if (a == null && b == null) return 0;
-        if (a == null) return 1;
-        if (b == null) return -1;
-        if (a.size != b.size) return (b.size > a.size) ? 1 : -1;
-        int pa = labelPriority(a.target);
-        int pb = labelPriority(b.target);
-        return pb - pa;
-      }
-    });
-
-    app.pushStyle();
-    for (MapLabel l : list) {
-      if (l == null) continue;
-      if (l.text == null) continue;
-      // Keep labels simple for now: fixed screen size (no zoom scaling) to avoid blurry/giant exports.
-      float pxSize = max(6.0f, l.size);
-      // Outline
-      int outlineCol = app.color(255, 255, 255, constrain(s.labelOutlineAlpha01, 0, 1) * 255);
-      app.textAlign(CENTER, CENTER);
-      app.textSize(pxSize);
-      app.fill(outlineCol);
-      float off = max(1.0f, pxSize * 0.07f);
-      app.text(l.text, l.x + off, l.y);
-      app.text(l.text, l.x - off, l.y);
-      app.text(l.text, l.x, l.y + off);
-      app.text(l.text, l.x, l.y - off);
-      // Main text
-      app.fill(0);
-      app.text(l.text, l.x, l.y);
+      l.draw(app); // use the same rendering as labels mode (zoom-invariant)
     }
     app.popStyle();
   }
@@ -567,12 +527,14 @@ class MapRenderer {
 
     // Biome outlines (boundary edges between biomes)
     if (s.biomeOutlineSizePx > 1e-4f && s.biomeOutlineAlpha01 > 1e-4f) {
-      ensureBiomeOutlineCache();
+      ensureBiomeOutlineCache(seaLevel);
       app.noFill();
       app.strokeWeight(max(0.1f, s.biomeOutlineSizePx) / viewport.zoom);
       for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
         PVector[] seg = cachedBiomeOutlineEdges.get(i);
         int biomeId = (i < cachedBiomeOutlineBiomes.size()) ? cachedBiomeOutlineBiomes.get(i) : -1;
+        boolean underwaterEdge = (i < cachedBiomeOutlineUnderwater.size()) ? cachedBiomeOutlineUnderwater.get(i) : false;
+        if (!s.biomeShowUnderwater && underwaterEdge) continue;
         int col = landBase;
         if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size()) {
           ZoneType zt = model.biomeTypes.get(biomeId);
@@ -626,6 +588,7 @@ class MapRenderer {
       app.stroke(strokeCol);
       app.strokeWeight(max(0.1f, s.waterContourSizePx) / viewport.zoom);
       app.noFill();
+      model.ensureCellNeighborsComputed();
       for (int ci = 0; ci < model.cells.size(); ci++) {
         Cell c = model.cells.get(ci);
         if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
@@ -636,8 +599,8 @@ class MapRenderer {
           PVector b = c.vertices.get((e + 1) % vc);
           String key = undirectedEdgeKey(a, b);
           if (drawn.contains(key)) continue;
-          drawn.add(key);
           boolean boundary = false;
+          boolean nbIsWater = false;
           ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
           if (nbs != null) {
             for (int nbIdx : nbs) {
@@ -651,7 +614,8 @@ class MapRenderer {
                 PVector nbp = nb.vertices.get((j + 1) % nv);
                 if ((model.distSq(a, na) < 1e-6f && model.distSq(b, nbp) < 1e-6f) ||
                     (model.distSq(a, nbp) < 1e-6f && model.distSq(b, na) < 1e-6f)) {
-                  boundary = isWater != (nb.elevation < seaLevel);
+                  nbIsWater = nb.elevation < seaLevel;
+                  boundary = isWater != nbIsWater;
                   match = true;
                   break;
                 }
@@ -659,7 +623,9 @@ class MapRenderer {
               if (match) break;
             }
           }
-          if (boundary && isWater) {
+          if (!boundary) continue;
+          drawn.add(key);
+          if (isWater || nbIsWater) {
             app.line(a.x, a.y, b.x, b.y);
           }
         }
@@ -667,17 +633,25 @@ class MapRenderer {
     }
 
     // Water ripples (distance-field contours)
-    if (s.waterRippleCount > 0 && s.waterRippleDistancePx > 1e-4f) {
+    if (s.waterRippleCount > 0 && s.waterContourAlpha01 > 1e-4f) {
       int cols = max(80, min(200, (int)(sqrt(max(1, model.cells.size())) * 1.0f)));
       int rows = cols;
       MapModel.ContourGrid g = model.getCoastDistanceGrid(cols, rows, seaLevel);
       if (g != null) {
-        float spacingWorld = s.waterRippleDistancePx / max(1e-6f, viewport.zoom);
+        float spacingWorld = max(0.1f, s.waterRippleDistancePx) / max(1e-6f, viewport.zoom);
         float maxIso = spacingWorld * s.waterRippleCount;
-        int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterContourAlpha01);
+        float strokePx = max(0.8f, s.waterContourSizePx) / max(1e-6f, viewport.zoom);
+        app.pushStyle();
+        app.noFill();
+        app.strokeWeight(strokePx);
         for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
-          model.drawSignedContourSet(app, g, iso, maxIso, spacingWorld, strokeCol, max(0.8f, s.waterContourSizePx));
+          float fade = (maxIso <= 1e-6f) ? 1.0f : 1.0f - ((iso - spacingWorld) / maxIso);
+          float a = constrain(fade * s.waterContourAlpha01, 0, 1);
+          int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, a);
+          app.stroke(strokeCol);
+          drawIsoLine(app, g, iso);
         }
+        app.popStyle();
       }
     }
 
@@ -685,7 +659,7 @@ class MapRenderer {
     if (s.elevationLinesCount > 0 && s.elevationLinesAlpha01 > 1e-4f) {
       int cols = 90;
       int rows = 90;
-      MapModel.ContourGrid grid = model.sampleElevationGrid(cols, rows, seaLevel);
+      MapModel.ContourGrid grid = model.getElevationGridForRender(cols, rows, seaLevel);
       if (grid != null) {
         float range = max(1e-4f, grid.max - seaLevel);
         float step = range / max(1, s.elevationLinesCount);
@@ -760,33 +734,50 @@ class MapRenderer {
     if (patternCache.containsKey(name)) return patternCache.get(name);
     String path = "patterns/" + name;
     PImage img = app.loadImage(path);
-    if (img != null && img.width > 0 && img.height > 0) {
-      img.loadPixels();
-      for (int i = 0; i < img.pixels.length; i++) {
-        int c = img.pixels[i];
-        int r = (c >> 16) & 0xFF;
-        int g = (c >> 8) & 0xFF;
-        int b = c & 0xFF;
-        int gray = (r + g + b) / 3;
-        int a = 255 - gray; // black -> opaque, white -> transparent
-        img.pixels[i] = app.color(255, 255, 255, a);
+    if (img == null || img.width <= 0 || img.height <= 0) {
+      String abs = app.sketchPath(path);
+      if (abs != null) {
+        img = app.loadImage(abs);
       }
-      img.updatePixels();
-      patternCache.put(name, img);
     }
+    if ((img == null || img.width <= 0 || img.height <= 0) && app.dataPath("") != null) {
+      String dataPath = app.dataPath(path);
+      img = app.loadImage(dataPath);
+    }
+    if (img == null || img.width <= 0 || img.height <= 0) {
+      patternCache.put(name, null);
+      return null;
+    }
+    img.format = PConstants.ARGB;
+    img.loadPixels();
+    for (int i = 0; i < img.pixels.length; i++) {
+      int c = img.pixels[i];
+      int r = (c >> 16) & 0xFF;
+      int g = (c >> 8) & 0xFF;
+      int b = c & 0xFF;
+      int gray = (r + g + b) / 3;
+      int a = 255 - gray; // black -> opaque, white -> transparent
+      img.pixels[i] = app.color(255, 255, 255, a);
+    }
+    img.updatePixels();
+    patternCache.put(name, img);
     return img;
   }
 
-  private void ensureBiomeOutlineCache() {
+  private void ensureBiomeOutlineCache(float seaLevel) {
     if (model == null || model.cells == null) return;
+    model.ensureCellNeighborsComputed();
     int cellCount = model.cells.size();
     int checksum = biomeChecksum();
-    if (cellCount == cachedBiomeOutlineCellCount && checksum == cachedBiomeOutlineChecksum) {
+    if (cellCount == cachedBiomeOutlineCellCount &&
+        checksum == cachedBiomeOutlineChecksum &&
+        abs(cachedBiomeOutlineSeaLevel - seaLevel) < 1e-6f) {
       return;
     }
 
     cachedBiomeOutlineEdges.clear();
     cachedBiomeOutlineBiomes.clear();
+    cachedBiomeOutlineUnderwater.clear();
     HashSet<String> drawn = new HashSet<String>();
     float eps2 = 1e-6f;
 
@@ -794,6 +785,7 @@ class MapRenderer {
       Cell c = model.cells.get(ci);
       if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
       int biomeId = c.biomeId;
+      boolean cellUnderwater = c.elevation < seaLevel;
       int vc = c.vertices.size();
       for (int e = 0; e < vc; e++) {
         PVector a = c.vertices.get(e);
@@ -803,6 +795,7 @@ class MapRenderer {
         drawn.add(key);
 
         int nbBiome = biomeId;
+        boolean nbUnderwater = cellUnderwater;
         boolean boundary = true;
         ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
         if (nbs != null) {
@@ -818,6 +811,7 @@ class MapRenderer {
               if ((model.distSq(a, na) < eps2 && model.distSq(b, nbp) < eps2) ||
                   (model.distSq(a, nbp) < eps2 && model.distSq(b, na) < eps2)) {
                 nbBiome = nb.biomeId;
+                nbUnderwater = nb.elevation < seaLevel;
                 match = true;
                 break;
               }
@@ -832,12 +826,14 @@ class MapRenderer {
         if (boundary) {
           cachedBiomeOutlineEdges.add(new PVector[] { a.copy(), b.copy() });
           cachedBiomeOutlineBiomes.add(biomeId);
+          cachedBiomeOutlineUnderwater.add(cellUnderwater || nbUnderwater);
         }
       }
     }
 
     cachedBiomeOutlineCellCount = cellCount;
     cachedBiomeOutlineChecksum = checksum;
+    cachedBiomeOutlineSeaLevel = seaLevel;
   }
 
   private int biomeChecksum() {
@@ -853,8 +849,10 @@ class MapRenderer {
   void invalidateBiomeOutlineCache() {
     cachedBiomeOutlineEdges.clear();
     cachedBiomeOutlineBiomes.clear();
+    cachedBiomeOutlineUnderwater.clear();
     cachedBiomeOutlineCellCount = -1;
     cachedBiomeOutlineChecksum = 0;
+    cachedBiomeOutlineSeaLevel = Float.MAX_VALUE;
   }
 
   MapModel.ContourGrid sampleElevationGrid(int cols, int rows, float fallback) {
@@ -1024,6 +1022,7 @@ class MapRenderer {
           if (z != null) {
             float[] hsb = model.rgbToHSB(z.col);
             hsb[1] = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
+            hsb[2] = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
             strokeCol = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
           }
         }
