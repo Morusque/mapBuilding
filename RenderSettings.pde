@@ -39,30 +39,30 @@ class RenderSettings {
   boolean biomeShowUnderwater = false;
 
   // Shading
-  float waterDepthAlpha01 = 0.65f;
-  float elevationLightAlpha01 = 0.0f;
+  float waterDepthAlpha01 = 0.5f;
+  float elevationLightAlpha01 = 0.5f;
   float elevationLightAzimuthDeg = 220.0f;
   float elevationLightAltitudeDeg = 45.0f;
 
   // Contours
   float waterContourSizePx = 2.0f;
   int waterRippleCount = 0;
-  float waterRippleDistancePx = 12.0f;
+  float waterRippleDistancePx = 5.0f;
   float waterContourHue01 = 0.0f;
   float waterContourSat01 = 0.0f;
   float waterContourBri01 = 0.0f;
   float waterContourAlpha01 = 1.0f;
   int elevationLinesCount = 0;
   ElevationLinesStyle elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
-  float elevationLinesAlpha01 = 0.25f;
+  float elevationLinesAlpha01 = 0.3f;
 
   // Paths
   float pathSatScale01 = 1.0f;
   boolean showPaths = true;
 
   // Zones (strokes only)
-  float zoneStrokeAlpha01 = 1.0f;
-  float zoneStrokeSatScale01 = 1.0f;
+  float zoneStrokeAlpha01 = 0.5f;
+  float zoneStrokeSatScale01 = 0.5f;
   boolean showZones = true;
 
   // Structures
@@ -76,11 +76,11 @@ class RenderSettings {
   boolean showLabelsZones = true;
   boolean showLabelsPaths = true;
   boolean showLabelsStructures = true;
-  float labelOutlineAlpha01 = 0.7f;
-  float labelMinFontPx = 10.0f;
+  float labelOutlineAlpha01 = 0.0f;
+  float labelMinFontPx = 13.0f;
 
   // General
-  float exportPaddingPct = 0.01f;
+  float exportPaddingPct = 0.015f;
   boolean antialiasing = true;
   int activePresetIndex = 0;
 
@@ -206,6 +206,12 @@ class RenderSettings {
 RenderPreset[] buildDefaultRenderPresets() {
   ArrayList<RenderPreset> list = new ArrayList<RenderPreset>();
 
+  // Default
+  {
+    RenderSettings s = new RenderSettings();
+    list.add(new RenderPreset("Default", s));
+  }
+
   // Simple
   {
     RenderSettings s = new RenderSettings();
@@ -223,6 +229,8 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourAlpha01 = 1.0f;
     s.elevationLinesCount = 0;
     s.elevationLinesAlpha01 = 1.0f;
+    s.zoneStrokeAlpha01 = 0.5f;
+    s.zoneStrokeSatScale01 = 0.5f;    
     list.add(new RenderPreset("Simple", s));
   }
 

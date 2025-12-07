@@ -103,7 +103,7 @@ float seaLevel = -0.2f;
 float elevationBrushRadius = 0.08f;
 float elevationBrushStrength = 0.05f; // per stroke
 boolean elevationBrushRaise = true;
-float elevationNoiseScale = 4.0f;
+float elevationNoiseScale = 8.0f;
 float defaultElevation = 0.05f;
 
 // Render toggles

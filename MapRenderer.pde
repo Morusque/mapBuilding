@@ -1,4 +1,5 @@
 import java.util.*;
+import processing.core.PConstants;
 
 class MapRenderer {
   private final MapModel model;
@@ -719,7 +720,7 @@ class MapRenderer {
 
   private int hsbColor(PApplet app, float h, float s, float b, float a) {
     app.pushStyle();
-    app.colorMode(app.HSB, 1.0f, 1.0f, 1.0f, 1.0f);
+    app.colorMode(PConstants.HSB, 1.0f, 1.0f, 1.0f, 1.0f);
     int c = app.color(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1), constrain(a, 0, 1));
     app.popStyle();
     return c;
@@ -735,8 +736,8 @@ class MapRenderer {
     if (pattern.width <= 0 || pattern.height <= 0) return;
     app.pushStyle();
     app.noStroke();
-    app.textureMode(app.NORMAL);
-    app.textureWrap(app.REPEAT);
+    app.textureMode(PConstants.NORMAL);
+    app.textureWrap(PConstants.REPEAT);
     app.tint(tintCol, constrain(alpha01, 0, 1) * 255);
     app.beginShape();
     app.texture(pattern);
@@ -747,7 +748,7 @@ class MapRenderer {
       float vv = wrap01(v.y / ph);
       app.vertex(v.x, v.y, u, vv);
     }
-    app.endShape(app.CLOSE);
+    app.endShape(PConstants.CLOSE);
     app.popStyle();
   }
 
