@@ -26,6 +26,7 @@ Paths :
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
 (later) option to generate paths
 (soon) when switchg path type on the left menu, desselect the path (on the right menu)
+(later) option to have the color match with water
 
 Struct :
 (later) structures should be groupable
@@ -70,3 +71,6 @@ General :
 (later) undo states
 (later) rgbToHSB seems to be part of the model class while hsb01ToRGB isnt, also why "01"? can we add more clarity to all this?
 (later) what's the use of passing "PApplet app" as a reference when methods could be called directly?
+(later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
+(later) revise UI element visual design, stil in an "old windows" way
+

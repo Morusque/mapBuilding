@@ -1897,17 +1897,18 @@ RenderLayout buildRenderLayout() {
   l.headerBase = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
   curY += PANEL_TITLE_H + PANEL_ROW_GAP;
   if (renderSectionBaseOpen) {
-    int yHue = curY;
+    int yHue = curY + PANEL_LABEL_H;
     l.landHSB[0] = new IntRect(innerX, yHue + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
     l.landHSB[1] = new IntRect(innerX + (shortSliderW + hsbGap), yHue + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
     l.landHSB[2] = new IntRect(innerX + 2 * (shortSliderW + hsbGap), yHue + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    curY += PANEL_LABEL_H*2 + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
+    curY += PANEL_LABEL_H;
     int yWater = curY;
     l.waterHSB[0] = new IntRect(innerX, yWater + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
     l.waterHSB[1] = new IntRect(innerX + (shortSliderW + hsbGap), yWater + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
     l.waterHSB[2] = new IntRect(innerX + 2 * (shortSliderW + hsbGap), yWater + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    curY += PANEL_LABEL_H*2 + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.cellBordersAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
@@ -1969,11 +1970,11 @@ RenderLayout buildRenderLayout() {
     l.waterRippleDistanceSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-    int yColor = curY;
+    int yColor = curY+PANEL_LABEL_H;
     l.waterContourHSB[0] = new IntRect(innerX, yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
     l.waterContourHSB[1] = new IntRect(innerX + (shortSliderW + hsbGap), yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
     l.waterContourHSB[2] = new IntRect(innerX + 2 * (shortSliderW + hsbGap), yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    curY += PANEL_LABEL_H*2 + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.waterContourAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
@@ -2069,8 +2070,8 @@ void drawRenderPanel() {
 
   drawSectionHeader(layout.headerBase, "Base", renderSectionBaseOpen);
   if (renderSectionBaseOpen) {
-    drawHSBRow(layout.landHSB, "Land base H / S / B", renderSettings.landHue01, renderSettings.landSat01, renderSettings.landBri01);
-    drawHSBRow(layout.waterHSB, "Water base H / S / B", renderSettings.waterHue01, renderSettings.waterSat01, renderSettings.waterBri01);
+    drawHSBRow(layout.landHSB, "Land base", renderSettings.landHue01, renderSettings.landSat01, renderSettings.landBri01);
+    drawHSBRow(layout.waterHSB, "Water base", renderSettings.waterHue01, renderSettings.waterSat01, renderSettings.waterBri01);
     drawSlider(layout.cellBordersAlphaSlider, renderSettings.cellBorderAlpha01, "Cell borders alpha (" + nf(renderSettings.cellBorderAlpha01 * 100, 1, 0) + "%)");
   }
 
@@ -2107,7 +2108,7 @@ void drawRenderPanel() {
     drawSlider(layout.waterContourSizeSlider, constrain(renderSettings.waterContourSizePx / 5.0f, 0, 1), "Water contour size (" + nf(renderSettings.waterContourSizePx, 1, 1) + " px)");
     drawSlider(layout.waterRippleCountSlider, constrain(renderSettings.waterRippleCount / 5.0f, 0, 1), "Number of ripples (" + renderSettings.waterRippleCount + ")");
     drawSlider(layout.waterRippleDistanceSlider, constrain(renderSettings.waterRippleDistancePx / 40.0f, 0, 1), "Ripple distance (" + nf(renderSettings.waterRippleDistancePx, 1, 1) + " px)");
-    drawHSBRow(layout.waterContourHSB, "Water contours H / S / B", renderSettings.waterContourHue01, renderSettings.waterContourSat01, renderSettings.waterContourBri01);
+    drawHSBRow(layout.waterContourHSB, "Water contours", renderSettings.waterContourHue01, renderSettings.waterContourSat01, renderSettings.waterContourBri01);
     drawSlider(layout.waterContourAlphaSlider, renderSettings.waterContourAlpha01, "Water contours alpha (" + nf(renderSettings.waterContourAlpha01 * 100, 1, 0) + "%)");
     float elevCountNorm = constrain(renderSettings.elevationLinesCount / 24.0f, 0, 1);
     drawSlider(layout.elevationLinesCountSlider, elevCountNorm, "Elevation lines (" + renderSettings.elevationLinesCount + ")");
@@ -2136,7 +2137,7 @@ void drawRenderPanel() {
   drawSectionHeader(layout.headerStructures, "Structures", renderSectionStructuresOpen);
   if (renderSectionStructuresOpen) {
     drawCheckbox(layout.structuresShowCheckbox.x, layout.structuresShowCheckbox.y, layout.structuresShowCheckbox.w, renderSettings.showStructures, "Show structures");
-    drawCheckbox(layout.structuresMergeCheckbox.x, layout.structuresMergeCheckbox.y, layout.structuresMergeCheckbox.w, renderSettings.mergeStructures, "Merge structures (later)");
+    drawCheckbox(layout.structuresMergeCheckbox.x, layout.structuresMergeCheckbox.y, layout.structuresMergeCheckbox.w, renderSettings.mergeStructures, "Merge structures");
   }
 
   drawSectionHeader(layout.headerLabels, "Labels", renderSectionLabelsOpen);
@@ -2211,8 +2212,8 @@ void drawHSBRow(IntRect[] sliders, String label, float h, float s, float b) {
   if (sliders == null || sliders.length < 3) return;
   fill(0);
   textAlign(LEFT, BOTTOM);
-  text(label, sliders[0].x, sliders[0].y - 4);
-  String[] names = { "H", "S", "B" };
+  text(label, sliders[0].x, sliders[0].y - 16);
+  String[] names = { "hue", "saturation", "brightness" };
   float[] vals = { h, s, b };
   for (int i = 0; i < 3; i++) {
     IntRect r = sliders[i];
