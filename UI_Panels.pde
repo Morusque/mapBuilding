@@ -1125,6 +1125,7 @@ class ElevationLayout {
   IntRect noiseSlider;
   IntRect perlinBtn;
   IntRect varyBtn;
+  IntRect plateauBtn;
 }
 
 ElevationLayout buildElevationLayout() {
@@ -1138,6 +1139,8 @@ ElevationLayout buildElevationLayout() {
   int genW = 120;
   l.perlinBtn = new IntRect(innerX, curY, genW, PANEL_BUTTON_H);
   l.varyBtn = new IntRect(l.perlinBtn.x + genW + 8, curY, genW, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+  l.plateauBtn = new IntRect(innerX, curY, genW, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   int sliderW = 200;
@@ -1235,10 +1238,12 @@ void drawElevationPanel() {
 
   drawBevelButton(layout.perlinBtn.x, layout.perlinBtn.y, layout.perlinBtn.w, layout.perlinBtn.h, false);
   drawBevelButton(layout.varyBtn.x, layout.varyBtn.y, layout.varyBtn.w, layout.varyBtn.h, false);
+  drawBevelButton(layout.plateauBtn.x, layout.plateauBtn.y, layout.plateauBtn.w, layout.plateauBtn.h, false);
   fill(10);
   textAlign(CENTER, CENTER);
   text("Generate", layout.perlinBtn.x + layout.perlinBtn.w / 2, layout.perlinBtn.y + layout.perlinBtn.h / 2);
   text("Vary", layout.varyBtn.x + layout.varyBtn.w / 2, layout.varyBtn.y + layout.varyBtn.h / 2);
+  text("Make plateaux", layout.plateauBtn.x + layout.plateauBtn.w / 2, layout.plateauBtn.y + layout.plateauBtn.h / 2);
 
   drawControlsHint(layout.panel,
                    "left-click: raise/lower",

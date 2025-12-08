@@ -1383,5 +1383,11 @@ boolean handleElevationPanelClick(int mx, int my) {
     return true;
   }
 
+  // Plateaux button
+  if (layout.plateauBtn.contains(mx, my)) {
+    mapModel.makePlateaus(seaLevel);
+    return true;
+  }
+
   return false;
 }

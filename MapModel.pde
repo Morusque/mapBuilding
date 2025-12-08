@@ -2054,6 +2054,60 @@ class MapModel {
     return fallback;
   }
 
+  void makePlateaus(float seaLevel) {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    int nCells = cells.size();
+    int targetCount = max(1, nCells / 100);
+    int iterations = max(1, nCells / 1000);
+    for (int iter = 0; iter < iterations; iter++) {
+      int startIdx = (int)random(nCells);
+      Cell start = cells.get(startIdx);
+      if (start == null || start.vertices == null || start.vertices.isEmpty()) continue;
+      HashSet<Integer> visited = new HashSet<Integer>();
+      visited.add(startIdx);
+      float sum = start.elevation;
+      int count = 1;
+
+      while (count < targetCount) {
+        float avg = sum / max(1, count);
+        float bestDiff = Float.MAX_VALUE;
+        int bestIdx = -1;
+        for (int idx : visited) {
+          ArrayList<Integer> nbs = cellNeighbors.get(idx);
+          if (nbs == null) continue;
+          for (int nb : nbs) {
+            if (nb < 0 || nb >= nCells) continue;
+            if (visited.contains(nb)) continue;
+            Cell nc = cells.get(nb);
+            if (nc == null) continue;
+            float diff = abs(nc.elevation - avg);
+            if (diff < bestDiff) {
+              bestDiff = diff;
+              bestIdx = nb;
+            }
+          }
+        }
+        if (bestIdx < 0) break;
+        visited.add(bestIdx);
+        Cell added = cells.get(bestIdx);
+        if (added != null) {
+          sum += added.elevation;
+          count++;
+        }
+      }
+
+      float avg = sum / max(1, count);
+      for (int idx : visited) {
+        Cell c = cells.get(idx);
+        if (c == null) continue;
+        c.elevation = lerp(c.elevation, avg, 0.8f);
+      }
+    }
+    normalizeElevationsIfOutOfBounds(seaLevel);
+    invalidateContourCaches();
+  }
+
   // Incremental Voronoi builder to keep UI responsive during generation.
   class VoronoiJob {
     MapModel model;

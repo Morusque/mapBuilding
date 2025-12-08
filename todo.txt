@@ -11,7 +11,6 @@ Sites :
 Elevation :
 (later) use techtonic logic in addition to perlin
 (later) extend water slider range so we can completely make water disappear or fill the whole screen
-(soon) new button : make plateaux (take one cell, extend to neighbor then neighbor etc n times, lerp all cells by 0.5 to the average value, repeat whole thing m times) n=number of cells/1000, m=number of cells/100
 
 Biomes :
 (soon) use selectable generation method for "generate" button
@@ -30,7 +29,6 @@ Biomes :
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
 (later) remove/reserve water from zones
-(later) small zones isolated artifacts
 (later) make zone display look somehow better
 (later) button : exclude water
 (later) button : make exclusive
