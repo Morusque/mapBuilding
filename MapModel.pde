@@ -2385,6 +2385,190 @@ class MapModel {
     }
   }
 
+  ArrayList<ArrayList<Integer>> mapCellsToZones() {
+    int n = (cells != null) ? cells.size() : 0;
+    ArrayList<ArrayList<Integer>> result = new ArrayList<ArrayList<Integer>>();
+    for (int i = 0; i < n; i++) {
+      result.add(new ArrayList<Integer>());
+    }
+    if (zones == null || zones.isEmpty() || n == 0) return result;
+    for (int zi = 0; zi < zones.size(); zi++) {
+      MapZone z = zones.get(zi);
+      if (z == null || z.cells == null) continue;
+      for (int ci : z.cells) {
+        if (ci >= 0 && ci < n) {
+          result.get(ci).add(zi);
+        }
+      }
+    }
+    return result;
+  }
+
+  void pruneZoneUnderwater(MapZone zone, float sea) {
+    if (zone == null || zone.cells == null || cells == null) return;
+    ArrayList<Integer> kept = new ArrayList<Integer>();
+    for (int ci : zone.cells) {
+      if (ci < 0 || ci >= cells.size()) continue;
+      Cell c = cells.get(ci);
+      if (c == null || c.elevation < sea) continue;
+      kept.add(ci);
+    }
+    zone.cells.clear();
+    zone.cells.addAll(kept);
+  }
+
+  void removeUnderwaterCellsFromZone(int zoneIdx, float sea) {
+    if (zones == null || zones.isEmpty()) return;
+    if (zoneIdx >= 0 && zoneIdx < zones.size()) {
+      pruneZoneUnderwater(zones.get(zoneIdx), sea);
+    } else {
+      for (int zi = 0; zi < zones.size(); zi++) {
+        pruneZoneUnderwater(zones.get(zi), sea);
+      }
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void enforceZoneExclusivity(int zoneIdx) {
+    if (zones == null || zones.isEmpty()) return;
+    if (zoneIdx >= 0 && zoneIdx < zones.size()) {
+      MapZone target = zones.get(zoneIdx);
+      HashSet<Integer> reserved = new HashSet<Integer>();
+      if (target != null && target.cells != null) {
+        reserved.addAll(target.cells);
+      }
+      for (int zi = 0; zi < zones.size(); zi++) {
+        if (zi == zoneIdx) continue;
+        MapZone other = zones.get(zi);
+        if (other == null || other.cells == null) continue;
+        ArrayList<Integer> filtered = new ArrayList<Integer>();
+        for (int ci : other.cells) {
+          if (!reserved.contains(ci)) filtered.add(ci);
+        }
+        other.cells.clear();
+        other.cells.addAll(filtered);
+      }
+    } else {
+      ArrayList<ArrayList<Integer>> cellZones = mapCellsToZones();
+      int zoneCount = zones.size();
+      if (cellZones.isEmpty() || zoneCount == 0) return;
+      int[] counts = new int[zoneCount];
+      ArrayList<ArrayList<Integer>> newZoneCells = new ArrayList<ArrayList<Integer>>();
+      for (int zi = 0; zi < zoneCount; zi++) {
+        newZoneCells.add(new ArrayList<Integer>());
+      }
+      for (int ci = 0; ci < cellZones.size(); ci++) {
+        ArrayList<Integer> owners = cellZones.get(ci);
+        if (owners == null || owners.isEmpty()) continue;
+        int assign = -1;
+        for (int owner : owners) {
+          if (owner < 0 || owner >= zoneCount) continue;
+          if (assign < 0 || counts[owner] < counts[assign]) {
+            assign = owner;
+          }
+        }
+        if (assign < 0) continue;
+        newZoneCells.get(assign).add(ci);
+        counts[assign]++;
+      }
+      for (int zi = 0; zi < zoneCount; zi++) {
+        MapZone z = zones.get(zi);
+        if (z == null) continue;
+        z.cells.clear();
+        z.cells.addAll(newZoneCells.get(zi));
+      }
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void recolorZonesWithFourColors() {
+    if (zones == null || zones.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    int zoneCount = zones.size();
+    int[] palette = {
+      color(200, 65, 65),
+      color(75, 160, 90),
+      color(85, 95, 190),
+      color(215, 180, 80)
+    };
+    ArrayList<ArrayList<Integer>> cellZones = mapCellsToZones();
+    final ArrayList<HashSet<Integer>> adjacency = new ArrayList<HashSet<Integer>>();
+    for (int zi = 0; zi < zoneCount; zi++) {
+      adjacency.add(new HashSet<Integer>());
+    }
+    int n = cellZones.size();
+    for (int ci = 0; ci < n; ci++) {
+      ArrayList<Integer> owners = cellZones.get(ci);
+      if (owners == null || owners.isEmpty()) continue;
+      int ownerCount = owners.size();
+      for (int aIdx = 0; aIdx < ownerCount; aIdx++) {
+        int a = owners.get(aIdx);
+        if (a < 0 || a >= zoneCount) continue;
+        for (int bIdx = aIdx + 1; bIdx < ownerCount; bIdx++) {
+          int b = owners.get(bIdx);
+          if (b < 0 || b >= zoneCount) continue;
+          adjacency.get(a).add(b);
+          adjacency.get(b).add(a);
+        }
+      }
+      ArrayList<Integer> neighbors = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
+      if (neighbors == null) continue;
+      for (int nb : neighbors) {
+        if (nb < 0 || nb >= cellZones.size()) continue;
+        ArrayList<Integer> nbOwners = cellZones.get(nb);
+        if (nbOwners == null || nbOwners.isEmpty()) continue;
+        for (int a : owners) {
+          if (a < 0 || a >= zoneCount) continue;
+          for (int b : nbOwners) {
+            if (b < 0 || b >= zoneCount || b == a) continue;
+            adjacency.get(a).add(b);
+            adjacency.get(b).add(a);
+          }
+        }
+      }
+    }
+    int[] assignment = new int[zoneCount];
+    Arrays.fill(assignment, -1);
+    ArrayList<Integer> order = new ArrayList<Integer>();
+    for (int zi = 0; zi < zoneCount; zi++) order.add(zi);
+    Collections.sort(order, new Comparator<Integer>() {
+      public int compare(Integer a, Integer b) {
+        return Integer.compare(adjacency.get(b).size(), adjacency.get(a).size());
+      }
+    });
+    for (int idx : order) {
+      boolean[] used = new boolean[palette.length];
+      for (int neighbor : adjacency.get(idx)) {
+        if (neighbor >= 0 && neighbor < zoneCount && assignment[neighbor] >= 0) {
+          int usedIdx = assignment[neighbor];
+          if (usedIdx >= 0 && usedIdx < palette.length) {
+            used[usedIdx] = true;
+          }
+        }
+      }
+      int pick = 0;
+      for (int c = 0; c < palette.length; c++) {
+        if (!used[c]) {
+          pick = c;
+          break;
+        }
+      }
+      assignment[idx] = pick;
+      MapZone z = zones.get(idx);
+      if (z == null) continue;
+      int col = palette[pick];
+      float[] hsb = rgbToHSB(col);
+      z.hue01 = hsb[0];
+      z.sat01 = hsb[1];
+      z.bri01 = hsb[2];
+      z.col = col;
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
   boolean cellInZone(int cellIdx, int zoneIdx) {
     if (zones == null || zoneIdx < 0 || zoneIdx >= zones.size()) return false;
     MapZone az = zones.get(zoneIdx);
@@ -3149,7 +3333,7 @@ class MapModel {
     snapDirty = true;
   }
 
-  void placeBeaches(int biomeId, float bandWidth, float sea) {
+  void placeBeaches(int biomeId, float sizeParam, float sea) {
     if (cells == null || cells.isEmpty()) return;
     ensureCellNeighborsComputed();
     int n = cells.size();
@@ -3175,8 +3359,8 @@ class MapModel {
     if (seedIdx < 0) seedIdx = fallbackIdx;
     if (seedIdx < 0) return;
 
-    // Map slider (0..10) to 1..10 cells (ceil to feel responsive)
-    int targetCount = max(1, min(10, (int)ceil(max(1.0f, bandWidth))));
+    // Map slider (0..1) to 1..100 target cells
+    int targetCount = max(1, min(100, 1 + round(sizeParam * 99.0f)));
     HashSet<Integer> claimed = new HashSet<Integer>();
     PriorityQueue<Integer> frontier = new PriorityQueue<Integer>(new Comparator<Integer>() {
       public int compare(Integer a, Integer b) {

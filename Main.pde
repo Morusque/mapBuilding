@@ -96,6 +96,7 @@ boolean keepPropertiesOnGenerate = false;
 int activeBiomeIndex = 1;                 // 0 = "None", 1..N = types
 int activeZoneIndex = 1;                  // 0 = "None", 1..N = zones
 ZonePaintMode currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
+ZonePaintMode currentBiomePaintMode = ZonePaintMode.ZONE_PAINT;
 int activePathTypeIndex = 0;
 int pathRouteModeIndex = 1; // 0=ENDS,1=PATHFIND
 float zoneBrushRadius = 0.04f;
@@ -164,7 +165,6 @@ String[] biomeGenerateModes = {
 };
 int biomeGenerateModeIndex = 0;
 float biomeGenerateValue01 = 0.75f;
-float biomeBeachWidth01 = 0.3f;
 
 // Label editing state
 int editingLabelIndex = -1;
@@ -257,7 +257,6 @@ final int SLIDER_RENDER_ZONE_BRI = 57;
 final int SLIDER_RENDER_PRESET_SELECT = 58;
 final int SLIDER_BIOME_GEN_MODE = 59;
 final int SLIDER_BIOME_GEN_VALUE = 60;
-final int SLIDER_BIOME_BEACH_WIDTH = 61;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -281,7 +280,6 @@ void applyBiomeGeneration() {
   int targetBiome = constrain(activeBiomeIndex, 0, mapModel.biomeTypes.size() - 1);
   float val01 = constrain(biomeGenerateValue01, 0, 1);
   float threshold = lerp(-1.0f, 1.0f, val01);
-  float beachWidth = biomeBeachWidth01 * 10.0f;
   float fullAbove = lerp(0.4f, 1.0f, val01); // keep above fill to higher elevations for full mode
 
   switch (mode) {
@@ -317,7 +315,7 @@ void applyBiomeGeneration() {
       mapModel.varyBiomesOnce();
       break;
     case 10: // beaches
-      mapModel.placeBeaches(targetBiome, beachWidth, seaLevel);
+      mapModel.placeBeaches(targetBiome, val01, seaLevel);
       break;
     case 11: // full pipeline
     default:
@@ -326,7 +324,7 @@ void applyBiomeGeneration() {
       mapModel.fillUnderThreshold(targetBiome, seaLevel); // underwater to selected
       mapModel.placeBiomeSpots(targetBiome, val01);
       mapModel.fillAboveThreshold(targetBiome, fullAbove);
-      mapModel.placeBeaches(targetBiome, beachWidth, seaLevel);
+      mapModel.placeBeaches(targetBiome, val01, seaLevel);
       mapModel.varyBiomesOnce();
       break;
   }
@@ -579,7 +577,7 @@ void draw() {
   if (currentTool == Tool.EDIT_ELEVATION) {
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, 0);
     drawElevationBrushPreview();
-  } else if (currentTool == Tool.EDIT_BIOMES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+  } else if (currentTool == Tool.EDIT_BIOMES && currentBiomePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();
   } else if (currentTool == Tool.EDIT_ZONES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
     drawZoneBrushPreview();

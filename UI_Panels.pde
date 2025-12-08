@@ -263,7 +263,6 @@ class BiomesLayout {
   IntRect genApplyBtn;
   IntRect genValueSlider;
   IntRect genValueWaterBtn;
-  IntRect beachWidthSlider;
   IntRect addBtn;
   IntRect removeBtn;
   ArrayList<IntRect> swatches = new ArrayList<IntRect>();
@@ -286,8 +285,6 @@ BiomesLayout buildBiomesLayout() {
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
   l.genValueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, selectorW, PANEL_SLIDER_H);
   l.genValueWaterBtn = new IntRect(l.genValueSlider.x + l.genValueSlider.w + 10, curY + PANEL_LABEL_H - 2, 100, PANEL_BUTTON_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-  l.beachWidthSlider = new IntRect(innerX, curY + PANEL_LABEL_H, selectorW, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   l.paintBtn = new IntRect(innerX, curY, 70, PANEL_BUTTON_H);
@@ -388,29 +385,16 @@ void drawBiomesPanel() {
     text("Set water level", layout.genValueWaterBtn.x + layout.genValueWaterBtn.w / 2, layout.genValueWaterBtn.y + layout.genValueWaterBtn.h / 2);
   }
 
-  // Beach width slider (0..10)
-  IntRect bw = layout.beachWidthSlider;
-  stroke(160);
-  fill(230);
-  rect(bw.x, bw.y, bw.w, bw.h, 4);
-  float bwx = bw.x + constrain(biomeBeachWidth01, 0, 1) * bw.w;
-  fill(40);
-  noStroke();
-  ellipse(bwx, bw.y + bw.h / 2.0f, bw.h * 0.9f, bw.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Beaches size (1-10)", bw.x, bw.y - 4);
-
   // Paint button
   drawBevelButton(layout.paintBtn.x, layout.paintBtn.y, layout.paintBtn.w, layout.paintBtn.h,
-                  currentZonePaintMode == ZonePaintMode.ZONE_PAINT);
+                  currentBiomePaintMode == ZonePaintMode.ZONE_PAINT);
   fill(10);
   textAlign(CENTER, CENTER);
   text("Paint", layout.paintBtn.x + layout.paintBtn.w * 0.5f, layout.paintBtn.y + layout.paintBtn.h * 0.5f);
 
   // Fill button
   drawBevelButton(layout.fillBtn.x, layout.fillBtn.y, layout.fillBtn.w, layout.fillBtn.h,
-                  currentZonePaintMode == ZonePaintMode.ZONE_FILL);
+                  currentBiomePaintMode == ZonePaintMode.ZONE_FILL);
   fill(10);
   textAlign(CENTER, CENTER);
   text("Fill", layout.fillBtn.x + layout.fillBtn.w * 0.5f, layout.fillBtn.y + layout.fillBtn.h * 0.5f);
@@ -530,6 +514,9 @@ class ZonesLayout {
   IntRect resetBtn;
   IntRect regenerateBtn;
   IntRect brushSlider;
+  IntRect excludeWaterBtn;
+  IntRect exclusiveBtn;
+  IntRect fourColorBtn;
   IntRect listPanel;
 }
 
@@ -687,6 +674,12 @@ ZonesLayout buildZonesLayout() {
   l.brushSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
 
+  l.excludeWaterBtn = new IntRect(innerX, curY, 110, PANEL_BUTTON_H);
+  l.exclusiveBtn = new IntRect(l.excludeWaterBtn.x + l.excludeWaterBtn.w + 8, curY, 140, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+  l.fourColorBtn = new IntRect(innerX, curY, 150, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
   // Right-side list panel reserved space
   l.listPanel = new IntRect(width - RIGHT_PANEL_W - PANEL_PADDING, panelTop(), RIGHT_PANEL_W, height - panelTop() - PANEL_PADDING);
 
@@ -732,6 +725,26 @@ void drawZonesPanel() {
                    "left-click: paint or erase",
                    "right-click pan",
                    "wheel: zoom");
+
+  // Zone helper buttons
+  if (layout.excludeWaterBtn != null) {
+    drawBevelButton(layout.excludeWaterBtn.x, layout.excludeWaterBtn.y, layout.excludeWaterBtn.w, layout.excludeWaterBtn.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("Exclude water", layout.excludeWaterBtn.x + layout.excludeWaterBtn.w / 2, layout.excludeWaterBtn.y + layout.excludeWaterBtn.h / 2);
+  }
+  if (layout.exclusiveBtn != null) {
+    drawBevelButton(layout.exclusiveBtn.x, layout.exclusiveBtn.y, layout.exclusiveBtn.w, layout.exclusiveBtn.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("Make exclusive", layout.exclusiveBtn.x + layout.exclusiveBtn.w / 2, layout.exclusiveBtn.y + layout.exclusiveBtn.h / 2);
+  }
+  if (layout.fourColorBtn != null) {
+    drawBevelButton(layout.fourColorBtn.x, layout.fourColorBtn.y, layout.fourColorBtn.w, layout.fourColorBtn.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("Four-color map", layout.fourColorBtn.x + layout.fourColorBtn.w / 2, layout.fourColorBtn.y + layout.fourColorBtn.h / 2);
+  }
 }
 
 // ----- PATHS PANEL -----

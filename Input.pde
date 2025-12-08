@@ -163,7 +163,7 @@ void mouseDragged() {
     boolean inPanel = (panel != null && panel.contains(mouseX, mouseY));
     if (!inPanel) {
       PVector w = viewport.screenToWorld(mouseX, mouseY);
-      if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+      if (currentBiomePaintMode == ZonePaintMode.ZONE_PAINT) {
         paintBiomeBrush(w.x, w.y);
       }
     }
@@ -302,13 +302,6 @@ void updateActiveSlider(int mx, int my) {
       float t = (mx - l.genValueSlider.x) / (float)l.genValueSlider.w;
       t = constrain(t, 0, 1);
       biomeGenerateValue01 = t;
-      break;
-    }
-    case SLIDER_BIOME_BEACH_WIDTH: {
-      BiomesLayout l = buildBiomesLayout();
-      float t = (mx - l.beachWidthSlider.x) / (float)l.beachWidthSlider.w;
-      t = constrain(t, 0, 1);
-      biomeBeachWidth01 = t;
       break;
     }
     case SLIDER_ELEV_SEA: {

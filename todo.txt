@@ -15,11 +15,8 @@ Biomes :
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
-(later) remove/reserve water from zones
 (later) make zone display look somehow better
-(later) button : exclude water
-(later) button : make exclusive
-(later) button : set four-color map coloring
+(later) reliable method when two outlines share the same border (always distinct, makes sense, line weight into account) and use it for biomes outlines and zones outlines (define segment edges normals, spread segments along it n times = number of borders that share it, based on : which side of it, smaller regions inside big ones)
 
 Paths :
 (later) width definer similar to water but using pathfinding to define more important roads
@@ -52,7 +49,7 @@ Rendering :
 (later) some ugly dots sometimes appear between polygones
 (later) labels outline don't work well
 (later) ripple lines are approximative, so either we optimize them or we make tem display below lands
-(later) reliable method when two outlines share the same border (always distinct, makes sense, line weight into account) and use it for biomes outlines and zones outlines (define segment edges normals, spread segments along it n times = number of borders that share it, based on : which side of it, smaller regions inside big ones)
+(later) use zone method for reliable borders display, make it potentially apply to all kinds of outlines that share the same border all-together at once
 (later) choosing biomes "pattern" option yields "The file patterns/dots01.png contains bad image data, or may not be an image." while file is seems ok.
 (later) contour lines (or other computationally intensive tasks) should trigger a progress bar and be made to not freeze the rest of the ui (like we did for cell placements and voronoi).
 (later) labels are wrong in many ways, rework no this

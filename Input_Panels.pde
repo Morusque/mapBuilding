@@ -192,13 +192,13 @@ boolean handleBiomesPanelClick(int mx, int my) {
 
   // Paint button
   if (layout.paintBtn.contains(mx, my)) {
-    currentZonePaintMode = ZonePaintMode.ZONE_PAINT;
+    currentBiomePaintMode = ZonePaintMode.ZONE_PAINT;
     return true;
   }
 
   // Fill button
   if (layout.fillBtn.contains(mx, my)) {
-    currentZonePaintMode = ZonePaintMode.ZONE_FILL;
+    currentBiomePaintMode = ZonePaintMode.ZONE_FILL;
     return true;
   }
 
@@ -301,13 +301,6 @@ boolean handleBiomesPanelClick(int mx, int my) {
     return true;
   }
 
-  if (layout.beachWidthSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.beachWidthSlider.x) / (float)layout.beachWidthSlider.w, 0, 1);
-    biomeBeachWidth01 = t;
-    activeSlider = SLIDER_BIOME_BEACH_WIDTH;
-    return true;
-  }
-
   return false;
 }
 
@@ -322,6 +315,25 @@ boolean handleZonesPanelClick(int mx, int my) {
     float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
     zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
     activeSlider = SLIDER_ZONES_BRUSH;
+    return true;
+  }
+
+  if (layout.excludeWaterBtn.contains(mx, my)) {
+    if (activeZoneIndex >= 0) {
+      mapModel.removeUnderwaterCellsFromZone(activeZoneIndex, seaLevel);
+    } else {
+      mapModel.removeUnderwaterCellsFromZone(-1, seaLevel);
+    }
+    return true;
+  }
+
+  if (layout.exclusiveBtn.contains(mx, my)) {
+    mapModel.enforceZoneExclusivity(activeZoneIndex);
+    return true;
+  }
+
+  if (layout.fourColorBtn.contains(mx, my)) {
+    mapModel.recolorZonesWithFourColors();
     return true;
   }
 
@@ -590,7 +602,7 @@ void mousePressed() {
     if (currentTool == Tool.EDIT_SITES) {
       handleSitesMousePressed(worldPos.x, worldPos.y);
     } else if (currentTool == Tool.EDIT_BIOMES) {
-      if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
+      if (currentBiomePaintMode == ZonePaintMode.ZONE_PAINT) {
         paintBiomeBrush(worldPos.x, worldPos.y);
       } else {
         fillBiomeAt(worldPos.x, worldPos.y);
