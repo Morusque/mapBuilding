@@ -2109,13 +2109,33 @@ class MapModel {
         for (int j = 0; j < n; j++) if (j != i) candidates.add(j);
       }
 
+      HashSet<Integer> seen = new HashSet<Integer>();
       for (int idxCandidate : candidates) {
         if (idxCandidate == i) continue;
+        if (seen.contains(idxCandidate)) continue;
+        seen.add(idxCandidate);
         Site sj = sites.get(idxCandidate);
         poly = model.clipPolygonWithHalfPlane(poly, si, sj);
         if (poly.size() < 3) {
           break;
         }
+      }
+
+      // Safety pass: clip with any neighbor within the cell's current radius to avoid overlaps.
+      float maxDist = 0;
+      for (PVector v : poly) {
+        float dx = v.x - si.x;
+        float dy = v.y - si.y;
+        maxDist = max(maxDist, sqrt(dx * dx + dy * dy));
+      }
+      int extraRing = ceil(maxDist * invBin) + 2;
+      ArrayList<Integer> extra = gatherNeighborsWithinRings(i, extraRing);
+      for (int idxCandidate : extra) {
+        if (idxCandidate == i || seen.contains(idxCandidate)) continue;
+        seen.add(idxCandidate);
+        Site sj = sites.get(idxCandidate);
+        poly = model.clipPolygonWithHalfPlane(poly, si, sj);
+        if (poly.size() < 3) break;
       }
 
       if (poly.size() < 3) return;
@@ -2175,8 +2195,8 @@ class MapModel {
       int gy = floor((s.y - minY) * invBin);
 
       // Expand rings until we have a reasonable set of neighbors or reach cap
-      int needed = 32;
-      int maxRing = 4;
+      int needed = 48;
+      int maxRing = 8;
       for (int ring = 0; ring <= maxRing && out.size() < needed; ring++) {
         for (int dx = -ring; dx <= ring; dx++) {
           for (int dy = -ring; dy <= ring; dy++) {
@@ -2192,6 +2212,29 @@ class MapModel {
             if (out.size() >= needed) break;
           }
           if (out.size() >= needed) break;
+        }
+      }
+      return out;
+    }
+
+    ArrayList<Integer> gatherNeighborsWithinRings(int i, int ringRadius) {
+      ArrayList<Integer> out = new ArrayList<Integer>();
+      Site s = sites.get(i);
+      int gx = floor((s.x - minX) * invBin);
+      int gy = floor((s.y - minY) * invBin);
+      int rMax = max(0, min(ringRadius, 20)); // cap to keep work bounded
+      for (int ring = 0; ring <= rMax; ring++) {
+        for (int dx = -ring; dx <= ring; dx++) {
+          for (int dy = -ring; dy <= ring; dy++) {
+            if (abs(dx) != ring && abs(dy) != ring) continue;
+            long key = (((long)(gx + dx)) << 32) ^ ((gy + dy) & 0xffffffffL);
+            ArrayList<Integer> bucket = bins.get(key);
+            if (bucket == null) continue;
+            for (int idxSite : bucket) {
+              if (idxSite == i) continue;
+              out.add(idxSite);
+            }
+          }
         }
       }
       return out;

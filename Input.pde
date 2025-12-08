@@ -54,12 +54,10 @@ void handlePathsMousePressed(float wx, float wy) {
     targetPath = np;
   }
 
-  if (targetPath != null) {
-    if (targetPath.routes.isEmpty()) {
-      targetPath.typeId = activePathTypeIndex;
-    }
-    mapModel.appendRouteToPath(targetPath, route);
+  if (targetPath.routes.isEmpty()) {
+    targetPath.typeId = activePathTypeIndex;
   }
+  mapModel.appendRouteToPath(targetPath, route);
   pendingPathStart = null;
 }
 
