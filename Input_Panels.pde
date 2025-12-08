@@ -704,6 +704,9 @@ boolean handlePathsPanelClick(int mx, int my) {
         mapModel.addPathType(pt);
         activePathTypeIndex = mapModel.pathTypes.size() - 1;
         syncActivePathTypeGlobals();
+        selectedPathIndex = -1;
+        pendingPathStart = null;
+        editingPathNameIndex = -1;
       }
     }
     return true;
@@ -717,6 +720,9 @@ boolean handlePathsPanelClick(int mx, int my) {
     if (activePathTypeIndex < 0) activePathTypeIndex = 0;
     editingPathTypeNameIndex = -1;
     syncActivePathTypeGlobals();
+    selectedPathIndex = -1;
+    pendingPathStart = null;
+    editingPathNameIndex = -1;
     return true;
   }
 
@@ -728,6 +734,9 @@ boolean handlePathsPanelClick(int mx, int my) {
     if (sw.contains(mx, my)) {
       activePathTypeIndex = i;
       syncActivePathTypeGlobals();
+      selectedPathIndex = -1;
+      pendingPathStart = null;
+      editingPathNameIndex = -1;
       return true;
     }
   }

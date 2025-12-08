@@ -12,11 +12,11 @@ Sites :
 Elevation :
 (later) use techtonic logic in addition to perlin
 (later) extend water slider range so we can completely make water disappear or fill the whole screen
-(later) button : make plateaus (take one cell, extend to neighbor then neighbor etc n times, lerp all cells by 0.5 to the average value, repeat whole thing m times) n=number of cells/1000, m=number of cells/100
+(soon) new button : make plateaux (take one cell, extend to neighbor then neighbor etc n times, lerp all cells by 0.5 to the average value, repeat whole thing m times) n=number of cells/1000, m=number of cells/100
 
 Biomes :
 (soon) use selectable generation method for "generate" button
-        - propagation : what "genberate" currently is
+        - propagation : what "generate" currently is
         - reset : what "reset" currently is
         - fill gaps : what "fill gaps" currently is
         - fill underwater : what "fill underwater" currently is
@@ -44,13 +44,14 @@ Paths :
 (soon) when switchg path type on the left menu, desselect the path (on the right menu)
 (later) option to have the color match with water
 
-Struct :
+Structures :
 (later) structures should be groupable
 (later) structure should snap to zones
 (later) option to generate structs
 (later) a way to move already placed structs
 (later) refine the way parameters work (UI, default, selected, etc)
 (later) structures light shading on rendering mode
+(later) crosses (as on treasure maps)
 
 Labels :
 (later) optionally associate labels with map elements
@@ -84,6 +85,7 @@ Export :
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 (later) are there existing formats for such tools to handle?
 (later) trying to export with labels makes the thing crash with a NullPointerException
+(later) path rendering slightly differ from their rendering in rendering mode (should be similar)
 
 Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
@@ -99,4 +101,5 @@ General :
 (later) what's the use of passing "PApplet app" as a reference when methods could be called directly?
 (later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
 (later) revise UI element visual design, stil in an "old windows" way
-
+(later) write a more consistent readme file
+(later) a "fully generate" button once all generate methods have been implemented

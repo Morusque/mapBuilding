@@ -5,8 +5,6 @@ void handlePathsMousePressed(float wx, float wy) {
     np.name = "Path " + (mapModel.paths.size() + 1);
     mapModel.paths.add(np);
     selectedPathIndex = 0;
-  } else if (selectedPathIndex < 0 || selectedPathIndex >= mapModel.paths.size()) {
-    selectedPathIndex = 0;
   }
   wx = constrain(wx, mapModel.minX, mapModel.maxX);
   wy = constrain(wy, mapModel.minY, mapModel.maxY);
@@ -27,7 +25,9 @@ void handlePathsMousePressed(float wx, float wy) {
     return;
   }
 
-  Path targetPath = mapModel.paths.get(selectedPathIndex);
+  Path targetPath = (selectedPathIndex >= 0 && selectedPathIndex < mapModel.paths.size())
+                    ? mapModel.paths.get(selectedPathIndex)
+                    : null;
   ArrayList<PVector> route = new ArrayList<PVector>();
   if (pendingPathStart != null) {
     PathRouteMode mode = currentPathRouteMode();
@@ -45,11 +45,20 @@ void handlePathsMousePressed(float wx, float wy) {
     }
   }
 
+  if (targetPath == null) {
+    Path np = new Path();
+    np.typeId = activePathTypeIndex;
+    np.name = "Path " + (mapModel.paths.size() + 1);
+    mapModel.paths.add(np);
+    selectedPathIndex = mapModel.paths.size() - 1;
+    targetPath = np;
+  }
+
   if (targetPath != null) {
     if (targetPath.routes.isEmpty()) {
       targetPath.typeId = activePathTypeIndex;
     }
-      mapModel.appendRouteToPath(targetPath, route);
+    mapModel.appendRouteToPath(targetPath, route);
   }
   pendingPathStart = null;
 }
