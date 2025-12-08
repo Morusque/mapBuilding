@@ -202,31 +202,25 @@ boolean handleBiomesPanelClick(int mx, int my) {
     return true;
   }
 
-  // Generate button
-  if (layout.generateBtn.contains(mx, my)) {
-    boolean hasNone = mapModel.hasAnyNoneBiome();
-    if (hasNone) {
-      mapModel.generateZonesFromSeeds();
-    } else {
-      mapModel.resetAllBiomesToNone();
-      mapModel.generateZonesFromSeeds();
-      activeBiomeIndex = 0;
-      editingBiomeNameIndex = -1;
-    }
+  // Generation selector + apply
+  if (layout.genModeSelector.contains(mx, my)) {
+    int modeCount = biomeGenerateModes.length;
+    int maxIdx = max(1, modeCount - 1);
+    float t = constrain((mx - layout.genModeSelector.x) / (float)layout.genModeSelector.w, 0, 1);
+    int idx = constrain(round(t * maxIdx), 0, modeCount - 1);
+    biomeGenerateModeIndex = idx;
+    activeSlider = SLIDER_BIOME_GEN_MODE;
+    return true;
+  }
+  if (layout.genApplyBtn.contains(mx, my)) {
+    applyBiomeGeneration();
     return true;
   }
 
-  // Reset button
-  if (layout.resetBtn.contains(mx, my)) {
-    mapModel.resetAllBiomesToNone();
-    activeBiomeIndex = 0;
-    editingBiomeNameIndex = -1;
-    return true;
-  }
-
-  // Fill underwater button
-  if (layout.fillUnderwaterBtn.contains(mx, my)) {
-    mapModel.setUnderwaterToBiome(activeBiomeIndex, seaLevel);
+  if (layout.genValueWaterBtn.contains(mx, my)) {
+    float clampedSea = constrain(seaLevel, -1.0f, 1.0f);
+    biomeGenerateValue01 = map(clampedSea, -1.0f, 1.0f, 0.0f, 1.0f);
+    activeSlider = SLIDER_BIOME_GEN_VALUE;
     return true;
   }
 
@@ -297,6 +291,20 @@ boolean handleBiomesPanelClick(int mx, int my) {
     float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);
     zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
     activeSlider = SLIDER_BIOME_BRUSH;
+    return true;
+  }
+
+  if (layout.genValueSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.genValueSlider.x) / (float)layout.genValueSlider.w, 0, 1);
+    biomeGenerateValue01 = t;
+    activeSlider = SLIDER_BIOME_GEN_VALUE;
+    return true;
+  }
+
+  if (layout.beachWidthSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.beachWidthSlider.x) / (float)layout.beachWidthSlider.w, 0, 1);
+    biomeBeachWidth01 = t;
+    activeSlider = SLIDER_BIOME_BEACH_WIDTH;
     return true;
   }
 

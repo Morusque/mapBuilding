@@ -12,18 +12,6 @@ Elevation :
 (later) use techtonic logic in addition to perlin
 
 Biomes :
-(soon) use selectable generation method for "generate" button
-        - propagation : what "generate" currently is
-        - reset : what "reset" currently is
-        - fill gaps : what "fill gaps" currently is
-        - fill underwater : what "fill underwater" currently is
-        - extend : propagate zones made of the currently selected biome a little
-        - shrink : shrink zones made of the currently selected biome a little (replace cells by biom of the closest placed biome if any)
-        - spots : place one cell of the currently selected biome (preferably replacing another biome) and propagate it a little
-        - vary : start from existing zones and propagate them all on each other a little
-        - mountains : place current biome above a certain threshold of elevation
-        - beaches : place a current biome right on a coastline, place a few other following the coastline, then propagate this new zone a little
-        - full : propagation, rocks -> fill underwater, forest -> spots, (with gradual threshold) rocks snow magma -> mountains, sand -> beaches, vary
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
@@ -98,3 +86,4 @@ General :
 (later) revise UI element visual design, stil in an "old windows" way
 (later) write a more consistent readme file
 (later) a "fully generate" button once all generate methods have been implemented
+(later) add a "tooltip" section with explanations about hovered ui element

@@ -2828,6 +2828,18 @@ class MapModel {
     for (Cell c : cells) {
       c.biomeId = 0;
     }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void setAllBiomesTo(int biomeId) {
+    if (cells == null || cells.isEmpty()) return;
+    int bid = max(0, min(biomeId, biomeTypes.size() - 1));
+    for (Cell c : cells) {
+      c.biomeId = bid;
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
   }
 
   void setUnderwaterToBiome(int biomeId, float sea) {
@@ -2838,6 +2850,384 @@ class MapModel {
       }
     }
     snapDirty = true;
+  }
+
+  void fillUnderThreshold(int biomeId, float threshold) {
+    if (cells == null || cells.isEmpty()) return;
+    for (Cell c : cells) {
+      if (c.elevation < threshold) c.biomeId = biomeId;
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void fillAboveThreshold(int biomeId, float threshold) {
+    if (cells == null || cells.isEmpty()) return;
+    for (Cell c : cells) {
+      if (c.elevation > threshold) c.biomeId = biomeId;
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void fillGapsFromExistingBiomes() {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    int n = cells.size();
+    int[] biomeForCell = new int[n];
+    Arrays.fill(biomeForCell, -1);
+    ArrayDeque<Integer> q = new ArrayDeque<Integer>();
+    int seeds = 0;
+    for (int i = 0; i < n; i++) {
+      Cell c = cells.get(i);
+      if (c.biomeId > 0) {
+        biomeForCell[i] = c.biomeId;
+        q.add(i);
+        seeds++;
+      }
+    }
+    if (seeds == 0) {
+      generateZonesFromSeeds();
+      return;
+    }
+    while (!q.isEmpty()) {
+      int idx = q.poll();
+      int bid = biomeForCell[idx];
+      ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        if (biomeForCell[nb] == -1) {
+          biomeForCell[nb] = bid;
+          q.add(nb);
+        }
+      }
+    }
+    for (int i = 0; i < n; i++) {
+      if (biomeForCell[i] > 0) cells.get(i).biomeId = biomeForCell[i];
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void fillGapsWithNewBiomes() {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    int n = cells.size();
+    int typeCount = biomeTypes.size() - 1; // exclude None
+    if (typeCount <= 0) return;
+
+    ArrayList<Integer> gaps = new ArrayList<Integer>();
+    for (int i = 0; i < n; i++) {
+      Cell c = cells.get(i);
+      if (c != null && c.biomeId == 0) {
+        gaps.add(i);
+      }
+    }
+    if (gaps.isEmpty()) return;
+
+    Collections.shuffle(gaps);
+    int[] assign = new int[n];
+    Arrays.fill(assign, -1);
+    ArrayDeque<Integer> q = new ArrayDeque<Integer>();
+
+    float avgSize = random(20.0f, 160.0f);
+    int seedCount = max(1, min(gaps.size(), round(gaps.size() / avgSize)));
+    for (int i = 0; i < seedCount; i++) {
+      int idx = gaps.get(i);
+      int bid = 1 + (int)random(typeCount);
+      assign[idx] = bid;
+      q.add(idx);
+    }
+
+    while (!q.isEmpty()) {
+      int idx = q.poll();
+      ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        if (assign[nb] != -1) continue;
+        Cell nc = cells.get(nb);
+        if (nc == null || nc.biomeId != 0) continue; // only fill previous gaps
+        assign[nb] = assign[idx];
+        q.add(nb);
+      }
+    }
+
+    for (int i = 0; i < n; i++) {
+      if (assign[i] >= 0) {
+        cells.get(i).biomeId = assign[i];
+      }
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void extendBiomeOnce(int biomeId) {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    int bid = max(0, min(biomeId, biomeTypes.size() - 1));
+    HashSet<Integer> toPaint = new HashSet<Integer>();
+    int n = cells.size();
+    for (int i = 0; i < n; i++) {
+      Cell c = cells.get(i);
+      if (c == null || c.biomeId != bid) continue;
+      ArrayList<Integer> nbs = cellNeighbors.get(i);
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        Cell nc = cells.get(nb);
+        if (nc == null) continue;
+        if (nc.biomeId != bid) toPaint.add(nb);
+      }
+    }
+    for (int idx : toPaint) {
+      cells.get(idx).biomeId = bid;
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void shrinkBiomeOnce(int biomeId) {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    int bid = max(0, min(biomeId, biomeTypes.size() - 1));
+    int n = cells.size();
+    int[] newBiome = new int[n];
+    for (int i = 0; i < n; i++) newBiome[i] = cells.get(i).biomeId;
+    for (int i = 0; i < n; i++) {
+      Cell c = cells.get(i);
+      if (c == null || c.biomeId != bid) continue;
+      ArrayList<Integer> nbs = cellNeighbors.get(i);
+      if (nbs == null) continue;
+      int boundary = 0;
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        Cell nc = cells.get(nb);
+        if (nc == null) continue;
+        if (nc.biomeId != bid) boundary++;
+      }
+      if (boundary > 0) {
+        int bestBiome = 0;
+        float bestDiff = Float.MAX_VALUE;
+        for (int nb : nbs) {
+          if (nb < 0 || nb >= n) continue;
+          Cell nc = cells.get(nb);
+          if (nc == null || nc.biomeId == bid) continue;
+          float diff = abs(nc.elevation - c.elevation);
+          if (diff < bestDiff) {
+            bestDiff = diff;
+            bestBiome = nc.biomeId;
+          }
+        }
+        if (bestBiome != bid && bestBiome >= 0) {
+          newBiome[i] = bestBiome;
+        }
+      }
+    }
+    for (int i = 0; i < n; i++) cells.get(i).biomeId = newBiome[i];
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void placeBiomeSpots(int biomeId, float value01) {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    int n = cells.size();
+    boolean[] visited = new boolean[n];
+    float total = 0;
+    int regions = 0;
+    for (int i = 0; i < n; i++) {
+      if (visited[i]) continue;
+      Cell c = cells.get(i);
+      if (c == null || c.biomeId <= 0) continue;
+      int size = floodCountBiome(i, visited);
+      if (size > 0) {
+        total += size;
+        regions++;
+      }
+    }
+    float avg = (regions > 0) ? (total / regions) : 1.0f;
+    int targetSize = max(1, round(avg * 0.7f));
+    int startIdx = (int)random(n);
+    int tries = 0;
+    while (tries < 100 && (startIdx < 0 || startIdx >= n || cells.get(startIdx) == null || cells.get(startIdx).biomeId == biomeId)) {
+      startIdx = (int)random(n);
+      tries++;
+    }
+    if (startIdx < 0 || startIdx >= n) return;
+    ArrayDeque<Integer> q = new ArrayDeque<Integer>();
+    HashSet<Integer> claimed = new HashSet<Integer>();
+    q.add(startIdx);
+    claimed.add(startIdx);
+    while (!q.isEmpty() && claimed.size() < targetSize) {
+      int idx = q.poll();
+      ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
+      if (nbs == null) continue;
+      Collections.shuffle(nbs);
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        if (claimed.contains(nb)) continue;
+        claimed.add(nb);
+        q.add(nb);
+        if (claimed.size() >= targetSize) break;
+      }
+    }
+    for (int idx : claimed) {
+      Cell c = cells.get(idx);
+      if (c != null) c.biomeId = biomeId;
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  int floodCountBiome(int startIdx, boolean[] visited) {
+    int n = cells.size();
+    if (startIdx < 0 || startIdx >= n) return 0;
+    int bid = cells.get(startIdx).biomeId;
+    ArrayDeque<Integer> q = new ArrayDeque<Integer>();
+    q.add(startIdx);
+    visited[startIdx] = true;
+    int count = 0;
+    while (!q.isEmpty()) {
+      int idx = q.poll();
+      Cell c = cells.get(idx);
+      if (c == null || c.biomeId != bid) continue;
+      count++;
+      ArrayList<Integer> nbs = cellNeighbors.get(idx);
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        if (visited[nb]) continue;
+        if (cells.get(nb) == null || cells.get(nb).biomeId != bid) continue;
+        visited[nb] = true;
+        q.add(nb);
+      }
+    }
+    return count;
+  }
+
+  void varyBiomesOnce() {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    int n = cells.size();
+    int[] newBiome = new int[n];
+    for (int i = 0; i < n; i++) newBiome[i] = cells.get(i).biomeId;
+    for (int i = 0; i < n; i++) {
+      if (random(1.0f) < 0.1f) continue; // leave some cells unchanged to break oscillations
+      ArrayList<Integer> nbs = cellNeighbors.get(i);
+      if (nbs == null || nbs.isEmpty()) continue;
+      int[] counts = new int[biomeTypes.size()];
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        Cell nc = cells.get(nb);
+        if (nc == null) continue;
+        int bid = max(0, min(nc.biomeId, biomeTypes.size() - 1));
+        counts[bid]++;
+      }
+      // Pick the most common neighbor, break ties randomly, add slight jitter to avoid cycles
+      float bestScore = -1;
+      int best = cells.get(i).biomeId;
+      for (int b = 0; b < counts.length; b++) {
+        float score = counts[b] + random(0.0f, 0.25f);
+        if (score > bestScore) {
+          bestScore = score;
+          best = b;
+        }
+      }
+      // Occasionally pick a random neighbor biome to keep variation alive
+      if (!nbs.isEmpty() && random(1.0f) < 0.2f) {
+        int nb = nbs.get((int)random(nbs.size()));
+        if (nb >= 0 && nb < n && cells.get(nb) != null) {
+          best = max(0, min(cells.get(nb).biomeId, biomeTypes.size() - 1));
+        }
+      }
+      newBiome[i] = best;
+    }
+    for (int i = 0; i < n; i++) cells.get(i).biomeId = newBiome[i];
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  void placeBeaches(int biomeId, float bandWidth, float sea) {
+    if (cells == null || cells.isEmpty()) return;
+    ensureCellNeighborsComputed();
+    int n = cells.size();
+    int seedIdx = -1;
+    int fallbackIdx = -1;
+    float bestDiff = Float.MAX_VALUE;
+    float bestAnyDiff = Float.MAX_VALUE;
+    for (int i = 0; i < n; i++) {
+      Cell c = cells.get(i);
+      if (c == null) continue;
+      float diff = abs(c.elevation - sea);
+      if (c.biomeId != biomeId) {
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          seedIdx = i;
+        }
+      }
+      if (diff < bestAnyDiff) {
+        bestAnyDiff = diff;
+        fallbackIdx = i;
+      }
+    }
+    if (seedIdx < 0) seedIdx = fallbackIdx;
+    if (seedIdx < 0) return;
+
+    // Map slider (0..10) to 1..10 cells (ceil to feel responsive)
+    int targetCount = max(1, min(10, (int)ceil(max(1.0f, bandWidth))));
+    HashSet<Integer> claimed = new HashSet<Integer>();
+    PriorityQueue<Integer> frontier = new PriorityQueue<Integer>(new Comparator<Integer>() {
+      public int compare(Integer a, Integer b) {
+        float da = abs(cells.get(a).elevation - sea);
+        float db = abs(cells.get(b).elevation - sea);
+        return Float.compare(da, db);
+      }
+    });
+
+    claimed.add(seedIdx);
+    frontier.add(seedIdx);
+
+    while (!frontier.isEmpty() && claimed.size() < targetCount) {
+      int idx = frontier.poll();
+      ArrayList<Integer> nbs = (idx < cellNeighbors.size()) ? cellNeighbors.get(idx) : null;
+      if (nbs == null) continue;
+      for (int nb : nbs) {
+        if (nb < 0 || nb >= n) continue;
+        if (claimed.contains(nb)) continue;
+        Cell nc = cells.get(nb);
+        if (nc == null) continue;
+        claimed.add(nb);
+        frontier.add(nb);
+        if (claimed.size() >= targetCount) break;
+      }
+    }
+
+    for (int idx : claimed) {
+      Cell c = cells.get(idx);
+      if (c != null) c.biomeId = biomeId;
+    }
+    renderer.invalidateBiomeOutlineCache();
+    snapDirty = true;
+  }
+
+  float sampleGridDistance(ContourGrid g, float x, float y) {
+    if (g == null || g.cols < 2 || g.rows < 2) return Float.MAX_VALUE;
+    float fx = constrain((x - g.ox) / max(1e-6f, g.dx), 0, g.cols - 1.0001f);
+    float fy = constrain((y - g.oy) / max(1e-6f, g.dy), 0, g.rows - 1.0001f);
+    int ix = floor(fx);
+    int iy = floor(fy);
+    float tx = fx - ix;
+    float ty = fy - iy;
+    float v00 = g.v[iy][ix];
+    float v10 = g.v[iy][ix + 1];
+    float v01 = g.v[iy + 1][ix];
+    float v11 = g.v[iy + 1][ix + 1];
+    float v0 = lerp(v00, v10, tx);
+    float v1 = lerp(v01, v11, tx);
+    float v = lerp(v0, v1, ty);
+    return abs(v);
   }
 
   boolean hasAnyNoneBiome() {

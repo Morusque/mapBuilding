@@ -259,9 +259,11 @@ class BiomesLayout {
   int titleY;
   IntRect paintBtn;
   IntRect fillBtn;
-  IntRect generateBtn;
-  IntRect resetBtn;
-  IntRect fillUnderwaterBtn;
+  IntRect genModeSelector;
+  IntRect genApplyBtn;
+  IntRect genValueSlider;
+  IntRect genValueWaterBtn;
+  IntRect beachWidthSlider;
   IntRect addBtn;
   IntRect removeBtn;
   ArrayList<IntRect> swatches = new ArrayList<IntRect>();
@@ -278,11 +280,15 @@ BiomesLayout buildBiomesLayout() {
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
-  l.resetBtn = new IntRect(innerX, curY, 90, PANEL_BUTTON_H);
-  l.generateBtn = new IntRect(l.resetBtn.x + l.resetBtn.w + 8, curY, 90, PANEL_BUTTON_H);
-  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
-  l.fillUnderwaterBtn = new IntRect(innerX, curY, 120, PANEL_BUTTON_H);
-  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+  int selectorW = 200;
+  l.genModeSelector = new IntRect(innerX, curY + PANEL_LABEL_H, selectorW, PANEL_SLIDER_H);
+  l.genApplyBtn = new IntRect(l.genModeSelector.x + l.genModeSelector.w + 10, curY + PANEL_LABEL_H - 2, 90, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  l.genValueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, selectorW, PANEL_SLIDER_H);
+  l.genValueWaterBtn = new IntRect(l.genValueSlider.x + l.genValueSlider.w + 10, curY + PANEL_LABEL_H - 2, 100, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  l.beachWidthSlider = new IntRect(innerX, curY + PANEL_LABEL_H, selectorW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   l.paintBtn = new IntRect(innerX, curY, 70, PANEL_BUTTON_H);
   l.fillBtn = new IntRect(l.paintBtn.x + l.paintBtn.w + 8, curY, 70, PANEL_BUTTON_H);
@@ -337,25 +343,63 @@ void drawBiomesPanel() {
   textAlign(LEFT, TOP);
   text("Biomes", labelX, layout.titleY);
 
-  // Generate button (auto-fill None zones)
-  drawBevelButton(layout.generateBtn.x, layout.generateBtn.y, layout.generateBtn.w, layout.generateBtn.h, false);
-  fill(10);
-  textAlign(CENTER, CENTER);
-  boolean hasNone = mapModel != null && mapModel.hasAnyNoneBiome();
-  String genLabel = hasNone ? "Fill gaps" : "Regenerate";
-  text(genLabel, layout.generateBtn.x + layout.generateBtn.w * 0.5f, layout.generateBtn.y + layout.generateBtn.h * 0.5f);
+  // Generation mode selector + apply
+  IntRect gsel = layout.genModeSelector;
+  stroke(160);
+  fill(230);
+  rect(gsel.x, gsel.y, gsel.w, gsel.h, 4);
+  int modeCount = biomeGenerateModes.length;
+  int maxIdx = max(1, modeCount - 1);
+  float tMode = constrain(biomeGenerateModeIndex / (float)maxIdx, 0, 1);
+  float gx = gsel.x + tMode * gsel.w;
+  fill(40);
+  noStroke();
+  ellipse(gx, gsel.y + gsel.h / 2.0f, gsel.h * 0.9f, gsel.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  String modeName = biomeGenerateModes[constrain(biomeGenerateModeIndex, 0, modeCount - 1)];
+  text("Generation mode: " + modeName, gsel.x, gsel.y - 4);
 
-  // Reset to None button
-  drawBevelButton(layout.resetBtn.x, layout.resetBtn.y, layout.resetBtn.w, layout.resetBtn.h, false);
-  fill(10);
-  textAlign(CENTER, CENTER);
-  text("Reset", layout.resetBtn.x + layout.resetBtn.w * 0.5f, layout.resetBtn.y + layout.resetBtn.h * 0.5f);
+  if (layout.genApplyBtn != null) {
+    drawBevelButton(layout.genApplyBtn.x, layout.genApplyBtn.y, layout.genApplyBtn.w, layout.genApplyBtn.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("Apply", layout.genApplyBtn.x + layout.genApplyBtn.w / 2, layout.genApplyBtn.y + layout.genApplyBtn.h / 2);
+  }
 
-  // Fill underwater button (short label, separate row)
-  drawBevelButton(layout.fillUnderwaterBtn.x, layout.fillUnderwaterBtn.y, layout.fillUnderwaterBtn.w, layout.fillUnderwaterBtn.h, false);
-  fill(10);
-  textAlign(CENTER, CENTER);
-  text("Fill underwater", layout.fillUnderwaterBtn.x + layout.fillUnderwaterBtn.w * 0.5f, layout.fillUnderwaterBtn.y + layout.fillUnderwaterBtn.h * 0.5f);
+  // Generation value slider (0..1 displayed)
+  IntRect gv = layout.genValueSlider;
+  stroke(160);
+  fill(230);
+  rect(gv.x, gv.y, gv.w, gv.h, 4);
+  float gvx = gv.x + constrain(biomeGenerateValue01, 0, 1) * gv.w;
+  fill(40);
+  noStroke();
+  ellipse(gvx, gv.y + gv.h / 2.0f, gv.h * 0.9f, gv.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Value (" + nf(biomeGenerateValue01, 1, 2) + ")", gv.x, gv.y - 4);
+
+  // "Set to water level" helper
+  if (layout.genValueWaterBtn != null) {
+    drawBevelButton(layout.genValueWaterBtn.x, layout.genValueWaterBtn.y, layout.genValueWaterBtn.w, layout.genValueWaterBtn.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("Set water level", layout.genValueWaterBtn.x + layout.genValueWaterBtn.w / 2, layout.genValueWaterBtn.y + layout.genValueWaterBtn.h / 2);
+  }
+
+  // Beach width slider (0..10)
+  IntRect bw = layout.beachWidthSlider;
+  stroke(160);
+  fill(230);
+  rect(bw.x, bw.y, bw.w, bw.h, 4);
+  float bwx = bw.x + constrain(biomeBeachWidth01, 0, 1) * bw.w;
+  fill(40);
+  noStroke();
+  ellipse(bwx, bw.y + bw.h / 2.0f, bw.h * 0.9f, bw.h * 0.9f);
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text("Beaches size (1-10)", bw.x, bw.y - 4);
 
   // Paint button
   drawBevelButton(layout.paintBtn.x, layout.paintBtn.y, layout.paintBtn.w, layout.paintBtn.h,

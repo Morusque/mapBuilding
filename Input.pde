@@ -288,6 +288,29 @@ void updateActiveSlider(int mx, int my) {
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
       break;
     }
+    case SLIDER_BIOME_GEN_MODE: {
+      BiomesLayout l = buildBiomesLayout();
+      int modeCount = biomeGenerateModes.length;
+      float t = (mx - l.genModeSelector.x) / (float)l.genModeSelector.w;
+      t = constrain(t, 0, 1);
+      int idx = round(t * max(1, modeCount - 1));
+      biomeGenerateModeIndex = constrain(idx, 0, modeCount - 1);
+      break;
+    }
+    case SLIDER_BIOME_GEN_VALUE: {
+      BiomesLayout l = buildBiomesLayout();
+      float t = (mx - l.genValueSlider.x) / (float)l.genValueSlider.w;
+      t = constrain(t, 0, 1);
+      biomeGenerateValue01 = t;
+      break;
+    }
+    case SLIDER_BIOME_BEACH_WIDTH: {
+      BiomesLayout l = buildBiomesLayout();
+      float t = (mx - l.beachWidthSlider.x) / (float)l.beachWidthSlider.w;
+      t = constrain(t, 0, 1);
+      biomeBeachWidth01 = t;
+      break;
+    }
     case SLIDER_ELEV_SEA: {
       ElevationLayout l = buildElevationLayout();
       float t = (mx - l.seaSlider.x) / (float)l.seaSlider.w;

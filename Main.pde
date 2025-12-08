@@ -147,6 +147,25 @@ String biomeNameDraft = "";
 int editingZoneNameIndex = -1;
 String zoneNameDraft = "";
 
+// Biome generation settings
+String[] biomeGenerateModes = {
+  "Propagation",
+  "Reset",
+  "Fill gaps",
+  "Replace gaps",
+  "Fill under",
+  "Fill above",
+  "Extend",
+  "Shrink",
+  "Spots",
+  "Vary",
+  "Beaches",
+  "Full"
+};
+int biomeGenerateModeIndex = 0;
+float biomeGenerateValue01 = 0.75f;
+float biomeBeachWidth01 = 0.3f;
+
 // Label editing state
 int editingLabelIndex = -1;
 int selectedLabelIndex = -1;
@@ -236,6 +255,9 @@ final int SLIDER_RENDER_LABEL_OUTLINE_ALPHA = 55;
 final int SLIDER_RENDER_ELEV_LINES_STYLE = 56;
 final int SLIDER_RENDER_ZONE_BRI = 57;
 final int SLIDER_RENDER_PRESET_SELECT = 58;
+final int SLIDER_BIOME_GEN_MODE = 59;
+final int SLIDER_BIOME_GEN_VALUE = 60;
+final int SLIDER_BIOME_BEACH_WIDTH = 61;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -251,6 +273,65 @@ void applyRenderPreset(int idx) {
   renderShowStructures = renderSettings.showStructures;
   renderShowZoneOutlines = renderSettings.zoneStrokeAlpha01 > 0.001f;
   renderShowLabels = renderSettings.showLabelsArbitrary;
+}
+
+void applyBiomeGeneration() {
+  if (mapModel == null || mapModel.cells == null) return;
+  int mode = constrain(biomeGenerateModeIndex, 0, biomeGenerateModes.length - 1);
+  int targetBiome = constrain(activeBiomeIndex, 0, mapModel.biomeTypes.size() - 1);
+  float val01 = constrain(biomeGenerateValue01, 0, 1);
+  float threshold = lerp(-1.0f, 1.0f, val01);
+  float beachWidth = biomeBeachWidth01 * 10.0f;
+  float fullAbove = lerp(0.4f, 1.0f, val01); // keep above fill to higher elevations for full mode
+
+  switch (mode) {
+    case 0: // propagation
+      mapModel.resetAllBiomesToNone();
+      mapModel.generateZonesFromSeeds();
+      break;
+    case 1: // reset
+      mapModel.setAllBiomesTo(targetBiome);
+      break;
+    case 2: // fill gaps
+      mapModel.fillGapsFromExistingBiomes();
+      break;
+    case 3: // replace gaps
+      mapModel.fillGapsWithNewBiomes();
+      break;
+    case 4: // fill under
+      mapModel.fillUnderThreshold(targetBiome, threshold);
+      break;
+    case 5: // fill above
+      mapModel.fillAboveThreshold(targetBiome, threshold);
+      break;
+    case 6: // extend
+      mapModel.extendBiomeOnce(targetBiome);
+      break;
+    case 7: // shrink
+      mapModel.shrinkBiomeOnce(targetBiome);
+      break;
+    case 8: // spots
+      mapModel.placeBiomeSpots(targetBiome, val01);
+      break;
+    case 9: // vary
+      mapModel.varyBiomesOnce();
+      break;
+    case 10: // beaches
+      mapModel.placeBeaches(targetBiome, beachWidth, seaLevel);
+      break;
+    case 11: // full pipeline
+    default:
+      mapModel.resetAllBiomesToNone();
+      mapModel.generateZonesFromSeeds();
+      mapModel.fillUnderThreshold(targetBiome, seaLevel); // underwater to selected
+      mapModel.placeBiomeSpots(targetBiome, val01);
+      mapModel.fillAboveThreshold(targetBiome, fullAbove);
+      mapModel.placeBeaches(targetBiome, beachWidth, seaLevel);
+      mapModel.varyBiomesOnce();
+      break;
+  }
+  mapModel.renderer.invalidateBiomeOutlineCache();
+  mapModel.snapDirty = true;
 }
 
 color hsb01ToColor(float h, float s, float b) {
