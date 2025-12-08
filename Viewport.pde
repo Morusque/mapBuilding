@@ -1,3 +1,4 @@
+
 class Viewport {
   float centerX;
   float centerY;

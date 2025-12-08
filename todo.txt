@@ -7,19 +7,35 @@ Loading bar :
 Sites :
 (later) there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 (later) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
+(soon) when making voronoi, sometimes in rare cases overlapping polygons appear (eg polygon vertex is inside the neighbor polygon)
 
 Elevation :
 (later) use techtonic logic in addition to perlin
 (later) extend water slider range so we can completely make water disappear or fill the whole screen
+(later) button : make plateaus (take one cell, extend to neighbor then neighbor etc n times, lerp all cells by 0.5 to the average value, repeat whole thing m times) n=number of cells/1000, m=number of cells/100
 
 Biomes :
-(soon) use selectable generation method for "generate" button : propagation, reset, fill gaps, beaches, mountains, extend, shrink, spots, vary, full
+(soon) use selectable generation method for "generate" button
+        - propagation : what "genberate" currently is
+        - reset : what "reset" currently is
+        - fill gaps : what "fill gaps" currently is
+        - fill underwater : what "fill underwater" currently is
+        - extend : propagate zones made of the currently selected biome a little
+        - shrink : shrink zones made of the currently selected biome a little (replace cells by biom of the closest placed biome if any)
+        - spots : place one cell of the currently selected biome (preferably replacing another biome) and propagate it a little
+        - vary : start from existing zones and propagate them all on each other a little
+        - mountains : place current biome above a certain threshold of elevation
+        - beaches : place a current biome right on a coastline, place a few other following the coastline, then propagate this new zone a little
+        - full : propagation, rocks -> fill underwater, forest -> spots, (with gradual threshold) rocks snow magma -> mountains, sand -> beaches, vary
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
 (later) remove/reserve water from zones
 (later) small zones isolated artifacts
 (later) make zone display look somehow better
+(later) button : exclude water
+(later) button : make exclusive
+(later) button : set four-color map coloring
 
 Paths :
 (later) width definer similar to water but using pathfinding to define more important roads
@@ -52,13 +68,16 @@ Rendering :
 (later) some ugly dots sometimes appear between polygones
 (later) labels outline don't work well
 (later) ripple lines are approximative, so either we optimize them or we make tem display below lands
-(later) we need to work on a reliable method to be used when two outlines share the same border (should be always distinct, placed on a right that makes sense, take weight into account) and use it for
+(later) reliable method when two outlines share the same border (always distinct, makes sense, line weight into account) and use it for biomes outlines and zones outlines (define segment edges normals, spread segments along it n times = number of borders that share it, based on : which side of it, smaller regions inside big ones)
 (later) choosing biomes "pattern" option yields "The file patterns/dots01.png contains bad image data, or may not be an image." while file is seems ok.
 (later) contour lines (or other computationally intensive tasks) should trigger a progress bar and be made to not freeze the rest of the ui (like we did for cell placements and voronoi).
 (later) labels are wrong in many ways, rework no this
 (later) changing preset should trigger computation of required features such as contour lines if needed
 (later) a "save preset" button
-
+(later) water contour lines distance should be zoom-dependant
+(later) water contour lines should have a starting and ending alpha
+(later) make sure water contour lines never cross actual coastline
+ 
 Export :
 (later) Comments exportable as custom format
 (later) JSON export/import (human-readable) with legend, layers, cells, paths, structures, groups, labels, view defaults.

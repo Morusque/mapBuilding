@@ -2137,7 +2137,7 @@ void drawRenderPanel() {
 
   drawSectionHeader(layout.headerZones, "Zones", renderSectionZonesOpen);
   if (renderSectionZonesOpen) {
-    drawSlider(layout.zoneAlphaSlider, renderSettings.zoneStrokeAlpha01, "Zone lines alpha (" + nf(renderSettings.zoneStrokeAlpha01 * 100, 1, 0) + "%)");
+    drawSlider(layout.zoneAlphaSlider, renderSettings.zoneStrokeAlpha01, "Zone lines alpha (" + nf(renderSettings.zoneStrokeAlpha01 * 100, 1, 0) + "%)"); 
     drawSlider(layout.zoneSatSlider, renderSettings.zoneStrokeSatScale01, "Zone lines saturation (" + nf(renderSettings.zoneStrokeSatScale01 * 100, 1, 0) + "%)");
     drawSlider(layout.zoneBriSlider, renderSettings.zoneStrokeBriScale01, "Zone lines brightness (" + nf(renderSettings.zoneStrokeBriScale01 * 100, 1, 0) + "%)");
   }
