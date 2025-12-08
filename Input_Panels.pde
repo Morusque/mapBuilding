@@ -1330,7 +1330,7 @@ boolean handleElevationPanelClick(int mx, int my) {
   // Sea level
   if (layout.seaSlider.contains(mx, my)) {
     float t = constrain((mx - layout.seaSlider.x) / (float)layout.seaSlider.w, 0, 1);
-    seaLevel = t * 1.0f - 0.5f;
+    seaLevel = lerp(-1.2f, 1.2f, t);
     activeSlider = SLIDER_ELEV_SEA;
     return true;
   }

@@ -292,7 +292,7 @@ void updateActiveSlider(int mx, int my) {
       ElevationLayout l = buildElevationLayout();
       float t = (mx - l.seaSlider.x) / (float)l.seaSlider.w;
       t = constrain(t, 0, 1);
-      seaLevel = t * 1.0f - 0.5f;
+      seaLevel = lerp(-1.2f, 1.2f, t);
       break;
     }
     case SLIDER_ELEV_RADIUS: {

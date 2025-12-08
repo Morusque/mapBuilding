@@ -1179,7 +1179,7 @@ void drawElevationPanel() {
   stroke(160);
   fill(230);
   rect(sea.x, sea.y, sea.w, sea.h, 4);
-  float seaNorm = constrain((seaLevel + 0.5f) / 1.0f, 0, 1);
+  float seaNorm = constrain(map(seaLevel, -1.2f, 1.2f, 0, 1), 0, 1);
   float sx = sea.x + seaNorm * sea.w;
   fill(40);
   noStroke();
