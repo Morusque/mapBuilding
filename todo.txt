@@ -1,15 +1,15 @@
 
-// this TODO file has tasked marked as (now) (soon) (later) from more urgent to less
+// this TODO file has tasked marked as (now) (soon) (later) (maybe) from more urgent to less urgent
 // done tasks should be marked as (done) for review before I delete them
 
 Loading bar :
 
 Sites :
-(later) there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
-(later) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
+(maybe) there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
+(maybe) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
 
 Elevation :
-(later) use techtonic logic in addition to perlin
+(maybe) use techtonic logic in addition to perlin
 
 Biomes :
 (later) review "value" sliders
@@ -17,76 +17,73 @@ Biomes :
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
-(later) make zone display look somehow better
-(later) reliable method when two outlines share the same border (always distinct, makes sense, line weight into account) and use it for biomes outlines and zones outlines (define segment edges normals, spread segments along it n times = number of borders that share it, based on : which side of it, smaller regions inside big ones)
+(soon) make zone display look somehow better, use reliable method when two outlines share the same border (always distinct, makes sense, line weight into account) and use it for biomes outlines and zones outlines (define segment edges normals, spread segments along it n times = number of borders that share it, based on : which side of it, smaller regions inside big ones)
 
 Paths :
-(later) width definer similar to water but using pathfinding to define more important roads
+(maybe) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
-(later) option to generate paths
+(soon) option to generate paths
 (later) option to have the color match with water
 
 Structures :
 (later) structures should be groupable
-(later) structure should snap to zones
-(later) option to generate structs
-(later) a way to move already placed structs
+(soon) option to generate structs
+(soon) a way to move already placed structs
 (later) refine the way parameters work (UI, default, selected, etc)
-(later) structures light shading on rendering mode
-(later) crosses (as on treasure maps)
+(soon) structures light shading on rendering mode
+(soon) crosses (as on treasure maps)
 
 Labels :
-(later) optionally associate labels with map elements
-(later) have type presets for label styles (like with path types)
+(maybe) optionally associate labels with map elements
+(maybe) have type presets for label styles (like with path types)
 (later) option to generate labels
-(later) find a way to allow for labels text fill color and outline color, also parameters for font used (just a few typical options)
-(later) text size should be handled better (typo appears blurry)
 
 Rendering :
 (later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (find examples of this)
 (later) LOD rules: hide/show groups vs members depending on zoom, optional merging visually of dense structures.
 (later) Rendering/exporting the legend for reference.
 (later) take inspiration from real map pictures (eg ign maps)
-(later) add loading bars for long operations (contours)
 (later) some ugly dots sometimes appear between polygones
+(later) ripple lines are approximative, so either we optimize them or we make tem display below lands. make sure water contour lines never cross actual coastline
+(soon) use zone method for reliable borders display, make it potentially apply to all kinds of outlines that share the same border all-together at once
+(soon) choosing biomes "pattern" option yields "The file patterns/dots01.png contains bad image data, or may not be an image." while file is seems ok.
+(soon) allow others labels than arbitrary labels
+(later) parametrable label font (per label type)
+(later) label size (per label type) should be handled better (typo appears blurry)
+(later) parametrable label color fill (per label type)
+(later) parametrable label outline (per label type)
 (later) labels outline don't work well
-(later) ripple lines are approximative, so either we optimize them or we make tem display below lands
-(later) use zone method for reliable borders display, make it potentially apply to all kinds of outlines that share the same border all-together at once
-(later) choosing biomes "pattern" option yields "The file patterns/dots01.png contains bad image data, or may not be an image." while file is seems ok.
-(later) contour lines (or other computationally intensive tasks) should trigger a progress bar and be made to not freeze the rest of the ui (like we did for cell placements and voronoi).
-(later) labels are wrong in many ways, rework no this
-(later) changing preset should trigger computation of required features such as contour lines if needed
-(later) a "save preset" button
+(soon) changing preset should trigger computation of required features such as contour lines if needed
+(maybe) a "save preset" button
 (later) water contour lines distance should be zoom-dependant
-(later) water contour lines should have a starting and ending alpha
-(later) make sure water contour lines never cross actual coastline
+(soon) water contour lines should have a starting and ending alpha
 (later) add biomes outline brightness + saturation parameter
-(later) show underwater biomes : replace by a "underwater biomes alpha" slider
-(later) path saturation button doesn't work
+(soon) show underwater biomes : replace by a "underwater biomes alpha" slider
+(soon) path saturation button doesn't work
 (later) structures sat and alpha variables exist but show no slider
 
 Export :
-(later) Comments exportable as custom format
+(later) Comments (associated with elements in lists) exportable as custom format
 (later) JSON export/import (human-readable) with legend, layers, cells, paths, structures, groups, labels, view defaults.
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 (later) are there existing formats for such tools to handle?
-(later) trying to export with labels makes the thing crash with a NullPointerException
+(soon) trying to export with labels makes the thing crash with a NullPointerException
 (later) path rendering slightly differ from their rendering in rendering mode (should be similar)
+(later) rendering shoud look exactly like the picture to be rendered (including points on paths and resolution, this should be cached, use loading bar)
 
 Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.
 
 General :
 (later) investigate caching options
-(later) option to generate details (about everything) for zooming
+(maybe) option to generate details (about everything) for zooming
 (later) Refactor, optimize etc.
-(later) remove comments specific to explain a single commit, add general purpose comments instead
-(later) remove obsolete debug prints
+(soon) remove comments specific to explain a single commit, add general purpose comments instead
 (later) undo states
-(later) rgbToHSB seems to be part of the model class while hsb01ToRGB isnt, also why "01"? can we add more clarity to all this?
-(later) what's the use of passing "PApplet app" as a reference when methods could be called directly?
+(soon) rgbToHSB seems to be part of the model class while hsb01ToRGB isnt, also why "01"? can we add more clarity to all this?
+(soon) what's the use of passing "PApplet app" as a reference when methods could be called directly?
 (later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
-(later) revise UI element visual design, stil in an "old windows" way
+(soon) revise UI element visual design, stil in an "old windows" way (eg selectors with markers, cursors rather than black dots, radio buttons, pushable buttons)
 (later) write a more consistent readme file
 (later) a "fully generate" button once all generate methods have been implemented
-(later) add a "tooltip" section with explanations about hovered ui element
+(soon) add a "tooltip" section with explanations about hovered ui element
