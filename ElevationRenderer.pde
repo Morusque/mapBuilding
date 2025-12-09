@@ -2,8 +2,7 @@
 static class ElevationRenderer {
   static void drawOverlay(MapModel model, PApplet app, float seaLevel, boolean showElevationContours,
                           boolean drawWater, boolean drawElevation, boolean showWaterContours,
-                          boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg, int quantSteps,
-                          boolean renderBlackWhite) {
+                          boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg, int quantSteps) {
     if (model == null || model.cells == null) return;
     app.pushStyle();
     app.noStroke();
@@ -45,7 +44,7 @@ static class ElevationRenderer {
           }
           float grain = (app.noise(v.x * 18.0f, v.y * 18.0f) - 0.5f) * 0.06f;
           float vShade = constrain(baseShade + directional + grain, 0, 1);
-          int col = renderBlackWhite ? app.color(vShade * 255) : app.color(vShade * 255);
+          int col = app.color(vShade * 255);
           app.fill(col, 150);
           app.vertex(v.x, v.y);
         }
@@ -64,12 +63,7 @@ static class ElevationRenderer {
         float baseG = 70;
         float baseB = 120;
         int water;
-        if (renderBlackWhite) {
-          float gray = shade * 255;
-          water = app.color(gray, gray, gray, 255);
-        } else {
-          water = app.color(baseR * shade, baseG * shade, baseB * shade, 255);
-        }
+        water = app.color(baseR * shade, baseG * shade, baseB * shade, 255);
         app.fill(water);
         app.beginShape();
         for (PVector v : c.vertices) app.vertex(v.x, v.y);
@@ -88,7 +82,7 @@ static class ElevationRenderer {
         float range = max(1e-4f, maxElev - seaLevel);
         float step = max(0.02f, range / 10.0f);
         float start = ceil(seaLevel / step) * step;
-        int strokeCol = renderBlackWhite ? app.color(40) : app.color(50, 50, 50, 180);
+        int strokeCol = app.color(50, 50, 50, 180);
         model.drawContourSet(app, grid, start, maxElev, step, strokeCol);
       }
 
@@ -98,7 +92,7 @@ static class ElevationRenderer {
           float depthRange = seaLevel - minWater;
           float step = max(0.02f, depthRange / 5.0f);
           float start = seaLevel - step;
-          int strokeCol = renderBlackWhite ? app.color(60) : app.color(30, 70, 140, 170);
+          int strokeCol = app.color(30, 70, 140, 170);
           model.drawContourSet(app, grid, start, minWater, -step, strokeCol);
         }
       }

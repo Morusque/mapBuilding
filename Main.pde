@@ -114,7 +114,6 @@ boolean renderShowPaths = true;
 boolean renderShowLabels = true;
 boolean renderShowStructures = true;
 boolean renderShowZoneOutlines = false;
-boolean renderBlackWhite = false;
 boolean renderWaterContours = false;
 boolean renderElevationContours = false;
 float renderLightAzimuthDeg = 220.0f;   // 0..360, 0 = +X (east)
@@ -481,8 +480,8 @@ void draw() {
 
   // Paths are visible in all modes
   boolean highlightPaths = (currentTool == Tool.EDIT_PATHS);
-  int pathCol = renderBlackWhite ? color(50) : color(60, 60, 200);
-  int pathElevCol = renderBlackWhite ? color(90) : color(120);
+  int pathCol = color(60, 60, 200);
+  int pathElevCol = color(120);
   if (currentTool == Tool.EDIT_ELEVATION) {
     mapModel.drawPaths(this, pathElevCol, highlightPaths, true);
   } else if (currentTool == Tool.EDIT_RENDER) {

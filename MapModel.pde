@@ -536,8 +536,7 @@ class MapModel {
                             boolean showWaterContours, boolean useLighting, float lightAzimuthDeg, float lightAltitudeDeg, int quantSteps) {
     if (useNewElevationShading) {
       ElevationRenderer.drawOverlay(this, app, seaLevel, showElevationContours, drawWater, drawElevation,
-                                    showWaterContours, useLighting, lightAzimuthDeg, lightAltitudeDeg, quantSteps,
-                                    renderBlackWhite);
+                                    showWaterContours, useLighting, lightAzimuthDeg, lightAltitudeDeg, quantSteps);
     } else {
       drawElevationOverlayLegacy(app, seaLevel, showElevationContours, drawWater, drawElevation, showWaterContours,
                                  useLighting, lightAzimuthDeg, lightAltitudeDeg, quantSteps);
@@ -574,7 +573,7 @@ class MapModel {
           float levels = quantSteps - 1;
           litShade = round(litShade * levels) / levels;
         }
-        int col = renderBlackWhite ? app.color(litShade * 255) : app.color(litShade * 255);
+        int col = app.color(litShade * 255);
         app.fill(col, 140);
         app.beginShape();
         for (PVector v : c.vertices) app.vertex(v.x, v.y);
@@ -593,12 +592,7 @@ class MapModel {
         float baseG = 70;
         float baseB = 120;
         int water;
-        if (renderBlackWhite) {
-          float gray = shade * 255;
-          water = app.color(gray, gray, gray, 255);
-        } else {
-          water = app.color(baseR * shade, baseG * shade, baseB * shade, 255);
-        }
+        water = app.color(baseR * shade, baseG * shade, baseB * shade, 255);
         app.fill(water);
         app.beginShape();
         for (PVector v : c.vertices) app.vertex(v.x, v.y);
@@ -617,7 +611,7 @@ class MapModel {
         float range = max(1e-4f, maxElev - seaLevel);
         float step = max(0.02f, range / 10.0f);
         float start = ceil(seaLevel / step) * step;
-        int strokeCol = renderBlackWhite ? app.color(40) : app.color(50, 50, 50, 180);
+        int strokeCol = app.color(50, 50, 50, 180);
         drawContourSet(app, grid, start, maxElev, step, strokeCol);
       }
 
@@ -627,7 +621,7 @@ class MapModel {
           float depthRange = seaLevel - minWater;
           float step = max(0.02f, depthRange / 5.0f);
           float start = seaLevel - step;
-          int strokeCol = renderBlackWhite ? app.color(60) : app.color(30, 70, 140, 170);
+          int strokeCol = app.color(30, 70, 140, 170);
           drawContourSet(app, grid, start, minWater, -step, strokeCol);
         }
       }

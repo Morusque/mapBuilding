@@ -67,10 +67,6 @@ class MapRenderer {
         hsb[2] = constrain(hsb[2] * 1.05f, 0, 1);
         col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
       }
-      if (renderBlackWhite) {
-        float shade = brightness(col);
-        col = color(shade);
-      }
 
       app.fill(col);
       if (showBorders) {
