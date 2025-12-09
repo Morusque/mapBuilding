@@ -1,4 +1,4 @@
-# Map Snapshot
+# Map Snapshots
 
 ![Rendered map](images/map_20251209_135501.png)
 ![Rendered map](images/map_20251209_135027.png)

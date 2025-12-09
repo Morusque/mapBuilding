@@ -14,24 +14,29 @@ Elevation :
 Biomes :
 (later) review "value" sliders
 (later) make a better "full" generation
+(soon) When adding a biome type from default presets check if there isn't already one with the same name present (in chich case take the next)
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
 (soon) make zone display look somehow better, use reliable method when two outlines share the same border (always distinct, makes sense, line weight into account) and use it for biomes outlines and zones outlines (define segment edges normals, spread segments along it n times = number of borders that share it, based on : which side of it, smaller regions inside big ones)
+(soon) "regenerate" should generate 5 zones if no zone is present, but if at least one is present, it should not change anything to the number of zones, only generate the arrangement.
 
 Paths :
 (maybe) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
 (soon) option to generate paths
 (later) option to have the color match with water
+(soon) When creating a new path, call it "River 1", "Road 1" based on type name instead of "Path 1" "Path 2" etc.
+(later) allow invisible (except on paths mode) path type
 
 Structures :
 (later) structures should be groupable
 (soon) option to generate structs
 (soon) a way to move already placed structs
-(later) refine the way parameters work (UI, default, selected, etc)
+(soon) refine the way parameters work (UI, default, selected, etc) (eg reuse structures parameters for upcoming structures) (take care of angle meaning, offset vs additional offset of snapping angle)
 (soon) structures light shading on rendering mode
 (soon) crosses (as on treasure maps)
+(soon) no name in the name section if no structure selected
 
 Labels :
 (maybe) optionally associate labels with map elements
@@ -85,4 +90,5 @@ General :
 (later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
 (soon) revise UI element visual design, stil in an "old windows" way (eg selectors with markers, cursors rather than black dots, radio buttons, pushable buttons)
 (later) write a more consistent readme file
-(later) a "fully generate" button once all generate methods have been implemented
+(later) a "fully generate" button once all generate methods have been implemented (keep things already defined though)
+(later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos

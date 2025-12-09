@@ -381,7 +381,7 @@ void drawBiomesPanel() {
     drawBevelButton(layout.genApplyBtn.x, layout.genApplyBtn.y, layout.genApplyBtn.w, layout.genApplyBtn.h, false);
     fill(10);
     textAlign(CENTER, CENTER);
-    text("Apply", layout.genApplyBtn.x + layout.genApplyBtn.w / 2, layout.genApplyBtn.y + layout.genApplyBtn.h / 2);
+    text("Generate", layout.genApplyBtn.x + layout.genApplyBtn.w / 2, layout.genApplyBtn.y + layout.genApplyBtn.h / 2);
     registerUiTooltip(layout.genApplyBtn, tooltipFor("biome_gen_apply"));
   }
 
@@ -1128,7 +1128,7 @@ void drawPathsPanel() {
 
   // Taper toggle per type
   drawCheckbox(layout.taperCheck.x, layout.taperCheck.y,
-               layout.taperCheck.w, active.taperOn, "Taper width (start small)");
+               layout.taperCheck.w, active.taperOn, "Taper water");
   registerUiTooltip(layout.taperCheck, tooltipFor("paths_taper"));
   }
 
