@@ -41,6 +41,7 @@ void drawExportPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Export PNG", layout.pngBtn.x + layout.pngBtn.w / 2, layout.pngBtn.y + layout.pngBtn.h / 2);
+  registerUiTooltip(layout.pngBtn, tooltipFor("export_png"));
 
   // Resolution scale slider
   if (layout.scaleSlider != null) {
@@ -58,6 +59,7 @@ void drawExportPanel() {
     fill(0);
     textAlign(LEFT, BOTTOM);
     text("Resolution scale (" + nf(exportScale, 1, 1) + "x)", s.x, s.y - 4);
+    registerUiTooltip(s, tooltipFor("export_scale"));
   }
 
   fill(60);

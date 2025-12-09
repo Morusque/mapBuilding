@@ -53,6 +53,15 @@ void drawSnapSettingsPanel() {
     "Other structures",
     "Elevation"
   };
+  String[] snapKeys = {
+    "snap_water",
+    "snap_biomes",
+    "snap_underwater_biomes",
+    "snap_zones",
+    "snap_paths",
+    "snap_structures",
+    "snap_elevation"
+  };
   boolean[] values = {
     snapWaterEnabled,
     snapBiomesEnabled,
@@ -66,6 +75,10 @@ void drawSnapSettingsPanel() {
   for (int i = 0; i < labels.length; i++) {
     IntRect b = l.checks.get(i);
     drawCheckbox(b.x, b.y, b.w, values[i], labels[i]);
+    if (i < snapKeys.length) {
+      int hintW = l.panel.w - 2 * PANEL_PADDING;
+      registerUiTooltip(new IntRect(b.x, b.y, hintW, b.h), tooltipFor(snapKeys[i]));
+    }
   }
 
   // Elevation divisions slider
@@ -83,6 +96,7 @@ void drawSnapSettingsPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Elevation divisions: " + snapElevationDivisions, es.x, es.y - 4);
+  registerUiTooltip(es, tooltipFor("snap_elevation_divisions"));
 }
 
 boolean isInSnapSettingsPanel(int mx, int my) {
@@ -158,6 +172,7 @@ void drawSitesPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Density: " + siteTargetCount + " cells", d.x, d.y - 4);
+  registerUiTooltip(d, tooltipFor("site_density"));
 
   // ---------- Fuzz slider (0..0.3) ----------
   IntRect f = layout.fuzzSlider;
@@ -177,6 +192,7 @@ void drawSitesPanel() {
   textAlign(LEFT, BOTTOM);
   text("Fuzz: " + nf(siteFuzz, 1, 2) + " (0 = none, 0.3 = strong jitter)",
        f.x, f.y - 4);
+  registerUiTooltip(f, tooltipFor("site_fuzz"));
 
   // ---------- Placement mode slider (DISCRETE) ----------
   IntRect m = layout.modeSlider;
@@ -224,6 +240,7 @@ void drawSitesPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Placement: " + modeName, m.x, m.y - 4);
+  registerUiTooltip(m, tooltipFor("site_mode"));
 
   // ---------- Generate button ----------
   IntRect g = layout.generateBtn;
@@ -231,6 +248,7 @@ void drawSitesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Generate", g.x + g.w / 2, g.y + g.h / 2);
+  registerUiTooltip(g, tooltipFor("sites_generate"));
 
   // Keep properties toggle
   IntRect c = layout.keepCheckbox;
@@ -244,6 +262,7 @@ void drawSitesPanel() {
   fill(0);
   textAlign(LEFT, CENTER);
   text("Keep properties", c.x + c.w + 6, g.y + g.h / 2);
+  registerUiTooltip(new IntRect(c.x, c.y, c.w + 120, c.h), tooltipFor("sites_keep"));
 
   drawControlsHint(layout.panel,
                    "right-click: pan",
@@ -356,12 +375,14 @@ void drawBiomesPanel() {
   textAlign(LEFT, BOTTOM);
   String modeName = biomeGenerateModes[constrain(biomeGenerateModeIndex, 0, modeCount - 1)];
   text("Generation mode: " + modeName, gsel.x, gsel.y - 4);
+  registerUiTooltip(gsel, tooltipFor("biome_gen_mode"));
 
   if (layout.genApplyBtn != null) {
     drawBevelButton(layout.genApplyBtn.x, layout.genApplyBtn.y, layout.genApplyBtn.w, layout.genApplyBtn.h, false);
     fill(10);
     textAlign(CENTER, CENTER);
     text("Apply", layout.genApplyBtn.x + layout.genApplyBtn.w / 2, layout.genApplyBtn.y + layout.genApplyBtn.h / 2);
+    registerUiTooltip(layout.genApplyBtn, tooltipFor("biome_gen_apply"));
   }
 
   // Generation value slider (0..1 displayed)
@@ -376,6 +397,7 @@ void drawBiomesPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Value (" + nf(biomeGenerateValue01, 1, 2) + ")", gv.x, gv.y - 4);
+  registerUiTooltip(gv, tooltipFor("biome_gen_value"));
 
   // "Set to water level" helper
   if (layout.genValueWaterBtn != null) {
@@ -383,6 +405,7 @@ void drawBiomesPanel() {
     fill(10);
     textAlign(CENTER, CENTER);
     text("Set water level", layout.genValueWaterBtn.x + layout.genValueWaterBtn.w / 2, layout.genValueWaterBtn.y + layout.genValueWaterBtn.h / 2);
+    registerUiTooltip(layout.genValueWaterBtn, tooltipFor("biome_value_water"));
   }
 
   // Paint button
@@ -391,6 +414,7 @@ void drawBiomesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Paint", layout.paintBtn.x + layout.paintBtn.w * 0.5f, layout.paintBtn.y + layout.paintBtn.h * 0.5f);
+  registerUiTooltip(layout.paintBtn, tooltipFor("biome_paint"));
 
   // Fill button
   drawBevelButton(layout.fillBtn.x, layout.fillBtn.y, layout.fillBtn.w, layout.fillBtn.h,
@@ -398,6 +422,7 @@ void drawBiomesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Fill", layout.fillBtn.x + layout.fillBtn.w * 0.5f, layout.fillBtn.y + layout.fillBtn.h * 0.5f);
+  registerUiTooltip(layout.fillBtn, tooltipFor("biome_fill"));
 
   // Add / Remove biome type buttons
   // "+" button
@@ -405,6 +430,7 @@ void drawBiomesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("+", layout.addBtn.x + layout.addBtn.w * 0.5f, layout.addBtn.y + layout.addBtn.h * 0.5f);
+  registerUiTooltip(layout.addBtn, tooltipFor("biome_add"));
 
   // "-" button (disabled if index 0 or only one type)
   boolean canRemove = (mapModel.biomeTypes != null &&
@@ -415,6 +441,7 @@ void drawBiomesPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("-", layout.removeBtn.x + layout.removeBtn.w * 0.5f, layout.removeBtn.y + layout.removeBtn.h * 0.5f);
+  registerUiTooltip(layout.removeBtn, tooltipFor("biome_remove"));
 
   // Palette
   if (mapModel == null || mapModel.biomeTypes == null) return;
@@ -434,6 +461,7 @@ void drawBiomesPanel() {
     fill(20);
     textAlign(CENTER, CENTER);
     text(zt.name, sw.x + sw.w * 0.5f, sw.y + sw.h * 0.5f);
+    registerUiTooltip(sw, tooltipFor("biome_palette"));
     popStyle();
   }
 
@@ -457,6 +485,7 @@ void drawBiomesPanel() {
       stroke(0);
       line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
     }
+    registerUiTooltip(nf, tooltipFor("biome_name"));
   }
 
   // Hue slider for currently selected biome
@@ -485,6 +514,7 @@ void drawBiomesPanel() {
     textAlign(LEFT, BOTTOM);
     text("Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2),
          hue.x, hue.y - 4);
+    registerUiTooltip(hue, tooltipFor("biome_hue"));
   }
 
   // Brush radius slider
@@ -606,11 +636,14 @@ void drawZonesListPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("New zone", layout.newBtn.x + layout.newBtn.w / 2, layout.newBtn.y + layout.newBtn.h / 2);
+  registerUiTooltip(layout.newBtn, tooltipFor("zones_list_new"));
 
   drawBevelButton(layout.deselectBtn.x, layout.deselectBtn.y, layout.deselectBtn.w, layout.deselectBtn.h, false);
   fill(10);
   textAlign(CENTER, CENTER);
   text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
+  registerUiTooltip(layout.deselectBtn, tooltipFor("structures_deselect"));
+  registerUiTooltip(layout.deselectBtn, tooltipFor("zones_list_deselect"));
 
   if (mapModel == null || mapModel.zones == null) return;
 
@@ -706,6 +739,8 @@ void drawZonesPanel() {
   textAlign(CENTER, CENTER);
   text("Reset", layout.resetBtn.x + layout.resetBtn.w * 0.5f, layout.resetBtn.y + layout.resetBtn.h * 0.5f);
   text("Regenerate", layout.regenerateBtn.x + layout.regenerateBtn.w * 0.5f, layout.regenerateBtn.y + layout.regenerateBtn.h * 0.5f);
+  registerUiTooltip(layout.resetBtn, tooltipFor("zones_reset"));
+  registerUiTooltip(layout.regenerateBtn, tooltipFor("zones_regenerate"));
 
   // Brush radius slider
   IntRect brush = layout.brushSlider;
@@ -720,6 +755,7 @@ void drawZonesPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Brush radius", brush.x, brush.y - 4);
+  registerUiTooltip(brush, tooltipFor("zones_brush"));
 
   drawControlsHint(layout.panel,
                    "left-click: paint or erase",
@@ -732,18 +768,21 @@ void drawZonesPanel() {
     fill(10);
     textAlign(CENTER, CENTER);
     text("Exclude water", layout.excludeWaterBtn.x + layout.excludeWaterBtn.w / 2, layout.excludeWaterBtn.y + layout.excludeWaterBtn.h / 2);
+    registerUiTooltip(layout.excludeWaterBtn, tooltipFor("zones_exclude_water"));
   }
   if (layout.exclusiveBtn != null) {
     drawBevelButton(layout.exclusiveBtn.x, layout.exclusiveBtn.y, layout.exclusiveBtn.w, layout.exclusiveBtn.h, false);
     fill(10);
     textAlign(CENTER, CENTER);
     text("Make exclusive", layout.exclusiveBtn.x + layout.exclusiveBtn.w / 2, layout.exclusiveBtn.y + layout.exclusiveBtn.h / 2);
+    registerUiTooltip(layout.exclusiveBtn, tooltipFor("zones_exclusive"));
   }
   if (layout.fourColorBtn != null) {
     drawBevelButton(layout.fourColorBtn.x, layout.fourColorBtn.y, layout.fourColorBtn.w, layout.fourColorBtn.h, false);
     fill(10);
     textAlign(CENTER, CENTER);
     text("Four-color map", layout.fourColorBtn.x + layout.fourColorBtn.w / 2, layout.fourColorBtn.y + layout.fourColorBtn.h / 2);
+    registerUiTooltip(layout.fourColorBtn, tooltipFor("zones_four_color"));
   }
 }
 
@@ -955,6 +994,7 @@ void drawPathsPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Route mode: " + modes[pathRouteModeIndex], rs.x, rs.y - 4);
+  registerUiTooltip(rs, tooltipFor("paths_route_mode"));
 
   // Flattest bias slider (only relevant for Flattest mode)
   IntRect fs = layout.flattestSlider;
@@ -969,14 +1009,17 @@ void drawPathsPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Flattest slope bias (" + nf(flattestSlopeBias, 1, 2) + ")", fs.x, fs.y - 4);
+  registerUiTooltip(fs, tooltipFor("paths_flattest"));
 
   // Avoid water checkbox
   drawCheckbox(layout.avoidWaterCheck.x, layout.avoidWaterCheck.y,
                layout.avoidWaterCheck.w, pathAvoidWater, "Avoid water");
+  registerUiTooltip(layout.avoidWaterCheck, tooltipFor("paths_avoid_water"));
   drawBevelButton(layout.eraserBtn.x, layout.eraserBtn.y, layout.eraserBtn.w, layout.eraserBtn.h, pathEraserMode);
   fill(10);
   textAlign(CENTER, CENTER);
   text("Eraser", layout.eraserBtn.x + layout.eraserBtn.w / 2, layout.eraserBtn.y + layout.eraserBtn.h / 2);
+  registerUiTooltip(layout.eraserBtn, tooltipFor("paths_eraser"));
 
   // Only type management on this panel
 
@@ -987,6 +1030,8 @@ void drawPathsPanel() {
   textAlign(CENTER, CENTER);
   text("+", layout.typeAddBtn.x + layout.typeAddBtn.w / 2, layout.typeAddBtn.y + layout.typeAddBtn.h / 2);
   text("-", layout.typeRemoveBtn.x + layout.typeRemoveBtn.w / 2, layout.typeRemoveBtn.y + layout.typeRemoveBtn.h / 2);
+  registerUiTooltip(layout.typeAddBtn, tooltipFor("paths_type_add"));
+  registerUiTooltip(layout.typeRemoveBtn, tooltipFor("paths_type_remove"));
 
   // Path type palette
   if (mapModel == null || mapModel.pathTypes == null) return;
@@ -1005,6 +1050,7 @@ void drawPathsPanel() {
     fill(20);
     textAlign(CENTER, CENTER);
     text(pt.name, sw.x + sw.w * 0.5f, sw.y + sw.h * 0.5f);
+    registerUiTooltip(sw, tooltipFor("paths_palette"));
     popStyle();
   }
 
@@ -1029,6 +1075,7 @@ void drawPathsPanel() {
       stroke(0);
       line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
     }
+    registerUiTooltip(nf, tooltipFor("paths_type_name"));
 
     IntRect hue = layout.typeHueSlider;
     stroke(160);
@@ -1058,6 +1105,7 @@ void drawPathsPanel() {
     ellipse(wx, weight.y + weight.h / 2.0f, weight.h * 0.9f, weight.h * 0.9f);
     fill(0);
     text("Weight for \"" + active.name + "\" (px)", weight.x, weight.y - 4);
+    registerUiTooltip(weight, tooltipFor("paths_type_weight"));
 
   // Min weight slider per type
   IntRect minw = layout.typeMinWeightSlider;
@@ -1076,10 +1124,12 @@ void drawPathsPanel() {
     ellipse(minx, minw.y + minw.h / 2.0f, minw.h * 0.9f, minw.h * 0.9f);
     fill(0);
     text("Min weight (px)", minw.x, minw.y - 4);
+    registerUiTooltip(minw, tooltipFor("paths_min_weight"));
 
-    // Taper toggle per type
+  // Taper toggle per type
   drawCheckbox(layout.taperCheck.x, layout.taperCheck.y,
                layout.taperCheck.w, active.taperOn, "Taper width (start small)");
+  registerUiTooltip(layout.taperCheck, tooltipFor("paths_taper"));
   }
 
   drawControlsHint(layout.panel,
@@ -1167,6 +1217,8 @@ void drawPathsListPanel() {
   textAlign(CENTER, CENTER);
   text("New Path", layout.newBtn.x + layout.newBtn.w / 2, layout.newBtn.y + layout.newBtn.h / 2);
   text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
+  registerUiTooltip(layout.newBtn, tooltipFor("paths_list_new"));
+  registerUiTooltip(layout.deselectBtn, tooltipFor("paths_list_deselect"));
 }
 
 // ----- ELEVATION PANEL -----
@@ -1244,6 +1296,7 @@ void drawElevationPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Water level: " + nf(seaLevel, 1, 2), sea.x, sea.y - 4);
+  registerUiTooltip(sea, tooltipFor("elevation_water_level"));
 
   // Brush radius slider (0.01..0.2)
   IntRect rad = layout.radiusSlider;
@@ -1257,6 +1310,7 @@ void drawElevationPanel() {
   ellipse(rx, rad.y + rad.h / 2.0f, rad.h * 0.9f, rad.h * 0.9f);
   fill(0);
   text("Brush radius", rad.x, rad.y - 4);
+  registerUiTooltip(rad, tooltipFor("elevation_brush_radius"));
 
   // Brush strength slider (0.005..0.2)
   IntRect str = layout.strengthSlider;
@@ -1270,6 +1324,7 @@ void drawElevationPanel() {
   ellipse(stx, str.y + str.h / 2.0f, str.h * 0.9f, str.h * 0.9f);
   fill(0);
   text("Brush strength", str.x, str.y - 4);
+  registerUiTooltip(str, tooltipFor("elevation_brush_strength"));
 
   // Raise / Lower buttons
   drawBevelButton(layout.raiseBtn.x, layout.raiseBtn.y, layout.raiseBtn.w, layout.raiseBtn.h, elevationBrushRaise);
@@ -1278,6 +1333,8 @@ void drawElevationPanel() {
   textAlign(CENTER, CENTER);
   text("Raise", layout.raiseBtn.x + layout.raiseBtn.w / 2, layout.raiseBtn.y + layout.raiseBtn.h / 2);
   text("Lower", layout.lowerBtn.x + layout.lowerBtn.w / 2, layout.lowerBtn.y + layout.lowerBtn.h / 2);
+  registerUiTooltip(layout.raiseBtn, tooltipFor("elevation_raise"));
+  registerUiTooltip(layout.lowerBtn, tooltipFor("elevation_lower"));
 
   // Noise controls stacked
   IntRect noise = layout.noiseSlider;
@@ -1292,6 +1349,7 @@ void drawElevationPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Noise scale", noise.x, noise.y - 4);
+  registerUiTooltip(noise, tooltipFor("elevation_noise"));
 
   drawBevelButton(layout.perlinBtn.x, layout.perlinBtn.y, layout.perlinBtn.w, layout.perlinBtn.h, false);
   drawBevelButton(layout.varyBtn.x, layout.varyBtn.y, layout.varyBtn.w, layout.varyBtn.h, false);
@@ -1301,6 +1359,9 @@ void drawElevationPanel() {
   text("Generate", layout.perlinBtn.x + layout.perlinBtn.w / 2, layout.perlinBtn.y + layout.perlinBtn.h / 2);
   text("Vary", layout.varyBtn.x + layout.varyBtn.w / 2, layout.varyBtn.y + layout.varyBtn.h / 2);
   text("Make plateaux", layout.plateauBtn.x + layout.plateauBtn.w / 2, layout.plateauBtn.y + layout.plateauBtn.h / 2);
+  registerUiTooltip(layout.perlinBtn, tooltipFor("elevation_generate_perlin"));
+  registerUiTooltip(layout.varyBtn, tooltipFor("elevation_vary"));
+  registerUiTooltip(layout.plateauBtn, tooltipFor("elevation_plateau"));
 
   drawControlsHint(layout.panel,
                    "left-click: raise/lower",
@@ -1422,6 +1483,7 @@ void drawLabelsListPanel() {
   fill(10);
   textAlign(CENTER, CENTER);
   text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
+  registerUiTooltip(layout.deselectBtn, tooltipFor("labels_deselect"));
 
   // Size slider
   IntRect ss = layout.sizeSlider;
@@ -1437,6 +1499,7 @@ void drawLabelsListPanel() {
   fill(10);
   textAlign(LEFT, BOTTOM);
   text("Size " + nf(labelSizeDefault(), 1, 0), ss.x, ss.y - 4);
+  registerUiTooltip(ss, tooltipFor("labels_size"));
   curY = ss.y + ss.h + PANEL_SECTION_GAP;
 
   for (int i = 0; i < layout.rows.size(); i++) {
@@ -1570,6 +1633,7 @@ void drawStructuresPanelUI() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Size", sz.x, sz.y - 4);
+  registerUiTooltip(sz, tooltipFor("structures_size"));
 
   // Angle offset slider (-180..180 deg)
   IntRect ang = layout.angleSlider;
@@ -1585,6 +1649,7 @@ void drawStructuresPanelUI() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Angle offset (" + nf(angDeg, 1, 1) + " deg)", ang.x, ang.y - 4);
+  registerUiTooltip(ang, tooltipFor("structures_angle"));
 
   // Rectangle ratio slider (width/height)
   IntRect ratio = layout.ratioSlider;
@@ -1599,6 +1664,7 @@ void drawStructuresPanelUI() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Rectangle ratio (W/H): " + nf(structureAspectRatio, 1, 2), ratio.x, ratio.y - 4);
+  registerUiTooltip(ratio, tooltipFor("structures_ratio"));
 
   // Shape buttons
   String[] shapeLabels = { "Rect", "Square", "Circle", "Triangle", "Hex" };
@@ -1609,6 +1675,7 @@ void drawStructuresPanelUI() {
     fill(10);
     textAlign(CENTER, CENTER);
     text(shapeLabels[i], b.x + b.w / 2, b.y + b.h / 2);
+    registerUiTooltip(b, tooltipFor("structures_shape"));
   }
 
   // Snap mode buttons
@@ -1620,6 +1687,7 @@ void drawStructuresPanelUI() {
     fill(10);
     textAlign(CENTER, CENTER);
     text(snapModes[i], b.x + b.w / 2, b.y + b.h / 2);
+    registerUiTooltip(b, tooltipFor("structures_snap_mode"));
   }
 
   drawControlsHint(layout.panel,
@@ -1766,6 +1834,7 @@ void drawStructuresListPanel() {
       stroke(0);
       line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
     }
+    registerUiTooltip(nf, tooltipFor("structures_detail_name"));
   }
 
   float baseSize = (target != null) ? target.size : structureSize;
@@ -1788,6 +1857,7 @@ void drawStructuresListPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Size", ss.x, ss.y - 4);
+  registerUiTooltip(ss, tooltipFor("structures_detail_size"));
 
   // Angle slider
   IntRect ang = layout.detailAngleSlider;
@@ -1802,6 +1872,7 @@ void drawStructuresListPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Angle (" + nf(baseAngDeg, 1, 1) + " deg)", ang.x, ang.y - 4);
+  registerUiTooltip(ang, tooltipFor("structures_detail_angle"));
 
   // Hue slider
   IntRect hue = layout.detailHueSlider;
@@ -1816,6 +1887,7 @@ void drawStructuresListPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Hue", hue.x, hue.y - 4);
+  registerUiTooltip(hue, tooltipFor("structures_detail_hue"));
 
   // Saturation slider
   IntRect sat = layout.detailSatSlider;
@@ -1830,6 +1902,7 @@ void drawStructuresListPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Saturation", sat.x, sat.y - 4);
+  registerUiTooltip(sat, tooltipFor("structures_detail_sat"));
 
   // Alpha slider (fill only)
   IntRect alp = layout.detailAlphaSlider;
@@ -1844,6 +1917,7 @@ void drawStructuresListPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Alpha (" + nf(baseAlpha * 100.0f, 1, 0) + "%)", alp.x, alp.y - 4);
+  registerUiTooltip(alp, tooltipFor("structures_detail_alpha"));
 
   // Stroke weight slider
   IntRect st = layout.detailStrokeSlider;
@@ -1858,6 +1932,7 @@ void drawStructuresListPanel() {
   fill(0);
   textAlign(LEFT, BOTTOM);
   text("Stroke weight (px)", st.x, st.y - 4);
+  registerUiTooltip(st, tooltipFor("structures_detail_stroke"));
 
   for (int i = 0; i < layout.rows.size(); i++) {
     StructureRowLayout row = layout.rows.get(i);
@@ -2171,6 +2246,7 @@ void drawRenderPanel() {
     drawSlider(layout.waterRippleDistanceSlider, constrain(renderSettings.waterRippleDistancePx / 40.0f, 0, 1), "Ripple distance (" + nf(renderSettings.waterRippleDistancePx, 1, 1) + " px)");
     drawHSBRow(layout.waterContourHSB, "Water contours", renderSettings.waterContourHue01, renderSettings.waterContourSat01, renderSettings.waterContourBri01);
     drawSlider(layout.waterContourAlphaSlider, renderSettings.waterContourAlpha01, "Water contours alpha (" + nf(renderSettings.waterContourAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.waterContourAlphaSlider, tooltipFor("render_contours"));
     float elevCountNorm = constrain(renderSettings.elevationLinesCount / 24.0f, 0, 1);
     drawSlider(layout.elevationLinesCountSlider, elevCountNorm, "Elevation lines (" + renderSettings.elevationLinesCount + ")");
     if (layout.elevationLineStyleSelector != null) {
@@ -2213,6 +2289,7 @@ void drawRenderPanel() {
   drawSectionHeader(layout.headerLabels, "Labels", renderSectionLabelsOpen);
   if (renderSectionLabelsOpen) {
     drawCheckbox(layout.labelsArbitraryCheckbox.x, layout.labelsArbitraryCheckbox.y, layout.labelsArbitraryCheckbox.w, renderSettings.showLabelsArbitrary, "Show arbitrary");
+    registerUiTooltip(layout.labelsArbitraryCheckbox, tooltipFor("render_labels_arbitrary"));
     drawCheckbox(layout.labelsZonesCheckbox.x, layout.labelsZonesCheckbox.y, layout.labelsZonesCheckbox.w, renderSettings.showLabelsZones, "Show zones");
     drawCheckbox(layout.labelsPathsCheckbox.x, layout.labelsPathsCheckbox.y, layout.labelsPathsCheckbox.w, renderSettings.showLabelsPaths, "Show paths");
     drawCheckbox(layout.labelsStructuresCheckbox.x, layout.labelsStructuresCheckbox.y, layout.labelsStructuresCheckbox.w, renderSettings.showLabelsStructures, "Show structures");
@@ -2241,6 +2318,7 @@ void drawRenderPanel() {
       textAlign(LEFT, BOTTOM);
       String presetName = renderPresets[renderSettings.activePresetIndex].name;
       text("Preset: " + presetName, ps.x, ps.y - 4);
+      registerUiTooltip(ps, tooltipFor("render_preset"));
     }
 
     if (layout.presetApplyBtn != null) {

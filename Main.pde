@@ -353,6 +353,7 @@ void setup() {
   mapModel.generateSites(currentPlacementMode(), siteTargetCount);
   mapModel.ensureVoronoiComputed();
   seedDefaultZones();
+  initTooltipTexts();
 }
 
 void initBiomeTypes() {
@@ -601,6 +602,8 @@ void draw() {
   rectMode(CORNER);
   ellipseMode(CENTER);
 
+  resetUiTooltips();
+
   if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT) {
     drawExportPaddingOverlay();
   }
@@ -634,6 +637,9 @@ void draw() {
   } else if (currentTool == Tool.EDIT_EXPORT) {
     drawExportPanel();
   }
+
+  refreshUiTooltip(mouseX, mouseY);
+  drawUiTooltipPanel();
 }
 
 void drawRenderView(PApplet app) {

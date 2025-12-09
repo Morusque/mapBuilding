@@ -86,4 +86,3 @@ General :
 (soon) revise UI element visual design, stil in an "old windows" way (eg selectors with markers, cursors rather than black dots, radio buttons, pushable buttons)
 (later) write a more consistent readme file
 (later) a "fully generate" button once all generate methods have been implemented
-(soon) add a "tooltip" section with explanations about hovered ui element

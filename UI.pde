@@ -208,5 +208,8 @@ void drawToolButtons() {
     fill(20);
     textAlign(CENTER, CENTER);
     text(labels[i], x + buttonW / 2, y + (barH - 4) / 2);
+
+    String key = "tool_" + labels[i].toLowerCase();
+    registerUiTooltip(new IntRect(x, y, buttonW, barH - 4), tooltipFor(key));
   }
 }
