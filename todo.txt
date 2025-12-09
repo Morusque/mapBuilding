@@ -12,6 +12,8 @@ Elevation :
 (later) use techtonic logic in addition to perlin
 
 Biomes :
+(later) review "value" sliders
+(later) make a better "full" generation
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
@@ -58,7 +60,11 @@ Rendering :
 (later) water contour lines distance should be zoom-dependant
 (later) water contour lines should have a starting and ending alpha
 (later) make sure water contour lines never cross actual coastline
- 
+(later) add biomes outline brightness + saturation parameter
+(later) show underwater biomes : replace by a "underwater biomes alpha" slider
+(later) path saturation button doesn't work
+(later) structures sat and alpha variables exist but show no slider
+
 Export :
 (later) Comments exportable as custom format
 (later) JSON export/import (human-readable) with legend, layers, cells, paths, structures, groups, labels, view defaults.
