@@ -35,7 +35,7 @@ void initTooltipTexts() {
   TOOLTIP_TEXTS.put("elevation_plateau", "Create random flatter areas on the current elevation set.");
 
   // biomes mode
-  TOOLTIP_TEXTS.put("biome_gen_mode", "Choose generation modes: \n- Propagation: place regions frmo all available biomes \n- Reset: fills entire map with selected biome \n- Fill gaps: replaces regions set to None by extending nearby regions \n- Replace gaps: replaces None reginos by new biomes \n- Fill under: sets cells under value threshold to selected biome \n- Fill above: sets cells above value threshold to selected biome \n- Extend: increases selected biome sizes \n- Shrink: decreases selected biome sizes \n- Spots: adds a spot of selected biome somewhere \n- Vary: move some cells around \n- Beaches : set selected biome region somewhere near coastlines \n- Full : arbitrary multiphase generation process");
+  TOOLTIP_TEXTS.put("biome_gen_mode", "Choose generation modes: \n- Propagation: plants biome seeds from every biome available and make them expand using a set of constraints \n- Reset: fills entire map with selected biome \n- Fill gaps: replaces regions set to None by extending nearby regions \n- Replace gaps: replaces None reginos by new biomes \n- Fill under: sets cells under value threshold to selected biome \n- Fill above: sets cells above value threshold to selected biome \n- Extend: increases selected biome sizes \n- Shrink: decreases selected biome sizes \n- Spots: adds a spot of selected biome somewhere \n- Vary: move some cells around \n- Beaches : set selected biome region somewhere near coastlines \n- Full : arbitrary multiphase generation process");
   TOOLTIP_TEXTS.put("biome_gen_apply", "Execute the selected generation method using the chosen value.");
   TOOLTIP_TEXTS.put("biome_value_water", "Sync the value slider with the current sea level.");
   TOOLTIP_TEXTS.put("biome_paint", "Paint selected biome while dragging with the brush.");
@@ -118,18 +118,18 @@ String tooltipFor(String key) {
 String tooltipForBiomeValue() {
   int idx = constrain(biomeGenerateModeIndex, 0, biomeGenerateModes.length - 1);
   switch (idx) {
-    case 0: return "Propagation: slider controls how aggressively the active biome expands from seeds.";
-    case 1: return "Reset: slider sets how much the biome clears others (low = polite, high = full override).";
-    case 2: return "Fill gaps: higher values push the biome into empty cells.";
-    case 3: return "Replace gaps: fills empty zones from scratch before expanding.";
-    case 4: return "Fill under: positive values push the biome below the sea level.";
-    case 5: return "Fill above: positive values push the biome to higher ground.";
-    case 6: return "Extend: slider controls how much the biome grows outward.";
-    case 7: return "Shrink: slider controls how much the biome retracts from edges.";
-    case 8: return "Spots: slider determines spot size and strength.";
-    case 9: return "Vary: slider adjusts randomness to produce different variations.";
-    case 10: return "Beaches: slider maps to beach width (scaled later to 1-100).";
-    case 11: return "Full: slider mixes the selected biome over the entire map.";
+    case 0: return "Propagation: number of seeds (TODO).";
+    case 1: return "Reset: (no use).";
+    case 2: return "Fill gaps: (no use).";
+    case 3: return "Replace gaps: number of seeds (TODO).";
+    case 4: return "Fill under: sets elevation threshold.";
+    case 5: return "Fill above: sets elevation threshold.";
+    case 6: return "Extend: how much the biome grows outward (TODO?).";
+    case 7: return "Shrink: how much the biome retracts from edges (TODO?).";
+    case 8: return "Spots: spot size and strength (TODO?).";
+    case 9: return "Vary: variations strength (TODO).";
+    case 10: return "Beaches: beaches width.";
+    case 11: return "Full: (no use)).";
   }
   return "Value slider meaning depends on chosen generation mode.";
 }
