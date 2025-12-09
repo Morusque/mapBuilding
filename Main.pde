@@ -28,7 +28,7 @@ StructureShape structureShape = StructureShape.SQUARE;
 float structureAspectRatio = 1.0f; // width/height for rectangle shape
 float structureHue01 = 0.0f;
 float structureSat01 = 0.0f;
-float structureAlpha01 = 0.7f;
+float structureAlpha01 = 1.0f;
 float structureStrokePx = 1.4f;
 float zonesListScroll = 0;
 float pathsListScroll = 0;
@@ -108,7 +108,6 @@ float elevationNoiseScale = 8.0f;
 float defaultElevation = 0.05f;
 
 // Render toggles
-boolean renderShowZones = true;
 boolean renderShowWater = true;
 boolean renderShowElevation = true;
 boolean renderShowPaths = true;
@@ -455,7 +454,7 @@ void draw() {
   viewport.applyTransform(this.g);
 
   boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS || currentTool == Tool.EDIT_ZONES || currentTool == Tool.EDIT_EXPORT);
-  boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER && !renderShowZones);
+  boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER);
   boolean renderView = (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT);
   if (renderView) {
     drawRenderView(this);
@@ -641,7 +640,7 @@ void drawRenderView(PApplet app) {
   mapModel.drawRenderAdvanced(app, renderSettings, seaLevel);
 
   // Zone outlines (stroke-only, no fill)
-  if (renderSettings.zoneStrokeAlpha01 > 1e-4f && renderSettings.showZones) {
+  if (renderSettings.zoneStrokeAlpha01 > 1e-4f) {
     mapModel.drawZoneOutlinesRender(app, renderSettings);
   }
 

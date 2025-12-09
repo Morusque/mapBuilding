@@ -64,7 +64,6 @@ class RenderSettings {
   float zoneStrokeAlpha01 = 0.5f;
   float zoneStrokeSatScale01 = 0.5f;
   float zoneStrokeBriScale01 = 1.0f;
-  boolean showZones = true;
 
   // Structures
   boolean showStructures = true;
@@ -125,7 +124,6 @@ class RenderSettings {
     c.zoneStrokeAlpha01 = zoneStrokeAlpha01;
     c.zoneStrokeSatScale01 = zoneStrokeSatScale01;
     c.zoneStrokeBriScale01 = zoneStrokeBriScale01;
-    c.showZones = showZones;
     // Structures
     c.showStructures = showStructures;
     c.mergeStructures = mergeStructures;
@@ -186,7 +184,6 @@ class RenderSettings {
     zoneStrokeAlpha01 = o.zoneStrokeAlpha01;
     zoneStrokeSatScale01 = o.zoneStrokeSatScale01;
     zoneStrokeBriScale01 = o.zoneStrokeBriScale01;
-    showZones = o.showZones;
     // Structures
     showStructures = o.showStructures;
     mergeStructures = o.mergeStructures;
@@ -208,133 +205,430 @@ class RenderSettings {
 RenderPreset[] buildDefaultRenderPresets() {
   ArrayList<RenderPreset> list = new ArrayList<RenderPreset>();
 
-  // Default
+  // default
   {
     RenderSettings s = new RenderSettings();
-    list.add(new RenderPreset("Default", s));
-  }
-
-  // Simple
-  {
-    RenderSettings s = new RenderSettings();
-    s.landHue01 = 0.08f; s.landSat01 = 0.0f; s.landBri01 = 0.90f;
-    s.waterHue01 = 0.58f; s.waterSat01 = 0.0f; s.waterBri01 = 0.30f;
-    s.biomeFillAlpha01 = 0.0f;
+    s.landHue01 = 0.0f;
+    s.landSat01 = 0.0f;
+    s.landBri01 = 0.85f;
+    s.waterHue01 = 0.58f;
+    s.waterSat01 = 0.28f;
+    s.waterBri01 = 0.35f;
+    s.cellBorderAlpha01 = 0.0f;
+    s.biomeFillAlpha01 = 0.5f;
     s.biomeSatScale01 = 1.0f;
     s.biomeOutlineSizePx = 0.0f;
-    s.biomeOutlineAlpha01 = 0.0f;
-    s.waterDepthAlpha01 = 0.0f;
-    s.elevationLightAlpha01 = 0.0f;
+    s.biomeOutlineAlpha01 = 1.0f;
+    s.biomeShowUnderwater = false;
+    s.waterDepthAlpha01 = 0.5f;
+    s.elevationLightAlpha01 = 0.5f;
+    s.elevationLightAzimuthDeg = 220.0f;
+    s.elevationLightAltitudeDeg = 45.0f;
     s.waterContourSizePx = 2.0f;
     s.waterRippleCount = 0;
     s.waterRippleDistancePx = 5.0f;
+    s.waterContourHue01 = 0.0f;
+    s.waterContourSat01 = 0.0f;
+    s.waterContourBri01 = 0.0f;
+    s.waterContourAlpha01 = 1.0f;
+    s.elevationLinesCount = 0;
+    s.elevationLinesAlpha01 = 0.3f;
+    s.pathSatScale01 = 1.0f;
+    s.showPaths = true;
+    s.zoneStrokeAlpha01 = 0.5f;
+    s.zoneStrokeSatScale01 = 0.5f;
+    s.zoneStrokeBriScale01 = 1.0f;
+    s.showStructures = true;
+    s.mergeStructures = true;
+    s.structureSatScale01 = 1.0f;
+    s.structureAlphaScale01 = 1.0f;
+    s.showLabelsArbitrary = true;
+    s.showLabelsZones = true;
+    s.showLabelsPaths = true;
+    s.showLabelsStructures = true;
+    s.labelOutlineAlpha01 = 0.0f;
+    s.exportPaddingPct = 0.015f;
+    s.antialiasing = true;
+    list.add(new RenderPreset("Default", s));
+  }
+
+  // satellite
+  {
+    RenderSettings s = new RenderSettings();
+    s.landHue01 = 0.2f;
+    s.landSat01 = 0.1f;
+    s.landBri01 = 0.9f;
+    s.waterHue01 = 0.6f;
+    s.waterSat01 = 0.2f;
+    s.waterBri01 = 0.4f;
+    s.cellBorderAlpha01 = 0.0f;
+    s.biomeFillAlpha01 = 0.8f;
+    s.biomeSatScale01 = 0.4f;
+    s.biomeOutlineSizePx = 0.0f;
+    s.biomeOutlineAlpha01 = 0.0f;
+    s.biomeShowUnderwater = false;
+    s.waterDepthAlpha01 = 0.8f;
+    s.elevationLightAlpha01 = 0.6f;
+    s.elevationLightAzimuthDeg = 200.0f;
+    s.elevationLightAltitudeDeg = 60.0f;
+    s.waterContourSizePx = 5.0f;
+    s.waterRippleCount = 0;
+    s.waterRippleDistancePx = 0.0f;
+    s.waterContourHue01 = 0.6f;
+    s.waterContourSat01 = 0.3f;
+    s.waterContourBri01 = 0.6f;
+    s.waterContourAlpha01 = 0.3f;
+    s.elevationLinesCount = 0;
+    s.elevationLinesAlpha01 = 0.0f;
+    s.pathSatScale01 = 0.7f;
+    s.showPaths = true;
+    s.zoneStrokeAlpha01 = 0.0f;
+    s.zoneStrokeSatScale01 = 0.0f;
+    s.zoneStrokeBriScale01 = 0.0f;
+    s.showStructures = true;
+    s.mergeStructures = false;
+    s.structureSatScale01 = 1.0f;
+    s.structureAlphaScale01 = 1.0f;
+    s.showLabelsArbitrary = false;
+    s.showLabelsZones = false;
+    s.showLabelsPaths = false;
+    s.showLabelsStructures = false;
+    s.labelOutlineAlpha01 = 0.0f;
+    s.exportPaddingPct = 0.01f;
+    s.antialiasing = true;
+    list.add(new RenderPreset("Satellite", s));
+  }
+
+  // geographic
+  {
+    RenderSettings s = new RenderSettings();
+    s.landHue01 = 0.2f;
+    s.landSat01 = 0.0f;
+    s.landBri01 = 1.0f;
+    s.waterHue01 = 0.6f;
+    s.waterSat01 = 0.7f;
+    s.waterBri01 = 0.6f;
+    s.cellBorderAlpha01 = 0.0f;
+    s.biomeFillAlpha01 = 1.0f;
+    s.biomeSatScale01 = 0.75f;
+    s.biomeOutlineSizePx = 1.0f;
+    s.biomeOutlineAlpha01 = 0.0f;
+    s.biomeShowUnderwater = false;
+    s.waterDepthAlpha01 = 0.3f;
+    s.elevationLightAlpha01 = 0.3f;
+    s.elevationLightAzimuthDeg = 280.0f;
+    s.elevationLightAltitudeDeg = 15.0f;
+    s.waterContourSizePx = 2.5f;
+    s.waterRippleCount = 0;
+    s.waterRippleDistancePx = 0.0f;
+    s.waterContourHue01 = 0.6f;
+    s.waterContourSat01 = 0.25f;
+    s.waterContourBri01 = 0.0f;
+    s.waterContourAlpha01 = 1.0f;
+    s.elevationLinesCount = 10;
+    s.elevationLinesAlpha01 = 0.6f;
+    s.pathSatScale01 = 1.0f;
+    s.showPaths = true;
+    s.zoneStrokeAlpha01 = 0.0f;
+    s.zoneStrokeSatScale01 = 0.0f;
+    s.zoneStrokeBriScale01 = 0.0f;
+    s.showStructures = false;
+    s.mergeStructures = false;
+    s.structureSatScale01 = 1.0f;
+    s.structureAlphaScale01 = 1.0f;
+    s.showLabelsArbitrary = true;
+    s.showLabelsZones = true;
+    s.showLabelsPaths = true;
+    s.showLabelsStructures = false;
+    s.labelOutlineAlpha01 = 0.0f;
+    s.exportPaddingPct = 0.02f;
+    s.antialiasing = true;
+    list.add(new RenderPreset("Geographic", s));
+  }
+
+  // grey
+  {
+    RenderSettings s = new RenderSettings();
+    s.landHue01 = 0.1f;
+    s.landSat01 = 0.0f;
+    s.landBri01 = 1.0f;
+    s.waterHue01 = 0.6f;
+    s.waterSat01 = 0.0f;
+    s.waterBri01 = 0.2f;
+    s.cellBorderAlpha01 = 0.0f;
+    s.biomeFillAlpha01 = 1.0f;
+    s.biomeSatScale01 = 0.0f;
+    s.biomeOutlineSizePx = 1.0f;
+    s.biomeOutlineAlpha01 = 0.0f;
+    s.biomeShowUnderwater = false;
+    s.waterDepthAlpha01 = 0.5f;
+    s.elevationLightAlpha01 = 0.25f;
+    s.elevationLightAzimuthDeg = 220.0f;
+    s.elevationLightAltitudeDeg = 25.0f;
+    s.waterContourSizePx = 3.0f;
+    s.waterRippleCount = 0;
+    s.waterRippleDistancePx = 0.0f;
+    s.waterContourHue01 = 0.5f;
+    s.waterContourSat01 = 0.0f;
+    s.waterContourBri01 = 0.0f;
+    s.waterContourAlpha01 = 1.0f;
+    s.elevationLinesCount = 4;
+    s.elevationLinesAlpha01 = 0.25f;
+    s.pathSatScale01 = 0.8f;
+    s.showPaths = true;
+    s.zoneStrokeAlpha01 = 0.7f;
+    s.zoneStrokeSatScale01 = 0.0f;
+    s.zoneStrokeBriScale01 = 0.0f;
+    s.showStructures = true;
+    s.mergeStructures = false;
+    s.structureSatScale01 = 0.0f;
+    s.structureAlphaScale01 = 1.0f;
+    s.showLabelsArbitrary = true;
+    s.showLabelsZones = true;
+    s.showLabelsPaths = true;
+    s.showLabelsStructures = true;
+    s.labelOutlineAlpha01 = 0.8f;
+    s.exportPaddingPct = 0.015f;
+    s.antialiasing = true;
+    list.add(new RenderPreset("Grey", s));
+  }
+
+  // bitmap
+  {
+    RenderSettings s = new RenderSettings();
+    s.landHue01 = 0.1f;
+    s.landSat01 = 0.0f;
+    s.landBri01 = 1.0f;
+    s.waterHue01 = 0.6f;
+    s.waterSat01 = 0.0f;
+    s.waterBri01 = 1.0f;
+    s.cellBorderAlpha01 = 0.0f;
+    s.biomeFillAlpha01 = 1.0f;
+    s.biomeSatScale01 = 0.0f;
+    s.biomeOutlineSizePx = 1.0f;
+    s.biomeOutlineAlpha01 = 0.0f;
+    s.biomeShowUnderwater = false;
+    s.waterDepthAlpha01 = 0.0f;
+    s.elevationLightAlpha01 = 0.0f;
+    s.elevationLightAzimuthDeg = 220.0f;
+    s.elevationLightAltitudeDeg = 45.0f;
+    s.waterContourSizePx = 2.0f;
+    s.waterRippleCount = 3;
+    s.waterRippleDistancePx = 4.0f;
+    s.waterContourHue01 = 0.5f;
+    s.waterContourSat01 = 0.0f;
+    s.waterContourBri01 = 0.0f;
+    s.waterContourAlpha01 = 1.0f;
+    s.elevationLinesCount = 2;
+    s.elevationLinesAlpha01 = 1.0f;
+    s.pathSatScale01 = 0.0f;
+    s.showPaths = true;
+    s.zoneStrokeAlpha01 = 1.0f;
+    s.zoneStrokeSatScale01 = 0.0f;
+    s.zoneStrokeBriScale01 = 0.0f;
+    s.showStructures = true;
+    s.mergeStructures = false;
+    s.structureSatScale01 = 0.0f;
+    s.structureAlphaScale01 = 1.0f;
+    s.showLabelsArbitrary = true;
+    s.showLabelsZones = true;
+    s.showLabelsPaths = true;
+    s.showLabelsStructures = true;
+    s.labelOutlineAlpha01 = 1.0f;
+    s.exportPaddingPct = 0.015f;
+    s.antialiasing = false;
+    s.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
+    list.add(new RenderPreset("Bitmap", s));
+  }
+
+  // much
+  {
+    RenderSettings s = new RenderSettings();
+    s.landHue01 = 0.1f;
+    s.landSat01 = 0.1f;
+    s.landBri01 = 0.8f;
+    s.waterHue01 = 0.6f;
+    s.waterSat01 = 0.7f;
+    s.waterBri01 = 0.2f;
+    s.cellBorderAlpha01 = 0.05f;
+    s.biomeFillAlpha01 = 0.3f;
+    s.biomeSatScale01 = 0.9f;
+    s.biomeOutlineSizePx = 2.0f;
+    s.biomeOutlineAlpha01 = 0.9f;
+    s.biomeShowUnderwater = true;
+    s.waterDepthAlpha01 = 1.0f;
+    s.elevationLightAlpha01 = 0.4f;
+    s.elevationLightAzimuthDeg = 250.0f;
+    s.elevationLightAltitudeDeg = 10.0f;
+    s.waterContourSizePx = 2.0f;
+    s.waterRippleCount = 4;
+    s.waterRippleDistancePx = 6.0f;
+    s.waterContourHue01 = 0.6f;
+    s.waterContourSat01 = 1.0f;
+    s.waterContourBri01 = 0.3f;
+    s.waterContourAlpha01 = 1.0f;
+    s.elevationLinesCount = 16;
+    s.elevationLinesAlpha01 = 0.3f;
+    s.pathSatScale01 = 1.0f;
+    s.showPaths = true;
+    s.zoneStrokeAlpha01 = 0.5f;
+    s.zoneStrokeSatScale01 = 0.8f;
+    s.zoneStrokeBriScale01 = 0.2f;
+    s.showStructures = true;
+    s.mergeStructures = true;
+    s.structureSatScale01 = 1.0f;
+    s.structureAlphaScale01 = 1.0f;
+    s.showLabelsArbitrary = true;
+    s.showLabelsZones = true;
+    s.showLabelsPaths = true;
+    s.showLabelsStructures = true;
+    s.labelOutlineAlpha01 = 0.9f;
+    s.exportPaddingPct = 0.02f;
+    s.antialiasing = true;
+    s.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
+    list.add(new RenderPreset("Much", s));
+  }
+
+  // administrative
+  {
+    RenderSettings s = new RenderSettings();
+    s.landHue01 = 0.2f;
+    s.landSat01 = 0.0f;
+    s.landBri01 = 1.0f;
+    s.waterHue01 = 0.6f;
+    s.waterSat01 = 0.7f;
+    s.waterBri01 = 0.5f;
+    s.cellBorderAlpha01 = 0.0f;
+    s.biomeFillAlpha01 = 0.3f;
+    s.biomeSatScale01 = 0.3f;
+    s.biomeOutlineSizePx = 1.0f;
+    s.biomeOutlineAlpha01 = 0.0f;
+    s.biomeShowUnderwater = true;
+    s.waterDepthAlpha01 = 0.0f;
+    s.elevationLightAlpha01 = 0.0f;
+    s.elevationLightAzimuthDeg = 0.0f;
+    s.elevationLightAltitudeDeg = 10.0f;
+    s.waterContourSizePx = 2.0f;
+    s.waterRippleCount = 0;
+    s.waterRippleDistancePx = 0.0f;
+    s.waterContourHue01 = 0.5f;
+    s.waterContourSat01 = 0.25f;
+    s.waterContourBri01 = 0.0f;
+    s.waterContourAlpha01 = 0.5f;
+    s.elevationLinesCount = 0;
+    s.elevationLinesAlpha01 = 0.1f;
+    s.pathSatScale01 = 0.8f;
+    s.showPaths = true;
+    s.zoneStrokeAlpha01 = 1.0f;
+    s.zoneStrokeSatScale01 = 1.0f;
+    s.zoneStrokeBriScale01 = 1.0f;
+    s.showStructures = true;
+    s.mergeStructures = true;
+    s.structureSatScale01 = 1.0f;
+    s.structureAlphaScale01 = 1.0f;
+    s.showLabelsArbitrary = true;
+    s.showLabelsZones = true;
+    s.showLabelsPaths = true;
+    s.showLabelsStructures = true;
+    s.labelOutlineAlpha01 = 1.0f;
+    s.exportPaddingPct = 0.015f;
+    s.antialiasing = true;
+    list.add(new RenderPreset("Administrative", s));
+  }
+
+  // simple
+  {
+    RenderSettings s = new RenderSettings();
+    s.landHue01 = 0.1f;
+    s.landSat01 = 0.1f;
+    s.landBri01 = 1.0f;
+    s.waterHue01 = 0.6f;
+    s.waterSat01 = 0.7f;
+    s.waterBri01 = 0.5f;
+    s.cellBorderAlpha01 = 0.0f;
+    s.biomeFillAlpha01 = 1.0f;
+    s.biomeSatScale01 = 1.0f;
+    s.biomeOutlineSizePx = 1.0f;
+    s.biomeOutlineAlpha01 = 0.0f;
+    s.biomeShowUnderwater = false;
+    s.waterDepthAlpha01 = 0.0f;
+    s.elevationLightAlpha01 = 0.0f;
+    s.elevationLightAzimuthDeg = 0.0f;
+    s.elevationLightAltitudeDeg = 10.0f;
+    s.waterContourSizePx = 3.0f;
+    s.waterRippleCount = 0;
+    s.waterRippleDistancePx = 0.0f;
+    s.waterContourHue01 = 0.5f;
+    s.waterContourSat01 = 0.25f;
+    s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 1.0f;
     s.elevationLinesCount = 0;
     s.elevationLinesAlpha01 = 1.0f;
-    s.zoneStrokeAlpha01 = 0.5f;
-    s.zoneStrokeSatScale01 = 0.5f;    
+    s.pathSatScale01 = 0.8f;
+    s.showPaths = false;
+    s.zoneStrokeAlpha01 = 1.0f;
+    s.zoneStrokeSatScale01 = 1.0f;
+    s.zoneStrokeBriScale01 = 1.0f;
+    s.showStructures = false;
+    s.mergeStructures = true;
+    s.structureSatScale01 = 1.0f;
+    s.structureAlphaScale01 = 1.0f;
+    s.showLabelsArbitrary = false;
+    s.showLabelsZones = false;
+    s.showLabelsPaths = false;
+    s.showLabelsStructures = false;
+    s.labelOutlineAlpha01 = 1.0f;
+    s.exportPaddingPct = 0.015f;
+    s.antialiasing = true;
     list.add(new RenderPreset("Simple", s));
   }
 
-  // Vivid Color
+  // rocky
   {
     RenderSettings s = new RenderSettings();
-    s.landHue01 = 0.08f; s.landSat01 = 0.05f; s.landBri01 = 0.90f;
-    s.waterHue01 = 0.58f; s.waterSat01 = 0.30f; s.waterBri01 = 0.36f;
-    s.biomeFillAlpha01 = 0.6f;
+    s.landHue01 = 0.7f;
+    s.landSat01 = 1.0f;
+    s.landBri01 = 0.4f;
+    s.waterHue01 = 0.1f;
+    s.waterSat01 = 1.0f;
+    s.waterBri01 = 1.0f;
+    s.cellBorderAlpha01 = 0.8f;
+    s.biomeFillAlpha01 = 0.7f;
     s.biomeSatScale01 = 1.0f;
-    s.biomeOutlineSizePx = 1.2f;
-    s.biomeOutlineAlpha01 = 0.9f;
-    s.waterDepthAlpha01 = 0.7f;
-    s.elevationLightAlpha01 = 0.35f;
-    s.waterContourSizePx = 2.0f;
-    s.waterRippleCount = 2;
-    s.waterRippleDistancePx = 12.0f;
-    s.waterContourAlpha01 = 0.9f;
-    s.elevationLinesCount = 6;
-    s.elevationLinesAlpha01 = 0.22f;
-    list.add(new RenderPreset("Vivid Color", s));
-  }
-
-  // Muted Terrain
-  {
-    RenderSettings s = new RenderSettings();
-    s.landHue01 = 0.10f; s.landSat01 = 0.02f; s.landBri01 = 0.86f;
-    s.waterHue01 = 0.56f; s.waterSat01 = 0.18f; s.waterBri01 = 0.32f;
-    s.biomeFillAlpha01 = 0.45f;
-    s.biomeSatScale01 = 0.65f;
-    s.biomeOutlineSizePx = 0.8f;
-    s.biomeOutlineAlpha01 = 0.6f;
-    s.waterDepthAlpha01 = 0.55f;
-    s.elevationLightAlpha01 = 0.25f;
-    s.waterContourSizePx = 1.5f;
-    s.waterRippleCount = 1;
-    s.waterRippleDistancePx = 16.0f;
-    s.waterContourAlpha01 = 0.7f;
-    s.elevationLinesCount = 4;
-    s.elevationLinesAlpha01 = 0.2f;
-    list.add(new RenderPreset("Muted Terrain", s));
-  }
-
-  // Paper BW
-  {
-    RenderSettings s = new RenderSettings();
-    s.landHue01 = 0.0f; s.landSat01 = 0.0f; s.landBri01 = 0.92f;
-    s.waterHue01 = 0.55f; s.waterSat01 = 0.0f; s.waterBri01 = 0.75f;
-    s.biomeFillAlpha01 = 0.4f;
-    s.biomeSatScale01 = 0.0f;
-    s.biomeOutlineSizePx = 1.2f;
-    s.biomeOutlineAlpha01 = 1.0f;
-    s.waterDepthAlpha01 = 0.0f;
-    s.elevationLightAlpha01 = 0.0f;
-    s.waterContourSizePx = 2.5f;
-    s.waterRippleCount = 3;
-    s.waterRippleDistancePx = 10.0f;
+    s.biomeOutlineSizePx = 4.0f;
+    s.biomeOutlineAlpha01 = 0.3f;
+    s.biomeShowUnderwater = true;
+    s.waterDepthAlpha01 = 0.6f;
+    s.elevationLightAlpha01 = 1.0f;
+    s.elevationLightAzimuthDeg = 300.0f;
+    s.elevationLightAltitudeDeg = 70.0f;
+    s.waterContourSizePx = 4.0f;
+    s.waterRippleCount = 5;
+    s.waterRippleDistancePx = 20.0f;
+    s.waterContourHue01 = 0.1f;
+    s.waterContourSat01 = 1.0f;
+    s.waterContourBri01 = 1.0f;
     s.waterContourAlpha01 = 1.0f;
-    s.elevationLinesCount = 10;
-    s.elevationLinesAlpha01 = 0.25f;
-    s.antialiasing = false;
-    list.add(new RenderPreset("Paper BW", s));
-  }
-
-  // Water Focus
-  {
-    RenderSettings s = new RenderSettings();
-    s.landHue01 = 0.09f; s.landSat01 = 0.03f; s.landBri01 = 0.90f;
-    s.waterHue01 = 0.58f; s.waterSat01 = 0.40f; s.waterBri01 = 0.42f;
-    s.biomeFillAlpha01 = 0.35f;
-    s.biomeSatScale01 = 0.8f;
-    s.biomeOutlineSizePx = 0.8f;
-    s.biomeOutlineAlpha01 = 0.7f;
-    s.waterDepthAlpha01 = 0.85f;
-    s.elevationLightAlpha01 = 0.2f;
-    s.waterContourSizePx = 2.5f;
-    s.waterRippleCount = 4;
-    s.waterRippleDistancePx = 12.0f;
-    s.waterContourAlpha01 = 0.9f;
-    s.elevationLinesCount = 4;
-    s.elevationLinesAlpha01 = 0.15f;
-    list.add(new RenderPreset("Water Focus", s));
-  }
-
-  // Line Art / Simplified
-  {
-    RenderSettings s = new RenderSettings();
-    s.landHue01 = 0.0f; s.landSat01 = 0.0f; s.landBri01 = 0.94f;
-    s.waterHue01 = 0.56f; s.waterSat01 = 0.05f; s.waterBri01 = 0.80f;
-    s.biomeFillAlpha01 = 0.25f;
-    s.biomeSatScale01 = 0.2f;
-    s.biomeOutlineSizePx = 1.6f;
-    s.biomeOutlineAlpha01 = 1.0f;
-    s.waterDepthAlpha01 = 0.0f;
-    s.elevationLightAlpha01 = 0.0f;
-    s.waterContourSizePx = 3.0f;
-    s.waterRippleCount = 1;
-    s.waterRippleDistancePx = 18.0f;
-    s.waterContourAlpha01 = 1.0f;
-    s.elevationLinesCount = 0;
-    s.elevationLinesAlpha01 = 0.0f;
-    list.add(new RenderPreset("Line Art", s));
+    s.elevationLinesCount = 24;
+    s.elevationLinesAlpha01 = 1.0f;
+    s.pathSatScale01 = 0.3f;
+    s.showPaths = false;
+    s.zoneStrokeAlpha01 = 1.0f;
+    s.zoneStrokeSatScale01 = 0.3f;
+    s.zoneStrokeBriScale01 = 0.5f;
+    s.showStructures = false;
+    s.mergeStructures = true;
+    s.structureSatScale01 = 1.0f;
+    s.structureAlphaScale01 = 1.0f;
+    s.showLabelsArbitrary = false;
+    s.showLabelsZones = false;
+    s.showLabelsPaths = false;
+    s.showLabelsStructures = false;
+    s.labelOutlineAlpha01 = 0.3f;
+    s.exportPaddingPct = 0.0f;
+    s.antialiasing = true;
+    s.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
+    list.add(new RenderPreset("Rocky", s));
   }
 
   RenderPreset[] arr = new RenderPreset[list.size()];
