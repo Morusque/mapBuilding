@@ -15,6 +15,7 @@ Elevation :
 Biomes :
 (later) review "value" sliders
 (later) replace "beaches" by same logic but arbitrary elevation and use it instead of some "above" logics in the full generation process
+(later) try a double multiplied perlin
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
