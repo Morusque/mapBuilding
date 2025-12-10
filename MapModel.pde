@@ -3708,9 +3708,24 @@ class MapModel {
 
   // ---------- Biome type management ----------
 
+  boolean biomeNameExists(String name) {
+    if (name == null || biomeTypes == null) return false;
+    for (ZoneType zt : biomeTypes) {
+      if (zt != null && zt.name != null && zt.name.equalsIgnoreCase(name)) return true;
+    }
+    return false;
+  }
+
   void addBiomeType() {
     int nonNoneCount = max(0, biomeTypes.size() - 1);
-    ZonePreset preset = (nonNoneCount < ZONE_PRESETS.length) ? ZONE_PRESETS[nonNoneCount] : null;
+    ZonePreset preset = null;
+    for (int pi = nonNoneCount; pi < ZONE_PRESETS.length; pi++) {
+      ZonePreset cand = ZONE_PRESETS[pi];
+      if (cand != null && cand.name != null && !biomeNameExists(cand.name)) {
+        preset = cand;
+        break;
+      }
+    }
 
     if (preset != null) {
       biomeTypes.add(new ZoneType(preset.name, preset.col));
