@@ -3088,7 +3088,7 @@ class MapModel {
     snapDirty = true;
   }
 
-  void fillGapsWithNewBiomes() {
+  void fillGapsWithNewBiomes(float avgSize) {
     if (cells == null || cells.isEmpty()) return;
     ensureCellNeighborsComputed();
     int n = cells.size();
@@ -3109,7 +3109,6 @@ class MapModel {
     Arrays.fill(assign, -1);
     ArrayDeque<Integer> q = new ArrayDeque<Integer>();
 
-    float avgSize = map(biomeGenerateValue01,0,1,160,20);
     int seedCount = max(1, min(gaps.size(), round(gaps.size() / avgSize)));
     for (int i = 0; i < seedCount; i++) {
       int idx = gaps.get(i);

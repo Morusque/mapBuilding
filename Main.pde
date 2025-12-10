@@ -292,7 +292,7 @@ void applyBiomeGeneration() {
       mapModel.fillGapsFromExistingBiomes();
       break;
     case 3: // replace gaps
-      mapModel.fillGapsWithNewBiomes();
+      mapModel.fillGapsWithNewBiomes(map(biomeGenerateValue01,0,1,160,20));
       break;
     case 4: // fill under
       mapModel.fillUnderThreshold(targetBiome, threshold);
@@ -317,17 +317,57 @@ void applyBiomeGeneration() {
       break;
     case 11: // full pipeline
     default:
-      mapModel.resetAllBiomesToNone();
-      mapModel.generateZonesFromSeeds();
-      mapModel.fillUnderThreshold(targetBiome, seaLevel); // underwater to selected
-      mapModel.placeBiomeSpots(targetBiome, val01);
-      mapModel.fillAboveThreshold(targetBiome, fullAbove);
-      mapModel.placeBeaches(targetBiome, val01, seaLevel);
+      int forestIdx = ensureBiomeType("Forest");
+      int wetIdx = ensureBiomeType("Wet");
+      int sandIdx = ensureBiomeType("Sand");
+      int rockIdx = ensureBiomeType("Rock");
+      int snowIdx = ensureBiomeType("Snow");
+      int magmaIdx = ensureBiomeType("Magma");
+      int grassIdx = ensureBiomeType("Grassland");
+      boolean hasNoneCell = false;
+      int cellCount = mapModel.cells.size();
+      for (int i = 0; i < cellCount && !hasNoneCell ; i++) if (mapModel.cells.get(i) != null) hasNoneCell = true;
+      if (hasNoneCell) mapModel.resetAllBiomesToNone();
+      mapModel.fillGapsWithNewBiomes(150);
+      if (magmaIdx >= 0) for (int i = 0; i < 8; i++) mapModel.shrinkBiomeOnce(magmaIdx);
+      if (wetIdx >= 0) for (int i = 0; i < 8; i++) mapModel.shrinkBiomeOnce(wetIdx);
+      if (forestIdx >= 0) for (int i = 0; i < 5; i++) mapModel.placeBiomeSpots(forestIdx, 0.5);
+      if (forestIdx >= 0) mapModel.fillAboveThreshold(forestIdx, 0.24f);
+      if (rockIdx >= 0) mapModel.fillAboveThreshold(rockIdx, 0.36f);
+      if (snowIdx >= 0) mapModel.fillAboveThreshold(snowIdx, 0.48f);
+      if (magmaIdx >= 0) mapModel.fillAboveThreshold(magmaIdx, 0.6f);
+      if (grassIdx >= 0) mapModel.extendBiomeOnce(grassIdx);
+      if (forestIdx >= 0) mapModel.shrinkBiomeOnce(forestIdx);
+      if (wetIdx >= 0) mapModel.fillUnderThreshold(wetIdx, seaLevel);
+      if (sandIdx >= 0) for (int i = 0; i < 7; i++) mapModel.placeBeaches(sandIdx, 0.8f, seaLevel);
       mapModel.varyBiomesOnce();
       break;
   }
   mapModel.renderer.invalidateBiomeOutlineCache();
   mapModel.snapDirty = true;
+}
+
+int ensureBiomeType(String name) {
+  if (mapModel == null || mapModel.biomeTypes == null || name == null) return -1;
+  for (int i = 0; i < mapModel.biomeTypes.size(); i++) {
+    ZoneType zt = mapModel.biomeTypes.get(i);
+    if (zt != null && zt.name != null && zt.name.equalsIgnoreCase(name)) {
+      return i;
+    }
+  }
+  int col = color(200);
+  for (ZonePreset zp : ZONE_PRESETS) {
+    if (zp != null && zp.name != null && zp.name.equalsIgnoreCase(name)) {
+      col = zp.col;
+      break;
+    }
+  }
+  mapModel.biomeTypes.add(new ZoneType(name, col));
+  return mapModel.biomeTypes.size() - 1;
+}
+
+float sliderFromElevation(float elev) {
+  return constrain(map(elev, -1.0f, 1.0f, 0, 1), 0, 1);
 }
 
 color hsb01ToColor(float h, float s, float b) {
