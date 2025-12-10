@@ -303,7 +303,7 @@ BiomesLayout buildBiomesLayout() {
   l.genApplyBtn = new IntRect(l.genModeSelector.x + l.genModeSelector.w + 10, curY + PANEL_LABEL_H - 2, 90, PANEL_BUTTON_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
   l.genValueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, selectorW, PANEL_SLIDER_H);
-  l.genValueWaterBtn = new IntRect(l.genValueSlider.x + l.genValueSlider.w + 10, curY + PANEL_LABEL_H - 2, 100, PANEL_BUTTON_H);
+  l.genValueWaterBtn = new IntRect(l.genValueSlider.x + l.genValueSlider.w + 10, curY + PANEL_LABEL_H - 2, 80, PANEL_BUTTON_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   l.paintBtn = new IntRect(innerX, curY, 70, PANEL_BUTTON_H);
@@ -361,20 +361,11 @@ void drawBiomesPanel() {
 
   // Generation mode selector + apply
   IntRect gsel = layout.genModeSelector;
-  stroke(160);
-  fill(230);
-  rect(gsel.x, gsel.y, gsel.w, gsel.h, 4);
   int modeCount = biomeGenerateModes.length;
   int maxIdx = max(1, modeCount - 1);
   float tMode = constrain(biomeGenerateModeIndex / (float)maxIdx, 0, 1);
-  float gx = gsel.x + tMode * gsel.w;
-  fill(40);
-  noStroke();
-  ellipse(gx, gsel.y + gsel.h / 2.0f, gsel.h * 0.9f, gsel.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
   String modeName = biomeGenerateModes[constrain(biomeGenerateModeIndex, 0, modeCount - 1)];
-  text("Generation mode: " + modeName, gsel.x, gsel.y - 4);
+  drawSelectorSlider(gsel, tMode, "Generation mode: " + modeName, modeCount);
   registerUiTooltip(gsel, tooltipFor("biome_gen_mode"));
 
   if (layout.genApplyBtn != null) {
@@ -404,7 +395,7 @@ void drawBiomesPanel() {
     drawBevelButton(layout.genValueWaterBtn.x, layout.genValueWaterBtn.y, layout.genValueWaterBtn.w, layout.genValueWaterBtn.h, false);
     fill(10);
     textAlign(CENTER, CENTER);
-    text("Set water level", layout.genValueWaterBtn.x + layout.genValueWaterBtn.w / 2, layout.genValueWaterBtn.y + layout.genValueWaterBtn.h / 2);
+    text("Set to water", layout.genValueWaterBtn.x + layout.genValueWaterBtn.w / 2, layout.genValueWaterBtn.y + layout.genValueWaterBtn.h / 2);
     registerUiTooltip(layout.genValueWaterBtn, tooltipFor("biome_value_water"));
   }
 
@@ -1285,45 +1276,20 @@ void drawElevationPanel() {
 
   // Sea level slider (-0.5 .. 0.5)
   IntRect sea = layout.seaSlider;
-  stroke(160);
-  fill(230);
-  rect(sea.x, sea.y, sea.w, sea.h, 4);
   float seaNorm = constrain(map(seaLevel, -1.2f, 1.2f, 0, 1), 0, 1);
-  float sx = sea.x + seaNorm * sea.w;
-  fill(40);
-  noStroke();
-  ellipse(sx, sea.y + sea.h / 2.0f, sea.h * 0.9f, sea.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Water level: " + nf(seaLevel, 1, 2), sea.x, sea.y - 4);
+  drawSlider(sea, seaNorm, "Water level: " + nf(seaLevel, 1, 2), true);
   registerUiTooltip(sea, tooltipFor("elevation_water_level"));
 
   // Brush radius slider (0.01..0.2)
   IntRect rad = layout.radiusSlider;
-  stroke(160);
-  fill(230);
-  rect(rad.x, rad.y, rad.w, rad.h, 4);
   float rNorm = constrain(map(elevationBrushRadius, 0.01f, 0.2f, 0, 1), 0, 1);
-  float rx = rad.x + rNorm * rad.w;
-  fill(40);
-  noStroke();
-  ellipse(rx, rad.y + rad.h / 2.0f, rad.h * 0.9f, rad.h * 0.9f);
-  fill(0);
-  text("Brush radius", rad.x, rad.y - 4);
+  drawSlider(rad, rNorm, "Brush radius");
   registerUiTooltip(rad, tooltipFor("elevation_brush_radius"));
 
   // Brush strength slider (0.005..0.2)
   IntRect str = layout.strengthSlider;
-  stroke(160);
-  fill(230);
-  rect(str.x, str.y, str.w, str.h, 4);
   float sNorm = constrain(map(elevationBrushStrength, 0.005f, 0.2f, 0, 1), 0, 1);
-  float stx = str.x + sNorm * str.w;
-  fill(40);
-  noStroke();
-  ellipse(stx, str.y + str.h / 2.0f, str.h * 0.9f, str.h * 0.9f);
-  fill(0);
-  text("Brush strength", str.x, str.y - 4);
+  drawSlider(str, sNorm, "Brush strength");
   registerUiTooltip(str, tooltipFor("elevation_brush_strength"));
 
   // Raise / Lower buttons
@@ -1342,13 +1308,7 @@ void drawElevationPanel() {
   fill(230);
   rect(noise.x, noise.y, noise.w, noise.h, 4);
   float nNorm = constrain(map(elevationNoiseScale, 1.0f, 12.0f, 0, 1), 0, 1);
-  float nx = noise.x + nNorm * noise.w;
-  fill(40);
-  noStroke();
-  ellipse(nx, noise.y + noise.h / 2.0f, noise.h * 0.9f, noise.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Noise scale", noise.x, noise.y - 4);
+  drawSlider(noise, nNorm, "Noise scale");
   registerUiTooltip(noise, tooltipFor("elevation_noise"));
 
   drawBevelButton(layout.perlinBtn.x, layout.perlinBtn.y, layout.perlinBtn.w, layout.perlinBtn.h, false);
@@ -2304,20 +2264,11 @@ void drawRenderPanel() {
     // Preset selector
     if (renderPresets != null && renderPresets.length > 0) {
       IntRect ps = layout.presetSelector;
-      stroke(160);
-      fill(230);
-      rect(ps.x, ps.y, ps.w, ps.h, 4);
       int n = renderPresets.length;
       int maxIdx = max(1, n - 1);
       float t = constrain(renderSettings.activePresetIndex / (float)maxIdx, 0, 1);
-      float handleX = ps.x + t * ps.w;
-      fill(40);
-      noStroke();
-      ellipse(handleX, ps.y + ps.h / 2.0f, ps.h * 0.9f, ps.h * 0.9f);
-      fill(0);
-      textAlign(LEFT, BOTTOM);
       String presetName = renderPresets[renderSettings.activePresetIndex].name;
-      text("Preset: " + presetName, ps.x, ps.y - 4);
+      drawSelectorSlider(ps, t, "Preset: " + presetName, n);
       registerUiTooltip(ps, tooltipFor("render_preset"));
     }
 
@@ -2340,15 +2291,92 @@ void drawSectionHeader(IntRect header, String label, boolean isOpen) {
 }
 
 void drawSlider(IntRect r, float tNorm, String label) {
+  drawSlider(r, tNorm, label, false);
+}
+
+void drawSlider(IntRect r, float tNorm, String label, boolean zeroTick) {
   if (r == null) return;
-  stroke(160);
-  fill(230);
-  rect(r.x, r.y, r.w, r.h, 4);
   float t = constrain(tNorm, 0, 1);
-  float sx = r.x + t * r.w;
-  fill(40);
+  int trackY = r.y + r.h / 2;
+  int padding = max(4, r.h / 2);
+  int startX = r.x + padding;
+  int endX = r.x + r.w - padding;
+
+  // Track
+  stroke(120);
+  line(startX, trackY, endX, trackY);
+  if (zeroTick) {
+    int zx = startX + (endX - startX) / 2;
+    stroke(80);
+    line(zx, trackY - r.h / 2, zx, trackY - r.h / 2 + 6);
+  }
+
+  // Cursor with pointy tip
+  int cursorX = round(lerp(startX, endX, t));
+  int cursorW = max(8, round(r.h * 0.55f));
+  int cursorH = round(r.h * 0.8f);
+  int cursorY = r.y + (r.h - cursorH) / 2;
   noStroke();
-  ellipse(sx, r.y + r.h / 2.0f, r.h * 0.9f, r.h * 0.9f);
+  fill(236);
+  rect(cursorX - cursorW / 2, cursorY, cursorW, cursorH);
+  beginShape();
+  fill(200);
+  vertex(cursorX - cursorW / 2, cursorY + cursorH);
+  vertex(cursorX + cursorW / 2, cursorY + cursorH);
+  vertex(cursorX, cursorY + cursorH + max(3, cursorH / 3));
+  endShape(CLOSE);
+  stroke(255);
+  line(cursorX - cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY);
+  line(cursorX - cursorW / 2, cursorY, cursorX - cursorW / 2, cursorY + cursorH);
+  stroke(96);
+  line(cursorX - cursorW / 2, cursorY + cursorH, cursorX + cursorW / 2, cursorY + cursorH);
+  line(cursorX + cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY + cursorH);
+
+  fill(0);
+  textAlign(LEFT, BOTTOM);
+  text(label, r.x, r.y - 4);
+}
+
+void drawSelectorSlider(IntRect r, float tNorm, String label, int divisions) {
+  if (r == null) return;
+  int steps = max(2, divisions);
+  float t = constrain(tNorm, 0, 1);
+  int trackY = r.y + r.h / 2;
+  int padding = max(4, r.h / 2);
+  int startX = r.x + padding;
+  int endX = r.x + r.w - padding;
+
+  stroke(120);
+  line(startX, trackY, endX, trackY);
+
+  stroke(60);
+  for (int i = 0; i < steps; i++) {
+    float tt = (float)i / (float)(steps - 1);
+    int tx = round(lerp(startX, endX, tt));
+    line(tx, trackY - r.h / 2, tx, trackY - r.h / 2 + 6);
+  }
+
+  // Same pointer as sliders
+  int cursorX = round(lerp(startX, endX, t));
+  int cursorW = max(8, round(r.h * 0.55f));
+  int cursorH = round(r.h * 0.8f);
+  int cursorY = r.y + (r.h - cursorH) / 2;
+  noStroke();
+  fill(236);
+  rect(cursorX - cursorW / 2, cursorY, cursorW, cursorH);
+  beginShape();
+  fill(200);
+  vertex(cursorX - cursorW / 2, cursorY + cursorH);
+  vertex(cursorX + cursorW / 2, cursorY + cursorH);
+  vertex(cursorX, cursorY + cursorH + max(3, cursorH / 3));
+  endShape(CLOSE);
+  stroke(255);
+  line(cursorX - cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY);
+  line(cursorX - cursorW / 2, cursorY, cursorX - cursorW / 2, cursorY + cursorH);
+  stroke(96);
+  line(cursorX - cursorW / 2, cursorY + cursorH, cursorX + cursorW / 2, cursorY + cursorH);
+  line(cursorX + cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY + cursorH);
+
   fill(0);
   textAlign(LEFT, BOTTOM);
   text(label, r.x, r.y - 4);
@@ -2396,10 +2424,32 @@ PathRouteMode currentPathRouteMode() {
   return PathRouteMode.PATHFIND;
 }
 
+void drawTabButton(IntRect r, boolean active) {
+  if (r == null) return;
+  rectMode(CORNER);
+  boolean held = isButtonHeld(r);
+  int baseBg = color(245);
+  int face = active ? baseBg : color(216);
+  if (held) face = color(200);
+  noStroke();
+  fill(face);
+  rect(r.x, r.y, r.w, r.h);
+  stroke(255);
+  line(r.x, r.y, r.x + r.w - 1, r.y);
+  line(r.x, r.y, r.x, r.y + r.h - 1);
+  stroke(active ? baseBg : color(160));
+  // Skip bottom line so tab blends into panel
+  stroke(96);
+  line(r.x + r.w - 1, r.y, r.x + r.w - 1, r.y + r.h - 1);
+}
+
 void drawBevelButton(int x, int y, int w, int h, boolean pressed) {
   // Guard against world draw state leaking (e.g., rectMode(CENTER))
   rectMode(CORNER);
-  int face = pressed ? color(192) : color(224);
+  IntRect r = new IntRect(x, y, w, h);
+  boolean held = isButtonHeld(r);
+  boolean pressState = pressed || held;
+  int face = pressState ? color(192) : color(224);
   int hl = color(255);
   int sh = color(96);
 
@@ -2407,7 +2457,7 @@ void drawBevelButton(int x, int y, int w, int h, boolean pressed) {
   fill(face);
   rect(x, y, w, h);
 
-  if (!pressed) {
+  if (!pressState) {
     stroke(hl);
     line(x, y, x + w - 1, y);
     line(x, y, x, y + h - 1);

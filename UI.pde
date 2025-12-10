@@ -46,6 +46,35 @@ class IntRect {
   boolean contains(int px, int py) { return px >= x && px <= x + w && py >= y && py <= y + h; }
 }
 
+IntRect pressedButtonRect = null;
+Runnable pendingButtonAction = null;
+
+boolean rectEquals(IntRect a, IntRect b) {
+  return a != null && b != null && a.x == b.x && a.y == b.y && a.w == b.w && a.h == b.h;
+}
+
+boolean queueButtonAction(IntRect rect, Runnable action) {
+  if (rect == null || action == null) return false;
+  if (!rect.contains(mouseX, mouseY)) return false;
+  pressedButtonRect = new IntRect(rect.x, rect.y, rect.w, rect.h);
+  pendingButtonAction = action;
+  return true;
+}
+
+boolean isButtonHeld(IntRect rect) {
+  if (rect == null || pressedButtonRect == null) return false;
+  if (!rectEquals(rect, pressedButtonRect)) return false;
+  return pressedButtonRect.contains(mouseX, mouseY);
+}
+
+void runPendingButtonAction(int mx, int my) {
+  if (pendingButtonAction != null && pressedButtonRect != null && pressedButtonRect.contains(mx, my)) {
+    pendingButtonAction.run();
+  }
+  pressedButtonRect = null;
+  pendingButtonAction = null;
+}
+
 float clampScroll(float scroll, float contentH, float viewH) {
   float maxScroll = max(0, contentH - viewH);
   return constrain(scroll, 0, maxScroll);
@@ -174,15 +203,14 @@ void drawToolButtons() {
 
   // Background for tool bar
   noStroke();
-  fill(210);
+  fill(245);
   rect(0, barY, width, barH);
 
-  // Bevel borders
+  // Bevel borders (no bottom line to blend with content)
   stroke(255);
   line(0, barY, width, barY);
   line(0, barY, 0, barY + barH);
   stroke(100);
-  line(0, barY + barH - 1, width, barY + barH - 1);
   line(width - 1, barY, width - 1, barY + barH);
 
   String[] labels = { "Cells", "Elevation", "Biomes", "Zones", "Paths", "Structures", "Labels", "Rendering", "Export" };
@@ -201,15 +229,16 @@ void drawToolButtons() {
   for (int i = 0; i < labels.length; i++) {
     int x = margin + i * (buttonW + 5);
     int y = barY + 2;
+    IntRect rect = new IntRect(x, y, buttonW, barH - 4);
 
     boolean active = (currentTool == tools[i]);
-    drawBevelButton(x, y, buttonW, barH - 4, active);
+    drawTabButton(rect, active);
 
     fill(20);
     textAlign(CENTER, CENTER);
     text(labels[i], x + buttonW / 2, y + (barH - 4) / 2);
 
     String key = "tool_" + labels[i].toLowerCase();
-    registerUiTooltip(new IntRect(x, y, buttonW, barH - 4), tooltipFor(key));
+    registerUiTooltip(rect, tooltipFor(key));
   }
 }

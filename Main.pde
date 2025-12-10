@@ -382,7 +382,7 @@ void settings() {
 }
 
 void setup() {
-  surface.setTitle("Map Editor - Cells + Zones + Paths");
+  surface.setTitle("map designing tool");
   viewport = new Viewport();
   mapModel = new MapModel();
   applyRenderPreset(0);

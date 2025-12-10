@@ -234,6 +234,7 @@ void mouseDragged() {
 void mouseReleased() {
   isPanning = false;
   if (mouseButton == LEFT) {
+    runPendingButtonAction(mouseX, mouseY);
     isDraggingSite = false;
     draggingSite = null;
     if (siteDirtyDuringDrag) {

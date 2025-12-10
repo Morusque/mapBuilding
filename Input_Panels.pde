@@ -113,20 +113,16 @@ boolean handleToolButtonClick(int mx, int my) {
   };
 
   for (int i = 0; i < labels.length; i++) {
+    final int idx = i;
     int x = margin + i * (buttonW + 5);
     int y = barY + 2;
-    int bx1 = x;
-    int by1 = y;
-    int bx2 = x + buttonW;
-    int by2 = y + (barH - 4);
-    if (mx >= bx1 && mx <= bx2 && my >= by1 && my <= by2) {
-      // Clear selections when switching modes
+    IntRect rect = new IntRect(x, y, buttonW, barH - 4);
+    if (queueButtonAction(rect, new Runnable() { public void run() {
       selectedPathIndex = -1;
       pendingPathStart = null;
       selectedStructureIndex = -1;
-      currentTool = tools[i];
-      return true;
-    }
+      currentTool = tools[idx];
+    }})) return true;
   }
   return false;
 }
@@ -168,10 +164,9 @@ boolean handleSitesPanelClick(int mx, int my) {
   }
 
   // Generate button
-  if (layout.generateBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.generateBtn, new Runnable() { public void run() {
     mapModel.generateSites(currentPlacementMode(), siteTargetCount, keepPropertiesOnGenerate);
-    return true;
-  }
+  }})) return true;
 
   // Keep properties toggle
   if (layout.keepCheckbox.contains(mx, my)) {
@@ -191,16 +186,14 @@ boolean handleBiomesPanelClick(int mx, int my) {
   BiomesLayout layout = buildBiomesLayout();
 
   // Paint button
-  if (layout.paintBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.paintBtn, new Runnable() { public void run() {
     currentBiomePaintMode = ZonePaintMode.ZONE_PAINT;
-    return true;
-  }
+  }})) return true;
 
   // Fill button
-  if (layout.fillBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.fillBtn, new Runnable() { public void run() {
     currentBiomePaintMode = ZonePaintMode.ZONE_FILL;
-    return true;
-  }
+  }})) return true;
 
   // Generation selector + apply
   if (layout.genModeSelector.contains(mx, my)) {
@@ -212,31 +205,27 @@ boolean handleBiomesPanelClick(int mx, int my) {
     activeSlider = SLIDER_BIOME_GEN_MODE;
     return true;
   }
-  if (layout.genApplyBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.genApplyBtn, new Runnable() { public void run() {
     applyBiomeGeneration();
-    return true;
-  }
+  }})) return true;
 
-  if (layout.genValueWaterBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.genValueWaterBtn, new Runnable() { public void run() {
     float clampedSea = constrain(seaLevel, -1.0f, 1.0f);
     biomeGenerateValue01 = map(clampedSea, -1.0f, 1.0f, 0.0f, 1.0f);
     activeSlider = SLIDER_BIOME_GEN_VALUE;
-    return true;
-  }
+  }})) return true;
 
   int nTypes = mapModel.biomeTypes.size();
 
   // "+" button
-  if (layout.addBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.addBtn, new Runnable() { public void run() {
     mapModel.addBiomeType();
     activeBiomeIndex = mapModel.biomeTypes.size() - 1;
-    return true;
-  }
+  }})) return true;
 
   // "-" button
   boolean canRemove = (nTypes > 1 && activeBiomeIndex > 0);
-  if (canRemove && layout.removeBtn.contains(mx, my)) {
-
+  if (canRemove && queueButtonAction(layout.removeBtn, new Runnable() { public void run() {
     int removeIndex = activeBiomeIndex;
     mapModel.removeBiomeType(removeIndex);
 
@@ -248,8 +237,7 @@ boolean handleBiomesPanelClick(int mx, int my) {
       activeBiomeIndex = min(removeIndex - 1, newCount - 1);
       if (activeBiomeIndex < 0) activeBiomeIndex = 0;
     }
-    return true;
-  }
+  }})) return true;
 
   // Palette swatches
   int n = mapModel.biomeTypes.size();
@@ -318,39 +306,34 @@ boolean handleZonesPanelClick(int mx, int my) {
     return true;
   }
 
-  if (layout.excludeWaterBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.excludeWaterBtn, new Runnable() { public void run() {
     if (activeZoneIndex >= 0) {
       mapModel.removeUnderwaterCellsFromZone(activeZoneIndex, seaLevel);
     } else {
       mapModel.removeUnderwaterCellsFromZone(-1, seaLevel);
     }
-    return true;
-  }
+  }})) return true;
 
-  if (layout.exclusiveBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.exclusiveBtn, new Runnable() { public void run() {
     mapModel.enforceZoneExclusivity(activeZoneIndex);
-    return true;
-  }
+  }})) return true;
 
-  if (layout.fourColorBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.fourColorBtn, new Runnable() { public void run() {
     mapModel.recolorZonesWithFourColors();
-    return true;
-  }
+  }})) return true;
 
-  if (layout.resetBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.resetBtn, new Runnable() { public void run() {
     mapModel.resetAllZonesToNone();
     activeZoneIndex = -1;
     editingZoneNameIndex = -1;
-    return true;
-  }
+  }})) return true;
 
-  if (layout.regenerateBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.regenerateBtn, new Runnable() { public void run() {
     int target = max(5, mapModel.zones.size());
     mapModel.regenerateRandomZones(target);
     activeZoneIndex = !mapModel.zones.isEmpty() ? 0 : -1;
     editingZoneNameIndex = -1;
-    return true;
-  }
+  }})) return true;
 
   return false;
 }
@@ -360,35 +343,31 @@ boolean handleZonesListPanelClick(int mx, int my) {
   ZonesListLayout layout = buildZonesListLayout();
   populateZonesRows(layout);
 
-  if (layout.deselectBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.deselectBtn, new Runnable() { public void run() {
     activeZoneIndex = -1;
     editingZoneNameIndex = -1;
-    return true;
-  }
+  }})) return true;
 
-  if (layout.newBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.newBtn, new Runnable() { public void run() {
     mapModel.addZone();
     activeZoneIndex = mapModel.zones.size() - 1;
-    return true;
-  }
+  }})) return true;
 
   for (int i = 0; i < layout.rows.size(); i++) {
     ZoneRowLayout row = layout.rows.get(i);
     if (row.index < 0 || row.index >= mapModel.zones.size()) continue;
     MapModel.MapZone az = mapModel.zones.get(row.index);
 
-    if (row.selectRect.contains(mx, my)) {
+    if (queueButtonAction(row.selectRect, new Runnable() { public void run() {
       activeZoneIndex = row.index;
       editingZoneNameIndex = -1;
-      return true;
-    }
+    }})) return true;
 
-    if (row.nameRect.contains(mx, my)) {
+    if (queueButtonAction(row.nameRect, new Runnable() { public void run() {
       activeZoneIndex = row.index;
       editingZoneNameIndex = row.index;
       zoneNameDraft = az.name;
-      return true;
-    }
+    }})) return true;
 
     if (row.hueSlider.contains(mx, my)) {
       activeZoneIndex = row.index;
@@ -510,6 +489,10 @@ boolean handleSnapSettingsClick(int mx, int my) {
 // ---------- Mouse & keyboard callbacks ----------
 
 void mousePressed() {
+  if (mouseButton == LEFT) {
+    pendingButtonAction = null;
+    pressedButtonRect = null;
+  }
   // Block interactions while generation is running; show notice
   if (mapModel.isVoronoiBuilding() && mouseButton == LEFT) {
     showNotice("Please wait for generation to finish...");
@@ -702,11 +685,10 @@ boolean handlePathsPanelClick(int mx, int my) {
     return true;
   }
 
-  if (layout.eraserBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.eraserBtn, new Runnable() { public void run() {
     pathEraserMode = !pathEraserMode;
     pendingPathStart = null;
-    return true;
-  }
+  }})) return true;
   if (layout.taperCheck.contains(mx, my)) {
     if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
       PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
@@ -716,7 +698,7 @@ boolean handlePathsPanelClick(int mx, int my) {
   }
 
   // Add path type
-  if (layout.typeAddBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.typeAddBtn, new Runnable() { public void run() {
     int n = mapModel.pathTypes.size();
     if (n < PATH_TYPE_PRESETS.length) {
       PathType pt = mapModel.makePathTypeFromPreset(n);
@@ -729,12 +711,11 @@ boolean handlePathsPanelClick(int mx, int my) {
         editingPathNameIndex = -1;
       }
     }
-    return true;
-  }
+  }})) return true;
 
   // Remove path type
   boolean canRemove = mapModel.pathTypes.size() > 1 && activePathTypeIndex > 0;
-  if (canRemove && layout.typeRemoveBtn.contains(mx, my)) {
+  if (canRemove && queueButtonAction(layout.typeRemoveBtn, new Runnable() { public void run() {
     mapModel.removePathType(activePathTypeIndex);
     activePathTypeIndex = min(activePathTypeIndex, mapModel.pathTypes.size() - 1);
     if (activePathTypeIndex < 0) activePathTypeIndex = 0;
@@ -743,8 +724,7 @@ boolean handlePathsPanelClick(int mx, int my) {
     selectedPathIndex = -1;
     pendingPathStart = null;
     editingPathNameIndex = -1;
-    return true;
-  }
+  }})) return true;
 
   int nTypes = mapModel.pathTypes.size();
 
@@ -812,12 +792,11 @@ boolean handleLabelsListPanelClick(int mx, int my) {
   LabelsListLayout layout = buildLabelsListLayout();
   populateLabelsListRows(layout);
 
-  if (layout.deselectBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.deselectBtn, new Runnable() { public void run() {
     selectedLabelIndex = -1;
     editingLabelIndex = -1;
     labelDraft = "label";
-    return true;
-  }
+  }})) return true;
 
   // Size slider
   if (layout.sizeSlider.contains(mx, my)) {
@@ -835,24 +814,22 @@ boolean handleLabelsListPanelClick(int mx, int my) {
     LabelRowLayout row = layout.rows.get(i);
     if (row.index < 0 || row.index >= mapModel.labels.size()) continue;
     MapLabel lbl = mapModel.labels.get(row.index);
-    if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
+    if (queueButtonAction(row.selectRect, new Runnable() { public void run() {
       selectedLabelIndex = row.index;
-      if (row.nameRect.contains(mx, my)) {
-        editingLabelIndex = row.index;
-        labelDraft = lbl.text;
-      } else {
-        editingLabelIndex = -1;
-        labelDraft = lbl.text;
-      }
-      return true;
-    }
-    if (row.delRect.contains(mx, my)) {
+      editingLabelIndex = -1;
+      labelDraft = lbl.text;
+    }})) return true;
+    if (queueButtonAction(row.nameRect, new Runnable() { public void run() {
+      selectedLabelIndex = row.index;
+      editingLabelIndex = row.index;
+      labelDraft = lbl.text;
+    }})) return true;
+    if (queueButtonAction(row.delRect, new Runnable() { public void run() {
       mapModel.labels.remove(row.index);
       if (selectedLabelIndex == row.index) selectedLabelIndex = -1;
       if (editingLabelIndex == row.index) editingLabelIndex = -1;
       labelDraft = "label";
-      return true;
-    }
+    }})) return true;
   }
   return false;
 }
@@ -871,15 +848,14 @@ boolean handlePathsListPanelClick(int mx, int my) {
   PathsListLayout layout = buildPathsListLayout();
   populatePathsListRows(layout);
 
-  if (layout.deselectBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.deselectBtn, new Runnable() { public void run() {
     selectedPathIndex = -1;
     pendingPathStart = null;
     editingPathNameIndex = -1;
-    return true;
-  }
+  }})) return true;
 
   // New path button
-  if (layout.newBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.newBtn, new Runnable() { public void run() {
     Path np = new Path();
     np.typeId = activePathTypeIndex;
     np.name = "Path " + (mapModel.paths.size() + 1);
@@ -890,8 +866,7 @@ boolean handlePathsListPanelClick(int mx, int my) {
     editingPathNameIndex = selectedPathIndex;
     pathNameDraft = np.name;
     pendingPathStart = null;
-    return true;
-  }
+  }})) return true;
 
   for (int i = 0; i < layout.rows.size(); i++) {
     PathRowLayout row = layout.rows.get(i);
@@ -899,21 +874,25 @@ boolean handlePathsListPanelClick(int mx, int my) {
     Path p = mapModel.paths.get(row.index);
     if (p == null) continue;
 
-    if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
+    if (queueButtonAction(row.selectRect, new Runnable() { public void run() {
       selectedPathIndex = row.index;
       if (p.typeId >= 0 && p.typeId < mapModel.pathTypes.size()) {
         activePathTypeIndex = p.typeId;
         syncActivePathTypeGlobals();
       }
-      editingPathNameIndex = row.nameRect.contains(mx, my) ? row.index : -1;
-      if (editingPathNameIndex == row.index) {
-        pathNameDraft = (p.name != null) ? p.name : "";
-      } else {
-        pendingPathStart = null;
+      editingPathNameIndex = -1;
+      pendingPathStart = null;
+    }})) return true;
+    if (queueButtonAction(row.nameRect, new Runnable() { public void run() {
+      selectedPathIndex = row.index;
+      if (p.typeId >= 0 && p.typeId < mapModel.pathTypes.size()) {
+        activePathTypeIndex = p.typeId;
+        syncActivePathTypeGlobals();
       }
-      return true;
-    }
-    if (row.delRect.contains(mx, my)) {
+      editingPathNameIndex = row.index;
+      pathNameDraft = (p.name != null) ? p.name : "";
+    }})) return true;
+    if (queueButtonAction(row.delRect, new Runnable() { public void run() {
       mapModel.paths.remove(row.index);
       if (selectedPathIndex == row.index) {
         selectedPathIndex = -1;
@@ -922,16 +901,14 @@ boolean handlePathsListPanelClick(int mx, int my) {
         selectedPathIndex -= 1;
       }
       if (editingPathNameIndex == row.index) editingPathNameIndex = -1;
-      return true;
-    }
-    if (row.typeRect.contains(mx, my)) {
+    }})) return true;
+    if (queueButtonAction(row.typeRect, new Runnable() { public void run() {
       if (!mapModel.pathTypes.isEmpty()) {
         p.typeId = (p.typeId + 1) % mapModel.pathTypes.size();
         activePathTypeIndex = p.typeId;
         syncActivePathTypeGlobals();
       }
-      return true;
-    }
+    }})) return true;
   }
 
   return false;
@@ -960,18 +937,18 @@ boolean handleStructuresPanelClick(int mx, int my) {
     return true;
   }
   for (int i = 0; i < layout.shapeButtons.size(); i++) {
+    final int shapeIdx = i;
     IntRect b = layout.shapeButtons.get(i);
-    if (b.contains(mx, my)) {
-      structureShape = StructureShape.values()[i];
-      return true;
-    }
+    if (queueButtonAction(b, new Runnable() { public void run() {
+      structureShape = StructureShape.values()[shapeIdx];
+    }})) return true;
   }
   for (int i = 0; i < layout.snapButtons.size(); i++) {
+    final int snapIdx = i;
     IntRect b = layout.snapButtons.get(i);
-    if (b.contains(mx, my)) {
-      structureSnapMode = StructureSnapMode.values()[i];
-      return true;
-    }
+    if (queueButtonAction(b, new Runnable() { public void run() {
+      structureSnapMode = StructureSnapMode.values()[snapIdx];
+    }})) return true;
   }
   return false;
 }
@@ -983,11 +960,10 @@ boolean handleStructuresListPanelClick(int mx, int my) {
   int listStartY = layoutStructureDetails(layout);
   populateStructuresListRows(layout, listStartY);
 
-  if (layout.deselectBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.deselectBtn, new Runnable() { public void run() {
     selectedStructureIndex = -1;
     editingStructureNameIndex = -1;
-    return true;
-  }
+  }})) return true;
 
   Structure sel = hasSelection ? mapModel.structures.get(selectedStructureIndex) : null;
   if (layout.detailNameField.contains(mx, my)) {
@@ -1046,19 +1022,23 @@ boolean handleStructuresListPanelClick(int mx, int my) {
   for (int i = 0; i < layout.rows.size(); i++) {
     StructureRowLayout row = layout.rows.get(i);
     if (row.index < 0 || row.index >= mapModel.structures.size()) continue;
-    if (row.selectRect.contains(mx, my) || row.nameRect.contains(mx, my)) {
+    if (queueButtonAction(row.selectRect, new Runnable() { public void run() {
       selectedStructureIndex = row.index;
       editingStructureNameIndex = -1;
-      return true;
-    }
-    if (row.delRect.contains(mx, my)) {
+    }})) return true;
+    if (queueButtonAction(row.nameRect, new Runnable() { public void run() {
+      selectedStructureIndex = row.index;
+      editingStructureNameIndex = row.index;
+      Structure target = mapModel.structures.get(row.index);
+      structureNameDraft = (target != null && target.name != null) ? target.name : "";
+    }})) return true;
+    if (queueButtonAction(row.delRect, new Runnable() { public void run() {
       mapModel.structures.remove(row.index);
       if (selectedStructureIndex == row.index) selectedStructureIndex = -1;
       else if (selectedStructureIndex > row.index) selectedStructureIndex -= 1;
       if (editingStructureNameIndex == row.index) editingStructureNameIndex = -1;
       else if (editingStructureNameIndex > row.index) editingStructureNameIndex -= 1;
-      return true;
-    }
+    }})) return true;
   }
   return false;
 }
@@ -1067,15 +1047,15 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (!isInRenderPanel(mx, my)) return false;
   RenderLayout layout = buildRenderLayout();
   // Section toggles
-  if (layout.headerBase.contains(mx, my)) { renderSectionBaseOpen = !renderSectionBaseOpen; return true; }
-  if (layout.headerBiomes.contains(mx, my)) { renderSectionBiomesOpen = !renderSectionBiomesOpen; return true; }
-  if (layout.headerShading.contains(mx, my)) { renderSectionShadingOpen = !renderSectionShadingOpen; return true; }
-  if (layout.headerContours.contains(mx, my)) { renderSectionContoursOpen = !renderSectionContoursOpen; return true; }
-  if (layout.headerPaths.contains(mx, my)) { renderSectionPathsOpen = !renderSectionPathsOpen; return true; }
-  if (layout.headerZones.contains(mx, my)) { renderSectionZonesOpen = !renderSectionZonesOpen; return true; }
-  if (layout.headerStructures.contains(mx, my)) { renderSectionStructuresOpen = !renderSectionStructuresOpen; return true; }
-  if (layout.headerLabels.contains(mx, my)) { renderSectionLabelsOpen = !renderSectionLabelsOpen; return true; }
-  if (layout.headerGeneral.contains(mx, my)) { renderSectionGeneralOpen = !renderSectionGeneralOpen; return true; }
+  if (queueButtonAction(layout.headerBase, new Runnable() { public void run() { renderSectionBaseOpen = !renderSectionBaseOpen; }})) return true;
+  if (queueButtonAction(layout.headerBiomes, new Runnable() { public void run() { renderSectionBiomesOpen = !renderSectionBiomesOpen; }})) return true;
+  if (queueButtonAction(layout.headerShading, new Runnable() { public void run() { renderSectionShadingOpen = !renderSectionShadingOpen; }})) return true;
+  if (queueButtonAction(layout.headerContours, new Runnable() { public void run() { renderSectionContoursOpen = !renderSectionContoursOpen; }})) return true;
+  if (queueButtonAction(layout.headerPaths, new Runnable() { public void run() { renderSectionPathsOpen = !renderSectionPathsOpen; }})) return true;
+  if (queueButtonAction(layout.headerZones, new Runnable() { public void run() { renderSectionZonesOpen = !renderSectionZonesOpen; }})) return true;
+  if (queueButtonAction(layout.headerStructures, new Runnable() { public void run() { renderSectionStructuresOpen = !renderSectionStructuresOpen; }})) return true;
+  if (queueButtonAction(layout.headerLabels, new Runnable() { public void run() { renderSectionLabelsOpen = !renderSectionLabelsOpen; }})) return true;
+  if (queueButtonAction(layout.headerGeneral, new Runnable() { public void run() { renderSectionGeneralOpen = !renderSectionGeneralOpen; }})) return true;
 
   // Base
   if (renderSectionBaseOpen) {
@@ -1310,10 +1290,9 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_PRESET_SELECT;
       return true;
     }
-    if (layout.presetApplyBtn.contains(mx, my)) {
+    if (queueButtonAction(layout.presetApplyBtn, new Runnable() { public void run() {
       applyRenderPreset(renderSettings.activePresetIndex);
-      return true;
-    }
+    }})) return true;
   }
   return false;
 }
@@ -1321,7 +1300,7 @@ boolean handleRenderPanelClick(int mx, int my) {
 boolean handleExportPanelClick(int mx, int my) {
   if (!isInExportPanel(mx, my)) return false;
   ExportLayout layout = buildExportLayout();
-  if (layout.pngBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.pngBtn, new Runnable() { public void run() {
     String path = exportPng();
     if (path != null && path.length() > 0 && !path.startsWith("Failed")) {
       lastExportStatus = path;
@@ -1330,8 +1309,7 @@ boolean handleExportPanelClick(int mx, int my) {
       lastExportStatus = (path != null) ? path : "Export failed";
       showNotice("Export failed");
     }
-    return true;
-  }
+  }})) return true;
   if (layout.scaleSlider != null && layout.scaleSlider.contains(mx, my)) {
     float t = constrain((mx - layout.scaleSlider.x) / (float)layout.scaleSlider.w, 0, 1);
     exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);
@@ -1372,14 +1350,12 @@ boolean handleElevationPanelClick(int mx, int my) {
   }
 
   // Raise / Lower buttons
-  if (layout.raiseBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.raiseBtn, new Runnable() { public void run() {
     elevationBrushRaise = true;
-    return true;
-  }
-  if (layout.lowerBtn.contains(mx, my)) {
+  }})) return true;
+  if (queueButtonAction(layout.lowerBtn, new Runnable() { public void run() {
     elevationBrushRaise = false;
-    return true;
-  }
+  }})) return true;
 
   // Noise scale slider
   if (layout.noiseSlider.contains(mx, my)) {
@@ -1390,24 +1366,21 @@ boolean handleElevationPanelClick(int mx, int my) {
   }
 
   // Generate button
-  if (layout.perlinBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.perlinBtn, new Runnable() { public void run() {
     noiseSeed((int)random(Integer.MAX_VALUE));
     mapModel.generateElevationNoise(elevationNoiseScale, 1.0f, seaLevel);
-    return true;
-  }
+  }})) return true;
 
   // Vary button
-  if (layout.varyBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.varyBtn, new Runnable() { public void run() {
     noiseSeed((int)random(Integer.MAX_VALUE));
     mapModel.addElevationVariation(elevationNoiseScale, 0.2f, seaLevel);
-    return true;
-  }
+  }})) return true;
 
   // Plateaux button
-  if (layout.plateauBtn.contains(mx, my)) {
+  if (queueButtonAction(layout.plateauBtn, new Runnable() { public void run() {
     mapModel.makePlateaus(seaLevel);
-    return true;
-  }
+  }})) return true;
 
   return false;
 }
