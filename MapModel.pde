@@ -1480,7 +1480,7 @@ class MapModel {
           taperCache.put(p.typeId, taperW);
         }
       }
-      p.draw(app, w, taperOn, taperW, i, showNodes);
+      p.draw(app, w, taperOn, taperW, i, showNodes, 1);
 
       // Debug: draw small dots on all route vertices
       if (showNodes) {
@@ -1521,7 +1521,7 @@ class MapModel {
           taperCache.put(sel.typeId, taperW);
         }
       }
-      sel.draw(app, w, taperOn, taperW, selectedPathIndex, showNodes);
+      sel.draw(app, w, taperOn, taperW, selectedPathIndex, showNodes, 1);
     }
 
     app.popStyle();
@@ -1532,15 +1532,16 @@ class MapModel {
     app.pushStyle();
     app.noFill();
     HashMap<Integer, HashMap<String, Float>> taperCache = new HashMap<Integer, HashMap<String, Float>>();
+    float[] hsbScratch = new float[3];
 
     for (int i = 0; i < paths.size(); i++) {
       Path p = paths.get(i);
       if (p.routes.isEmpty()) continue;
       PathType pt = getPathType(p.typeId);
       int baseCol = (pt != null) ? pt.col : app.color(80);
-      float[] hsb = rgbToHSB(baseCol);
-      hsb[1] = constrain(hsb[1] * s.pathSatScale01, 0, 1);
-      int col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+      rgbToHSB01(baseCol, hsbScratch);
+      float scaledSat = constrain(hsbScratch[1] * s.pathSatScale01, 0, 1);
+      int col = hsb01ToRGB(hsbScratch[0], scaledSat, hsbScratch[2]);
       float w = (pt != null) ? pt.weightPx : 2.0f;
       if (w <= 0.01f) continue;
       app.stroke(col);
@@ -1554,7 +1555,7 @@ class MapModel {
           taperCache.put(p.typeId, taperW);
         }
       }
-      p.draw(app, w, taperOn, taperW, i, false);
+      p.draw(app, w, taperOn, taperW, i, false, 1);
     }
     app.popStyle();
   }

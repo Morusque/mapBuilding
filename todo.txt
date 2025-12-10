@@ -98,3 +98,6 @@ General :
 (later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
 (later) use appropriate caps for strokes (probably round)
 (later) correctly merge strokes that overlap with alpha
+(later) use HSB directly instead of converting?
+(later) make a wild estimation of number of lines to change for all tasks
+

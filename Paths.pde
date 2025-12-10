@@ -11,8 +11,9 @@ class Path {
     routes.add(copy);
   }
 
-  void draw(PApplet app, float baseWeight, boolean taper, HashMap<String, Float> segWeights, int pathIndex, boolean showNodes) {
+  void draw(PApplet app, float baseWeight, boolean taper, HashMap<String, Float> segWeights, int pathIndex, boolean showNodes, float sat) {
     if (routes.isEmpty()) return;
+    float[] hsbScratch = new float[3];
 
     for (int ri = 0; ri < routes.size(); ri++) {
       ArrayList<PVector> seg = routes.get(ri);
@@ -21,7 +22,6 @@ class Path {
         if (!showNodes) continue;
         float r = 3.0f / viewport.zoom;
         app.pushStyle();
-        app.noStroke();
         app.fill(app.g.strokeColor);
         PVector a = seg.get(0);
         app.ellipse(a.x, a.y, r, r);
@@ -38,6 +38,10 @@ class Path {
           w = segWeights.get(key);
         }
         app.pushStyle();
+        rgbToHSB01(app.g.strokeColor, hsbScratch);
+        hsbScratch[1] = constrain(hsbScratch[1] * sat, 0, 1);
+        int col = hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]);
+        app.stroke(col);
         app.strokeWeight(max(1.5f, w) / viewport.zoom);
         app.line(a.x, a.y, b.x, b.y);
         app.popStyle();

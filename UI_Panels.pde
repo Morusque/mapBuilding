@@ -664,6 +664,8 @@ class PathsLayout {
   ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
   IntRect nameField;
   IntRect typeHueSlider;
+  IntRect typeSatSlider;
+  IntRect typeBriSlider;
   IntRect typeWeightSlider;
 }
 
@@ -727,6 +729,12 @@ PathsLayout buildPathsLayout() {
   curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   l.typeHueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.typeSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.typeBriSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   l.typeWeightSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
@@ -914,6 +922,14 @@ void drawPathsPanel() {
     IntRect hue = layout.typeHueSlider;
     float hNorm = constrain(active.hue01, 0, 1);
     drawSlider(hue, hNorm, "Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2));
+
+    IntRect sat = layout.typeSatSlider;
+    float sNorm = constrain(active.sat01, 0, 1);
+    drawSlider(sat, sNorm, "Saturation for \"" + active.name + "\"");
+
+    IntRect bri = layout.typeBriSlider;
+    float bNorm = constrain(active.bri01, 0, 1);
+    drawSlider(bri, bNorm, "Brightness for \"" + active.name + "\"");
 
     // Weight slider per type
     IntRect weight = layout.typeWeightSlider;

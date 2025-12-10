@@ -344,6 +344,28 @@ void updateActiveSlider(int mx, int my) {
       }
       break;
     }
+    case SLIDER_PATH_TYPE_SAT: {
+      PathsLayout l = buildPathsLayout();
+      float t = (mx - l.typeSatSlider.x) / (float)l.typeSatSlider.w;
+      t = constrain(t, 0, 1);
+      if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+        PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+        pt.sat01 = t;
+        pt.updateColorFromHSB();
+      }
+      break;
+    }
+    case SLIDER_PATH_TYPE_BRI: {
+      PathsLayout l = buildPathsLayout();
+      float t = (mx - l.typeBriSlider.x) / (float)l.typeBriSlider.w;
+      t = constrain(t, 0, 1);
+      if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
+        PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+        pt.bri01 = t;
+        pt.updateColorFromHSB();
+      }
+      break;
+    }
     case SLIDER_PATH_TYPE_WEIGHT: {
       PathsLayout l = buildPathsLayout();
       float t = (mx - l.typeWeightSlider.x) / (float)l.typeWeightSlider.w;

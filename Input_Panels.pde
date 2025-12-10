@@ -757,6 +757,22 @@ boolean handlePathsPanelClick(int mx, int my) {
       activeSlider = SLIDER_PATH_TYPE_HUE;
       return true;
     }
+    if (layout.typeSatSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.typeSatSlider.x) / (float)layout.typeSatSlider.w, 0, 1);
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.sat01 = t;
+      pt.updateColorFromHSB();
+      activeSlider = SLIDER_PATH_TYPE_SAT;
+      return true;
+    }
+    if (layout.typeBriSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.typeBriSlider.x) / (float)layout.typeBriSlider.w, 0, 1);
+      PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
+      pt.bri01 = t;
+      pt.updateColorFromHSB();
+      activeSlider = SLIDER_PATH_TYPE_BRI;
+      return true;
+    }
     if (layout.typeWeightSlider.contains(mx, my)) {
       float t = constrain((mx - layout.typeWeightSlider.x) / (float)layout.typeWeightSlider.w, 0, 1);
       PathType pt = mapModel.pathTypes.get(activePathTypeIndex);
