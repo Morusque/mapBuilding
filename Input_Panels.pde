@@ -1333,6 +1333,26 @@ boolean handleExportPanelClick(int mx, int my) {
     activeSlider = SLIDER_EXPORT_SCALE;
     return true;
   }
+  if (queueButtonAction(layout.mapExportBtn, new Runnable() { public void run() {
+    String path = exportMapJson();
+    if (path != null && path.length() > 0 && !path.startsWith("Failed")) {
+      lastExportStatus = path;
+      showNotice("Saved map JSON: " + path);
+    } else {
+      lastExportStatus = (path != null) ? path : "Export failed";
+      showNotice("Export failed");
+    }
+  }})) return true;
+  if (queueButtonAction(layout.mapImportBtn, new Runnable() { public void run() {
+    String res = importMapJson();
+    if (res != null && res.startsWith("Failed")) {
+      lastExportStatus = res;
+      showNotice("Import failed");
+    } else {
+      lastExportStatus = (res != null) ? res : "Imported";
+      showNotice("Map imported");
+    }
+  }})) return true;
   return false;
 }
 

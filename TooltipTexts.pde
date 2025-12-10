@@ -106,6 +106,8 @@ void initTooltipTexts() {
   // export mode
   TOOLTIP_TEXTS.put("export_png", "Export the current view as a PNG.");
   TOOLTIP_TEXTS.put("export_scale", "Multiply the output raster size. \nSome elements such as outlines are resolution agnostic.");
+  TOOLTIP_TEXTS.put("export_map_json", "Export full map data to JSON (exports/map_latest.json).");
+  TOOLTIP_TEXTS.put("import_map_json", "Import map data from exports/map_latest.json.");
   
 }
 

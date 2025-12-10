@@ -2,6 +2,8 @@
 import processing.event.MouseEvent;
 import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.io.File;
 
 Viewport viewport;
 MapModel mapModel;
@@ -787,6 +789,660 @@ String exportPng() {
   String path = dir + java.io.File.separator + "map_" + ts + ".png";
   g.save(path);
   return path;
+}
+
+String exportMapJson() {
+  try {
+    JSONObject root = new JSONObject();
+
+    JSONObject meta = new JSONObject();
+    meta.setInt("schemaVersion", 1);
+    meta.setString("savedAt", new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").format(new java.util.Date()));
+    root.setJSONObject("meta", meta);
+
+    JSONObject view = new JSONObject();
+    view.setFloat("centerX", viewport.centerX);
+    view.setFloat("centerY", viewport.centerY);
+    view.setFloat("zoom", viewport.zoom);
+    root.setJSONObject("view", view);
+
+    JSONObject settings = new JSONObject();
+    settings.setJSONObject("render", serializeRenderSettings(renderSettings));
+    root.setJSONObject("settings", settings);
+
+    JSONObject types = new JSONObject();
+    types.setJSONArray("pathTypes", serializePathTypes(mapModel.pathTypes));
+    types.setJSONArray("biomeTypes", serializeZoneTypes(mapModel.biomeTypes));
+    root.setJSONObject("types", types);
+
+    root.setJSONArray("sites", serializeSites(mapModel.sites));
+    root.setJSONArray("cells", serializeCells(mapModel.cells));
+    root.setJSONArray("zones", serializeZones(mapModel.zones));
+    root.setJSONArray("paths", serializePaths(mapModel.paths));
+    root.setJSONArray("structures", serializeStructures(mapModel.structures));
+    root.setJSONArray("labels", serializeLabels(mapModel.labels));
+
+    File dir = new File(sketchPath("exports"));
+    if (!dir.exists()) dir.mkdirs();
+    String ts = nf(year(), 4, 0) + nf(month(), 2, 0) + nf(day(), 2, 0) + "_" +
+                nf(hour(), 2, 0) + nf(minute(), 2, 0) + nf(second(), 2, 0);
+    File target = new File(dir, "map_" + ts + ".json");
+    File latest = new File(dir, "map_latest.json");
+    saveJSONObject(root, target.getAbsolutePath());
+    saveJSONObject(root, latest.getAbsolutePath());
+    return target.getAbsolutePath();
+  } catch (Exception e) {
+    e.printStackTrace();
+    return "Failed: " + e.getMessage();
+  }
+}
+
+String importMapJson() {
+  try {
+    File latest = new File(sketchPath("exports"), "map_latest.json");
+    if (!latest.exists()) return "Failed: exports/map_latest.json not found";
+    JSONObject root = loadJSONObject(latest.getAbsolutePath());
+    if (root == null) return "Failed: invalid JSON";
+
+    if (root.hasKey("types")) {
+      JSONObject types = root.getJSONObject("types");
+      mapModel.pathTypes = deserializePathTypes(types.getJSONArray("pathTypes"));
+      mapModel.biomeTypes = deserializeZoneTypes(types.getJSONArray("biomeTypes"));
+    }
+
+    if (root.hasKey("sites")) mapModel.sites = deserializeSites(root.getJSONArray("sites"));
+    if (root.hasKey("cells")) mapModel.cells = deserializeCells(root.getJSONArray("cells"));
+    if (root.hasKey("zones")) mapModel.zones = deserializeZones(root.getJSONArray("zones"));
+    if (root.hasKey("paths")) mapModel.paths = deserializePaths(root.getJSONArray("paths"));
+    if (root.hasKey("structures")) mapModel.structures = deserializeStructures(root.getJSONArray("structures"));
+    if (root.hasKey("labels")) mapModel.labels = deserializeLabels(root.getJSONArray("labels"));
+    mapModel.cellNeighbors = new ArrayList<ArrayList<Integer>>();
+    mapModel.snapNodes = new HashMap<String, PVector>();
+    mapModel.snapAdj = new HashMap<String, ArrayList<String>>();
+
+    if (root.hasKey("settings")) {
+      JSONObject settings = root.getJSONObject("settings");
+      if (settings.hasKey("render")) applyRenderSettingsFromJson(settings.getJSONObject("render"), renderSettings);
+    }
+
+    if (root.hasKey("view")) {
+      JSONObject view = root.getJSONObject("view");
+      viewport.centerX = view.getFloat("centerX", viewport.centerX);
+      viewport.centerY = view.getFloat("centerY", viewport.centerY);
+      viewport.zoom = view.getFloat("zoom", viewport.zoom);
+    }
+
+    recomputeWorldBoundsFromData();
+    mapModel.snapDirty = true;
+    mapModel.voronoiDirty = false;
+    selectedPathIndex = -1;
+    return latest.getAbsolutePath();
+  } catch (Exception e) {
+    e.printStackTrace();
+    return "Failed: " + e.getMessage();
+  }
+}
+
+JSONObject serializeRenderSettings(RenderSettings s) {
+  JSONObject r = new JSONObject();
+  r.setFloat("landHue01", s.landHue01);
+  r.setFloat("landSat01", s.landSat01);
+  r.setFloat("landBri01", s.landBri01);
+  r.setFloat("waterHue01", s.waterHue01);
+  r.setFloat("waterSat01", s.waterSat01);
+  r.setFloat("waterBri01", s.waterBri01);
+  r.setFloat("cellBorderAlpha01", s.cellBorderAlpha01);
+
+  JSONObject biomes = new JSONObject();
+  biomes.setFloat("fillAlpha01", s.biomeFillAlpha01);
+  biomes.setFloat("satScale01", s.biomeSatScale01);
+  biomes.setString("fillType", (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN) ? "pattern" : "color");
+  biomes.setString("patternName", s.biomePatternName);
+  biomes.setFloat("outlineSizePx", s.biomeOutlineSizePx);
+  biomes.setFloat("outlineAlpha01", s.biomeOutlineAlpha01);
+  biomes.setFloat("underwaterAlpha01", s.biomeUnderwaterAlpha01);
+  r.setJSONObject("biomes", biomes);
+
+  JSONObject shading = new JSONObject();
+  shading.setFloat("waterDepthAlpha01", s.waterDepthAlpha01);
+  shading.setFloat("elevationLightAlpha01", s.elevationLightAlpha01);
+  shading.setFloat("elevationLightAzimuthDeg", s.elevationLightAzimuthDeg);
+  shading.setFloat("elevationLightAltitudeDeg", s.elevationLightAltitudeDeg);
+  r.setJSONObject("shading", shading);
+
+  JSONObject contours = new JSONObject();
+  contours.setFloat("waterContourSizePx", s.waterContourSizePx);
+  contours.setInt("waterRippleCount", s.waterRippleCount);
+  contours.setFloat("waterRippleDistancePx", s.waterRippleDistancePx);
+  contours.setFloat("waterContourHue01", s.waterContourHue01);
+  contours.setFloat("waterContourSat01", s.waterContourSat01);
+  contours.setFloat("waterContourBri01", s.waterContourBri01);
+  contours.setFloat("waterContourAlpha01", s.waterContourAlpha01);
+  contours.setInt("elevationLinesCount", s.elevationLinesCount);
+  contours.setString("elevationLinesStyle", s.elevationLinesStyle.name());
+  contours.setFloat("elevationLinesAlpha01", s.elevationLinesAlpha01);
+  r.setJSONObject("contours", contours);
+
+  JSONObject paths = new JSONObject();
+  paths.setFloat("pathSatScale01", s.pathSatScale01);
+  paths.setBoolean("showPaths", s.showPaths);
+  r.setJSONObject("paths", paths);
+
+  JSONObject zones = new JSONObject();
+  zones.setFloat("zoneStrokeAlpha01", s.zoneStrokeAlpha01);
+  zones.setFloat("zoneStrokeSatScale01", s.zoneStrokeSatScale01);
+  zones.setFloat("zoneStrokeBriScale01", s.zoneStrokeBriScale01);
+  r.setJSONObject("zones", zones);
+
+  JSONObject structures = new JSONObject();
+  structures.setBoolean("showStructures", s.showStructures);
+  structures.setBoolean("mergeStructures", s.mergeStructures);
+  structures.setFloat("structureSatScale01", s.structureSatScale01);
+  structures.setFloat("structureAlphaScale01", s.structureAlphaScale01);
+  r.setJSONObject("structures", structures);
+
+  JSONObject labels = new JSONObject();
+  labels.setBoolean("showLabelsArbitrary", s.showLabelsArbitrary);
+  labels.setBoolean("showLabelsZones", s.showLabelsZones);
+  labels.setBoolean("showLabelsPaths", s.showLabelsPaths);
+  labels.setBoolean("showLabelsStructures", s.showLabelsStructures);
+  labels.setFloat("labelOutlineAlpha01", s.labelOutlineAlpha01);
+  r.setJSONObject("labels", labels);
+
+  JSONObject general = new JSONObject();
+  general.setFloat("exportPaddingPct", s.exportPaddingPct);
+  general.setBoolean("antialiasing", s.antialiasing);
+  general.setInt("activePresetIndex", s.activePresetIndex);
+  r.setJSONObject("general", general);
+
+  return r;
+}
+
+void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
+  if (r == null || target == null) return;
+  target.landHue01 = r.getFloat("landHue01", target.landHue01);
+  target.landSat01 = r.getFloat("landSat01", target.landSat01);
+  target.landBri01 = r.getFloat("landBri01", target.landBri01);
+  target.waterHue01 = r.getFloat("waterHue01", target.waterHue01);
+  target.waterSat01 = r.getFloat("waterSat01", target.waterSat01);
+  target.waterBri01 = r.getFloat("waterBri01", target.waterBri01);
+  target.cellBorderAlpha01 = r.getFloat("cellBorderAlpha01", target.cellBorderAlpha01);
+
+  if (r.hasKey("biomes")) {
+    JSONObject b = r.getJSONObject("biomes");
+    target.biomeFillAlpha01 = b.getFloat("fillAlpha01", target.biomeFillAlpha01);
+    target.biomeSatScale01 = b.getFloat("satScale01", target.biomeSatScale01);
+    target.biomeFillType = "pattern".equals(b.getString("fillType", "color"))
+      ? RenderFillType.RENDER_FILL_PATTERN
+      : RenderFillType.RENDER_FILL_COLOR;
+    target.biomePatternName = b.getString("patternName", target.biomePatternName);
+    target.biomeOutlineSizePx = b.getFloat("outlineSizePx", target.biomeOutlineSizePx);
+    target.biomeOutlineAlpha01 = b.getFloat("outlineAlpha01", target.biomeOutlineAlpha01);
+    target.biomeUnderwaterAlpha01 = b.getFloat("underwaterAlpha01", target.biomeUnderwaterAlpha01);
+  }
+
+  if (r.hasKey("shading")) {
+    JSONObject b = r.getJSONObject("shading");
+    target.waterDepthAlpha01 = b.getFloat("waterDepthAlpha01", target.waterDepthAlpha01);
+    target.elevationLightAlpha01 = b.getFloat("elevationLightAlpha01", target.elevationLightAlpha01);
+    target.elevationLightAzimuthDeg = b.getFloat("elevationLightAzimuthDeg", target.elevationLightAzimuthDeg);
+    target.elevationLightAltitudeDeg = b.getFloat("elevationLightAltitudeDeg", target.elevationLightAltitudeDeg);
+  }
+
+  if (r.hasKey("contours")) {
+    JSONObject b = r.getJSONObject("contours");
+    target.waterContourSizePx = b.getFloat("waterContourSizePx", target.waterContourSizePx);
+    target.waterRippleCount = b.getInt("waterRippleCount", target.waterRippleCount);
+    target.waterRippleDistancePx = b.getFloat("waterRippleDistancePx", target.waterRippleDistancePx);
+    target.waterContourHue01 = b.getFloat("waterContourHue01", target.waterContourHue01);
+    target.waterContourSat01 = b.getFloat("waterContourSat01", target.waterContourSat01);
+    target.waterContourBri01 = b.getFloat("waterContourBri01", target.waterContourBri01);
+    target.waterContourAlpha01 = b.getFloat("waterContourAlpha01", target.waterContourAlpha01);
+    target.elevationLinesCount = b.getInt("elevationLinesCount", target.elevationLinesCount);
+    String style = b.getString("elevationLinesStyle", target.elevationLinesStyle.name());
+    target.elevationLinesStyle = "ELEV_LINES_BASIC".equals(style) ? ElevationLinesStyle.ELEV_LINES_BASIC : target.elevationLinesStyle;
+    target.elevationLinesAlpha01 = b.getFloat("elevationLinesAlpha01", target.elevationLinesAlpha01);
+  }
+
+  if (r.hasKey("paths")) {
+    JSONObject b = r.getJSONObject("paths");
+    target.pathSatScale01 = b.getFloat("pathSatScale01", target.pathSatScale01);
+    target.showPaths = b.getBoolean("showPaths", target.showPaths);
+  }
+
+  if (r.hasKey("zones")) {
+    JSONObject b = r.getJSONObject("zones");
+    target.zoneStrokeAlpha01 = b.getFloat("zoneStrokeAlpha01", target.zoneStrokeAlpha01);
+    target.zoneStrokeSatScale01 = b.getFloat("zoneStrokeSatScale01", target.zoneStrokeSatScale01);
+    target.zoneStrokeBriScale01 = b.getFloat("zoneStrokeBriScale01", target.zoneStrokeBriScale01);
+  }
+
+  if (r.hasKey("structures")) {
+    JSONObject b = r.getJSONObject("structures");
+    target.showStructures = b.getBoolean("showStructures", target.showStructures);
+    target.mergeStructures = b.getBoolean("mergeStructures", target.mergeStructures);
+    target.structureSatScale01 = b.getFloat("structureSatScale01", target.structureSatScale01);
+    target.structureAlphaScale01 = b.getFloat("structureAlphaScale01", target.structureAlphaScale01);
+  }
+
+  if (r.hasKey("labels")) {
+    JSONObject b = r.getJSONObject("labels");
+    target.showLabelsArbitrary = b.getBoolean("showLabelsArbitrary", target.showLabelsArbitrary);
+    target.showLabelsZones = b.getBoolean("showLabelsZones", target.showLabelsZones);
+    target.showLabelsPaths = b.getBoolean("showLabelsPaths", target.showLabelsPaths);
+    target.showLabelsStructures = b.getBoolean("showLabelsStructures", target.showLabelsStructures);
+    target.labelOutlineAlpha01 = b.getFloat("labelOutlineAlpha01", target.labelOutlineAlpha01);
+  }
+
+  if (r.hasKey("general")) {
+    JSONObject b = r.getJSONObject("general");
+    target.exportPaddingPct = b.getFloat("exportPaddingPct", target.exportPaddingPct);
+    target.antialiasing = b.getBoolean("antialiasing", target.antialiasing);
+    target.activePresetIndex = b.getInt("activePresetIndex", target.activePresetIndex);
+    renderPaddingPct = target.exportPaddingPct;
+  }
+}
+
+JSONArray serializePathTypes(ArrayList<PathType> list) {
+  JSONArray arr = new JSONArray();
+  if (list == null) return arr;
+  for (int i = 0; i < list.size(); i++) {
+    PathType t = list.get(i);
+    if (t == null) continue;
+    JSONObject o = new JSONObject();
+    o.setInt("id", i);
+    o.setString("name", t.name);
+    o.setInt("col", t.col);
+    o.setFloat("hue01", t.hue01);
+    o.setFloat("sat01", t.sat01);
+    o.setFloat("bri01", t.bri01);
+    o.setFloat("weightPx", t.weightPx);
+    o.setFloat("minWeightPx", t.minWeightPx);
+    o.setString("routeMode", t.routeMode.name());
+    o.setFloat("slopeBias", t.slopeBias);
+    o.setBoolean("avoidWater", t.avoidWater);
+    o.setBoolean("taperOn", t.taperOn);
+    arr.append(o);
+  }
+  return arr;
+}
+
+JSONArray serializeZoneTypes(ArrayList<ZoneType> list) {
+  JSONArray arr = new JSONArray();
+  if (list == null) return arr;
+  for (int i = 0; i < list.size(); i++) {
+    ZoneType z = list.get(i);
+    if (z == null) continue;
+    JSONObject o = new JSONObject();
+    o.setInt("id", i);
+    o.setString("name", z.name);
+    o.setInt("col", z.col);
+    o.setFloat("hue01", z.hue01);
+    o.setFloat("sat01", z.sat01);
+    o.setFloat("bri01", z.bri01);
+    arr.append(o);
+  }
+  return arr;
+}
+
+JSONArray serializeSites(ArrayList<Site> list) {
+  JSONArray arr = new JSONArray();
+  if (list == null) return arr;
+  for (int i = 0; i < list.size(); i++) {
+    Site s = list.get(i);
+    if (s == null) continue;
+    JSONObject o = new JSONObject();
+    o.setInt("id", i);
+    o.setFloat("x", s.x);
+    o.setFloat("y", s.y);
+    o.setBoolean("selected", s.selected);
+    arr.append(o);
+  }
+  return arr;
+}
+
+JSONArray serializeCells(ArrayList<Cell> list) {
+  JSONArray arr = new JSONArray();
+  if (list == null) return arr;
+  for (int i = 0; i < list.size(); i++) {
+    Cell c = list.get(i);
+    if (c == null) continue;
+    JSONObject o = new JSONObject();
+    o.setInt("id", i);
+    o.setInt("siteIndex", c.siteIndex);
+    o.setInt("biomeId", c.biomeId);
+    o.setFloat("elevation", c.elevation);
+    JSONArray verts = new JSONArray();
+    if (c.vertices != null) {
+      for (PVector v : c.vertices) {
+        JSONObject pv = new JSONObject();
+        pv.setFloat("x", v.x);
+        pv.setFloat("y", v.y);
+        verts.append(pv);
+      }
+    }
+    o.setJSONArray("vertices", verts);
+    arr.append(o);
+  }
+  return arr;
+}
+
+JSONArray serializeZones(ArrayList<MapModel.MapZone> list) {
+  JSONArray arr = new JSONArray();
+  if (list == null) return arr;
+  for (int i = 0; i < list.size(); i++) {
+    MapModel.MapZone z = list.get(i);
+    if (z == null) continue;
+    JSONObject o = new JSONObject();
+    o.setInt("id", i);
+    o.setString("name", z.name);
+    o.setInt("col", z.col);
+    o.setFloat("hue01", z.hue01);
+    o.setFloat("sat01", z.sat01);
+    o.setFloat("bri01", z.bri01);
+    JSONArray cellsArr = new JSONArray();
+    if (z.cells != null) {
+      for (Integer ci : z.cells) cellsArr.append(ci);
+    }
+    o.setJSONArray("cells", cellsArr);
+    arr.append(o);
+  }
+  return arr;
+}
+
+JSONArray serializePaths(ArrayList<Path> list) {
+  JSONArray arr = new JSONArray();
+  if (list == null) return arr;
+  for (int i = 0; i < list.size(); i++) {
+    Path p = list.get(i);
+    if (p == null) continue;
+    JSONObject o = new JSONObject();
+    o.setInt("id", i);
+    o.setInt("typeId", p.typeId);
+    o.setString("name", p.name);
+    JSONArray routes = new JSONArray();
+    if (p.routes != null) {
+      for (ArrayList<PVector> seg : p.routes) {
+        JSONArray pts = new JSONArray();
+        if (seg != null) {
+          for (PVector v : seg) {
+            JSONObject pv = new JSONObject();
+            pv.setFloat("x", v.x);
+            pv.setFloat("y", v.y);
+            pts.append(pv);
+          }
+        }
+        routes.append(pts);
+      }
+    }
+    o.setJSONArray("routes", routes);
+    arr.append(o);
+  }
+  return arr;
+}
+
+JSONArray serializeStructures(ArrayList<Structure> list) {
+  JSONArray arr = new JSONArray();
+  if (list == null) return arr;
+  for (int i = 0; i < list.size(); i++) {
+    Structure s = list.get(i);
+    if (s == null) continue;
+    JSONObject o = new JSONObject();
+    o.setInt("id", i);
+    o.setInt("typeId", s.typeId);
+    o.setString("name", s.name);
+    o.setFloat("x", s.x);
+    o.setFloat("y", s.y);
+    o.setFloat("angle", s.angle);
+    o.setFloat("size", s.size);
+    o.setString("shape", s.shape.name());
+    o.setFloat("aspect", s.aspect);
+    o.setFloat("hue01", s.hue01);
+    o.setFloat("sat01", s.sat01);
+    o.setFloat("bri01", s.bri01);
+    o.setFloat("alpha01", s.alpha01);
+    o.setFloat("strokeWeightPx", s.strokeWeightPx);
+    o.setInt("fillCol", s.fillCol);
+    arr.append(o);
+  }
+  return arr;
+}
+
+JSONArray serializeLabels(ArrayList<MapLabel> list) {
+  JSONArray arr = new JSONArray();
+  if (list == null) return arr;
+  for (int i = 0; i < list.size(); i++) {
+    MapLabel l = list.get(i);
+    if (l == null) continue;
+    JSONObject o = new JSONObject();
+    o.setInt("id", i);
+    o.setFloat("x", l.x);
+    o.setFloat("y", l.y);
+    o.setString("text", l.text);
+    o.setString("target", l.target.name());
+    o.setFloat("size", l.size);
+    arr.append(o);
+  }
+  return arr;
+}
+
+ArrayList<PathType> deserializePathTypes(JSONArray arr) {
+  ArrayList<PathType> list = new ArrayList<PathType>();
+  if (arr == null) return list;
+  for (int i = 0; i < arr.size(); i++) {
+    JSONObject o = arr.getJSONObject(i);
+    if (o == null) continue;
+    String name = o.getString("name", "Path");
+    int col = o.getInt("col", color(80));
+    float weight = o.getFloat("weightPx", 2.0f);
+    float minWeight = o.getFloat("minWeightPx", weight * 0.6f);
+    String mode = o.getString("routeMode", PathRouteMode.PATHFIND.name());
+    PathRouteMode rm = mode.equals(PathRouteMode.ENDS.name()) ? PathRouteMode.ENDS : PathRouteMode.PATHFIND;
+    float slope = o.getFloat("slopeBias", 0.0f);
+    boolean avoidWater = o.getBoolean("avoidWater", true);
+    boolean taper = o.getBoolean("taperOn", false);
+    PathType pt = new PathType(name, col, weight, minWeight, rm, slope, avoidWater, taper);
+    list.add(pt);
+  }
+  return list;
+}
+
+ArrayList<ZoneType> deserializeZoneTypes(JSONArray arr) {
+  ArrayList<ZoneType> list = new ArrayList<ZoneType>();
+  if (arr == null) return list;
+  for (int i = 0; i < arr.size(); i++) {
+    JSONObject o = arr.getJSONObject(i);
+    if (o == null) continue;
+    String name = o.getString("name", "Zone");
+    int col = o.getInt("col", color(200));
+    ZoneType z = new ZoneType(name, col);
+    z.hue01 = o.getFloat("hue01", z.hue01);
+    z.sat01 = o.getFloat("sat01", z.sat01);
+    z.bri01 = o.getFloat("bri01", z.bri01);
+    z.updateColorFromHSB();
+    list.add(z);
+  }
+  return list;
+}
+
+ArrayList<Site> deserializeSites(JSONArray arr) {
+  ArrayList<Site> list = new ArrayList<Site>();
+  if (arr == null) return list;
+  for (int i = 0; i < arr.size(); i++) {
+    JSONObject o = arr.getJSONObject(i);
+    if (o == null) continue;
+    float x = o.getFloat("x", 0);
+    float y = o.getFloat("y", 0);
+    Site s = new Site(x, y);
+    s.selected = o.getBoolean("selected", false);
+    list.add(s);
+  }
+  return list;
+}
+
+ArrayList<Cell> deserializeCells(JSONArray arr) {
+  ArrayList<Cell> list = new ArrayList<Cell>();
+  if (arr == null) return list;
+  for (int i = 0; i < arr.size(); i++) {
+    JSONObject o = arr.getJSONObject(i);
+    if (o == null) continue;
+    int siteIdx = o.getInt("siteIndex", -1);
+    int biomeId = o.getInt("biomeId", 0);
+    JSONArray vertsArr = o.getJSONArray("vertices");
+    ArrayList<PVector> verts = new ArrayList<PVector>();
+    if (vertsArr != null) {
+      for (int vi = 0; vi < vertsArr.size(); vi++) {
+        JSONObject pv = vertsArr.getJSONObject(vi);
+        if (pv == null) continue;
+        verts.add(new PVector(pv.getFloat("x", 0), pv.getFloat("y", 0)));
+      }
+    }
+    Cell c = new Cell(siteIdx, verts, biomeId);
+    c.elevation = o.getFloat("elevation", 0.0f);
+    list.add(c);
+  }
+  return list;
+}
+
+ArrayList<MapModel.MapZone> deserializeZones(JSONArray arr) {
+  ArrayList<MapModel.MapZone> list = new ArrayList<MapModel.MapZone>();
+  if (arr == null) return list;
+  for (int i = 0; i < arr.size(); i++) {
+    JSONObject o = arr.getJSONObject(i);
+    if (o == null) continue;
+    String name = o.getString("name", "Zone");
+    int col = o.getInt("col", color(200));
+    MapModel.MapZone z = mapModel.new MapZone(name, col);
+    z.hue01 = o.getFloat("hue01", z.hue01);
+    z.sat01 = o.getFloat("sat01", z.sat01);
+    z.bri01 = o.getFloat("bri01", z.bri01);
+    z.col = hsb01ToRGB(z.hue01, z.sat01, z.bri01);
+    z.cells.clear();
+    JSONArray cellsArr = o.getJSONArray("cells");
+    if (cellsArr != null) {
+      for (int ci = 0; ci < cellsArr.size(); ci++) {
+        z.cells.add(cellsArr.getInt(ci));
+      }
+    }
+    list.add(z);
+  }
+  return list;
+}
+
+ArrayList<Path> deserializePaths(JSONArray arr) {
+  ArrayList<Path> list = new ArrayList<Path>();
+  if (arr == null) return list;
+  for (int i = 0; i < arr.size(); i++) {
+    JSONObject o = arr.getJSONObject(i);
+    if (o == null) continue;
+    Path p = new Path();
+    p.typeId = o.getInt("typeId", 0);
+    p.name = o.getString("name", "Path");
+    JSONArray routesArr = o.getJSONArray("routes");
+    if (routesArr != null) {
+      for (int ri = 0; ri < routesArr.size(); ri++) {
+        JSONArray ptsArr = routesArr.getJSONArray(ri);
+        ArrayList<PVector> seg = new ArrayList<PVector>();
+        if (ptsArr != null) {
+          for (int pi = 0; pi < ptsArr.size(); pi++) {
+            JSONObject pv = ptsArr.getJSONObject(pi);
+            if (pv == null) continue;
+            seg.add(new PVector(pv.getFloat("x", 0), pv.getFloat("y", 0)));
+          }
+        }
+        p.routes.add(seg);
+      }
+    }
+    list.add(p);
+  }
+  return list;
+}
+
+ArrayList<Structure> deserializeStructures(JSONArray arr) {
+  ArrayList<Structure> list = new ArrayList<Structure>();
+  if (arr == null) return list;
+  for (int i = 0; i < arr.size(); i++) {
+    JSONObject o = arr.getJSONObject(i);
+    if (o == null) continue;
+    float x = o.getFloat("x", 0);
+    float y = o.getFloat("y", 0);
+    Structure s = new Structure(x, y);
+    s.typeId = o.getInt("typeId", 0);
+    s.name = o.getString("name", "");
+    s.angle = o.getFloat("angle", 0);
+    s.size = o.getFloat("size", s.size);
+    try { s.shape = StructureShape.valueOf(o.getString("shape", s.shape.name())); } catch (Exception e) {}
+    s.aspect = o.getFloat("aspect", s.aspect);
+    s.hue01 = o.getFloat("hue01", s.hue01);
+    s.sat01 = o.getFloat("sat01", s.sat01);
+    s.bri01 = o.getFloat("bri01", s.bri01);
+    s.alpha01 = o.getFloat("alpha01", s.alpha01);
+    s.strokeWeightPx = o.getFloat("strokeWeightPx", s.strokeWeightPx);
+    s.fillCol = o.getInt("fillCol", s.fillCol);
+    s.updateFillColor();
+    list.add(s);
+  }
+  return list;
+}
+
+ArrayList<MapLabel> deserializeLabels(JSONArray arr) {
+  ArrayList<MapLabel> list = new ArrayList<MapLabel>();
+  if (arr == null) return list;
+  for (int i = 0; i < arr.size(); i++) {
+    JSONObject o = arr.getJSONObject(i);
+    if (o == null) continue;
+    float x = o.getFloat("x", 0);
+    float y = o.getFloat("y", 0);
+    String text = o.getString("text", "");
+    String targetStr = o.getString("target", LabelTarget.FREE.name());
+    LabelTarget target = LabelTarget.FREE;
+    try { target = LabelTarget.valueOf(targetStr); } catch (Exception e) {}
+    MapLabel l = new MapLabel(x, y, text, target);
+    l.size = o.getFloat("size", l.size);
+    list.add(l);
+  }
+  return list;
+}
+
+void recomputeWorldBoundsFromData() {
+  float minXLocal = Float.MAX_VALUE;
+  float minYLocal = Float.MAX_VALUE;
+  float maxXLocal = -Float.MAX_VALUE;
+  float maxYLocal = -Float.MAX_VALUE;
+
+  if (mapModel.cells != null) {
+    for (Cell c : mapModel.cells) {
+      if (c == null || c.vertices == null) continue;
+      for (PVector v : c.vertices) {
+        if (v == null) continue;
+        minXLocal = min(minXLocal, v.x);
+        minYLocal = min(minYLocal, v.y);
+        maxXLocal = max(maxXLocal, v.x);
+        maxYLocal = max(maxYLocal, v.y);
+      }
+    }
+  }
+  if (mapModel.sites != null) {
+    for (Site s : mapModel.sites) {
+      if (s == null) continue;
+      minXLocal = min(minXLocal, s.x);
+      minYLocal = min(minYLocal, s.y);
+      maxXLocal = max(maxXLocal, s.x);
+      maxYLocal = max(maxYLocal, s.y);
+    }
+  }
+
+  if (minXLocal == Float.MAX_VALUE || maxXLocal == -Float.MAX_VALUE) {
+    mapModel.minX = 0;
+    mapModel.maxX = 1;
+    mapModel.minY = 0;
+    mapModel.maxY = 1;
+  } else {
+    mapModel.minX = minXLocal;
+    mapModel.maxX = maxXLocal;
+    mapModel.minY = minYLocal;
+    mapModel.maxY = maxYLocal;
+  }
 }
 
 void drawPathSnappingPoints() {

@@ -6,6 +6,9 @@ class ExportLayout {
   int bodyY;
   IntRect pngBtn;
   IntRect scaleSlider;
+  IntRect mapExportBtn;
+  IntRect mapImportBtn;
+  int mapSectionY;
   int statusY;
 }
 
@@ -21,6 +24,13 @@ ExportLayout buildExportLayout() {
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   l.bodyY = curY;
   curY += PANEL_LABEL_H * 2 + PANEL_SECTION_GAP;
+
+  l.mapSectionY = curY;
+  curY += PANEL_LABEL_H + PANEL_ROW_GAP;
+  l.mapExportBtn = new IntRect(l.panel.x + PANEL_PADDING, curY, 120, PANEL_BUTTON_H);
+  l.mapImportBtn = new IntRect(l.mapExportBtn.x + l.mapExportBtn.w + PANEL_ROW_GAP, curY, 120, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
   l.statusY = curY;
   curY += PANEL_LABEL_H + PANEL_SECTION_GAP;
   l.panel.h = curY - l.panel.y;
@@ -54,6 +64,18 @@ void drawExportPanel() {
   fill(60);
   textAlign(LEFT, TOP);
   text("Uses Rendering tab toggles (biomes, zones, paths, etc.)\nand current viewport + padding.", labelX, layout.bodyY);
+
+  fill(0);
+  textAlign(LEFT, TOP);
+  text("Map data (JSON)", labelX, layout.mapSectionY);
+  drawBevelButton(layout.mapExportBtn.x, layout.mapExportBtn.y, layout.mapExportBtn.w, layout.mapExportBtn.h, false);
+  drawBevelButton(layout.mapImportBtn.x, layout.mapImportBtn.y, layout.mapImportBtn.w, layout.mapImportBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Export map", layout.mapExportBtn.x + layout.mapExportBtn.w / 2, layout.mapExportBtn.y + layout.mapExportBtn.h / 2);
+  text("Import map", layout.mapImportBtn.x + layout.mapImportBtn.w / 2, layout.mapImportBtn.y + layout.mapImportBtn.h / 2);
+  registerUiTooltip(layout.mapExportBtn, tooltipFor("export_map_json"));
+  registerUiTooltip(layout.mapImportBtn, tooltipFor("import_map_json"));
 
   fill(30);
   textAlign(LEFT, TOP);
