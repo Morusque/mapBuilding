@@ -44,6 +44,7 @@ ZonePreset[] ZONE_PRESETS = new ZonePreset[] {
   new ZonePreset("Snow",        color(235, 240, 245)),
   new ZonePreset("Wetland",     color(165, 190, 155)),
   new ZonePreset("Magma",       color(190, 70, 40)),
+  new ZonePreset("Wet",         color(80, 80, 150)),
   new ZonePreset("Shrubland",   color(195, 205, 170)),
   new ZonePreset("Clay Flats",  color(198, 176, 156)),
   new ZonePreset("Savannah",    color(215, 196, 128)),

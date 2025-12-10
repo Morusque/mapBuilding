@@ -77,7 +77,7 @@ final int SCROLLBAR_W = 14;
 final int SCROLLBAR_THUMB_MIN = 24;
 final int SCROLL_STEP_PX = 24;
 final float FLATTEST_BIAS_MIN = 0.0f;
-final float FLATTEST_BIAS_MAX = 500.0f;
+final float FLATTEST_BIAS_MAX = 1000.0f;
 
 // Cells (site seeds) generation config
 PlacementMode[] placementModes = {
