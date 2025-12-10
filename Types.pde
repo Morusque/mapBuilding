@@ -131,8 +131,7 @@ PathTypePreset[] PATH_TYPE_PRESETS = new PathTypePreset[] {
   new PathTypePreset("Rail",    color(70, 70, 70),    2.8f, 1.2f, PathRouteMode.PATHFIND, 300.0f, true,  false),
   new PathTypePreset("Pipeline",color(120, 120, 120), 2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,   true,  false),
   new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,   false, false),
-  new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,   false, false),
-  new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,   false, false) 
+  new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,   false, false)
 };
 
 // ---------- Color helpers for HSB<->RGB in [0..1] ----------
