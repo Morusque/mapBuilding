@@ -133,6 +133,7 @@ boolean siteDirtyDuringDrag = false;
 float renderPaddingPct = 0.01f; // fraction of min(screenW, screenH) cropped from all sides
 float exportScale = 2.0f; // multiplier for PNG export resolution
 String lastExportStatus = "";
+boolean renderContoursDirty = true;
 
 float labelSizeDefault() {
   return labelSizeDefaultVal;
@@ -275,7 +276,6 @@ void applyRenderPreset(int idx) {
   renderShowStructures = renderSettings.showStructures;
   renderShowZoneOutlines = renderSettings.zoneStrokeAlpha01 > 0.001f;
   renderShowLabels = renderSettings.showLabelsArbitrary;
-  triggerRenderPrerequisites();
 }
 
 void applyBiomeGeneration() {
@@ -354,8 +354,6 @@ void applyBiomeGeneration() {
 
 void triggerRenderPrerequisites() {
   if (mapModel == null || renderSettings == null) return;
-  mapModel.invalidateContourCaches();
-
   if (renderSettings.waterRippleCount > 0 && renderSettings.waterContourAlpha01 > 1e-4f) {
     int cols = max(80, min(200, (int)(sqrt(max(1, mapModel.cells.size())))));
     int rows = cols;
@@ -364,6 +362,14 @@ void triggerRenderPrerequisites() {
   if (renderSettings.elevationLinesCount > 0 && renderSettings.elevationLinesAlpha01 > 1e-4f) {
     mapModel.getElevationGridForRender(90, 90, seaLevel);
   }
+}
+
+void triggerRenderPrerequisitesIfDirty() {
+  if (mapModel == null || renderSettings == null) return;
+  if (!renderContoursDirty) return;
+  if (mapModel.isContourJobRunning()) return;
+  renderContoursDirty = false;
+  triggerRenderPrerequisites();
 }
 
 int ensureBiomeType(String name) {
@@ -516,6 +522,7 @@ void draw() {
   boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER);
   boolean renderView = (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT);
   if (renderView) {
+    triggerRenderPrerequisitesIfDirty();
     drawRenderView(this);
   } else if (currentTool == Tool.EDIT_PATHS) {
     mapModel.drawCellsRender(this, showBorders, true);

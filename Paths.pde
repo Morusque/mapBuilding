@@ -42,6 +42,8 @@ class Path {
         hsbScratch[1] = constrain(hsbScratch[1] * sat, 0, 1);
         int col = hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]);
         app.stroke(col);
+        app.strokeCap(PConstants.ROUND);
+        app.strokeJoin(PConstants.ROUND);
         app.strokeWeight(max(1.5f, w) / viewport.zoom);
         app.line(a.x, a.y, b.x, b.y);
         app.popStyle();
@@ -79,6 +81,8 @@ class Path {
     app.pushStyle();
     app.noFill();
     app.stroke(strokeCol);
+    app.strokeCap(PConstants.ROUND);
+    app.strokeJoin(PConstants.ROUND);
     app.strokeWeight(max(2.0f, weightPx) / viewport.zoom); // keep preview visible
 
     for (int i = 0; i < seg.size() - 1; i++) {

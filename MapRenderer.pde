@@ -20,6 +20,8 @@ class MapRenderer {
     app.pushStyle();
     app.noFill();
     app.stroke(0);
+    app.strokeCap(PConstants.ROUND);
+    app.strokeJoin(PConstants.ROUND);
     app.strokeWeight(1.5f / viewport.zoom);
     app.rect(model.minX, model.minY, model.maxX - model.minX, model.maxY - model.minY);
     app.popStyle();
@@ -50,6 +52,8 @@ class MapRenderer {
   void drawCellsRender(PApplet app, boolean showBorders, boolean desaturate) {
     if (model.cells == null) return;
     app.pushStyle();
+    app.strokeCap(PConstants.ROUND);
+    app.strokeJoin(PConstants.ROUND);
     for (Cell c : model.cells) {
       if (c.vertices == null || c.vertices.size() < 3) continue;
       int col = color(230);
@@ -245,6 +249,8 @@ class MapRenderer {
     HashSet<String> drawn = new HashSet<String>();
 
     app.pushStyle();
+    app.strokeCap(PConstants.ROUND);
+    app.strokeJoin(PConstants.ROUND);
     app.noFill();
 
     for (int ci = 0; ci < n; ci++) {
@@ -521,6 +527,8 @@ class MapRenderer {
     if (s.cellBorderAlpha01 > 1e-4f) {
       app.stroke(0, 0, 0, s.cellBorderAlpha01 * 255);
       app.strokeWeight(1.0f / viewport.zoom);
+      app.strokeCap(PConstants.ROUND);
+      app.strokeJoin(PConstants.ROUND);
       app.noFill();
       for (Cell c : model.cells) {
         if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
@@ -648,6 +656,8 @@ class MapRenderer {
         float strokePx = max(0.8f, s.waterContourSizePx) / max(1e-6f, viewport.zoom);
         app.pushStyle();
         app.noFill();
+        app.strokeCap(PConstants.ROUND);
+        app.strokeJoin(PConstants.ROUND);
         app.strokeWeight(strokePx);
         for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
           float fade = (maxIso <= 1e-6f) ? 1.0f : 1.0f - ((iso - spacingWorld) / maxIso);
@@ -670,7 +680,11 @@ class MapRenderer {
         float step = range / max(1, s.elevationLinesCount);
         float start = seaLevel + step;
         int strokeCol = app.color(0, 0, 0, s.elevationLinesAlpha01 * 255);
+        app.pushStyle();
+        app.strokeCap(PConstants.ROUND);
+        app.strokeJoin(PConstants.ROUND);
         drawContourSet(app, grid, start, grid.max, step, strokeCol);
+        app.popStyle();
       }
     }
 
@@ -988,8 +1002,7 @@ class MapRenderer {
       float width;
       int col;
       float alpha;
-      boolean positiveSide;
-      Lane(float w, int ccol, float a, boolean pos) { width = w; col = ccol; alpha = a; positiveSide = pos; }
+      Lane(float w, int ccol, float a) { width = w; col = ccol; alpha = a;}
     }
 
     for (int ci = 0; ci < n; ci++) {
@@ -1084,7 +1097,7 @@ class MapRenderer {
             hsb[1] = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
             hsb[2] = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
             int colZ = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
-            lanesPos.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01, true));
+            lanesPos.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01));
           }
           for (int zId : listB) {
             if (zId < 0 || zId >= model.zones.size()) continue;
@@ -1094,7 +1107,7 @@ class MapRenderer {
             hsb[1] = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
             hsb[2] = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
             int colZ = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
-            lanesNeg.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01, false));
+            lanesNeg.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01));
           }
         }
 
@@ -1106,7 +1119,7 @@ class MapRenderer {
               hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
               int col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
               float alpha = (aWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
-              if (alpha > 1e-4f) lanesPos.add(new Lane(biomeW, col, alpha, true));
+              if (alpha > 1e-4f) lanesPos.add(new Lane(biomeW, col, alpha));
             }
           }
           if (biomeB >= 0 && biomeB < model.biomeTypes.size()) {
@@ -1116,15 +1129,15 @@ class MapRenderer {
               hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
               int col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
               float alpha = (bWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
-              if (alpha > 1e-4f) lanesNeg.add(new Lane(biomeW, col, alpha, false));
+              if (alpha > 1e-4f) lanesNeg.add(new Lane(biomeW, col, alpha));
             }
           }
         }
 
         if (drawWater && waterDiff) {
           int coastCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterContourAlpha01);
-          if (aWater) lanesPos.add(new Lane(waterW, coastCol, s.waterContourAlpha01, true));
-          else lanesNeg.add(new Lane(waterW, coastCol, s.waterContourAlpha01, false));
+          if (aWater) lanesPos.add(new Lane(waterW, coastCol, s.waterContourAlpha01));
+          else lanesNeg.add(new Lane(waterW, coastCol, s.waterContourAlpha01));
         }
 
         Comparator<Lane> cmp = new Comparator<Lane>() {
@@ -1138,6 +1151,8 @@ class MapRenderer {
           if (l.alpha <= 1e-4f || l.width <= 1e-4f) continue;
           float laneOff = offsetPos + l.width * 0.5f;
           app.stroke(l.col, l.alpha * 255);
+          app.strokeCap(PConstants.ROUND);
+          app.strokeJoin(PConstants.ROUND);
           app.strokeWeight(l.width);
           app.line(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, b.x + nrm.x * laneOff, b.y + nrm.y * laneOff);
           offsetPos += l.width + laneGap;
@@ -1147,6 +1162,8 @@ class MapRenderer {
           if (l.alpha <= 1e-4f || l.width <= 1e-4f) continue;
           float laneOff = offsetNeg + l.width * 0.5f;
           app.stroke(l.col, l.alpha * 255);
+          app.strokeCap(PConstants.ROUND);
+          app.strokeJoin(PConstants.ROUND);
           app.strokeWeight(l.width);
           app.line(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, b.x - nrm.x * laneOff, b.y - nrm.y * laneOff);
           offsetNeg += l.width + laneGap;

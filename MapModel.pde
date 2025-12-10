@@ -1462,6 +1462,8 @@ class MapModel {
     if (paths.isEmpty()) return;
 
     app.pushStyle();
+    app.strokeCap(PConstants.ROUND);
+    app.strokeJoin(PConstants.ROUND);
     app.noFill();
     HashMap<Integer, HashMap<String, Float>> taperCache = new HashMap<Integer, HashMap<String, Float>>();
 
@@ -1532,6 +1534,8 @@ class MapModel {
   void drawPathsRender(PApplet app, RenderSettings s) {
     if (paths.isEmpty() || s == null) return;
     app.pushStyle();
+    app.strokeCap(PConstants.ROUND);
+    app.strokeJoin(PConstants.ROUND);
     app.noFill();
     HashMap<Integer, HashMap<String, Float>> taperCache = new HashMap<Integer, HashMap<String, Float>>();
     float[] hsbScratch = new float[3];
@@ -2981,7 +2985,7 @@ class MapModel {
 
     // Multi-source weighted expansion to propagate seeds into remaining None cells
     float elevationPenaltyScale = 60.0f;
-    float waterPenalty = 12.0f;
+    float waterPenalty = 20.0f;
     float zoneBoundaryPenalty = 6.0f;
     float pathCrossPenalty = 10.0f;
 
@@ -3499,7 +3503,7 @@ class MapModel {
     // Weighted expansion: discourage big elevation jumps and biome changes.
     float biomePenalty = 6.0f;
     float elevationPenaltyScale = 60.0f;
-    float waterPenalty = 12.0f;
+    float waterPenalty = 70.0f;
 
     while (!frontier.isEmpty()) {
       int ci = frontier.poll();

@@ -598,6 +598,7 @@ void mousePressed() {
     } else if (currentTool == Tool.EDIT_ELEVATION) {
       float dir = elevationBrushRaise ? 1 : -1;
       mapModel.applyElevationBrush(worldPos.x, worldPos.y, elevationBrushRadius, elevationBrushStrength * dir, seaLevel);
+      renderContoursDirty = true;
     } else if (currentTool == Tool.EDIT_PATHS) {
       if (pathEraserMode) {
         mapModel.erasePathSegments(worldPos.x, worldPos.y, pathEraserRadius);
@@ -1365,7 +1366,11 @@ boolean handleElevationPanelClick(int mx, int my) {
   // Sea level
   if (layout.seaSlider.contains(mx, my)) {
     float t = constrain((mx - layout.seaSlider.x) / (float)layout.seaSlider.w, 0, 1);
-    seaLevel = lerp(-1.2f, 1.2f, t);
+    float newSea = lerp(-1.2f, 1.2f, t);
+    if (abs(newSea - seaLevel) > 1e-6f) {
+      seaLevel = newSea;
+      renderContoursDirty = true;
+    }
     activeSlider = SLIDER_ELEV_SEA;
     return true;
   }
