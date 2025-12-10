@@ -83,7 +83,7 @@ boolean isInActivePanel(int mx, int my) {
   return (panel != null && panel.contains(mx, my));
 }
 
-boolean handleToolButtonClick(int mx, int my) {
+boolean handleToolButtonClick(int my) {
   int barY = TOP_BAR_TOTAL;
   int barH = TOOL_BAR_HEIGHT;
 
@@ -128,7 +128,6 @@ boolean handleToolButtonClick(int mx, int my) {
 }
 
 // ----- Sites panel click -----
-
 boolean handleSitesPanelClick(int mx, int my) {
   if (!isInSitesPanel(mx, my)) return false;
   SitesLayout layout = buildSitesLayout();
@@ -331,7 +330,7 @@ boolean handleZonesPanelClick(int mx, int my) {
   if (queueButtonAction(layout.regenerateBtn, new Runnable() { public void run() {
     int target = max(5, mapModel.zones.size());
     mapModel.regenerateRandomZones(target);
-    activeZoneIndex = !mapModel.zones.isEmpty() ? 0 : -1;
+    activeZoneIndex = -1;
     editingZoneNameIndex = -1;
   }})) return true;
 
@@ -501,7 +500,7 @@ void mousePressed() {
 
   // Tool buttons
   if (mouseButton == LEFT) {
-    if (handleToolButtonClick(mouseX, mouseY)) return;
+    if (handleToolButtonClick(mouseY)) return;
   }
 
   // Snap settings (Structures mode only)

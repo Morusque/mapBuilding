@@ -83,19 +83,10 @@ void drawSnapSettingsPanel() {
 
   // Elevation divisions slider
   IntRect es = l.elevationSlider;
-  stroke(160);
-  fill(230);
-  rect(es.x, es.y, es.w, es.h, 4);
   int divMin = 2;
   int divMax = 24;
   float t = constrain((snapElevationDivisions - divMin) / (float)(divMax - divMin), 0, 1);
-  float sx = es.x + t * es.w;
-  fill(40);
-  noStroke();
-  ellipse(sx, es.y + es.h / 2.0f, es.h * 0.9f, es.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Elevation divisions: " + snapElevationDivisions, es.x, es.y - 4);
+  drawSlider(es, t, "Elevation divisions: " + snapElevationDivisions);
   registerUiTooltip(es, tooltipFor("snap_elevation_divisions"));
 }
 
@@ -157,89 +148,23 @@ void drawSitesPanel() {
 
   // ---------- Density slider ----------
   IntRect d = layout.densitySlider;
-  stroke(160);
-  fill(230);
-  rect(d.x, d.y, d.w, d.h, 4);
-
   float density01 = constrain(siteTargetCount / (float)MAX_SITE_COUNT, 0, 1);
-  float densityHandleX = d.x + density01 * d.w;
-  float handleW = 8;
-
-  fill(80);
-  noStroke();
-  rect(densityHandleX - handleW / 2, d.y - 2, handleW, d.h + 4, 4);
-
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Density: " + siteTargetCount + " cells", d.x, d.y - 4);
+  drawSlider(d, density01, "Density: " + siteTargetCount + " cells");
   registerUiTooltip(d, tooltipFor("site_density"));
 
   // ---------- Fuzz slider (0..0.3) ----------
   IntRect f = layout.fuzzSlider;
-
-  stroke(160);
-  fill(230);
-  rect(f.x, f.y, f.w, f.h, 4);
-
   float fuzzNorm = (siteFuzz <= 0) ? 0 : constrain(siteFuzz / 0.3f, 0, 1);
-  float fuzzHandleX = f.x + fuzzNorm * f.w;
-
-  fill(80);
-  noStroke();
-  rect(fuzzHandleX - handleW / 2, f.y - 2, handleW, f.h + 4, 4);
-
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Fuzz: " + nf(siteFuzz, 1, 2) + " (0 = none, 0.3 = strong jitter)",
-       f.x, f.y - 4);
+  drawSlider(f, fuzzNorm, "Fuzz: " + nf(siteFuzz, 1, 2) + " (0 = none, 0.3 = strong jitter)");
   registerUiTooltip(f, tooltipFor("site_fuzz"));
 
   // ---------- Placement mode slider (DISCRETE) ----------
   IntRect m = layout.modeSlider;
-
-  // Track
-  stroke(160);
-  fill(225);
-  rect(m.x, m.y, m.w, m.h, 4);
-
   int modeCount = placementModes.length;
   if (modeCount < 1) modeCount = 1;
-
-  float stepW = (modeCount > 1) ?
-    (m.w / (float)(modeCount - 1)) :
-    0;
-
-  // Tick marks
-  stroke(120);
-  for (int i = 0; i < modeCount; i++) {
-    float tx = m.x + i * stepW;
-    float ty0 = m.y;
-    float ty1 = m.y + m.h;
-    line(tx, ty0, tx, ty1);
-  }
-
-  // Handle (circle)
-  float modeHandleX;
-  if (placementModeIndex <= 0) {
-    modeHandleX = m.x;
-  } else if (placementModeIndex >= modeCount - 1) {
-    modeHandleX = m.x + m.w;
-  } else {
-    modeHandleX = m.x + placementModeIndex * stepW;
-  }
-
-  float knobRadius = m.h * 0.9f;
-  float knobY = m.y + m.h / 2.0f;
-
-  fill(40);
-  noStroke();
-  ellipse(modeHandleX, knobY, knobRadius, knobRadius);
-
-  // Mode name label
   String modeName = placementModeLabel(currentPlacementMode());
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Placement: " + modeName, m.x, m.y - 4);
+  float tMode = constrain(placementModeIndex / max(1.0f, modeCount - 1.0f), 0, 1);
+  drawSelectorSlider(m, tMode, "Placement: " + modeName, modeCount);
   registerUiTooltip(m, tooltipFor("site_mode"));
 
   // ---------- Generate button ----------
@@ -378,16 +303,7 @@ void drawBiomesPanel() {
 
   // Generation value slider (0..1 displayed)
   IntRect gv = layout.genValueSlider;
-  stroke(160);
-  fill(230);
-  rect(gv.x, gv.y, gv.w, gv.h, 4);
-  float gvx = gv.x + constrain(biomeGenerateValue01, 0, 1) * gv.w;
-  fill(40);
-  noStroke();
-  ellipse(gvx, gv.y + gv.h / 2.0f, gv.h * 0.9f, gv.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Value (" + nf(biomeGenerateValue01, 1, 2) + ")", gv.x, gv.y - 4);
+  drawSlider(gv, constrain(biomeGenerateValue01, 0, 1), "Value (" + nf(biomeGenerateValue01, 1, 2) + ")");
   registerUiTooltip(gv, tooltipFor("biome_gen_value"));
 
   // "Set to water level" helper
@@ -484,43 +400,15 @@ void drawBiomesPanel() {
     ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
 
     IntRect hue = layout.hueSlider;
-
-    // Track
-    stroke(160);
-    fill(230);
-    rect(hue.x, hue.y, hue.w, hue.h, 4);
-
-    // Handle position from active.hue01
     float hNorm = constrain(active.hue01, 0, 1);
-    float handleX = hue.x + hNorm * hue.w;
-    float handleR = hue.h * 0.9f;
-    float handleY = hue.y + hue.h / 2.0f;
-
-    fill(40);
-    noStroke();
-    ellipse(handleX, handleY, handleR, handleR);
-
-    // Label
-    fill(0);
-    textAlign(LEFT, BOTTOM);
-    text("Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2),
-         hue.x, hue.y - 4);
+    drawSlider(hue, hNorm, "Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2));
     registerUiTooltip(hue, tooltipFor("biome_hue"));
   }
 
   // Brush radius slider
   IntRect brush = layout.brushSlider;
-  stroke(160);
-  fill(230);
-  rect(brush.x, brush.y, brush.w, brush.h, 4);
   float bNorm = constrain(map(zoneBrushRadius, 0.01f, 0.15f, 0, 1), 0, 1);
-  float bx = brush.x + bNorm * brush.w;
-  fill(40);
-  noStroke();
-  ellipse(bx, brush.y + brush.h / 2.0f, brush.h * 0.9f, brush.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Brush radius", brush.x, brush.y - 4);
+  drawSlider(brush, bNorm, "Brush radius");
 
   drawControlsHint(layout.panel,
                    "left-click: paint/fill",
@@ -668,16 +556,8 @@ void drawZonesListPanel() {
       text(az.name, row.nameRect.x + 6, row.nameRect.y + row.nameRect.h / 2);
     }
 
-    stroke(160);
-    fill(230);
-    rect(row.hueSlider.x, row.hueSlider.y, row.hueSlider.w, row.hueSlider.h, 4);
     float hNorm = constrain(az.hue01, 0, 1);
-    float hx = row.hueSlider.x + hNorm * row.hueSlider.w;
-    float hr = row.hueSlider.h * 0.9f;
-    float hy = row.hueSlider.y + row.hueSlider.h / 2.0f;
-    fill(40);
-    noStroke();
-    ellipse(hx, hy, hr, hr);
+    drawSlider(row.hueSlider, hNorm, "");
   }
 
   drawScrollbar(layout.scrollbar, layout.contentH, zonesListScroll);
@@ -735,17 +615,8 @@ void drawZonesPanel() {
 
   // Brush radius slider
   IntRect brush = layout.brushSlider;
-  stroke(160);
-  fill(230);
-  rect(brush.x, brush.y, brush.w, brush.h, 4);
   float bNorm = constrain(map(zoneBrushRadius, 0.01f, 0.15f, 0, 1), 0, 1);
-  float bx = brush.x + bNorm * brush.w;
-  fill(40);
-  noStroke();
-  ellipse(bx, brush.y + brush.h / 2.0f, brush.h * 0.9f, brush.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Brush radius", brush.x, brush.y - 4);
+  drawSlider(brush, bNorm, "Brush radius");
   registerUiTooltip(brush, tooltipFor("zones_brush"));
 
   drawControlsHint(layout.panel,
@@ -962,44 +833,16 @@ void drawPathsPanel() {
 
   // Route mode slider (discrete)
   IntRect rs = layout.routeSlider;
-  stroke(160);
-  fill(225);
-  rect(rs.x, rs.y, rs.w, rs.h, 4);
   String[] modes = { "Ends", "Pathfind" };
   int modeCount = modes.length;
-  float stepW = (modeCount > 1) ? (rs.w / (float)(modeCount - 1)) : 0;
-  stroke(120);
-  for (int i = 0; i < modeCount; i++) {
-    float tx = rs.x + i * stepW;
-    line(tx, rs.y, tx, rs.y + rs.h);
-  }
-  float handleX;
-  if (pathRouteModeIndex <= 0) handleX = rs.x;
-  else if (pathRouteModeIndex >= modeCount - 1) handleX = rs.x + rs.w;
-  else handleX = rs.x + pathRouteModeIndex * stepW;
-  float knobR = rs.h * 0.9f;
-  float knobY = rs.y + rs.h / 2.0f;
-  fill(40);
-  noStroke();
-  ellipse(handleX, knobY, knobR, knobR);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Route mode: " + modes[pathRouteModeIndex], rs.x, rs.y - 4);
+  float tRoute = constrain(pathRouteModeIndex / max(1.0f, modeCount - 1.0f), 0, 1);
+  drawSelectorSlider(rs, tRoute, "Route mode: " + modes[pathRouteModeIndex], modeCount);
   registerUiTooltip(rs, tooltipFor("paths_route_mode"));
 
   // Flattest bias slider (only relevant for Flattest mode)
   IntRect fs = layout.flattestSlider;
-  stroke(160);
-  fill(230);
-  rect(fs.x, fs.y, fs.w, fs.h, 4);
   float fNorm = constrain(map(flattestSlopeBias, FLATTEST_BIAS_MIN, FLATTEST_BIAS_MAX, 0, 1), 0, 1);
-  float fx = fs.x + fNorm * fs.w;
-  fill(40);
-  noStroke();
-  ellipse(fx, fs.y + fs.h / 2.0f, fs.h * 0.9f, fs.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Flattest slope bias (" + nf(flattestSlopeBias, 1, 2) + ")", fs.x, fs.y - 4);
+  drawSlider(fs, fNorm, "Flattest slope bias (" + nf(flattestSlopeBias, 1, 2) + ")");
   registerUiTooltip(fs, tooltipFor("paths_flattest"));
 
   // Avoid water checkbox
@@ -1069,52 +912,24 @@ void drawPathsPanel() {
     registerUiTooltip(nf, tooltipFor("paths_type_name"));
 
     IntRect hue = layout.typeHueSlider;
-    stroke(160);
-    fill(230);
-    rect(hue.x, hue.y, hue.w, hue.h, 4);
     float hNorm = constrain(active.hue01, 0, 1);
-    handleX = hue.x + hNorm * hue.w;
-    float handleR = hue.h * 0.9f;
-    float handleY = hue.y + hue.h / 2.0f;
-    fill(40);
-    noStroke();
-    ellipse(handleX, handleY, handleR, handleR);
-    fill(0);
-    textAlign(LEFT, BOTTOM);
-    text("Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2),
-         hue.x, hue.y - 4);
+    drawSlider(hue, hNorm, "Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2));
 
     // Weight slider per type
     IntRect weight = layout.typeWeightSlider;
-    stroke(160);
-    fill(230);
-    rect(weight.x, weight.y, weight.w, weight.h, 4);
     float wNorm = constrain(map(active.weightPx, 0.5f, 8.0f, 0, 1), 0, 1);
-    float wx = weight.x + wNorm * weight.w;
-    fill(40);
-    noStroke();
-    ellipse(wx, weight.y + weight.h / 2.0f, weight.h * 0.9f, weight.h * 0.9f);
-    fill(0);
-    text("Weight for \"" + active.name + "\" (px)", weight.x, weight.y - 4);
+    drawSlider(weight, wNorm, "Weight for \"" + active.name + "\" (px)");
     registerUiTooltip(weight, tooltipFor("paths_type_weight"));
 
   // Min weight slider per type
   IntRect minw = layout.typeMinWeightSlider;
-  stroke(160);
-  fill(230);
-  rect(minw.x, minw.y, minw.w, minw.h, 4);
     float minNorm;
     if (abs(active.weightPx - 0.5f) < 1e-6f) {
       minNorm = 0; // avoid map() divide-by-zero when range collapses
     } else {
       minNorm = constrain(map(active.minWeightPx, 0.5f, active.weightPx, 0, 1), 0, 1);
     }
-    float minx = minw.x + minNorm * minw.w;
-    fill(40);
-    noStroke();
-    ellipse(minx, minw.y + minw.h / 2.0f, minw.h * 0.9f, minw.h * 0.9f);
-    fill(0);
-    text("Min weight (px)", minw.x, minw.y - 4);
+    drawSlider(minw, minNorm, "Min weight (px)");
     registerUiTooltip(minw, tooltipFor("paths_min_weight"));
 
   // Taper toggle per type
@@ -1304,9 +1119,6 @@ void drawElevationPanel() {
 
   // Noise controls stacked
   IntRect noise = layout.noiseSlider;
-  stroke(160);
-  fill(230);
-  rect(noise.x, noise.y, noise.w, noise.h, 4);
   float nNorm = constrain(map(elevationNoiseScale, 1.0f, 12.0f, 0, 1), 0, 1);
   drawSlider(noise, nNorm, "Noise scale");
   registerUiTooltip(noise, tooltipFor("elevation_noise"));
@@ -1447,18 +1259,9 @@ void drawLabelsListPanel() {
 
   // Size slider
   IntRect ss = layout.sizeSlider;
-  stroke(160);
-  fill(230);
-  rect(ss.x, ss.y, ss.w, ss.h, 4);
   float sizeNorm = map(labelSizeDefault(), 8, 40, 0, 1);
   sizeNorm = constrain(sizeNorm, 0, 1);
-  float sx = ss.x + sizeNorm * ss.w;
-  fill(40);
-  noStroke();
-  ellipse(sx, ss.y + ss.h / 2.0f, ss.h * 0.9f, ss.h * 0.9f);
-  fill(10);
-  textAlign(LEFT, BOTTOM);
-  text("Size " + nf(labelSizeDefault(), 1, 0), ss.x, ss.y - 4);
+  drawSlider(ss, sizeNorm, "Size " + nf(labelSizeDefault(), 1, 0));
   registerUiTooltip(ss, tooltipFor("labels_size"));
   curY = ss.y + ss.h + PANEL_SECTION_GAP;
 
@@ -1582,48 +1385,21 @@ void drawStructuresPanelUI() {
 
   // Size slider
   IntRect sz = layout.sizeSlider;
-  stroke(160);
-  fill(230);
-  rect(sz.x, sz.y, sz.w, sz.h, 4);
   float sNorm = constrain(map(structureSize, 0.01f, 0.2f, 0, 1), 0, 1);
-  float sx = sz.x + sNorm * sz.w;
-  fill(40);
-  noStroke();
-  ellipse(sx, sz.y + sz.h / 2.0f, sz.h * 0.9f, sz.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Size", sz.x, sz.y - 4);
+  drawSlider(sz, sNorm, "Size");
   registerUiTooltip(sz, tooltipFor("structures_size"));
 
   // Angle offset slider (-180..180 deg)
   IntRect ang = layout.angleSlider;
-  stroke(160);
-  fill(230);
-  rect(ang.x, ang.y, ang.w, ang.h, 4);
   float angDeg = degrees(structureAngleOffsetRad);
   float aNorm = constrain(map(angDeg, -180.0f, 180.0f, 0, 1), 0, 1);
-  float ax = ang.x + aNorm * ang.w;
-  fill(40);
-  noStroke();
-  ellipse(ax, ang.y + ang.h / 2.0f, ang.h * 0.9f, ang.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Angle offset (" + nf(angDeg, 1, 1) + " deg)", ang.x, ang.y - 4);
+  drawSlider(ang, aNorm, "Angle offset (" + nf(angDeg, 1, 1) + " deg)", true);
   registerUiTooltip(ang, tooltipFor("structures_angle"));
 
   // Rectangle ratio slider (width/height)
   IntRect ratio = layout.ratioSlider;
-  stroke(160);
-  fill(230);
-  rect(ratio.x, ratio.y, ratio.w, ratio.h, 4);
   float rNorm = constrain(map(structureAspectRatio, 0.3f, 3.0f, 0, 1), 0, 1);
-  float rx = ratio.x + rNorm * ratio.w;
-  fill(40);
-  noStroke();
-  ellipse(rx, ratio.y + ratio.h / 2.0f, ratio.h * 0.9f, ratio.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Rectangle ratio (W/H): " + nf(structureAspectRatio, 1, 2), ratio.x, ratio.y - 4);
+  drawSlider(ratio, rNorm, "Rectangle ratio (W/H): " + nf(structureAspectRatio, 1, 2));
   registerUiTooltip(ratio, tooltipFor("structures_ratio"));
 
   // Shape buttons
@@ -1806,92 +1582,38 @@ void drawStructuresListPanel() {
 
   // Size slider
   IntRect ss = layout.detailSizeSlider;
-  stroke(160);
-  fill(230);
-  rect(ss.x, ss.y, ss.w, ss.h, 4);
   float sNorm = constrain(map(baseSize, 0.01f, 0.2f, 0, 1), 0, 1);
-  float sx = ss.x + sNorm * ss.w;
-  fill(40);
-  noStroke();
-  ellipse(sx, ss.y + ss.h / 2.0f, ss.h * 0.9f, ss.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Size", ss.x, ss.y - 4);
+  drawSlider(ss, sNorm, "Size");
   registerUiTooltip(ss, tooltipFor("structures_detail_size"));
 
   // Angle slider
   IntRect ang = layout.detailAngleSlider;
-  stroke(160);
-  fill(230);
-  rect(ang.x, ang.y, ang.w, ang.h, 4);
   float aNorm = constrain(map(baseAngDeg, -180.0f, 180.0f, 0, 1), 0, 1);
-  float ax = ang.x + aNorm * ang.w;
-  fill(40);
-  noStroke();
-  ellipse(ax, ang.y + ang.h / 2.0f, ang.h * 0.9f, ang.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Angle (" + nf(baseAngDeg, 1, 1) + " deg)", ang.x, ang.y - 4);
+  drawSlider(ang, aNorm, "Angle (" + nf(baseAngDeg, 1, 1) + " deg)", true);
   registerUiTooltip(ang, tooltipFor("structures_detail_angle"));
 
   // Hue slider
   IntRect hue = layout.detailHueSlider;
-  stroke(160);
-  fill(230);
-  rect(hue.x, hue.y, hue.w, hue.h, 4);
   float hNorm = constrain(baseHue, 0, 1);
-  float hx = hue.x + hNorm * hue.w;
-  fill(40);
-  noStroke();
-  ellipse(hx, hue.y + hue.h / 2.0f, hue.h * 0.9f, hue.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Hue", hue.x, hue.y - 4);
+  drawSlider(hue, hNorm, "Hue");
   registerUiTooltip(hue, tooltipFor("structures_detail_hue"));
 
   // Saturation slider
   IntRect sat = layout.detailSatSlider;
-  stroke(160);
-  fill(230);
-  rect(sat.x, sat.y, sat.w, sat.h, 4);
   float satNorm = constrain(baseSat, 0, 1);
-  float satx = sat.x + satNorm * sat.w;
-  fill(40);
-  noStroke();
-  ellipse(satx, sat.y + sat.h / 2.0f, sat.h * 0.9f, sat.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Saturation", sat.x, sat.y - 4);
+  drawSlider(sat, satNorm, "Saturation");
   registerUiTooltip(sat, tooltipFor("structures_detail_sat"));
 
   // Alpha slider (fill only)
   IntRect alp = layout.detailAlphaSlider;
-  stroke(160);
-  fill(230);
-  rect(alp.x, alp.y, alp.w, alp.h, 4);
   float aNorm2 = constrain(baseAlpha, 0, 1);
-  float apx = alp.x + aNorm2 * alp.w;
-  fill(40);
-  noStroke();
-  ellipse(apx, alp.y + alp.h / 2.0f, alp.h * 0.9f, alp.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Alpha (" + nf(baseAlpha * 100.0f, 1, 0) + "%)", alp.x, alp.y - 4);
+  drawSlider(alp, aNorm2, "Alpha (" + nf(baseAlpha * 100.0f, 1, 0) + "%)");
   registerUiTooltip(alp, tooltipFor("structures_detail_alpha"));
 
   // Stroke weight slider
   IntRect st = layout.detailStrokeSlider;
-  stroke(160);
-  fill(230);
-  rect(st.x, st.y, st.w, st.h, 4);
   float stNorm = constrain(map(baseStroke, 0.5f, 4.0f, 0, 1), 0, 1);
-  float stx = st.x + stNorm * st.w;
-  fill(40);
-  noStroke();
-  ellipse(stx, st.y + st.h / 2.0f, st.h * 0.9f, st.h * 0.9f);
-  fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Stroke weight (px)", st.x, st.y - 4);
+  drawSlider(st, stNorm, "Stroke weight (px)");
   registerUiTooltip(st, tooltipFor("structures_detail_stroke"));
 
   for (int i = 0; i < layout.rows.size(); i++) {
@@ -2211,18 +1933,7 @@ void drawRenderPanel() {
     drawSlider(layout.elevationLinesCountSlider, elevCountNorm, "Elevation lines (" + renderSettings.elevationLinesCount + ")");
     if (layout.elevationLineStyleSelector != null) {
       IntRect b = layout.elevationLineStyleSelector;
-      stroke(160);
-      fill(230);
-      rect(b.x, b.y, b.w, b.h, 4);
-      float knobX = b.x;
-      float knobY = b.y + b.h / 2.0f;
-      float knobR = b.h * 0.9f;
-      fill(40);
-      noStroke();
-      ellipse(knobX, knobY, knobR, knobR);
-      fill(0);
-      textAlign(LEFT, BOTTOM);
-      text("Style: Basic", b.x, b.y - 4);
+      drawSelectorSlider(b, 0, "Style: Basic", 1);
     }
     drawSlider(layout.elevationLinesAlphaSlider, renderSettings.elevationLinesAlpha01, "Elevation lines alpha (" + nf(renderSettings.elevationLinesAlpha01 * 100, 1, 0) + "%)");
   }
@@ -2319,12 +2030,6 @@ void drawSlider(IntRect r, float tNorm, String label, boolean zeroTick) {
   noStroke();
   fill(236);
   rect(cursorX - cursorW / 2, cursorY, cursorW, cursorH);
-  beginShape();
-  fill(200);
-  vertex(cursorX - cursorW / 2, cursorY + cursorH);
-  vertex(cursorX + cursorW / 2, cursorY + cursorH);
-  vertex(cursorX, cursorY + cursorH + max(3, cursorH / 3));
-  endShape(CLOSE);
   stroke(255);
   line(cursorX - cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY);
   line(cursorX - cursorW / 2, cursorY, cursorX - cursorW / 2, cursorY + cursorH);
@@ -2364,12 +2069,6 @@ void drawSelectorSlider(IntRect r, float tNorm, String label, int divisions) {
   noStroke();
   fill(236);
   rect(cursorX - cursorW / 2, cursorY, cursorW, cursorH);
-  beginShape();
-  fill(200);
-  vertex(cursorX - cursorW / 2, cursorY + cursorH);
-  vertex(cursorX + cursorW / 2, cursorY + cursorH);
-  vertex(cursorX, cursorY + cursorH + max(3, cursorH / 3));
-  endShape(CLOSE);
   stroke(255);
   line(cursorX - cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY);
   line(cursorX - cursorW / 2, cursorY, cursorX - cursorW / 2, cursorY + cursorH);

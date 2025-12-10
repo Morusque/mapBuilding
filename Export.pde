@@ -46,19 +46,8 @@ void drawExportPanel() {
   // Resolution scale slider
   if (layout.scaleSlider != null) {
     IntRect s = layout.scaleSlider;
-    stroke(160);
-    fill(230);
-    rect(s.x, s.y, s.w, s.h, 4);
     float t = constrain(map(exportScale, 1.0f, 4.0f, 0, 1), 0, 1);
-    float hx = s.x + t * s.w;
-    float hr = s.h * 0.9f;
-    float hy = s.y + s.h / 2.0f;
-    fill(40);
-    noStroke();
-    ellipse(hx, hy, hr, hr);
-    fill(0);
-    textAlign(LEFT, BOTTOM);
-    text("Resolution scale (" + nf(exportScale, 1, 1) + "x)", s.x, s.y - 4);
+    drawSlider(s, t, "Resolution scale (" + nf(exportScale, 1, 1) + "x)");
     registerUiTooltip(s, tooltipFor("export_scale"));
   }
 

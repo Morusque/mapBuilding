@@ -3225,7 +3225,7 @@ class MapModel {
       }
     }
     float avg = (regions > 0) ? (total / regions) : 1.0f;
-    int targetSize = max(1, round(avg * 0.7f));
+    int targetSize = max(1, round(avg * value01 * 2.0f));
     int startIdx = (int)random(n);
     int tries = 0;
     while (tries < 100 && (startIdx < 0 || startIdx >= n || cells.get(startIdx) == null || cells.get(startIdx).biomeId == biomeId)) {

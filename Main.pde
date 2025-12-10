@@ -278,7 +278,6 @@ void applyBiomeGeneration() {
   int targetBiome = constrain(activeBiomeIndex, 0, mapModel.biomeTypes.size() - 1);
   float val01 = constrain(biomeGenerateValue01, 0, 1);
   float threshold = lerp(-1.0f, 1.0f, val01);
-  float fullAbove = lerp(0.4f, 1.0f, val01); // keep above fill to higher elevations for full mode
 
   switch (mode) {
     case 0: // propagation
