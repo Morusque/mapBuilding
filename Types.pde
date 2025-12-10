@@ -136,6 +136,7 @@ PathTypePreset[] PATH_TYPE_PRESETS = new PathTypePreset[] {
 };
 
 // ---------- Color helpers for HSB<->RGB in [0..1] ----------
+// The "01" suffix means values are normalized [0..1] instead of Processing's default 0..255.
 
 void rgbToHSB01(int c, float[] outHSB) {
   // Use Processing's HSB colorMode temporarily
@@ -292,10 +293,12 @@ class MapLabel {
   }
 
   void draw(PApplet app) {
+    if (app == null || text == null || text.length() == 0) return;
+    float ts = size / max(1e-6f, viewport.zoom);
     app.pushStyle();
     app.fill(0);
     app.textAlign(CENTER, CENTER);
-    app.textSize(size / viewport.zoom);
+    app.textSize(ts);
     app.text(text, x, y);
     app.popStyle();
   }

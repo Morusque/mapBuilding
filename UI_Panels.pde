@@ -1568,7 +1568,7 @@ void drawStructuresListPanel() {
     boolean editingName = (target != null && editingStructureNameIndex == selectedStructureIndex);
     fill(0);
     textAlign(LEFT, BOTTOM);
-    text(target != null ? "Name" : "Next name", nf.x, nf.y - 4);
+    text("Name", nf.x, nf.y - 4);
     stroke(80);
     fill(255);
     rect(nf.x, nf.y, nf.w, nf.h);
@@ -1578,7 +1578,7 @@ void drawStructuresListPanel() {
     if (target != null) {
       shownName = editingName ? structureNameDraft : target.name;
     } else {
-      shownName = "Struct " + (mapModel.structures.size() + 1);
+      shownName = "";
     }
     text(shownName, nf.x + 6, nf.y + nf.h / 2);
     if (editingName) {

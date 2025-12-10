@@ -275,6 +275,7 @@ void applyRenderPreset(int idx) {
   renderShowStructures = renderSettings.showStructures;
   renderShowZoneOutlines = renderSettings.zoneStrokeAlpha01 > 0.001f;
   renderShowLabels = renderSettings.showLabelsArbitrary;
+  triggerRenderPrerequisites();
 }
 
 void applyBiomeGeneration() {
@@ -349,6 +350,20 @@ void applyBiomeGeneration() {
   }
   mapModel.renderer.invalidateBiomeOutlineCache();
   mapModel.snapDirty = true;
+}
+
+void triggerRenderPrerequisites() {
+  if (mapModel == null || renderSettings == null) return;
+  mapModel.invalidateContourCaches();
+
+  if (renderSettings.waterRippleCount > 0 && renderSettings.waterContourAlpha01 > 1e-4f) {
+    int cols = max(80, min(200, (int)(sqrt(max(1, mapModel.cells.size())))));
+    int rows = cols;
+    mapModel.getCoastDistanceGrid(cols, rows, seaLevel);
+  }
+  if (renderSettings.elevationLinesCount > 0 && renderSettings.elevationLinesAlpha01 > 1e-4f) {
+    mapModel.getElevationGridForRender(90, 90, seaLevel);
+  }
 }
 
 int ensureBiomeType(String name) {
@@ -1218,7 +1233,7 @@ JSONArray serializeLabels(ArrayList<MapLabel> list) {
     o.setInt("id", i);
     o.setFloat("x", l.x);
     o.setFloat("y", l.y);
-    o.setString("text", l.text);
+    o.setString("text", (l.text != null) ? l.text : "");
     o.setString("target", l.target.name());
     o.setFloat("size", l.size);
     arr.append(o);

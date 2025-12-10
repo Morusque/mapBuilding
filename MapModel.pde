@@ -162,6 +162,7 @@ class MapModel {
   }
 
   float[] rgbToHSB(int c) {
+    // Convenience wrapper; both HSB helpers live in Types.pde and use 0..1 ranges.
     float[] hsb = new float[3];
     rgbToHSB01(c, hsb);
     return hsb;
@@ -239,6 +240,7 @@ class MapModel {
   }
 
   void drawCells(PApplet app) {
+    // Rendering methods take an explicit PApplet so we can target the main canvas or export buffers.
     renderer.drawCells(app);
   }
 
