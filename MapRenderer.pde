@@ -481,7 +481,7 @@ class MapRenderer {
     }
 
     // Biome fills
-    if (s.biomeFillAlpha01 > 1e-4f) {
+    if (s.biomeFillAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f) {
       app.noStroke();
       boolean usePattern = (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN);
       PImage pattern = null;
@@ -492,7 +492,8 @@ class MapRenderer {
       for (Cell c : model.cells) {
         if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
         boolean isWater = c.elevation < seaLevel;
-        if (isWater && !s.biomeShowUnderwater) continue;
+        if (isWater && s.biomeUnderwaterAlpha01 <= 1e-4f) continue;
+        if (!isWater && s.biomeFillAlpha01 <= 1e-4f) continue;
         int col = landBase;
         if (model.biomeTypes != null && c.biomeId >= 0 && c.biomeId < model.biomeTypes.size()) {
           ZoneType zt = model.biomeTypes.get(c.biomeId);
@@ -500,7 +501,7 @@ class MapRenderer {
           hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
           col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
         }
-        float a = s.biomeFillAlpha01;
+        float a = isWater ? s.biomeUnderwaterAlpha01 : s.biomeFillAlpha01;
         if (usePattern && pattern != null) {
           drawPatternPoly(app, c.vertices, pattern, col, a);
         } else {
@@ -522,7 +523,7 @@ class MapRenderer {
     }
 
     // Biome outlines (boundary edges between biomes)
-    if (s.biomeOutlineSizePx > 1e-4f && s.biomeOutlineAlpha01 > 1e-4f) {
+    if (s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f)) {
       ensureBiomeOutlineCache(seaLevel);
       app.noFill();
       app.strokeWeight(max(0.1f, s.biomeOutlineSizePx) / viewport.zoom);
@@ -530,7 +531,8 @@ class MapRenderer {
         PVector[] seg = cachedBiomeOutlineEdges.get(i);
         int biomeId = (i < cachedBiomeOutlineBiomes.size()) ? cachedBiomeOutlineBiomes.get(i) : -1;
         boolean underwaterEdge = (i < cachedBiomeOutlineUnderwater.size()) ? cachedBiomeOutlineUnderwater.get(i) : false;
-        if (!s.biomeShowUnderwater && underwaterEdge) continue;
+        if (underwaterEdge && s.biomeUnderwaterAlpha01 <= 1e-4f) continue;
+        if (!underwaterEdge && s.biomeOutlineAlpha01 <= 1e-4f) continue;
         int col = landBase;
         if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size()) {
           ZoneType zt = model.biomeTypes.get(biomeId);
@@ -538,7 +540,8 @@ class MapRenderer {
           hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
           col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
         }
-        app.stroke(col, s.biomeOutlineAlpha01 * 255);
+        float outlineAlpha = underwaterEdge ? min(s.biomeOutlineAlpha01, s.biomeUnderwaterAlpha01) : s.biomeOutlineAlpha01;
+        app.stroke(col, outlineAlpha * 255);
         app.line(seg[0].x, seg[0].y, seg[1].x, seg[1].y);
       }
     }

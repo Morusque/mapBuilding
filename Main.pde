@@ -255,6 +255,7 @@ final int SLIDER_RENDER_ZONE_BRI = 57;
 final int SLIDER_RENDER_PRESET_SELECT = 58;
 final int SLIDER_BIOME_GEN_MODE = 59;
 final int SLIDER_BIOME_GEN_VALUE = 60;
+final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 61;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {

@@ -15,12 +15,12 @@ Elevation :
 Biomes :
 (later) review "value" sliders
 (later) make a better "full" generation
-(soon) When adding a biome type from default presets check if there isn't already one with the same name present (in chich case take the next)
 (later) replace "beaches" by same logic but arbitrary elevation and use it instead of some "above" logics in the full generation process
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
 (soon) make zone display look somehow better, use reliable method when two outlines share the same border (always distinct, makes sense, line weight into account) and use it for biomes outlines and zones outlines (define segment edges normals, spread segments along it n times = number of borders that share it, based on : which side of it, smaller regions inside big ones)
+(later) use polygon tracing as an alternative to brush
 
 Paths :
 (maybe) width definer similar to water but using pathfinding to define more important roads
@@ -37,6 +37,7 @@ Structures :
 (soon) structures light shading on rendering mode
 (soon) crosses (as on treasure maps)
 (soon) no name in the name section if no structure selected
+(later) use polygon tracing as a structure input mode
 
 Labels :
 (maybe) optionally associate labels with map elements
@@ -63,10 +64,12 @@ Rendering :
 (later) water contour lines distance should be zoom-dependant
 (soon) water contour lines should have a starting and ending alpha
 (later) add biomes outline brightness + saturation parameter
-(soon) show underwater biomes : replace by a "underwater biomes alpha" slider
 (soon) path saturation button doesn't work
 (later) structures sat and alpha variables exist but show no slider
 (later) lightning: build, optionally blur, gradient, dither, etc, then cache
+(later) water rendering style : many horizontal lines to represent coastlines
+(later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
+(later) background rendering : noise amount
 
 Export :
 (later) Comments (associated with elements in lists) exportable as custom format
@@ -76,6 +79,7 @@ Export :
 (soon) trying to export with labels makes the thing crash with a NullPointerException
 (later) path rendering slightly differ from their rendering in rendering mode (should be similar)
 (later) rendering shoud look exactly like the picture to be rendered (including points on paths and resolution, this should be cached, use loading bar)
+(maybe) importing from picture
 
 Editable types :
 (later) Visually show which parameters "belong" to a type or to a more general part of the interface.

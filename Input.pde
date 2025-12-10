@@ -568,6 +568,12 @@ void updateActiveSlider(int mx, int my) {
       renderSettings.biomeOutlineAlpha01 = t;
       break;
     }
+    case SLIDER_RENDER_BIOME_UNDERWATER_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.biomeUnderwaterAlphaSlider.x) / (float)l.biomeUnderwaterAlphaSlider.w, 0, 1);
+      renderSettings.biomeUnderwaterAlpha01 = t;
+      break;
+    }
     case SLIDER_RENDER_WATER_DEPTH_ALPHA: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.waterDepthAlphaSlider.x) / (float)l.waterDepthAlphaSlider.w, 0, 1);

@@ -1661,7 +1661,7 @@ class RenderLayout {
   ArrayList<IntRect> biomeFillTypeButtons = new ArrayList<IntRect>();
   IntRect biomeOutlineSizeSlider;
   IntRect biomeOutlineAlphaSlider;
-  IntRect biomeUnderwaterCheckbox;
+  IntRect biomeUnderwaterAlphaSlider;
 
   IntRect waterDepthAlphaSlider;
   IntRect lightAlphaSlider;
@@ -1740,6 +1740,9 @@ RenderLayout buildRenderLayout() {
     l.biomeFillAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
+    l.biomeUnderwaterAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
     l.biomeSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
@@ -1753,10 +1756,7 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.biomeOutlineAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-
-    l.biomeUnderwaterCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
-    curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
   // ----- Shading -----
@@ -1895,7 +1895,8 @@ void drawRenderPanel() {
 
   drawSectionHeader(layout.headerBiomes, "Biomes", renderSectionBiomesOpen);
   if (renderSectionBiomesOpen) {
-    drawSlider(layout.biomeFillAlphaSlider, renderSettings.biomeFillAlpha01, "Biomes fill alpha (" + nf(renderSettings.biomeFillAlpha01 * 100, 1, 0) + "%)");
+    drawSlider(layout.biomeFillAlphaSlider, renderSettings.biomeFillAlpha01, "Emerged biomes alpha (" + nf(renderSettings.biomeFillAlpha01 * 100, 1, 0) + "%)");
+    drawSlider(layout.biomeUnderwaterAlphaSlider, renderSettings.biomeUnderwaterAlpha01, "Underwater biomes alpha (" + nf(renderSettings.biomeUnderwaterAlpha01 * 100, 1, 0) + "%)");
     drawSlider(layout.biomeSatSlider, renderSettings.biomeSatScale01, "Biomes saturation (" + nf(renderSettings.biomeSatScale01 * 100, 1, 0) + "%)");
     String[] fillLabels = { "Color", "Pattern" };
     for (int i = 0; i < layout.biomeFillTypeButtons.size(); i++) {
@@ -1908,7 +1909,6 @@ void drawRenderPanel() {
     }
     drawSlider(layout.biomeOutlineSizeSlider, constrain(renderSettings.biomeOutlineSizePx / 5.0f, 0, 1), "Biomes outlines size (" + nf(renderSettings.biomeOutlineSizePx, 1, 1) + " px)");
     drawSlider(layout.biomeOutlineAlphaSlider, renderSettings.biomeOutlineAlpha01, "Biomes outlines alpha (" + nf(renderSettings.biomeOutlineAlpha01 * 100, 1, 0) + "%)");
-    drawCheckbox(layout.biomeUnderwaterCheckbox.x, layout.biomeUnderwaterCheckbox.y, layout.biomeUnderwaterCheckbox.w, renderSettings.biomeShowUnderwater, "Show underwater biomes");
   }
 
   drawSectionHeader(layout.headerShading, "Shading", renderSectionShadingOpen);

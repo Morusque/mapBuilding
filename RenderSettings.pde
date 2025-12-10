@@ -36,7 +36,7 @@ class RenderSettings {
   String biomePatternName = "dots01.png";
   float biomeOutlineSizePx = 0.0f;
   float biomeOutlineAlpha01 = 1.0f;
-  boolean biomeShowUnderwater = false;
+  float biomeUnderwaterAlpha01 = 0.0f;
 
   // Shading
   float waterDepthAlpha01 = 0.5f;
@@ -100,7 +100,7 @@ class RenderSettings {
     c.biomePatternName = biomePatternName;
     c.biomeOutlineSizePx = biomeOutlineSizePx;
     c.biomeOutlineAlpha01 = biomeOutlineAlpha01;
-    c.biomeShowUnderwater = biomeShowUnderwater;
+    c.biomeUnderwaterAlpha01 = biomeUnderwaterAlpha01;
     // Shading
     c.waterDepthAlpha01 = waterDepthAlpha01;
     c.elevationLightAlpha01 = elevationLightAlpha01;
@@ -160,7 +160,7 @@ class RenderSettings {
     biomePatternName = o.biomePatternName;
     biomeOutlineSizePx = o.biomeOutlineSizePx;
     biomeOutlineAlpha01 = o.biomeOutlineAlpha01;
-    biomeShowUnderwater = o.biomeShowUnderwater;
+    biomeUnderwaterAlpha01 = o.biomeUnderwaterAlpha01;
     // Shading
     waterDepthAlpha01 = o.waterDepthAlpha01;
     elevationLightAlpha01 = o.elevationLightAlpha01;
@@ -219,7 +219,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 1.0f;
     s.biomeOutlineSizePx = 0.0f;
     s.biomeOutlineAlpha01 = 1.0f;
-    s.biomeShowUnderwater = false;
+    s.biomeUnderwaterAlpha01 = 0.0f;
     s.waterDepthAlpha01 = 0.5f;
     s.elevationLightAlpha01 = 0.5f;
     s.elevationLightAzimuthDeg = 220.0f;
@@ -266,7 +266,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.4f;
     s.biomeOutlineSizePx = 0.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeShowUnderwater = false;
+    s.biomeUnderwaterAlpha01 = 0.0f;
     s.waterDepthAlpha01 = 0.8f;
     s.elevationLightAlpha01 = 0.6f;
     s.elevationLightAzimuthDeg = 200.0f;
@@ -313,7 +313,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.75f;
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeShowUnderwater = false;
+    s.biomeUnderwaterAlpha01 = 0.0f;
     s.waterDepthAlpha01 = 0.3f;
     s.elevationLightAlpha01 = 0.3f;
     s.elevationLightAzimuthDeg = 280.0f;
@@ -360,7 +360,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.0f;
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeShowUnderwater = false;
+    s.biomeUnderwaterAlpha01 = 0.0f;
     s.waterDepthAlpha01 = 0.5f;
     s.elevationLightAlpha01 = 0.25f;
     s.elevationLightAzimuthDeg = 220.0f;
@@ -407,7 +407,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.0f;
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeShowUnderwater = false;
+    s.biomeUnderwaterAlpha01 = 0.0f;
     s.waterDepthAlpha01 = 0.0f;
     s.elevationLightAlpha01 = 0.0f;
     s.elevationLightAzimuthDeg = 220.0f;
@@ -455,7 +455,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.9f;
     s.biomeOutlineSizePx = 2.0f;
     s.biomeOutlineAlpha01 = 0.9f;
-    s.biomeShowUnderwater = true;
+    s.biomeUnderwaterAlpha01 = 1.0f;
     s.waterDepthAlpha01 = 1.0f;
     s.elevationLightAlpha01 = 0.4f;
     s.elevationLightAzimuthDeg = 250.0f;
@@ -503,7 +503,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.3f;
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeShowUnderwater = true;
+    s.biomeUnderwaterAlpha01 = 1.0f;
     s.waterDepthAlpha01 = 0.0f;
     s.elevationLightAlpha01 = 0.0f;
     s.elevationLightAzimuthDeg = 0.0f;
@@ -550,7 +550,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 1.0f;
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeShowUnderwater = false;
     s.waterDepthAlpha01 = 0.0f;
     s.elevationLightAlpha01 = 0.0f;
     s.elevationLightAzimuthDeg = 0.0f;
@@ -597,7 +596,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 1.0f;
     s.biomeOutlineSizePx = 4.0f;
     s.biomeOutlineAlpha01 = 0.3f;
-    s.biomeShowUnderwater = true;
     s.waterDepthAlpha01 = 0.6f;
     s.elevationLightAlpha01 = 1.0f;
     s.elevationLightAzimuthDeg = 300.0f;

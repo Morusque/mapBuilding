@@ -1105,8 +1105,10 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_BIOME_OUTLINE_ALPHA;
       return true;
     }
-    if (layout.biomeUnderwaterCheckbox.contains(mx, my)) {
-      renderSettings.biomeShowUnderwater = !renderSettings.biomeShowUnderwater;
+    if (layout.biomeUnderwaterAlphaSlider != null && layout.biomeUnderwaterAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.biomeUnderwaterAlphaSlider.x) / (float)layout.biomeUnderwaterAlphaSlider.w, 0, 1);
+      renderSettings.biomeUnderwaterAlpha01 = t;
+      activeSlider = SLIDER_RENDER_BIOME_UNDERWATER_ALPHA;
       return true;
     }
   }
