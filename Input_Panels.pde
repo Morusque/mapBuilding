@@ -328,7 +328,7 @@ boolean handleZonesPanelClick(int mx, int my) {
   }})) return true;
 
   if (queueButtonAction(layout.regenerateBtn, new Runnable() { public void run() {
-    int target = max(5, mapModel.zones.size());
+    int target = mapModel.zones.isEmpty() ? 5 : mapModel.zones.size();
     mapModel.regenerateRandomZones(target);
     activeZoneIndex = -1;
     editingZoneNameIndex = -1;
@@ -857,7 +857,7 @@ boolean handlePathsListPanelClick(int mx, int my) {
   if (queueButtonAction(layout.newBtn, new Runnable() { public void run() {
     Path np = new Path();
     np.typeId = activePathTypeIndex;
-    np.name = "Path " + (mapModel.paths.size() + 1);
+    np.name = mapModel.defaultPathNameForType(np.typeId);
     mapModel.paths.add(np);
     selectedPathIndex = mapModel.paths.size() - 1;
     activePathTypeIndex = (np.typeId >= 0 && np.typeId < mapModel.pathTypes.size()) ? np.typeId : activePathTypeIndex;

@@ -2,7 +2,7 @@ void handlePathsMousePressed(float wx, float wy) {
   if (mapModel.paths.isEmpty()) {
     Path np = new Path();
     np.typeId = activePathTypeIndex;
-    np.name = "Path " + (mapModel.paths.size() + 1);
+    np.name = mapModel.defaultPathNameForType(np.typeId);
     mapModel.paths.add(np);
     selectedPathIndex = 0;
   }
@@ -48,7 +48,7 @@ void handlePathsMousePressed(float wx, float wy) {
   if (targetPath == null) {
     Path np = new Path();
     np.typeId = activePathTypeIndex;
-    np.name = "Path " + (mapModel.paths.size() + 1);
+    np.name = mapModel.defaultPathNameForType(np.typeId);
     mapModel.paths.add(np);
     selectedPathIndex = mapModel.paths.size() - 1;
     targetPath = np;

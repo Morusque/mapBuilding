@@ -1561,11 +1561,43 @@ class MapModel {
 
   // ---------- Paths management ----------
 
+  String defaultPathNameForType(int typeId) {
+    String base = "Path";
+    if (pathTypes != null && typeId >= 0 && typeId < pathTypes.size()) {
+      PathType pt = pathTypes.get(typeId);
+      if (pt != null && pt.name != null && pt.name.trim().length() > 0) {
+        base = pt.name.trim();
+      }
+    }
+    if (base.length() == 0) base = "Path";
+    String baseLower = base.toLowerCase();
+    int maxIdx = 0;
+    if (paths != null) {
+      for (Path p : paths) {
+        if (p == null || p.name == null) continue;
+        String nm = p.name.trim();
+        String nmLower = nm.toLowerCase();
+        if (nmLower.startsWith(baseLower)) {
+          String tail = nm.substring(base.length()).trim();
+          try {
+            int idx = Integer.parseInt(tail);
+            if (idx > maxIdx) maxIdx = idx;
+          } catch (Exception e) {
+            // ignore non-numeric suffix
+          }
+          if (tail.length() == 0 && maxIdx < 1) maxIdx = 1;
+        }
+      }
+    }
+    int next = (maxIdx <= 0) ? 1 : maxIdx + 1;
+    return base + " " + next;
+  }
+
   void addFinishedPath(Path p) {
     if (p == null) return;
     if (p.routes.isEmpty()) return; // ignore degenerate paths
     if (p.name == null || p.name.length() == 0) {
-      p.name = "Path " + (paths.size() + 1);
+      p.name = defaultPathNameForType(p.typeId);
     }
     if (p.typeId < 0 || p.typeId >= pathTypes.size()) {
       p.typeId = 0;
