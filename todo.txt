@@ -14,7 +14,6 @@ Elevation :
 
 Biomes :
 (later) review "value" sliders
-(later) make a better "full" generation
 (later) replace "beaches" by same logic but arbitrary elevation and use it instead of some "above" logics in the full generation process
 
 Zones :
@@ -85,7 +84,6 @@ General :
 (later) investigate caching options
 (maybe) option to generate details (about everything) for zooming
 (later) Refactor, optimize etc.
-(soon) remove comments specific to explain a single commit, add general purpose comments instead
 (later) undo states
 (later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
 (later) write a more consistent readme file
@@ -93,5 +91,4 @@ General :
 (later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
 (later) use appropriate caps for strokes (probably round)
 (later) correctly merge strokes that overlap with alpha
-(later) use HSB directly instead of converting?
-(later) make a wild estimation of number of lines to change for all tasks
+(maybe) use HSB directly instead of converting?

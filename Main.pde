@@ -88,7 +88,7 @@ PlacementMode[] placementModes = {
   PlacementMode.HEX
 };
 int placementModeIndex = 1; // 0=GRID, 1=POISSON, 2=HEX
-final int MAX_SITE_COUNT = 20000;
+final int MAX_SITE_COUNT = 50000;
 final int DEFAULT_SITE_COUNT = 10000;
 int siteTargetCount = DEFAULT_SITE_COUNT; // slider maps 0..MAX_SITE_COUNT
 float siteFuzz = 0.0;       // 0..1
