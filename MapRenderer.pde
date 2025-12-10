@@ -240,9 +240,8 @@ class MapRenderer {
     }
 
     float eps2 = 1e-6f; // lenient match to avoid missing shared edges
-    float baseW = 2.0f / viewport.zoom;
-    float offset = 3.0f / viewport.zoom;
-    float laneGap = 1.4f / viewport.zoom;
+    float baseW = 2.0f / viewport.zoom; // base stroke for zone outlines (editing view)
+    float laneGap = baseW * 0.6f;       // gap between parallel lanes
     HashSet<String> drawn = new HashSet<String>();
 
     app.pushStyle();
@@ -310,24 +309,31 @@ class MapRenderer {
         }
 
         // Draw all differing zones with small per-zone offsets so they do not overlap.
-        float startA = offset;
-        for (int zId : uniqueA) {
+        ArrayList<Integer> listA = new ArrayList<Integer>(uniqueA);
+        ArrayList<Integer> listB = new ArrayList<Integer>(uniqueB);
+        Collections.sort(listA);
+        Collections.sort(listB);
+
+        float offsetA = 0;
+        for (int zId : listA) {
           if (zId < 0 || zId >= model.zones.size()) continue;
+          float w = baseW;
+          float lane = offsetA + w * 0.5f;
           app.stroke(model.zones.get(zId).col, 240);
-          app.strokeWeight(baseW);
-          float lane = startA;
+          app.strokeWeight(w);
           app.line(a.x + nrm.x * lane, a.y + nrm.y * lane, b.x + nrm.x * lane, b.y + nrm.y * lane);
-          startA += laneGap;
+          offsetA += w + laneGap;
         }
 
-        float startB = offset;
-        for (int zId : uniqueB) {
+        float offsetB = 0;
+        for (int zId : listB) {
           if (zId < 0 || zId >= model.zones.size()) continue;
+          float w = baseW;
+          float lane = offsetB + w * 0.5f;
           app.stroke(model.zones.get(zId).col, 240);
-          app.strokeWeight(baseW * 0.9f);
-          float lane = startB;
+          app.strokeWeight(w);
           app.line(a.x - nrm.x * lane, a.y - nrm.y * lane, b.x - nrm.x * lane, b.y - nrm.y * lane);
-          startB += laneGap;
+          offsetB += w + laneGap;
         }
 
         drawn.add(key);
@@ -944,14 +950,14 @@ class MapRenderer {
   }
 
   void drawZoneOutlinesRender(PApplet app, RenderSettings s) {
-    if (s == null || s.zoneStrokeAlpha01 <= 1e-4f) return;
+    if (s == null || (s.zoneStrokeAlpha01 <= 1e-4f && s.biomeOutlineSizePx <= 1e-4f && s.waterContourSizePx <= 1e-4f)) return;
     app.pushStyle();
-    app.strokeWeight(2.0f / viewport.zoom);
     if (model.cells == null || model.zones == null) { app.popStyle(); return; }
     model.ensureCellNeighborsComputed();
     int n = model.cells.size();
-    if (n == 0 || model.zones.isEmpty()) { app.popStyle(); return; }
+    if (n == 0) { app.popStyle(); return; }
 
+    // Precompute zone memberships per cell
     ArrayList<ArrayList<Integer>> zoneForCell = new ArrayList<ArrayList<Integer>>(n);
     for (int i = 0; i < n; i++) zoneForCell.add(new ArrayList<Integer>());
     for (int zi = 0; zi < model.zones.size(); zi++) {
@@ -964,13 +970,32 @@ class MapRenderer {
       }
     }
 
+    boolean drawZones = s.zoneStrokeAlpha01 > 1e-4f;
+    boolean drawBiomes = s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f);
+    boolean drawWater = s.waterContourSizePx > 1e-4f && s.waterContourAlpha01 > 1e-4f;
+
     float eps2 = 1e-6f;
+    float zoneW = 2.0f / viewport.zoom;
+    float biomeW = drawBiomes ? max(0.1f, s.biomeOutlineSizePx) / viewport.zoom : 0;
+    float waterW = drawWater ? max(0.1f, s.waterContourSizePx) / viewport.zoom : 0;
+    float laneGap = max(0.2f / viewport.zoom, zoneW * 0.4f);
+
     HashSet<String> drawn = new HashSet<String>();
+    ArrayList<Integer> listA = new ArrayList<Integer>();
+    ArrayList<Integer> listB = new ArrayList<Integer>();
+
+    class Lane {
+      float width;
+      int col;
+      float alpha;
+      boolean positiveSide;
+      Lane(float w, int ccol, float a, boolean pos) { width = w; col = ccol; alpha = a; positiveSide = pos; }
+    }
+
     for (int ci = 0; ci < n; ci++) {
       Cell c = model.cells.get(ci);
       if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
       ArrayList<Integer> zonesA = zoneForCell.get(ci);
-      if (zonesA == null || zonesA.isEmpty()) continue;
       int vc = c.vertices.size();
       for (int e = 0; e < vc; e++) {
         PVector a = c.vertices.get(e);
@@ -978,6 +1003,7 @@ class MapRenderer {
         String key = undirectedEdgeKey(a, b);
         if (drawn.contains(key)) continue;
 
+        int matchedNbIdx = -1;
         ArrayList<Integer> zonesB = null;
         ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
         if (nbs != null) {
@@ -995,6 +1021,7 @@ class MapRenderer {
               if (match || matchRev) {
                 zonesB = zoneForCell.get(nbIdx);
                 matched = true;
+                matchedNbIdx = nbIdx;
                 break;
               }
             }
@@ -1002,31 +1029,129 @@ class MapRenderer {
           }
         }
 
-        HashSet<Integer> setA = new HashSet<Integer>(zonesA);
+        HashSet<Integer> setA = (zonesA != null) ? new HashSet<Integer>(zonesA) : new HashSet<Integer>();
         HashSet<Integer> setB = (zonesB != null) ? new HashSet<Integer>(zonesB) : new HashSet<Integer>();
         HashSet<Integer> uniqueA = new HashSet<Integer>(setA);
         uniqueA.removeAll(setB);
         HashSet<Integer> uniqueB = new HashSet<Integer>(setB);
         uniqueB.removeAll(setA);
-        if (uniqueA.isEmpty() && uniqueB.isEmpty()) {
+
+        boolean hasDiff = !uniqueA.isEmpty() || !uniqueB.isEmpty();
+        boolean biomeDiff = false;
+        int biomeA = c.biomeId;
+        int biomeB = biomeA;
+        if (matchedNbIdx >= 0) {
+          Cell nb = model.cells.get(matchedNbIdx);
+          biomeB = (nb != null) ? nb.biomeId : biomeA;
+        }
+        biomeDiff = biomeA != biomeB;
+        boolean waterDiff = false;
+        boolean aWater = c.elevation < seaLevel;
+        boolean bWater = aWater;
+        if (matchedNbIdx >= 0) {
+          Cell nb = model.cells.get(matchedNbIdx);
+          bWater = (nb != null && nb.elevation < seaLevel);
+        }
+        waterDiff = aWater != bWater;
+
+        if (!hasDiff && !biomeDiff && !waterDiff) {
           drawn.add(key);
           continue;
         }
 
-        // Pick stroke color from first unique zone in A or B
-        int zoneIdx = !uniqueA.isEmpty() ? uniqueA.iterator().next() : uniqueB.iterator().next();
-        int strokeCol = app.color(0);
-        if (zoneIdx >= 0 && zoneIdx < model.zones.size()) {
-          MapModel.MapZone z = model.zones.get(zoneIdx);
-          if (z != null) {
+        PVector cenA = model.cellCentroid(c);
+        PVector mid = new PVector((a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f);
+        PVector edgeDir = new PVector(b.x - a.x, b.y - a.y);
+        PVector nrm = new PVector(-edgeDir.y, edgeDir.x);
+        float nLen = max(1e-6f, sqrt(nrm.x * nrm.x + nrm.y * nrm.y));
+        nrm.mult(1.0f / nLen);
+        if (cenA != null) {
+          PVector toCenter = PVector.sub(cenA, mid);
+          if (toCenter.dot(nrm) < 0) nrm.mult(-1);
+        }
+
+        ArrayList<Lane> lanesPos = new ArrayList<Lane>();
+        ArrayList<Lane> lanesNeg = new ArrayList<Lane>();
+
+        if (drawZones && hasDiff) {
+          listA.clear(); listA.addAll(uniqueA); Collections.sort(listA);
+          listB.clear(); listB.addAll(uniqueB); Collections.sort(listB);
+          for (int zId : listA) {
+            if (zId < 0 || zId >= model.zones.size()) continue;
+            MapModel.MapZone z = model.zones.get(zId);
+            if (z == null) continue;
             float[] hsb = model.rgbToHSB(z.col);
             hsb[1] = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
             hsb[2] = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
-            strokeCol = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+            int colZ = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+            lanesPos.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01, true));
+          }
+          for (int zId : listB) {
+            if (zId < 0 || zId >= model.zones.size()) continue;
+            MapModel.MapZone z = model.zones.get(zId);
+            if (z == null) continue;
+            float[] hsb = model.rgbToHSB(z.col);
+            hsb[1] = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
+            hsb[2] = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
+            int colZ = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+            lanesNeg.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01, false));
           }
         }
-        app.stroke(strokeCol, s.zoneStrokeAlpha01 * 255);
-        app.line(a.x, a.y, b.x, b.y);
+
+        if (drawBiomes && biomeDiff) {
+          if (biomeA >= 0 && biomeA < model.biomeTypes.size()) {
+            ZoneType zt = model.biomeTypes.get(biomeA);
+            if (zt != null) {
+              float[] hsb = model.rgbToHSB(zt.col);
+              hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
+              int col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+              float alpha = (aWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
+              if (alpha > 1e-4f) lanesPos.add(new Lane(biomeW, col, alpha, true));
+            }
+          }
+          if (biomeB >= 0 && biomeB < model.biomeTypes.size()) {
+            ZoneType zt = model.biomeTypes.get(biomeB);
+            if (zt != null) {
+              float[] hsb = model.rgbToHSB(zt.col);
+              hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
+              int col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+              float alpha = (bWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
+              if (alpha > 1e-4f) lanesNeg.add(new Lane(biomeW, col, alpha, false));
+            }
+          }
+        }
+
+        if (drawWater && waterDiff) {
+          int coastCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterContourAlpha01);
+          if (aWater) lanesPos.add(new Lane(waterW, coastCol, s.waterContourAlpha01, true));
+          else lanesNeg.add(new Lane(waterW, coastCol, s.waterContourAlpha01, false));
+        }
+
+        Comparator<Lane> cmp = new Comparator<Lane>() {
+          public int compare(Lane aL, Lane bL) { return Float.compare(bL.width, aL.width); }
+        };
+        Collections.sort(lanesPos, cmp);
+        Collections.sort(lanesNeg, cmp);
+
+        float offsetPos = 0;
+        for (Lane l : lanesPos) {
+          if (l.alpha <= 1e-4f || l.width <= 1e-4f) continue;
+          float laneOff = offsetPos + l.width * 0.5f;
+          app.stroke(l.col, l.alpha * 255);
+          app.strokeWeight(l.width);
+          app.line(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, b.x + nrm.x * laneOff, b.y + nrm.y * laneOff);
+          offsetPos += l.width + laneGap;
+        }
+        float offsetNeg = 0;
+        for (Lane l : lanesNeg) {
+          if (l.alpha <= 1e-4f || l.width <= 1e-4f) continue;
+          float laneOff = offsetNeg + l.width * 0.5f;
+          app.stroke(l.col, l.alpha * 255);
+          app.strokeWeight(l.width);
+          app.line(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, b.x - nrm.x * laneOff, b.y - nrm.y * laneOff);
+          offsetNeg += l.width + laneGap;
+        }
+
         drawn.add(key);
       }
     }
