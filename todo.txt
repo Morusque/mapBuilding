@@ -9,40 +9,43 @@ Sites :
 (maybe) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
 
 Elevation :
-(maybe) use techtonic logic in addition to perlin
-(later) make elevation easier to see on this mode when there's biomes on it
+(soon) make elevation easier to see on this mode when there's biomes on it (make biomes less alpha, only on this mode)
+(maybe) use techtonic logic in addition to perlin or double multiplied perlin
 
 Biomes :
 (later) review "value" sliders
 (later) replace "beaches" by same logic but arbitrary elevation and use it instead of some "above" logics in the full generation process
-(later) try a double multiplied perlin
 
 Zones :
 (later) options to allow overlapping or not (two groups? allowed / not-allowed)
 (later) use polygon tracing as an alternative to brush
 
 Paths :
-(maybe) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
 (later) refine the way path generation works
 (later) option to have the color match with water
-(later) allow invisible (except on paths mode) path type
+(later) allow invisible (except on paths mode) path type (which means having alpha slider probably)
+(maybe) width definer similar to water but using pathfinding to define more important roads
 
 Structures :
+(soon) structures light shading on rendering mode
 (later) structures should be groupable
-(soon) option to generate structs
+(later) option to generate structs
 (later) exact meaning of angle (absolute vs offset)
 (later) shrink big left menu a little
-(soon) structures light shading on rendering mode
-(soon) crosses (as on treasure maps)
+(later) crosses (as on treasure maps)
 (maybe) use polygon tracing as a structure input mode
 
 Labels :
+(later) option to generate labels
 (maybe) optionally associate labels with map elements
 (maybe) have type presets for label styles (like with path types)
-(later) option to generate labels
 
 Rendering :
+(soon) choosing biomes "pattern" option yields "The file patterns/dots01.png contains bad image data, or may not be an image." while file is seems ok.
+(soon) allow others labels than arbitrary labels
+(soon) water contour lines should have a starting and ending alpha
+(soon) path saturation button doesn't work
 (later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (find examples of this)
 (later) LOD rules: hide/show groups vs members depending on zoom, optional merging visually of dense structures.
 (later) Rendering/exporting the legend for reference.
@@ -50,8 +53,6 @@ Rendering :
 (later) some ugly dots sometimes appear between polygones
 (later) ripple lines are approximative, so either we optimize them or we make tem display below lands. make sure water contour lines never cross actual coastline
 (later) make outline display apply to all kinds of outlines that share the same border all-together at once
-(soon) choosing biomes "pattern" option yields "The file patterns/dots01.png contains bad image data, or may not be an image." while file is seems ok.
-(soon) allow others labels than arbitrary labels
 (later) parametrable label font (per label type)
 (later) label size (per label type) should be handled better (typo appears blurry)
 (later) parametrable label color fill (per label type)
@@ -59,9 +60,7 @@ Rendering :
 (later) labels outline don't work well
 (maybe) a "save preset" button
 (later) water contour lines distance should be zoom-dependant
-(soon) water contour lines should have a starting and ending alpha
 (later) add biomes outline brightness + saturation parameter
-(soon) path saturation button doesn't work
 (later) structures sat and alpha variables exist but show no slider
 (later) lightning: build, optionally blur, gradient, dither, etc, then cache
 (later) water rendering style : many horizontal lines to represent coastlines
@@ -69,20 +68,16 @@ Rendering :
 (later) background rendering : noise amount
 
 Export :
+(soon) trying to export with labels makes the thing crash with a NullPointerException or IllegalArgumentException: Width (0) and height (0) cannot be <= 0
 (later) Comments (associated with elements in lists) exportable as custom format
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 (later) are there existing formats for such tools to handle?
-(soon) trying to export with labels makes the thing crash with a NullPointerException or IllegalArgumentException: Width (0) and height (0) cannot be <= 0
 (later) path rendering slightly differ from their rendering in rendering mode (should be similar)
 (later) rendering shoud look exactly like the picture to be rendered (including points on paths and resolution, this should be cached, use loading bar)
 (maybe) importing from picture
 
-Editable types :
-(later) Visually show which parameters "belong" to a type or to a more general part of the interface.
-
 General :
 (later) investigate caching options
-(maybe) option to generate details (about everything) for zooming
 (later) Refactor, optimize etc.
 (later) undo states
 (later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
@@ -91,4 +86,6 @@ General :
 (later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
 (later) use appropriate caps for strokes (probably round)
 (later) correctly merge strokes that overlap with alpha
+(maybe) option to generate details (about everything) for zooming
 (maybe) use HSB directly instead of converting?
+(maybe) Editable types: visually show which parameters "belong" to a type or to a more general part of the interface.
