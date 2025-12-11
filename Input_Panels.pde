@@ -689,6 +689,17 @@ boolean handlePathsPanelClick(int mx, int my) {
     pathEraserMode = !pathEraserMode;
     pendingPathStart = null;
   }})) return true;
+  if (queueButtonAction(layout.generateBtn, new Runnable() { public void run() {
+    startLoading();
+    loadingPct = 0;
+    try {
+      mapModel.generatePathsAuto(seaLevel);
+      loadingPct = 1.0f;
+    } finally {
+      stopLoading();
+    }
+    renderContoursDirty = true;
+  }})) return true;
   if (layout.taperCheck.contains(mx, my)) {
     if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
       PathType pt = mapModel.pathTypes.get(activePathTypeIndex);

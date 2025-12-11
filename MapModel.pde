@@ -1566,6 +1566,597 @@ class MapModel {
     app.popStyle();
   }
 
+  // ---------- Path generation ----------
+
+  void generatePathsAuto(float seaLevel) {
+    ensureCellNeighborsComputed();
+    if (structures != null) {
+      for (int i = structures.size() - 1; i >= 0; i--) {
+        Structure st = structures.get(i);
+        if (st != null && "IP".equals(st.name)) structures.remove(i);
+      }
+    }
+    int roadType = ensurePathTypeByName("Road");
+    int riverType = ensurePathTypeByName("River");
+    int bridgeType = ensurePathTypeByName("Bridge");
+    int trailType = ensurePathTypeByName("Trail");
+    float worldW = maxX - minX;
+    float worldH = maxY - minY;
+    float stepLen = max(1e-4f, min(worldW, worldH) * 0.02f);
+
+    // Collect coastline midpoints (land/water boundary)
+    ArrayList<PVector> coastPts = new ArrayList<PVector>();
+    ArrayList<PVector> coastNrm = new ArrayList<PVector>(); // normal pointing from land to water
+    int n = cells.size();
+    for (int ci = 0; ci < n; ci++) {
+      Cell c = cells.get(ci);
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      boolean aWater = c.elevation < seaLevel;
+      ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
+        if (nbs == null) continue;
+        int vc = c.vertices.size();
+        for (int nbIdx : nbs) {
+          if (nbIdx < 0 || nbIdx >= n) continue;
+          if (nbIdx < ci) continue; // avoid dup
+          Cell nb = cells.get(nbIdx);
+          if (nb == null || nb.vertices == null || nb.vertices.size() < 3) continue;
+          boolean bWater = nb.elevation < seaLevel;
+          if (aWater == bWater) continue;
+          PVector cenA = cellCentroid(c);
+          PVector cenB = cellCentroid(nb);
+          // find shared edge
+          for (int e = 0; e < vc; e++) {
+            PVector a = c.vertices.get(e);
+            PVector b = c.vertices.get((e + 1) % vc);
+            for (int je = 0; je < nb.vertices.size(); je++) {
+              PVector na = nb.vertices.get(je);
+              PVector nbp = nb.vertices.get((je + 1) % nb.vertices.size());
+              boolean match = distSq(a, na) < 1e-6f && distSq(b, nbp) < 1e-6f;
+              boolean matchRev = distSq(a, nbp) < 1e-6f && distSq(b, na) < 1e-6f;
+              if (match || matchRev) {
+                PVector va = a.copy();
+                PVector vb = b.copy();
+                coastPts.add(va);
+                coastPts.add(vb);
+                PVector nrm = new PVector(0, 1);
+                if (cenA != null && cenB != null) {
+                  PVector land = aWater ? cenB : cenA;
+                  PVector water = aWater ? cenA : cenB;
+                  nrm = PVector.sub(water, land);
+                  if (nrm.magSq() > 1e-12f) nrm.normalize(); else nrm = new PVector(0, 1);
+                }
+                coastNrm.add(nrm);
+                coastNrm.add(nrm.copy());
+                break;
+              }
+            }
+          }
+        }
+    }
+
+    // Precompute mesh vertices for snapping
+    ArrayList<PVector> meshVerts = new ArrayList<PVector>();
+    HashSet<String> vertSeen = new HashSet<String>();
+    for (Cell c : cells) {
+      if (c == null || c.vertices == null) continue;
+      for (PVector v : c.vertices) {
+        String k = keyFor(v.x, v.y);
+        if (vertSeen.add(k)) meshVerts.add(v);
+      }
+    }
+    ArrayList<PVector[]> existingSegs = collectAllPathSegments();
+
+    // Rivers
+    int riversPlaced = 0;
+    for (int i = 0; i < 5; i++) {
+      if (coastPts.isEmpty()) break;
+      PVector start = coastPts.get((int)random(coastPts.size()));
+      ArrayList<PVector> route = growRiver(start, seaLevel, stepLen, existingSegs);
+      if (route == null || route.size() < 2) continue;
+      addPathFromPoints(riverType, "River " + (paths.size() + 1), route);
+      existingSegs = collectAllPathSegments();
+      riversPlaced++;
+    }
+    // Interest points (snap to nearest cell vertex)
+    ArrayList<PVector> interest = new ArrayList<PVector>();
+    // biggest structures
+    if (structures != null && !structures.isEmpty()) {
+      ArrayList<Structure> sorted = new ArrayList<Structure>(structures);
+      Collections.sort(sorted, new Comparator<Structure>() {
+        public int compare(Structure a, Structure b) { return Float.compare(b.size, a.size); }
+      });
+      int take = min(5, sorted.size());
+      for (int i = 0; i < take; i++) {
+        Structure s = sorted.get(i);
+        Cell c = findCellContaining(s.x, s.y);
+        if (c != null && c.elevation > seaLevel) {
+        interest.add(snapToVertices(cellCentroid(c), meshVerts));
+      } else {
+        PVector p = new PVector(s.x, s.y);
+        interest.add(snapToVertices(p, meshVerts));
+      }
+    }
+    }
+    // border points (limit)
+    float margin = min(worldW, worldH) * 0.05f;
+    boolean borderTop = false, borderBottom = false, borderLeft = false, borderRight = false;
+    for (Cell c : cells) {
+      if (borderTop && borderBottom && borderLeft && borderRight) break;
+      if (c == null || c.vertices == null || c.vertices.isEmpty()) continue;
+      if (c.elevation <= seaLevel) continue;
+      PVector cen = cellCentroid(c);
+      if (cen == null) continue;
+      if (abs(cen.x - minX) < margin && !borderLeft) { interest.add(snapToVertices(cen, meshVerts)); borderLeft = true; }
+      else if (abs(cen.x - maxX) < margin && !borderRight) { interest.add(snapToVertices(cen, meshVerts)); borderRight = true; }
+      else if (abs(cen.y - minY) < margin && !borderBottom) { interest.add(snapToVertices(cen, meshVerts)); borderBottom = true; }
+      else if (abs(cen.y - maxY) < margin && !borderTop) { interest.add(snapToVertices(cen, meshVerts)); borderTop = true; }
+    }
+    // zones centers
+    for (MapZone z : zones) {
+      if (z == null || z.cells == null || z.cells.isEmpty()) continue;
+      float sx = 0, sy = 0; int cnt = 0;
+      for (int ci : z.cells) {
+        if (ci < 0 || ci >= cells.size()) continue;
+        Cell c = cells.get(ci);
+        if (c == null) continue;
+        PVector cen = cellCentroid(c);
+        if (cen == null) continue;
+        if (c.elevation <= seaLevel) continue;
+        sx += cen.x; sy += cen.y; cnt++;
+      }
+      if (cnt > 0) interest.add(snapToVertices(new PVector(sx / cnt, sy / cnt), meshVerts));
+    }
+    // farthest from sea: pick highest elevation land cell
+    float bestElev = -Float.MAX_VALUE;
+    PVector bestP = null;
+    for (Cell c : cells) {
+      if (c == null || c.vertices == null || c.vertices.isEmpty()) continue;
+      if (c.elevation <= seaLevel) continue;
+      if (c.elevation > bestElev) {
+        bestElev = c.elevation;
+        bestP = cellCentroid(c);
+      }
+    }
+    if (bestP != null) interest.add(snapToVertices(bestP, meshVerts));
+
+    // Dedup interest
+    ArrayList<PVector> interestUnique = new ArrayList<PVector>();
+    HashSet<String> seen = new HashSet<String>();
+    for (PVector p : interest) {
+      if (p == null) continue;
+      String k = keyFor(p.x, p.y);
+      if (seen.contains(k)) continue;
+      seen.add(k);
+      interestUnique.add(p);
+    }
+    interest = interestUnique;
+
+    // Dedup very close interest points, keep closer to center
+    PVector center = new PVector((minX + maxX) * 0.5f, (minY + maxY) * 0.5f);
+    float dedupThresh = min(worldW, worldH) * 0.2f;
+    ArrayList<PVector> dedup = new ArrayList<PVector>();
+    for (PVector p : interest) {
+      if (p == null) continue;
+      boolean replaced = false;
+      for (int i = 0; i < dedup.size(); i++) {
+        PVector q = dedup.get(i);
+        if (dist2D(p, q) < dedupThresh) {
+          float dp = dist2D(p, center);
+          float dq = dist2D(q, center);
+          if (dp < dq) dedup.set(i, p);
+          replaced = true;
+          break;
+        }
+      }
+      if (!replaced) dedup.add(p);
+    }
+    interest = dedup;
+
+    // Connect five closest pairs with roads (debug)
+    ArrayList<ArrayList<PVector>> roadCandidates = new ArrayList<ArrayList<PVector>>();
+    ArrayList<Float> roadCandidateDistSq = new ArrayList<Float>();
+    boolean usePathfindingForRoads = true; // set false to skip pathfinding for debugging
+    for (int i = 0; i < interest.size(); i++) {
+      for (int j = i + 1; j < interest.size(); j++) {
+        PVector pa = interest.get(i);
+        PVector pb = interest.get(j);
+        ArrayList<PVector> pathPts;
+        if (usePathfindingForRoads) {
+          pathPts = findSnapPath(pa, pb);
+        } else {
+          pathPts = new ArrayList<PVector>();
+          pathPts.add(pa);
+          pathPts.add(pb);
+        }
+        if (pathPts == null || pathPts.size() < 2) continue;
+        boolean overWater = false;
+        for (PVector p : pathPts) {
+          if (p == null) continue;
+          if (sampleElevationAt(p.x, p.y, seaLevel) < seaLevel) { overWater = true; break; }
+        }
+        if (overWater) continue;
+        float dx = pa.x - pb.x;
+        float dy = pa.y - pb.y;
+        float len = dx * dx + dy * dy; // compare by squared distance for speed
+        roadCandidates.add(pathPts);
+        roadCandidateDistSq.add(len);
+      }
+    }
+    ArrayList<Integer> roadOrder = new ArrayList<Integer>();
+    for (int i = 0; i < roadCandidates.size(); i++) roadOrder.add(i);
+    final ArrayList<Float> roadLenRef = roadCandidateDistSq;
+    Collections.sort(roadOrder, new Comparator<Integer>() {
+      public int compare(Integer a, Integer b) {
+        return Float.compare(roadLenRef.get(a), roadLenRef.get(b));
+      }
+    });
+    int roadLinks = 0;
+    for (int idx : roadOrder) {
+      if (roadLinks >= 5) break;
+      ArrayList<PVector> pathPts = roadCandidates.get(idx);
+      addPathFromPoints(roadType, "Road " + (paths.size() + 1), pathPts);
+      roadLinks++;
+    }
+    // Bridges: try three times
+    // Bridge generation: coastline cells with >=3 consecutive water edges
+    ArrayList<Integer> coastCells = new ArrayList<Integer>();
+    ArrayList<Integer> coastStartEdge = new ArrayList<Integer>();
+    ArrayList<Integer> coastLenEdge = new ArrayList<Integer>();
+    for (int ci = 0; ci < cells.size() && coastCells.size() < 10; ci++) {
+      Cell c = cells.get(ci);
+      if (c == null || c.vertices == null) continue;
+      if (c.elevation < seaLevel) continue;
+      int vc = c.vertices.size();
+      if (vc < 3) continue;
+      boolean[] waterEdge = new boolean[vc];
+      ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
+      if (nbs == null) continue;
+      for (int e = 0; e < vc; e++) {
+        PVector a = c.vertices.get(e);
+        PVector b = c.vertices.get((e + 1) % vc);
+        boolean edgeWater = false;
+        for (int nbIdx : nbs) {
+          if (nbIdx < 0 || nbIdx >= cells.size()) continue;
+          Cell nb = cells.get(nbIdx);
+          if (nb == null || nb.vertices == null || nb.vertices.size() < 3) continue;
+          if (nb.elevation >= seaLevel) continue;
+          int nvc = nb.vertices.size();
+          for (int je = 0; je < nvc; je++) {
+            PVector na = nb.vertices.get(je);
+            PVector nbp = nb.vertices.get((je + 1) % nvc);
+            boolean match = distSq(a, na) < 1e-6f && distSq(b, nbp) < 1e-6f;
+            boolean matchRev = distSq(a, nbp) < 1e-6f && distSq(b, na) < 1e-6f;
+            if (match || matchRev) { edgeWater = true; break; }
+          }
+          if (edgeWater) break;
+        }
+        waterEdge[e] = edgeWater;
+      }
+      int bestLen = 0, bestStart = -1, curLen = 0, curStart = 0;
+      for (int i = 0; i < vc * 2; i++) { // handle wrap-around by looping twice
+        int idx = i % vc;
+        if (waterEdge[idx]) {
+          if (curLen == 0) curStart = idx;
+          curLen++;
+          if (curLen > bestLen) { bestLen = curLen; bestStart = curStart; }
+        } else {
+          curLen = 0;
+        }
+      }
+      if (bestLen >= 3) {
+        if (bestLen > vc) bestLen = vc;
+        coastCells.add(ci);
+        coastStartEdge.add(bestStart);
+        coastLenEdge.add(bestLen);
+      }
+    }
+
+    class BridgeCandidate {
+      PVector a, b;
+      float len;
+      BridgeCandidate(PVector a, PVector b, float len) { this.a = a; this.b = b; this.len = len; }
+    }
+    ArrayList<BridgeCandidate> bridgeCand = new ArrayList<BridgeCandidate>();
+    for (int idx = 0; idx < coastCells.size(); idx++) {
+      int ci = coastCells.get(idx);
+      Cell c = cells.get(ci);
+      if (c == null || c.vertices == null) continue;
+      PVector cen = cellCentroid(c);
+      if (cen == null) continue;
+      int vc = c.vertices.size();
+      int start = coastStartEdge.get(idx);
+      int lenEdge = coastLenEdge.get(idx);
+      int midEdge = (lenEdge % 2 == 1) ? (start + lenEdge / 2) % vc : -1;
+      int midVertex = (lenEdge % 2 == 0) ? (start + lenEdge / 2) % vc : -1;
+      PVector target;
+      if (midEdge >= 0) {
+        PVector a = c.vertices.get(midEdge);
+        PVector b = c.vertices.get((midEdge + 1) % vc);
+        target = PVector.add(a, b).mult(0.5f);
+      } else {
+        target = c.vertices.get(midVertex).copy();
+      }
+      PVector dir = PVector.sub(target, cen);
+      if (dir.magSq() < 1e-8f) continue;
+      dir.normalize();
+      float travelMax = min(worldW, worldH) * 0.6f;
+      float step = stepLen;
+      PVector probe = cen.copy();
+      PVector endPoint = null;
+      for (int s = 0; s < 800 && s * step < travelMax; s++) {
+        probe.add(PVector.mult(dir, step));
+        Cell pc = findCellContaining(probe.x, probe.y);
+        if (pc == null) continue;
+        if (pc == c) continue;
+        if (pc.elevation < seaLevel) continue;
+        // check if pc touches water
+        boolean touchesWater = false;
+        int pcIdx = indexOfCell(pc);
+        if (pcIdx >= 0 && pc.vertices != null && pc.vertices.size() >= 3) {
+          int pvc = pc.vertices.size();
+          ArrayList<Integer> nbs = (pcIdx < cellNeighbors.size()) ? cellNeighbors.get(pcIdx) : null;
+          if (nbs != null) {
+            for (int e = 0; e < pvc && !touchesWater; e++) {
+              PVector a = pc.vertices.get(e);
+              PVector b = pc.vertices.get((e + 1) % pvc);
+              for (int nbIdx : nbs) {
+                if (nbIdx < 0 || nbIdx >= cells.size()) continue;
+                Cell nb = cells.get(nbIdx);
+                if (nb == null || nb.elevation >= seaLevel || nb.vertices == null) continue;
+                int nvc = nb.vertices.size();
+                for (int je = 0; je < nvc; je++) {
+                  PVector na = nb.vertices.get(je);
+                  PVector nbp = nb.vertices.get((je + 1) % nvc);
+                  boolean match = distSq(a, na) < 1e-6f && distSq(b, nbp) < 1e-6f;
+                  boolean matchRev = distSq(a, nbp) < 1e-6f && distSq(b, na) < 1e-6f;
+                  if (match || matchRev) { touchesWater = true; break; }
+                }
+                if (touchesWater) break;
+              }
+            }
+          }
+        }
+        if (touchesWater) {
+          PVector tgt = cellCentroid(pc);
+          if (tgt != null) { endPoint = tgt; break; }
+        }
+      }
+      if (endPoint == null) continue;
+      float bridgeLen = dist2D(cen, endPoint);
+      ArrayList<PVector> road = findSnapPath(cen, endPoint);
+      float roadLen = 0;
+      if (road != null) {
+        for (int i = 0; i < road.size() - 1; i++) roadLen += dist2D(road.get(i), road.get(i + 1));
+      }
+      if (road == null || roadLen >= bridgeLen * 2f) {
+        bridgeCand.add(new BridgeCandidate(cen.copy(), endPoint.copy(), bridgeLen));
+      }
+    }
+    Collections.sort(bridgeCand, new Comparator<BridgeCandidate>() {
+      public int compare(BridgeCandidate a, BridgeCandidate b) { return Float.compare(a.len, b.len); }
+    });
+    int bridges = 0;
+    for (BridgeCandidate bc : bridgeCand) {
+      if (bridges >= 3) break;
+      ArrayList<PVector> bridgePts = new ArrayList<PVector>();
+      bridgePts.add(bc.a.copy());
+      bridgePts.add(bc.b.copy());
+      ArrayList<PVector[]> segs = segmentsFromPoints(bridgePts);
+      if (segmentsCross(segs, existingSegs)) continue;
+      addPathFromPoints(bridgeType, "Bridge " + (paths.size() + 1), bridgePts);
+      existingSegs.addAll(segs);
+      bridges++;
+    }
+  }
+
+
+  int ensurePathTypeByName(String name) {
+    if (pathTypes != null) {
+      for (int i = 0; i < pathTypes.size(); i++) {
+        PathType pt = pathTypes.get(i);
+        if (pt != null && pt.name != null && pt.name.equalsIgnoreCase(name)) return i;
+      }
+    }
+    int presetIdx = -1;
+    for (int i = 0; i < PATH_TYPE_PRESETS.length; i++) {
+      PathTypePreset p = PATH_TYPE_PRESETS[i];
+      if (p != null && p.name != null && p.name.equalsIgnoreCase(name)) {
+        presetIdx = i;
+        break;
+      }
+    }
+    PathType created = (presetIdx >= 0) ? makePathTypeFromPreset(presetIdx) : new PathType(name, color(60), 2.0f, 1.0f, PathRouteMode.PATHFIND, 0.0f, true, false);
+    addPathType(created);
+    return pathTypes.size() - 1;
+  }
+
+  ArrayList<PVector> growRiver(PVector start, float seaLevel, float stepLen, ArrayList<PVector[]> avoid) {
+    if (start == null) return null;
+    long riverStart = millis();
+    ArrayList<PVector> pts = new ArrayList<PVector>();
+    pts.add(start.copy());
+    PVector dir = new PVector(0, 1);
+    float lastElev = sampleElevationAt(start.x, start.y, seaLevel);
+    int maxSeg = 60;
+    for (int i = 0; i < maxSeg; i++) {
+      PVector cur = pts.get(pts.size() - 1);
+      ArrayList<PVector> candidates = new ArrayList<PVector>();
+      for (int k = 0; k < 5; k++) {
+        float ang = radians(random(-30, 30));
+        PVector d = dir.copy();
+        d.rotate(ang);
+        if (d.y < 0) d.y = abs(d.y); // push upward
+        d.normalize();
+        d.mult(stepLen);
+        PVector np = PVector.add(cur, d);
+        candidates.add(np);
+      }
+      PVector best = null;
+      float bestElev = -Float.MAX_VALUE;
+      for (PVector c : candidates) {
+        float elev = sampleElevationAt(c.x, c.y, seaLevel);
+        if (elev <= seaLevel) continue;
+        if (elev < lastElev - 0.02f) continue; // allow small dips but mostly uphill
+        if (segmentTouches(c, pts, stepLen * 0.5f)) continue;
+        if (segmentsCross(segmentsFromPoints(Arrays.asList(cur, c)), avoid)) continue;
+        if (elev > bestElev) { bestElev = elev; best = c; }
+      }
+      if (best == null) break;
+      pts.add(best);
+      lastElev = max(lastElev, bestElev);
+      dir = PVector.sub(best, cur);
+      if (pts.size() > 80) break;
+    }
+    if (pts.size() < 2) return pts;
+    if (pts.size() > 31) {
+      int mid = pts.size() / 2;
+      ArrayList<PVector> branch = growBranch(pts.get(mid), pts, seaLevel, stepLen * 0.8f, avoid);
+      if (branch != null && branch.size() > 1) {
+        addPathFromPoints(ensurePathTypeByName("River"), "River Branch " + (paths.size() + 1), branch);
+        avoid.addAll(segmentsFromPoints(branch));
+      }
+    }
+    avoid.addAll(segmentsFromPoints(pts));
+    return pts;
+  }
+
+  ArrayList<PVector> growBranch(PVector start, ArrayList<PVector> main, float seaLevel, float stepLen, ArrayList<PVector[]> avoid) {
+    ArrayList<PVector> pts = new ArrayList<PVector>();
+    pts.add(start.copy());
+    PVector dir = new PVector(0, 1);
+    for (int i = 0; i < 40; i++) {
+      PVector cur = pts.get(pts.size() - 1);
+      PVector best = null;
+      float bestElev = -Float.MAX_VALUE;
+      for (int k = 0; k < 4; k++) {
+        float ang = radians(random(-40, 40));
+        PVector d = dir.copy();
+        d.rotate(ang);
+        d.y = abs(d.y);
+        d.normalize();
+        d.mult(stepLen);
+        PVector np = PVector.add(cur, d);
+        float elev = sampleElevationAt(np.x, np.y, seaLevel);
+        if (elev <= seaLevel) continue;
+        if (segmentTouches(np, main, stepLen * 0.5f)) continue;
+        ArrayList<PVector[]> segs = segmentsFromPoints(Arrays.asList(cur, np));
+        if (segmentsCross(segs, avoid)) continue;
+        if (elev > bestElev) { bestElev = elev; best = np; }
+      }
+      if (best == null) break;
+      pts.add(best);
+      dir = PVector.sub(best, cur);
+    }
+    return (pts.size() < 3) ? null : pts;
+  }
+
+  boolean segmentTouches(PVector p, ArrayList<PVector> poly, float minDist) {
+    float md2 = minDist * minDist;
+    for (int i = 0; i < poly.size(); i++) {
+      if (distSq(p, poly.get(i)) < md2) return true;
+      if (i < poly.size() - 1) {
+        if (pointToSegmentSq(p, poly.get(i), poly.get(i + 1)) < md2) return true;
+      }
+    }
+    return false;
+  }
+
+  ArrayList<PVector[]> segmentsFromPoints(List<PVector> pts) {
+    ArrayList<PVector[]> out = new ArrayList<PVector[]>();
+    if (pts == null) return out;
+    for (int i = 0; i < pts.size() - 1; i++) {
+      out.add(new PVector[] { pts.get(i), pts.get(i + 1) });
+    }
+    return out;
+  }
+
+  boolean segmentsCross(ArrayList<PVector[]> a, ArrayList<PVector[]> b) {
+    if (a == null || b == null) return false;
+    for (PVector[] sa : a) {
+      for (PVector[] sb : b) {
+        if (segmentsIntersect(sa[0], sa[1], sb[0], sb[1])) return true;
+      }
+    }
+    return false;
+  }
+
+  ArrayList<PVector> trimAtFirstIntersection(ArrayList<PVector> pts, ArrayList<PVector[]> existing) {
+    if (pts == null || pts.size() < 2) return null;
+    ArrayList<PVector> out = new ArrayList<PVector>();
+    out.add(pts.get(0));
+    for (int i = 0; i < pts.size() - 1; i++) {
+      PVector a = pts.get(i);
+      PVector b = pts.get(i + 1);
+      PVector hit = null;
+      for (PVector[] ex : existing) {
+        if (segmentsIntersect(a, b, ex[0], ex[1])) {
+          hit = segmentIntersection(a, b, ex[0], ex[1]);
+          break;
+        }
+      }
+      if (hit != null) {
+        out.add(hit);
+        break;
+      } else {
+        out.add(b);
+      }
+    }
+    return (out.size() < 2) ? null : out;
+  }
+
+  void addPathFromPoints(int typeId, String name, ArrayList<PVector> pts) {
+    if (pts == null || pts.size() < 2) return;
+    Path p = new Path();
+    p.typeId = constrain(typeId, 0, max(0, pathTypes.size() - 1));
+    p.name = name;
+    p.addRoute(pts);
+    paths.add(p);
+    snapDirty = true;
+  }
+
+  boolean segmentsIntersect(PVector a1, PVector a2, PVector b1, PVector b2) {
+    float d = (a2.x - a1.x) * (b2.y - b1.y) - (a2.y - a1.y) * (b2.x - b1.x);
+    if (abs(d) < 1e-6f) return false;
+    float ua = ((b1.x - a1.x) * (b2.y - b1.y) - (b1.y - a1.y) * (b2.x - b1.x)) / d;
+    float ub = ((b1.x - a1.x) * (a2.y - a1.y) - (b1.y - a1.y) * (a2.x - a1.x)) / d;
+    return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
+  }
+
+  PVector segmentIntersection(PVector a1, PVector a2, PVector b1, PVector b2) {
+    float d = (a2.x - a1.x) * (b2.y - b1.y) - (a2.y - a1.y) * (b2.x - b1.x);
+    if (abs(d) < 1e-6f) return null;
+    float ua = ((b1.x - a1.x) * (b2.y - b1.y) - (b1.y - a1.y) * (b2.x - b1.x)) / d;
+    return new PVector(a1.x + ua * (a2.x - a1.x), a1.y + ua * (a2.y - a1.y));
+  }
+
+  PVector snapToVertices(PVector p, ArrayList<PVector> meshVerts) {
+    if (p == null) return null;
+    if (meshVerts == null || meshVerts.isEmpty()) return p;
+    float bestD = Float.MAX_VALUE;
+    PVector best = p;
+    for (PVector v : meshVerts) {
+      float d2 = distSq(p, v);
+      if (d2 < bestD) {
+        bestD = d2;
+        best = v;
+      }
+    }
+    return best.copy();
+  }
+
+  float pointToSegmentSq(PVector p, PVector a, PVector b) {
+    float dx = b.x - a.x;
+    float dy = b.y - a.y;
+    if (abs(dx) < 1e-6f && abs(dy) < 1e-6f) return distSq(p, a);
+    float t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy);
+    t = constrain(t, 0, 1);
+    float px = a.x + t * dx;
+    float py = a.y + t * dy;
+    float ddx = p.x - px;
+    float ddy = p.y - py;
+    return ddx * ddx + ddy * ddy;
+  }
+
   // ---------- Paths management ----------
 
   String defaultPathNameForType(int typeId) {
@@ -3918,4 +4509,3 @@ class MapModel {
     return result;
   }
 }
-

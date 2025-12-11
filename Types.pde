@@ -121,17 +121,18 @@ class PathTypePreset {
 }
 
 PathTypePreset[] PATH_TYPE_PRESETS = new PathTypePreset[] {
-  new PathTypePreset("Road",    color(80, 80, 80),    3.0f, 1.2f, PathRouteMode.PATHFIND, 100.0f, true,  false),
-  new PathTypePreset("River",   color(60, 90, 180),   8.0f, 2.0f, PathRouteMode.PATHFIND, 40.0f,  false, true),
-  new PathTypePreset("Bridge",  color(130, 130, 160), 2.5f, 1.0f, PathRouteMode.ENDS,     0.0f,   false, false),
-  new PathTypePreset("Trail",   color(140, 100, 70),  1.6f, 0.6f, PathRouteMode.PATHFIND, 0.0f,   true,  false),
-  new PathTypePreset("Wall",    color(90, 70, 50),    2.5f, 1.0f, PathRouteMode.ENDS,     0.0f,   true,  false),
-  new PathTypePreset("Street",  color(110, 110, 110), 2.2f, 0.8f, PathRouteMode.PATHFIND, 400.0f, true,  false),
-  new PathTypePreset("Canal",   color(70, 110, 190),  2.4f, 1.0f, PathRouteMode.PATHFIND, 500.0f, false, true),
-  new PathTypePreset("Rail",    color(70, 70, 70),    2.8f, 1.2f, PathRouteMode.PATHFIND, 300.0f, true,  false),
-  new PathTypePreset("Pipeline",color(120, 120, 120), 2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,   true,  false),
-  new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,   false, false),
-  new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,   false, false)
+  new PathTypePreset("Road",    color(80, 80, 80),    3.0f, 1.2f, PathRouteMode.PATHFIND, 500.0f,  true,  false),
+  new PathTypePreset("River",   color(60, 90, 180),   8.0f, 2.0f, PathRouteMode.PATHFIND, 0.0f,    false, true),
+  new PathTypePreset("Bridge",  color(130, 130, 160), 2.5f, 1.0f, PathRouteMode.ENDS,     0.0f,    false, false),
+  new PathTypePreset("Trail",   color(140, 100, 70),  1.6f, 0.6f, PathRouteMode.PATHFIND, 0.0f,    true,  false),
+  new PathTypePreset("Wall",    color(90, 70, 50),    2.5f, 1.0f, PathRouteMode.ENDS,     0.0f,    true,  false),
+  new PathTypePreset("Street",  color(110, 110, 110), 2.2f, 0.8f, PathRouteMode.ENDS,     0.0f,    false, false),
+  new PathTypePreset("Highway", color(130, 130, 130), 2.5f, 1.0f, PathRouteMode.ENDS,     0.0f,    false, false),
+  new PathTypePreset("Canal",   color(70, 110, 190),  2.4f, 1.0f, PathRouteMode.PATHFIND, 700.0f,  false, true),
+  new PathTypePreset("Rail",    color(70, 70, 70),    2.8f, 1.2f, PathRouteMode.PATHFIND, 700.0f,  true,  false),
+  new PathTypePreset("Pipeline",color(120, 120, 120), 2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,    true,  false),
+  new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,    false, false),
+  new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,    false, false)
 };
 
 // ---------- Color helpers for HSB<->RGB in [0..1] ----------

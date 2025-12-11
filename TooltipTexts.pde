@@ -72,6 +72,7 @@ void initTooltipTexts() {
   TOOLTIP_TEXTS.put("paths_type_weight", "Set stroke width for active path type.");
   TOOLTIP_TEXTS.put("paths_min_weight", "Clamp how thin the tapered path can become.");
   TOOLTIP_TEXTS.put("paths_taper", "End of path touching the sea will appear with a bigger stroke width than the other end.");
+  TOOLTIP_TEXTS.put("paths_generate", "Auto-generate rivers, roads, and bridges.");
 
   // structures mode
   TOOLTIP_TEXTS.put("snap_water", "Snap to sea when placing new structures.");

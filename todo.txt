@@ -24,7 +24,7 @@ Zones :
 Paths :
 (maybe) width definer similar to water but using pathfinding to define more important roads
 (later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
-(soon) option to generate paths
+(later) refine the way path generation works
 (later) option to have the color match with water
 (later) allow invisible (except on paths mode) path type
 

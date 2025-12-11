@@ -653,6 +653,7 @@ void drawZonesPanel() {
 class PathsLayout {
   IntRect panel;
   int titleY;
+  IntRect generateBtn;
   IntRect typeAddBtn;
   IntRect typeRemoveBtn;
   IntRect routeSlider;
@@ -698,6 +699,9 @@ PathsLayout buildPathsLayout() {
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  l.generateBtn = new IntRect(innerX, curY, 120, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   // Path types controls
   l.typeAddBtn = new IntRect(innerX, curY, 24, PANEL_BUTTON_H);
@@ -862,6 +866,20 @@ void drawPathsPanel() {
   textAlign(CENTER, CENTER);
   text("Eraser", layout.eraserBtn.x + layout.eraserBtn.w / 2, layout.eraserBtn.y + layout.eraserBtn.h / 2);
   registerUiTooltip(layout.eraserBtn, tooltipFor("paths_eraser"));
+
+  // Generate button
+  drawBevelButton(layout.generateBtn.x, layout.generateBtn.y, layout.generateBtn.w, layout.generateBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Generate", layout.generateBtn.x + layout.generateBtn.w / 2, layout.generateBtn.y + layout.generateBtn.h / 2);
+  registerUiTooltip(layout.generateBtn, tooltipFor("paths_generate"));
+
+  // Generate button
+  drawBevelButton(layout.generateBtn.x, layout.generateBtn.y, layout.generateBtn.w, layout.generateBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Generate", layout.generateBtn.x + layout.generateBtn.w / 2, layout.generateBtn.y + layout.generateBtn.h / 2);
+  registerUiTooltip(layout.generateBtn, tooltipFor("paths_generate"));
 
   // Only type management on this panel
 
