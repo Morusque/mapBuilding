@@ -31,11 +31,11 @@ Paths :
 Structures :
 (later) structures should be groupable
 (soon) option to generate structs
-(soon) a way to move already placed structs
-(soon) refine the way parameters work (UI, default, selected, etc) (eg reuse structures parameters for upcoming structures) (take care of angle meaning, offset vs additional offset of snapping angle)
+(later) exact meaning of angle (absolute vs offset)
+(later) shrink big left menu a little
 (soon) structures light shading on rendering mode
 (soon) crosses (as on treasure maps)
-(later) use polygon tracing as a structure input mode
+(maybe) use polygon tracing as a structure input mode
 
 Labels :
 (maybe) optionally associate labels with map elements

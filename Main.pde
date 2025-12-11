@@ -183,9 +183,174 @@ int editingPathNameIndex = -1;
 String pathNameDraft = "";
 
 // Structure selection state
-int selectedStructureIndex = -1;
+HashSet<Integer> selectedStructureIndices = new HashSet<Integer>();
+int primaryStructureIndex = -1;
+boolean editingStructureName = false;
 int editingStructureNameIndex = -1;
 String structureNameDraft = "";
+
+class StructureSelectionInfo {
+  boolean hasSelection = false;
+  boolean nameMixed = false;
+  boolean sizeMixed = false;
+  boolean angleMixed = false;
+  boolean ratioMixed = false;
+  boolean shapeMixed = false;
+  boolean alignmentMixed = false;
+  boolean hueMixed = false;
+  boolean satMixed = false;
+  boolean alphaMixed = false;
+  boolean strokeMixed = false;
+
+  String sharedName = "";
+  float sharedSize = 0.02f;
+  float sharedAngleRad = 0.0f;
+  float sharedAngleOffsetRad = 0.0f;
+  float sharedRatio = 1.0f;
+  StructureShape sharedShape = StructureShape.SQUARE;
+  StructureSnapMode sharedAlignment = StructureSnapMode.NEXT_TO_PATH;
+  float sharedHue = 0.0f;
+  float sharedSat = 0.0f;
+  float sharedAlpha = 1.0f;
+  float sharedStroke = 1.4f;
+}
+
+StructureSelectionInfo gatherStructureSelectionInfo() {
+  StructureSelectionInfo info = new StructureSelectionInfo();
+  info.sharedName = structureNameDraft;
+  info.sharedSize = structureSize;
+  info.sharedAngleRad = structureAngleOffsetRad;
+  info.sharedAngleOffsetRad = structureAngleOffsetRad;
+  info.sharedRatio = structureAspectRatio;
+  info.sharedShape = structureShape;
+  info.sharedAlignment = structureSnapMode;
+  info.sharedHue = structureHue01;
+  info.sharedSat = structureSat01;
+  info.sharedAlpha = structureAlpha01;
+  info.sharedStroke = structureStrokePx;
+
+  if (mapModel == null || mapModel.structures == null || selectedStructureIndices == null || selectedStructureIndices.isEmpty()) {
+    return info;
+  }
+
+  ArrayList<Integer> invalid = new ArrayList<Integer>();
+  boolean first = true;
+  for (int idx : selectedStructureIndices) {
+    if (idx < 0 || idx >= mapModel.structures.size()) {
+      invalid.add(idx);
+      continue;
+    }
+    Structure s = mapModel.structures.get(idx);
+    if (s == null) {
+      invalid.add(idx);
+      continue;
+    }
+    if (first) {
+      info.sharedName = (s.name != null) ? s.name : "";
+      info.sharedSize = s.size;
+      info.sharedAngleRad = s.angle;
+      float snapAngle = (s.snapBinding != null) ? s.snapBinding.snapAngleRad : 0.0f;
+      info.sharedAngleOffsetRad = s.angle - snapAngle;
+      info.sharedRatio = s.aspect;
+      info.sharedShape = s.shape;
+      info.sharedAlignment = s.alignment;
+      info.sharedHue = s.hue01;
+      info.sharedSat = s.sat01;
+      info.sharedAlpha = s.alpha01;
+      info.sharedStroke = s.strokeWeightPx;
+      first = false;
+      continue;
+    }
+    if (!info.nameMixed) {
+      String nm = (s.name != null) ? s.name : "";
+      info.nameMixed = !nm.equals(info.sharedName);
+    }
+    if (!info.sizeMixed && abs(info.sharedSize - s.size) > 1e-6f) info.sizeMixed = true;
+    if (!info.angleMixed && abs(info.sharedAngleRad - s.angle) > 1e-6f) info.angleMixed = true;
+    if (!info.ratioMixed && abs(info.sharedRatio - s.aspect) > 1e-6f) info.ratioMixed = true;
+    if (!info.shapeMixed && info.sharedShape != s.shape) info.shapeMixed = true;
+    if (!info.alignmentMixed && info.sharedAlignment != s.alignment) info.alignmentMixed = true;
+    if (!info.hueMixed && abs(info.sharedHue - s.hue01) > 1e-6f) info.hueMixed = true;
+    if (!info.satMixed && abs(info.sharedSat - s.sat01) > 1e-6f) info.satMixed = true;
+    if (!info.alphaMixed && abs(info.sharedAlpha - s.alpha01) > 1e-6f) info.alphaMixed = true;
+    if (!info.strokeMixed && abs(info.sharedStroke - s.strokeWeightPx) > 1e-6f) info.strokeMixed = true;
+  }
+
+  for (int idx : invalid) {
+    selectedStructureIndices.remove(idx);
+  }
+
+  if (first) return info;
+  info.hasSelection = true;
+
+  // Keep UI draft values in sync when there's a clear consensus.
+  if (!info.nameMixed) structureNameDraft = info.sharedName;
+  if (!info.sizeMixed) structureSize = info.sharedSize;
+  if (!info.angleMixed) structureAngleOffsetRad = info.sharedAngleOffsetRad;
+  if (!info.ratioMixed) structureAspectRatio = info.sharedRatio;
+  if (!info.shapeMixed) structureShape = info.sharedShape;
+  if (!info.alignmentMixed) structureSnapMode = info.sharedAlignment;
+  if (!info.hueMixed) structureHue01 = info.sharedHue;
+  if (!info.satMixed) structureSat01 = info.sharedSat;
+  if (!info.alphaMixed) structureAlpha01 = info.sharedAlpha;
+  if (!info.strokeMixed) structureStrokePx = info.sharedStroke;
+  return info;
+}
+
+boolean isStructureSelected(int idx) {
+  return selectedStructureIndices != null && selectedStructureIndices.contains(idx);
+}
+
+void clearStructureSelection() {
+  if (selectedStructureIndices != null) selectedStructureIndices.clear();
+  primaryStructureIndex = -1;
+  editingStructureName = false;
+  editingStructureNameIndex = -1;
+}
+
+void toggleStructureSelection(int idx) {
+  if (selectedStructureIndices == null) selectedStructureIndices = new HashSet<Integer>();
+  if (selectedStructureIndices.contains(idx)) {
+    selectedStructureIndices.remove(idx);
+    if (primaryStructureIndex == idx) {
+      primaryStructureIndex = selectedStructureIndices.isEmpty() ? -1 : selectedStructureIndices.iterator().next();
+    }
+  } else {
+    selectedStructureIndices.add(idx);
+    primaryStructureIndex = idx;
+  }
+  if (selectedStructureIndices.isEmpty()) {
+    editingStructureName = false;
+    editingStructureNameIndex = -1;
+  }
+}
+
+void selectStructureExclusive(int idx) {
+  clearStructureSelection();
+  if (selectedStructureIndices == null) selectedStructureIndices = new HashSet<Integer>();
+  if (idx >= 0) {
+    selectedStructureIndices.add(idx);
+    primaryStructureIndex = idx;
+  }
+}
+
+void shiftStructureSelectionAfterRemoval(int removedIdx) {
+  if (selectedStructureIndices == null || selectedStructureIndices.isEmpty()) return;
+  HashSet<Integer> updated = new HashSet<Integer>();
+  for (int idx : selectedStructureIndices) {
+    if (idx == removedIdx) continue;
+    int adjusted = (idx > removedIdx) ? idx - 1 : idx;
+    if (adjusted >= 0) updated.add(adjusted);
+  }
+  selectedStructureIndices = updated;
+  if (!selectedStructureIndices.contains(primaryStructureIndex)) {
+    primaryStructureIndex = selectedStructureIndices.isEmpty() ? -1 : selectedStructureIndices.iterator().next();
+  }
+  if (selectedStructureIndices.isEmpty()) {
+    editingStructureName = false;
+    editingStructureNameIndex = -1;
+  }
+}
 
 // Loading indicator
 boolean isLoading = false;
@@ -1218,6 +1383,7 @@ JSONArray serializeStructures(ArrayList<Structure> list) {
     o.setFloat("angle", s.angle);
     o.setFloat("size", s.size);
     o.setString("shape", s.shape.name());
+    o.setString("alignment", s.alignment.name());
     o.setFloat("aspect", s.aspect);
     o.setFloat("hue01", s.hue01);
     o.setFloat("sat01", s.sat01);
@@ -1225,6 +1391,28 @@ JSONArray serializeStructures(ArrayList<Structure> list) {
     o.setFloat("alpha01", s.alpha01);
     o.setFloat("strokeWeightPx", s.strokeWeightPx);
     o.setInt("fillCol", s.fillCol);
+    if (s.snapBinding != null) {
+      o.setString("snapTargetType", s.snapBinding.type.name());
+      o.setInt("snapPathIndex", s.snapBinding.pathIndex);
+      o.setInt("snapRouteIndex", s.snapBinding.routeIndex);
+      o.setInt("snapSegmentIndex", s.snapBinding.segmentIndex);
+      o.setInt("snapStructureIndex", s.snapBinding.structureIndex);
+      o.setInt("snapCellA", s.snapBinding.cellA);
+      o.setInt("snapCellB", s.snapBinding.cellB);
+      o.setFloat("snapAngleRad", s.snapBinding.snapAngleRad);
+      if (s.snapBinding.snapPoint != null) {
+        o.setFloat("snapPointX", s.snapBinding.snapPoint.x);
+        o.setFloat("snapPointY", s.snapBinding.snapPoint.y);
+      }
+      if (s.snapBinding.segA != null) {
+        o.setFloat("snapSegAx", s.snapBinding.segA.x);
+        o.setFloat("snapSegAy", s.snapBinding.segA.y);
+      }
+      if (s.snapBinding.segB != null) {
+        o.setFloat("snapSegBx", s.snapBinding.segB.x);
+        o.setFloat("snapSegBy", s.snapBinding.segB.y);
+      }
+    }
     arr.append(o);
   }
   return arr;
@@ -1394,6 +1582,7 @@ ArrayList<Structure> deserializeStructures(JSONArray arr) {
     s.angle = o.getFloat("angle", 0);
     s.size = o.getFloat("size", s.size);
     try { s.shape = StructureShape.valueOf(o.getString("shape", s.shape.name())); } catch (Exception e) {}
+    try { s.alignment = StructureSnapMode.valueOf(o.getString("alignment", s.alignment.name())); } catch (Exception e) {}
     s.aspect = o.getFloat("aspect", s.aspect);
     s.hue01 = o.getFloat("hue01", s.hue01);
     s.sat01 = o.getFloat("sat01", s.sat01);
@@ -1402,6 +1591,25 @@ ArrayList<Structure> deserializeStructures(JSONArray arr) {
     s.strokeWeightPx = o.getFloat("strokeWeightPx", s.strokeWeightPx);
     s.fillCol = o.getInt("fillCol", s.fillCol);
     s.updateFillColor();
+    if (s.snapBinding == null) s.snapBinding = new StructureSnapBinding();
+    s.snapBinding.clear();
+    try { s.snapBinding.type = StructureSnapTargetType.valueOf(o.getString("snapTargetType", s.snapBinding.type.name())); } catch (Exception e) {}
+    s.snapBinding.pathIndex = o.getInt("snapPathIndex", s.snapBinding.pathIndex);
+    s.snapBinding.routeIndex = o.getInt("snapRouteIndex", s.snapBinding.routeIndex);
+    s.snapBinding.segmentIndex = o.getInt("snapSegmentIndex", s.snapBinding.segmentIndex);
+    s.snapBinding.structureIndex = o.getInt("snapStructureIndex", s.snapBinding.structureIndex);
+    s.snapBinding.cellA = o.getInt("snapCellA", s.snapBinding.cellA);
+    s.snapBinding.cellB = o.getInt("snapCellB", s.snapBinding.cellB);
+    s.snapBinding.snapAngleRad = o.getFloat("snapAngleRad", s.snapBinding.snapAngleRad);
+    if (o.hasKey("snapPointX") && o.hasKey("snapPointY")) {
+      s.snapBinding.snapPoint = new PVector(o.getFloat("snapPointX", 0), o.getFloat("snapPointY", 0));
+    }
+    if (o.hasKey("snapSegAx") && o.hasKey("snapSegAy")) {
+      s.snapBinding.segA = new PVector(o.getFloat("snapSegAx", 0), o.getFloat("snapSegAy", 0));
+    }
+    if (o.hasKey("snapSegBx") && o.hasKey("snapSegBy")) {
+      s.snapBinding.segB = new PVector(o.getFloat("snapSegBx", 0), o.getFloat("snapSegBy", 0));
+    }
     list.add(s);
   }
   return list;
@@ -1598,6 +1806,7 @@ void drawElevationBrushPreview() {
 void drawStructurePreview() {
   int uiBottom = TOP_BAR_TOTAL + TOOL_BAR_HEIGHT;
   if (mouseY < uiBottom) return;
+  if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) return;
   PVector w = viewport.screenToWorld(mouseX, mouseY);
   Structure tmp = mapModel.computeSnappedStructure(w.x, w.y, structureSize);
   if (tmp == null) return;

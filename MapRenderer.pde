@@ -95,7 +95,7 @@ class MapRenderer {
     for (int i = 0; i < model.structures.size(); i++) {
       Structure s = model.structures.get(i);
       s.draw(app);
-      if (i == selectedStructureIndex) {
+      if (isStructureSelected(i)) {
         app.pushStyle();
         app.noFill();
         app.stroke(255, 180, 0, 200);

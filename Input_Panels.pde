@@ -120,7 +120,7 @@ boolean handleToolButtonClick(int my) {
     if (queueButtonAction(rect, new Runnable() { public void run() {
       selectedPathIndex = -1;
       pendingPathStart = null;
-      selectedStructureIndex = -1;
+      clearStructureSelection();
       currentTool = tools[idx];
     }})) return true;
   }
@@ -605,23 +605,51 @@ void mousePressed() {
       } else {
         handlePathsMousePressed(worldPos.x, worldPos.y);
       }
-  } else if (currentTool == Tool.EDIT_STRUCTURES) {
-    Structure s = mapModel.computeSnappedStructure(worldPos.x, worldPos.y, structureSize);
-    mapModel.structures.add(s);
-    selectedStructureIndex = mapModel.structures.size() - 1;
-  } else if (currentTool == Tool.EDIT_LABELS) {
-    String baseText = "label";
-    if (selectedLabelIndex >= 0 && selectedLabelIndex < mapModel.labels.size()) {
-      MapLabel sel = mapModel.labels.get(selectedLabelIndex);
-      if (sel != null && sel.text != null && sel.text.length() > 0) baseText = sel.text;
+    } else if (currentTool == Tool.EDIT_STRUCTURES) {
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        float cx = 0;
+        float cy = 0;
+        int count = 0;
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          Structure s = mapModel.structures.get(idx);
+          cx += s.x;
+          cy += s.y;
+          count++;
+        }
+        if (count > 0) {
+          cx /= count;
+          cy /= count;
+          float dx = worldPos.x - cx;
+          float dy = worldPos.y - cy;
+          for (int idx : selectedStructureIndices) {
+            if (idx < 0 || idx >= mapModel.structures.size()) continue;
+            Structure s = mapModel.structures.get(idx);
+            s.x += dx;
+            s.y += dy;
+            if (s.snapBinding != null) s.snapBinding.clear();
+          }
+        }
+      } else {
+        Structure s = mapModel.computeSnappedStructure(worldPos.x, worldPos.y, structureSize);
+        mapModel.structures.add(s);
+        clearStructureSelection();
+        editingStructureName = false;
+        editingStructureNameIndex = -1;
+      }
+    } else if (currentTool == Tool.EDIT_LABELS) {
+      String baseText = "label";
+      if (selectedLabelIndex >= 0 && selectedLabelIndex < mapModel.labels.size()) {
+        MapLabel sel = mapModel.labels.get(selectedLabelIndex);
+        if (sel != null && sel.text != null && sel.text.length() > 0) baseText = sel.text;
+      }
+      MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, baseText, labelTargetMode);
+      lbl.size = labelSizeDefault();
+      mapModel.labels.add(lbl);
+      selectedLabelIndex = mapModel.labels.size() - 1;
+      editingLabelIndex = selectedLabelIndex;
+      labelDraft = lbl.text;
     }
-    MapLabel lbl = new MapLabel(worldPos.x, worldPos.y, baseText, labelTargetMode);
-    lbl.size = labelSizeDefault();
-    mapModel.labels.add(lbl);
-    selectedLabelIndex = mapModel.labels.size() - 1;
-    editingLabelIndex = selectedLabelIndex;
-    labelDraft = lbl.text;
-  }
   }
 }
 
@@ -944,38 +972,153 @@ boolean handlePathsListPanelClick(int mx, int my) {
 boolean handleStructuresPanelClick(int mx, int my) {
   if (!isInStructuresPanel(mx, my)) return false;
   StructuresLayout layout = buildStructuresLayout();
+  StructureSelectionInfo info = gatherStructureSelectionInfo();
+  boolean hasSelection = info.hasSelection;
+
+  if (!layout.nameField.contains(mx, my)) {
+    editingStructureName = false;
+    editingStructureNameIndex = -1;
+  }
+
+  if (layout.nameField.contains(mx, my)) {
+    editingStructureName = true;
+    editingStructureNameIndex = -1;
+    if (hasSelection && !info.nameMixed) structureNameDraft = info.sharedName;
+    else if (hasSelection && info.nameMixed) structureNameDraft = "";
+    return true;
+  }
+
   if (layout.sizeSlider.contains(mx, my)) {
     float t = constrain((mx - layout.sizeSlider.x) / (float)layout.sizeSlider.w, 0, 1);
-    structureSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
-    activeSlider = SLIDER_STRUCT_SIZE;
+    float newSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+    structureSize = newSize;
+    if (hasSelection) {
+      for (int idx : selectedStructureIndices) {
+        if (idx < 0 || idx >= mapModel.structures.size()) continue;
+        mapModel.structures.get(idx).size = newSize;
+      }
+      activeSlider = SLIDER_STRUCT_SELECTED_SIZE;
+    } else {
+      activeSlider = SLIDER_STRUCT_SIZE;
+    }
     return true;
   }
   if (layout.angleSlider.contains(mx, my)) {
     float t = constrain((mx - layout.angleSlider.x) / (float)layout.angleSlider.w, 0, 1);
     float angDeg = -180.0f + t * 360.0f;
-    structureAngleOffsetRad = radians(angDeg);
-    activeSlider = SLIDER_STRUCT_ANGLE;
+    float angRad = radians(angDeg);
+    float snapBase = (hasSelection && !info.angleMixed) ? (info.sharedAngleRad - info.sharedAngleOffsetRad) : 0.0f;
+    structureAngleOffsetRad = angRad - snapBase;
+    if (hasSelection) {
+      for (int idx : selectedStructureIndices) {
+        if (idx < 0 || idx >= mapModel.structures.size()) continue;
+        mapModel.structures.get(idx).angle = angRad;
+      }
+      activeSlider = SLIDER_STRUCT_SELECTED_ANGLE;
+    } else {
+      activeSlider = SLIDER_STRUCT_ANGLE;
+    }
     return true;
   }
   if (layout.ratioSlider.contains(mx, my)) {
     float t = constrain((mx - layout.ratioSlider.x) / (float)layout.ratioSlider.w, 0, 1);
-    structureAspectRatio = constrain(0.3f + t * (3.0f - 0.3f), 0.3f, 3.0f);
-    activeSlider = SLIDER_STRUCT_RATIO;
+    float newRatio = constrain(0.3f + t * (3.0f - 0.3f), 0.3f, 3.0f);
+    structureAspectRatio = newRatio;
+    if (hasSelection) {
+      for (int idx : selectedStructureIndices) {
+        if (idx < 0 || idx >= mapModel.structures.size()) continue;
+        mapModel.structures.get(idx).aspect = newRatio;
+      }
+      activeSlider = SLIDER_STRUCT_RATIO;
+    } else {
+      activeSlider = SLIDER_STRUCT_RATIO;
+    }
     return true;
   }
-  for (int i = 0; i < layout.shapeButtons.size(); i++) {
-    final int shapeIdx = i;
-    IntRect b = layout.shapeButtons.get(i);
-    if (queueButtonAction(b, new Runnable() { public void run() {
-      structureShape = StructureShape.values()[shapeIdx];
-    }})) return true;
+  if (layout.shapeSelector.contains(mx, my)) {
+    StructureShape[] shapes = StructureShape.values();
+    float t = constrain((mx - layout.shapeSelector.x) / (float)layout.shapeSelector.w, 0, 1);
+    int idx = round(t * max(0, shapes.length - 1));
+    idx = constrain(idx, 0, shapes.length - 1);
+    structureShape = shapes[idx];
+    if (hasSelection) {
+      for (int si : selectedStructureIndices) {
+        if (si < 0 || si >= mapModel.structures.size()) continue;
+        mapModel.structures.get(si).shape = structureShape;
+      }
+    }
+    return true;
   }
-  for (int i = 0; i < layout.snapButtons.size(); i++) {
-    final int snapIdx = i;
-    IntRect b = layout.snapButtons.get(i);
-    if (queueButtonAction(b, new Runnable() { public void run() {
-      structureSnapMode = StructureSnapMode.values()[snapIdx];
-    }})) return true;
+  if (layout.alignmentSelector.contains(mx, my)) {
+    StructureSnapMode[] snaps = StructureSnapMode.values();
+    float t = constrain((mx - layout.alignmentSelector.x) / (float)layout.alignmentSelector.w, 0, 1);
+    int idx = round(t * max(0, snaps.length - 1));
+    idx = constrain(idx, 0, snaps.length - 1);
+    structureSnapMode = snaps[idx];
+    if (hasSelection) {
+      for (int si : selectedStructureIndices) {
+        if (si < 0 || si >= mapModel.structures.size()) continue;
+        mapModel.structures.get(si).alignment = structureSnapMode;
+      }
+    }
+    return true;
+  }
+  if (layout.hueSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.hueSlider.x) / (float)layout.hueSlider.w, 0, 1);
+    structureHue01 = t;
+    if (hasSelection) {
+      for (int idx : selectedStructureIndices) {
+        if (idx < 0 || idx >= mapModel.structures.size()) continue;
+        mapModel.structures.get(idx).setHue(t);
+      }
+      activeSlider = SLIDER_STRUCT_SELECTED_HUE;
+    } else {
+      activeSlider = SLIDER_STRUCT_SELECTED_HUE;
+    }
+    return true;
+  }
+  if (layout.satSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.satSlider.x) / (float)layout.satSlider.w, 0, 1);
+    structureSat01 = t;
+    if (hasSelection) {
+      for (int idx : selectedStructureIndices) {
+        if (idx < 0 || idx >= mapModel.structures.size()) continue;
+        mapModel.structures.get(idx).setSaturation(t);
+      }
+      activeSlider = SLIDER_STRUCT_SELECTED_SAT;
+    } else {
+      activeSlider = SLIDER_STRUCT_SELECTED_SAT;
+    }
+    return true;
+  }
+  if (layout.alphaSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.alphaSlider.x) / (float)layout.alphaSlider.w, 0, 1);
+    structureAlpha01 = t;
+    if (hasSelection) {
+      for (int idx : selectedStructureIndices) {
+        if (idx < 0 || idx >= mapModel.structures.size()) continue;
+        mapModel.structures.get(idx).setAlpha(t);
+      }
+      activeSlider = SLIDER_STRUCT_SELECTED_ALPHA;
+    } else {
+      activeSlider = SLIDER_STRUCT_SELECTED_ALPHA;
+    }
+    return true;
+  }
+  if (layout.strokeSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.strokeSlider.x) / (float)layout.strokeSlider.w, 0, 1);
+    float w = constrain(0.5f + t * (4.0f - 0.5f), 0.5f, 4.0f);
+    structureStrokePx = w;
+    if (hasSelection) {
+      for (int idx : selectedStructureIndices) {
+        if (idx < 0 || idx >= mapModel.structures.size()) continue;
+        mapModel.structures.get(idx).strokeWeightPx = w;
+      }
+      activeSlider = SLIDER_STRUCT_SELECTED_STROKE;
+    } else {
+      activeSlider = SLIDER_STRUCT_SELECTED_STROKE;
+    }
+    return true;
   }
   return false;
 }
@@ -983,88 +1126,34 @@ boolean handleStructuresPanelClick(int mx, int my) {
 boolean handleStructuresListPanelClick(int mx, int my) {
   if (!isInStructuresListPanel(mx, my)) return false;
   StructuresListLayout layout = buildStructuresListLayout();
-  boolean hasSelection = (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size());
   int listStartY = layoutStructureDetails(layout);
   populateStructuresListRows(layout, listStartY);
 
   if (queueButtonAction(layout.deselectBtn, new Runnable() { public void run() {
-    selectedStructureIndex = -1;
-    editingStructureNameIndex = -1;
+    clearStructureSelection();
   }})) return true;
-
-  Structure sel = hasSelection ? mapModel.structures.get(selectedStructureIndex) : null;
-  if (layout.detailNameField.contains(mx, my)) {
-    if (sel != null) {
-      editingStructureNameIndex = selectedStructureIndex;
-      structureNameDraft = (sel.name != null) ? sel.name : "";
-    }
-    return true;
-  }
-  if (layout.detailSizeSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.detailSizeSlider.x) / (float)layout.detailSizeSlider.w, 0, 1);
-    float newSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
-    if (sel != null) sel.size = newSize;
-    else structureSize = newSize;
-    activeSlider = SLIDER_STRUCT_SELECTED_SIZE;
-    return true;
-  }
-  if (layout.detailAngleSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.detailAngleSlider.x) / (float)layout.detailAngleSlider.w, 0, 1);
-    float angDeg = -180.0f + t * 360.0f;
-    if (sel != null) sel.angle = radians(angDeg);
-    else structureAngleOffsetRad = radians(angDeg);
-    activeSlider = SLIDER_STRUCT_SELECTED_ANGLE;
-    return true;
-  }
-  if (layout.detailHueSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.detailHueSlider.x) / (float)layout.detailHueSlider.w, 0, 1);
-    if (sel != null) sel.setHue(t);
-    else structureHue01 = t;
-    activeSlider = SLIDER_STRUCT_SELECTED_HUE;
-    return true;
-  }
-  if (layout.detailSatSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.detailSatSlider.x) / (float)layout.detailSatSlider.w, 0, 1);
-    if (sel != null) sel.setSaturation(t);
-    else structureSat01 = t;
-    activeSlider = SLIDER_STRUCT_SELECTED_SAT;
-    return true;
-  }
-  if (layout.detailAlphaSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.detailAlphaSlider.x) / (float)layout.detailAlphaSlider.w, 0, 1);
-    if (sel != null) sel.setAlpha(t);
-    else structureAlpha01 = t;
-    activeSlider = SLIDER_STRUCT_SELECTED_ALPHA;
-    return true;
-  }
-  if (layout.detailStrokeSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.detailStrokeSlider.x) / (float)layout.detailStrokeSlider.w, 0, 1);
-    float w = constrain(0.5f + t * (4.0f - 0.5f), 0.5f, 4.0f);
-    if (sel != null) sel.strokeWeightPx = w;
-    else structureStrokePx = w;
-    activeSlider = SLIDER_STRUCT_SELECTED_STROKE;
-    return true;
-  }
 
   for (int i = 0; i < layout.rows.size(); i++) {
     StructureRowLayout row = layout.rows.get(i);
     if (row.index < 0 || row.index >= mapModel.structures.size()) continue;
     if (queueButtonAction(row.selectRect, new Runnable() { public void run() {
-      selectedStructureIndex = row.index;
+      toggleStructureSelection(row.index);
+      editingStructureName = false;
       editingStructureNameIndex = -1;
     }})) return true;
     if (queueButtonAction(row.nameRect, new Runnable() { public void run() {
-      selectedStructureIndex = row.index;
+      selectStructureExclusive(row.index);
+      editingStructureName = true;
       editingStructureNameIndex = row.index;
       Structure target = mapModel.structures.get(row.index);
       structureNameDraft = (target != null && target.name != null) ? target.name : "";
     }})) return true;
     if (queueButtonAction(row.delRect, new Runnable() { public void run() {
       mapModel.structures.remove(row.index);
-      if (selectedStructureIndex == row.index) selectedStructureIndex = -1;
-      else if (selectedStructureIndex > row.index) selectedStructureIndex -= 1;
+      shiftStructureSelectionAfterRemoval(row.index);
       if (editingStructureNameIndex == row.index) editingStructureNameIndex = -1;
       else if (editingStructureNameIndex > row.index) editingStructureNameIndex -= 1;
+      if (selectedStructureIndices.isEmpty()) editingStructureName = false;
     }})) return true;
   }
   return false;

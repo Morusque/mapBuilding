@@ -40,6 +40,13 @@ enum StructureShape {
   HEXAGON
 }
 
+enum StructureSnapTargetType {
+  NONE,
+  PATH,
+  FRONTIER,
+  STRUCTURE
+}
+
 enum LabelTarget {
   FREE,
   BIOME,

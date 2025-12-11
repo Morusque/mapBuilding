@@ -423,110 +423,98 @@ void updateActiveSlider(int mx, int my) {
                                     FLATTEST_BIAS_MIN, FLATTEST_BIAS_MAX);
       break;
     }
-    case SLIDER_STRUCT_SIZE: {
+    case SLIDER_STRUCT_SIZE:
+    case SLIDER_STRUCT_SELECTED_SIZE: {
       StructuresLayout l = buildStructuresLayout();
       float t = (mx - l.sizeSlider.x) / (float)l.sizeSlider.w;
       t = constrain(t, 0, 1);
-      structureSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+      float newSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
+      structureSize = newSize;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).size = newSize;
+        }
+      }
       break;
     }
-    case SLIDER_STRUCT_ANGLE: {
+    case SLIDER_STRUCT_ANGLE:
+    case SLIDER_STRUCT_SELECTED_ANGLE: {
       StructuresLayout l = buildStructuresLayout();
       float t = (mx - l.angleSlider.x) / (float)l.angleSlider.w;
       t = constrain(t, 0, 1);
       float angDeg = -180.0f + t * 360.0f;
-      structureAngleOffsetRad = radians(angDeg);
+      float angRad = radians(angDeg);
+      StructureSelectionInfo info = gatherStructureSelectionInfo();
+      float snapBase = (info.hasSelection && !info.angleMixed) ? (info.sharedAngleRad - info.sharedAngleOffsetRad) : 0.0f;
+      structureAngleOffsetRad = angRad - snapBase;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).angle = angRad;
+        }
+      }
       break;
     }
     case SLIDER_STRUCT_RATIO: {
       StructuresLayout l = buildStructuresLayout();
       float t = constrain((mx - l.ratioSlider.x) / (float)l.ratioSlider.w, 0, 1);
-      structureAspectRatio = constrain(0.3f + t * (3.0f - 0.3f), 0.3f, 3.0f);
-      break;
-    }
-    case SLIDER_STRUCT_SELECTED_SIZE: {
-      StructuresListLayout l = buildStructuresListLayout();
-      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailSizeSlider.x) / (float)l.detailSizeSlider.w, 0, 1);
-        Structure sel = mapModel.structures.get(selectedStructureIndex);
-        sel.size = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
-      } else {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailSizeSlider.x) / (float)l.detailSizeSlider.w, 0, 1);
-        structureSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
-      }
-      break;
-    }
-    case SLIDER_STRUCT_SELECTED_ANGLE: {
-      StructuresListLayout l = buildStructuresListLayout();
-      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailAngleSlider.x) / (float)l.detailAngleSlider.w, 0, 1);
-        float angDeg = -180.0f + t * 360.0f;
-        Structure sel = mapModel.structures.get(selectedStructureIndex);
-        sel.angle = radians(angDeg);
-      } else {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailAngleSlider.x) / (float)l.detailAngleSlider.w, 0, 1);
-        float angDeg = -180.0f + t * 360.0f;
-        structureAngleOffsetRad = radians(angDeg);
+      float newRatio = constrain(0.3f + t * (3.0f - 0.3f), 0.3f, 3.0f);
+      structureAspectRatio = newRatio;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).aspect = newRatio;
+        }
       }
       break;
     }
     case SLIDER_STRUCT_SELECTED_HUE: {
-      StructuresListLayout l = buildStructuresListLayout();
-      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailHueSlider.x) / (float)l.detailHueSlider.w, 0, 1);
-        Structure sel = mapModel.structures.get(selectedStructureIndex);
-        sel.setHue(t);
-      } else {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailHueSlider.x) / (float)l.detailHueSlider.w, 0, 1);
-        structureHue01 = t;
+      StructuresLayout l = buildStructuresLayout();
+      float t = constrain((mx - l.hueSlider.x) / (float)l.hueSlider.w, 0, 1);
+      structureHue01 = t;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).setHue(t);
+        }
       }
       break;
     }
     case SLIDER_STRUCT_SELECTED_ALPHA: {
-      StructuresListLayout l = buildStructuresListLayout();
-      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailAlphaSlider.x) / (float)l.detailAlphaSlider.w, 0, 1);
-        Structure sel = mapModel.structures.get(selectedStructureIndex);
-        sel.setAlpha(t);
-      } else {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailAlphaSlider.x) / (float)l.detailAlphaSlider.w, 0, 1);
-        structureAlpha01 = t;
+      StructuresLayout l = buildStructuresLayout();
+      float t = constrain((mx - l.alphaSlider.x) / (float)l.alphaSlider.w, 0, 1);
+      structureAlpha01 = t;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).setAlpha(t);
+        }
       }
       break;
     }
     case SLIDER_STRUCT_SELECTED_SAT: {
-      StructuresListLayout l = buildStructuresListLayout();
-      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailSatSlider.x) / (float)l.detailSatSlider.w, 0, 1);
-        Structure sel = mapModel.structures.get(selectedStructureIndex);
-        sel.setSaturation(t);
-      } else {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailSatSlider.x) / (float)l.detailSatSlider.w, 0, 1);
-        structureSat01 = t;
+      StructuresLayout l = buildStructuresLayout();
+      float t = constrain((mx - l.satSlider.x) / (float)l.satSlider.w, 0, 1);
+      structureSat01 = t;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).setSaturation(t);
+        }
       }
       break;
     }
     case SLIDER_STRUCT_SELECTED_STROKE: {
-      StructuresListLayout l = buildStructuresListLayout();
-      if (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailStrokeSlider.x) / (float)l.detailStrokeSlider.w, 0, 1);
-        Structure sel = mapModel.structures.get(selectedStructureIndex);
-        sel.strokeWeightPx = constrain(0.5f + t * (4.0f - 0.5f), 0.5f, 4.0f);
-      } else {
-        layoutStructureDetails(l);
-        float t = constrain((mx - l.detailStrokeSlider.x) / (float)l.detailStrokeSlider.w, 0, 1);
-        structureStrokePx = constrain(0.5f + t * (4.0f - 0.5f), 0.5f, 4.0f);
+      StructuresLayout l = buildStructuresLayout();
+      float t = constrain((mx - l.strokeSlider.x) / (float)l.strokeSlider.w, 0, 1);
+      float w = constrain(0.5f + t * (4.0f - 0.5f), 0.5f, 4.0f);
+      structureStrokePx = w;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).strokeWeightPx = w;
+        }
       }
       break;
     }
@@ -876,23 +864,33 @@ void keyPressed() {
   }
 
   // Inline text editing for structures (name)
-  if (editingStructureNameIndex >= 0) {
+  if (editingStructureName) {
     if (key == ENTER || key == RETURN) {
-      if (editingStructureNameIndex < mapModel.structures.size()) {
-        mapModel.structures.get(editingStructureNameIndex).name = structureNameDraft;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).name = structureNameDraft;
+        }
       }
+      editingStructureName = false;
       editingStructureNameIndex = -1;
       return;
     } else if (key == BACKSPACE || key == DELETE) {
       if (structureNameDraft.length() > 0) structureNameDraft = structureNameDraft.substring(0, structureNameDraft.length() - 1);
-      if (editingStructureNameIndex < mapModel.structures.size()) {
-        mapModel.structures.get(editingStructureNameIndex).name = structureNameDraft;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).name = structureNameDraft;
+        }
       }
       return;
     } else if (key >= 32) {
       structureNameDraft += key;
-      if (editingStructureNameIndex < mapModel.structures.size()) {
-        mapModel.structures.get(editingStructureNameIndex).name = structureNameDraft;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).name = structureNameDraft;
+        }
       }
       return;
     }

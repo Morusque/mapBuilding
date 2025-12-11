@@ -411,22 +411,37 @@ class MapModel {
     return false;
   }
 
-  Structure computeSnappedStructure(float wx, float wy, float size) {
+  class SegmentHit {
+    PVector a;
+    PVector b;
+    PVector p;
+    int pathIndex = -1;
+    int routeIndex = -1;
+    int segmentIndex = -1;
+    int cellA = -1;
+    int cellB = -1;
+  }
+
+  Structure computeSnappedStructure(float wx, float wy, StructureAttributes attrs) {
+    StructureAttributes at = (attrs != null) ? attrs : new StructureAttributes();
     Structure s = new Structure(wx, wy);
-    s.name = "Struct " + (structures.size() + 1);
-    s.size = size;
-    s.shape = structureShape;
-    s.aspect = structureAspectRatio;
-    s.setHue(structureHue01);
-    s.setSaturation(structureSat01);
-    s.setAlpha(structureAlpha01);
-    s.strokeWeightPx = structureStrokePx;
+    at.applyTo(s);
+    if (s.name == null || s.name.length() == 0) {
+      s.name = "Struct " + (structures.size() + 1);
+    }
+    if (s.snapBinding == null) s.snapBinding = new StructureSnapBinding();
+    s.snapBinding.clear();
     // Keep magnetism roughly constant in screen space: smaller in world units when zoomed in.
     float snapRangePx = 20.0f;
     float snapRange = max(0.01f, snapRangePx / max(1e-3f, viewport.zoom));
 
-    if (structureSnapMode == StructureSnapMode.NONE) {
-      s.angle = lastStructureSnapAngle + structureAngleOffsetRad;
+    StructureSnapMode align = at.alignment;
+    float angleOffset = at.angleOffsetRad;
+
+    if (align == StructureSnapMode.NONE) {
+      s.snapBinding.type = StructureSnapTargetType.NONE;
+      s.snapBinding.snapAngleRad = lastStructureSnapAngle;
+      s.angle = lastStructureSnapAngle + angleOffset;
       return s;
     }
 
@@ -439,15 +454,15 @@ class MapModel {
                         : null;
 
     // Snap priority: paths > frontier guides (biome/water) > other structures
-    PVector[] seg = (usePaths) ? nearestPathSegment(wx, wy, snapRange) : null;
+    SegmentHit seg = (usePaths) ? nearestPathSegmentHit(wx, wy, snapRange) : null;
     if (seg != null) {
-      PVector a = seg[0];
-      PVector b = seg[1];
-      PVector p = seg[2];
+      PVector a = seg.a;
+      PVector b = seg.b;
+      PVector p = seg.p;
       float dx = b.x - a.x;
       float dy = b.y - a.y;
       float ang = atan2(dy, dx);
-      if (structureSnapMode == StructureSnapMode.ON_PATH) {
+      if (align == StructureSnapMode.ON_PATH) {
         s.x = p.x;
         s.y = p.y;
       } else {
@@ -461,24 +476,32 @@ class MapModel {
         s.y = p.y + ny * offset;
       }
       lastStructureSnapAngle = ang;
-      s.angle = ang + structureAngleOffsetRad;
+      s.angle = ang + angleOffset;
+      s.snapBinding.type = StructureSnapTargetType.PATH;
+      s.snapBinding.pathIndex = seg.pathIndex;
+      s.snapBinding.routeIndex = seg.routeIndex;
+      s.snapBinding.segmentIndex = seg.segmentIndex;
+      s.snapBinding.segA = a.copy();
+      s.snapBinding.segB = b.copy();
+      s.snapBinding.snapPoint = (p != null) ? p.copy() : null;
+      s.snapBinding.snapAngleRad = ang;
       return s;
     }
 
-    PVector[] guide = (useFrontiers)
-      ? nearestFrontierSegment(wx, wy, snapRange,
-                               snapWaterEnabled, snapBiomesEnabled, snapUnderwaterBiomesEnabled,
-                               snapZonesEnabled, snapElevationEnabled && elevBuckets != null,
-                               zoneMembership, elevBuckets)
+    SegmentHit guide = (useFrontiers)
+      ? nearestFrontierSegmentHit(wx, wy, snapRange,
+                                  snapWaterEnabled, snapBiomesEnabled, snapUnderwaterBiomesEnabled,
+                                  snapZonesEnabled, snapElevationEnabled && elevBuckets != null,
+                                  zoneMembership, elevBuckets)
       : null;
     if (guide != null) {
-      PVector a = guide[0];
-      PVector b = guide[1];
-      PVector p = guide[2];
+      PVector a = guide.a;
+      PVector b = guide.b;
+      PVector p = guide.p;
       float dx = b.x - a.x;
       float dy = b.y - a.y;
       float ang = atan2(dy, dx);
-      if (structureSnapMode == StructureSnapMode.ON_PATH) {
+      if (align == StructureSnapMode.ON_PATH) {
         s.x = p.x;
         s.y = p.y;
       } else {
@@ -491,7 +514,14 @@ class MapModel {
         s.y = p.y + ny * offset;
       }
       lastStructureSnapAngle = ang;
-      s.angle = ang + structureAngleOffsetRad;
+      s.angle = ang + angleOffset;
+      s.snapBinding.type = StructureSnapTargetType.FRONTIER;
+      s.snapBinding.cellA = guide.cellA;
+      s.snapBinding.cellB = guide.cellB;
+      s.snapBinding.segA = a.copy();
+      s.snapBinding.segB = b.copy();
+      s.snapBinding.snapPoint = (p != null) ? p.copy() : null;
+      s.snapBinding.snapAngleRad = ang;
       return s;
     }
 
@@ -518,13 +548,34 @@ class MapModel {
         s.x = closest.x + cos(ang) * targetDist;
         s.y = closest.y + sin(ang) * targetDist;
         lastStructureSnapAngle = ang;
-        s.angle = ang + structureAngleOffsetRad;
+        s.angle = ang + angleOffset;
+        s.snapBinding.type = StructureSnapTargetType.STRUCTURE;
+        s.snapBinding.structureIndex = structures.indexOf(closest);
+        s.snapBinding.snapAngleRad = ang;
+        s.snapBinding.snapPoint = new PVector(closest.x, closest.y);
         return s;
       }
     }
 
-    s.angle = lastStructureSnapAngle + structureAngleOffsetRad;
+    s.snapBinding.type = StructureSnapTargetType.NONE;
+    s.snapBinding.snapAngleRad = lastStructureSnapAngle;
+    s.angle = lastStructureSnapAngle + angleOffset;
     return s;
+  }
+
+  Structure computeSnappedStructure(float wx, float wy, float size) {
+    StructureAttributes attrs = new StructureAttributes();
+    attrs.size = size;
+    attrs.angleOffsetRad = structureAngleOffsetRad;
+    attrs.shape = structureShape;
+    attrs.alignment = structureSnapMode;
+    attrs.aspectRatio = structureAspectRatio;
+    attrs.hue01 = structureHue01;
+    attrs.sat01 = structureSat01;
+    attrs.alpha01 = structureAlpha01;
+    attrs.strokeWeightPx = structureStrokePx;
+    attrs.name = structureNameDraft;
+    return computeSnappedStructure(wx, wy, attrs);
   }
 
   void drawElevationOverlay(PApplet app, float seaLevel, boolean showElevationContours, boolean drawWater, boolean drawElevation,
@@ -2381,29 +2432,35 @@ class MapModel {
     }
   }
 
-  PVector[] nearestPathSegment(float wx, float wy, float maxDist) {
+  SegmentHit nearestPathSegmentHit(float wx, float wy, float maxDist) {
     if (paths == null || paths.isEmpty()) return null;
     float best = maxDist;
-    PVector bestA = null, bestB = null, bestP = null;
-    for (Path p : paths) {
-      for (ArrayList<PVector> seg : p.routes) {
+    SegmentHit bestHit = null;
+    for (int pi = 0; pi < paths.size(); pi++) {
+      Path p = paths.get(pi);
+      if (p == null || p.routes == null) continue;
+      for (int ri = 0; ri < p.routes.size(); ri++) {
+        ArrayList<PVector> seg = p.routes.get(ri);
         if (seg == null) continue;
-        for (int i = 0; i < seg.size() - 1; i++) {
-          PVector a = seg.get(i);
-          PVector b = seg.get(i + 1);
+        for (int si = 0; si < seg.size() - 1; si++) {
+          PVector a = seg.get(si);
+          PVector b = seg.get(si + 1);
           PVector proj = closestPointOnSegment(wx, wy, a, b);
           float d = dist(wx, wy, proj.x, proj.y);
           if (d < best) {
             best = d;
-            bestA = a;
-            bestB = b;
-            bestP = proj;
+            bestHit = new SegmentHit();
+            bestHit.a = a;
+            bestHit.b = b;
+            bestHit.p = proj;
+            bestHit.pathIndex = pi;
+            bestHit.routeIndex = ri;
+            bestHit.segmentIndex = si;
           }
         }
       }
     }
-    if (bestP == null) return null;
-    return new PVector[] { bestA, bestB, bestP };
+    return bestHit;
   }
 
   PVector closestPointOnSegment(float px, float py, PVector a, PVector b) {
@@ -2416,10 +2473,10 @@ class MapModel {
     return new PVector(ax + abx * t, ay + aby * t);
   }
 
-  PVector[] nearestFrontierSegment(float wx, float wy, float maxDist,
-                                   boolean useWater, boolean useBiomes, boolean useUnderwaterBiomes,
-                                   boolean useZones, boolean useElevation,
-                                   int[] zoneMembership, int[] elevBuckets) {
+  SegmentHit nearestFrontierSegmentHit(float wx, float wy, float maxDist,
+                                       boolean useWater, boolean useBiomes, boolean useUnderwaterBiomes,
+                                       boolean useZones, boolean useElevation,
+                                       int[] zoneMembership, int[] elevBuckets) {
     if (cells == null || cells.isEmpty()) return null;
     if (!useWater && !useBiomes && !useUnderwaterBiomes && !useZones && !useElevation) return null;
     ensureCellNeighborsComputed();
@@ -2427,7 +2484,7 @@ class MapModel {
     float eps2 = eps * eps;
 
     float best = maxDist;
-    PVector bestA = null, bestB = null, bestP = null;
+    SegmentHit bestHit = null;
 
     int n = cells.size();
     for (int i = 0; i < n; i++) {
@@ -2462,18 +2519,19 @@ class MapModel {
             float d = dist(wx, wy, proj.x, proj.y);
             if (d < best) {
               best = d;
-              bestA = a0;
-              bestB = a1;
-              bestP = proj;
+              bestHit = new SegmentHit();
+              bestHit.a = a0;
+              bestHit.b = a1;
+              bestHit.p = proj;
+              bestHit.cellA = i;
+              bestHit.cellB = nb;
             }
             break;
           }
         }
       }
     }
-
-    if (bestP == null) return null;
-    return new PVector[] { bestA, bestB, bestP };
+    return bestHit;
   }
 
   // ---------- Sites management ----------

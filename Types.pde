@@ -167,6 +167,75 @@ int hsb01ToRGB(float h, float s, float b) {
 
 // ---------- Structures ----------
 
+class StructureAttributes {
+  String name = "";
+  float size = 0.02f;
+  float angleOffsetRad = 0.0f;
+  StructureShape shape = StructureShape.SQUARE;
+  StructureSnapMode alignment = StructureSnapMode.NEXT_TO_PATH;
+  float aspectRatio = 1.0f;
+  float hue01 = 0.0f;
+  float sat01 = 0.0f;
+  float alpha01 = 1.0f;
+  float strokeWeightPx = 1.4f;
+
+  StructureAttributes copy() {
+    StructureAttributes c = new StructureAttributes();
+    c.name = name;
+    c.size = size;
+    c.angleOffsetRad = angleOffsetRad;
+    c.shape = shape;
+    c.alignment = alignment;
+    c.aspectRatio = aspectRatio;
+    c.hue01 = hue01;
+    c.sat01 = sat01;
+    c.alpha01 = alpha01;
+    c.strokeWeightPx = strokeWeightPx;
+    return c;
+  }
+
+  void applyTo(Structure s) {
+    if (s == null) return;
+    s.name = (name != null) ? name : "";
+    s.size = size;
+    s.shape = shape;
+    s.aspect = aspectRatio;
+    s.alignment = alignment;
+    s.setHue(hue01);
+    s.setSaturation(sat01);
+    s.setAlpha(alpha01);
+    s.strokeWeightPx = strokeWeightPx;
+  }
+}
+
+class StructureSnapBinding {
+  StructureSnapTargetType type = StructureSnapTargetType.NONE;
+  int pathIndex = -1;
+  int routeIndex = -1;
+  int segmentIndex = -1;
+  int structureIndex = -1;
+  int cellA = -1;
+  int cellB = -1;
+  float snapAngleRad = 0.0f;
+  PVector segA = null;
+  PVector segB = null;
+  PVector snapPoint = null;
+
+  void clear() {
+    type = StructureSnapTargetType.NONE;
+    pathIndex = -1;
+    routeIndex = -1;
+    segmentIndex = -1;
+    structureIndex = -1;
+    cellA = -1;
+    cellB = -1;
+    snapAngleRad = 0.0f;
+    segA = null;
+    segB = null;
+    snapPoint = null;
+  }
+}
+
 class Structure {
   float x;
   float y;
@@ -175,6 +244,7 @@ class Structure {
   float size = 0.02f; // world units square side
   StructureShape shape = StructureShape.SQUARE;
   float aspect = 1.0f; // width / height for rectangle
+  StructureSnapMode alignment = StructureSnapMode.NEXT_TO_PATH;
   String name = "";
   float hue01 = 0.0f;
   float sat01 = 0.0f;
@@ -182,6 +252,7 @@ class Structure {
   float alpha01 = 0.7f;
   float strokeWeightPx = 1.4f;
   int fillCol = color(245, 245, 235, 180);
+  StructureSnapBinding snapBinding = new StructureSnapBinding();
 
   Structure(float x, float y) {
     this.x = x;
@@ -270,6 +341,23 @@ class Structure {
     }
     app.popMatrix();
   }
+}
+
+StructureAttributes structureAttributesFromStructure(Structure s) {
+  StructureAttributes a = new StructureAttributes();
+  if (s == null) return a;
+  a.name = s.name;
+  a.size = s.size;
+  a.shape = s.shape;
+  a.alignment = s.alignment;
+  a.aspectRatio = s.aspect;
+  a.hue01 = s.hue01;
+  a.sat01 = s.sat01;
+  a.alpha01 = s.alpha01;
+  a.strokeWeightPx = s.strokeWeightPx;
+  float baseAngle = (s.snapBinding != null) ? s.snapBinding.snapAngleRad : 0.0f;
+  a.angleOffsetRad = s.angle - baseAngle;
+  return a;
 }
 
 // ---------- Labels ----------

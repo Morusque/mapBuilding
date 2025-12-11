@@ -1352,15 +1352,28 @@ String structureShapeLabel(StructureShape sh) {
   }
 }
 
+String structureAlignmentLabel(StructureSnapMode mode) {
+  switch (mode) {
+    case NONE: return "None";
+    case ON_PATH: return "Center";
+    default: return "Next";
+  }
+}
+
 // ----- STRUCTURES PANEL -----
 class StructuresLayout {
   IntRect panel;
   int titleY;
+  IntRect nameField;
   IntRect sizeSlider;
   IntRect angleSlider;
   IntRect ratioSlider;
-  ArrayList<IntRect> shapeButtons = new ArrayList<IntRect>();
-  ArrayList<IntRect> snapButtons = new ArrayList<IntRect>();
+  IntRect shapeSelector;
+  IntRect alignmentSelector;
+  IntRect hueSlider;
+  IntRect alphaSlider;
+  IntRect satSlider;
+  IntRect strokeSlider;
 }
 
 StructuresLayout buildStructuresLayout() {
@@ -1372,36 +1385,36 @@ StructuresLayout buildStructuresLayout() {
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
-  l.sizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  int fullW = l.panel.w - 2 * PANEL_PADDING;
+  l.nameField = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+  l.sizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  l.angleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+  l.angleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  l.ratioSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_PADDING;
+  l.ratioSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
-  // Shape selection buttons
-  String[] shapeLabels = { "Rect", "Square", "Circle", "Triangle", "Hex" };
-  int btnWShape = 58;
-  int gapShape = 6;
-  for (int i = 0; i < shapeLabels.length; i++) {
-    int row = i / 3;
-    int col = i % 3;
-    int x = innerX + col * (btnWShape + gapShape);
-    int y = curY + row * (PANEL_BUTTON_H + PANEL_ROW_GAP);
-    l.shapeButtons.add(new IntRect(x, y, btnWShape, PANEL_BUTTON_H));
-  }
-  curY += (PANEL_BUTTON_H + PANEL_ROW_GAP) * 2; // two rows of shape buttons
-  curY += PANEL_PADDING - PANEL_ROW_GAP;
+  l.shapeSelector = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  String[] snapModes = { "None", "Next", "Center" };
-  int btnW = 70;
-  int gap = 6;
-  for (int i = 0; i < snapModes.length; i++) {
-    l.snapButtons.add(new IntRect(innerX + i * (btnW + gap), curY, btnW, PANEL_BUTTON_H));
-  }
-  curY += PANEL_BUTTON_H + PANEL_PADDING;
+  l.alignmentSelector = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.hueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.satSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.alphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.strokeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
@@ -1413,55 +1426,102 @@ void drawStructuresPanelUI() {
   drawPanelBackground(layout.panel);
 
   int labelX = layout.panel.x + PANEL_PADDING;
+  StructureSelectionInfo info = gatherStructureSelectionInfo();
   fill(0);
   textAlign(LEFT, TOP);
-  text("Structures", labelX, layout.titleY);
+  text("Attributes", labelX, layout.titleY);
+
+  // Name field
+  {
+    IntRect nf = layout.nameField;
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Name", nf.x, nf.y - 4);
+    stroke(80);
+    fill(255);
+    rect(nf.x, nf.y, nf.w, nf.h);
+    fill(0);
+    textAlign(LEFT, CENTER);
+    String shownName = (info.nameMixed && !editingStructureName) ? "" : structureNameDraft;
+    if (!info.hasSelection && !editingStructureName) shownName = structureNameDraft;
+    if (info.hasSelection && !info.nameMixed && !editingStructureName) shownName = info.sharedName;
+    text(shownName, nf.x + 6, nf.y + nf.h / 2);
+    if (editingStructureName) {
+      float caretX = nf.x + 6 + textWidth(structureNameDraft);
+      stroke(0);
+      line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
+    }
+    registerUiTooltip(nf, tooltipFor("structures_detail_name"));
+  }
 
   // Size slider
   IntRect sz = layout.sizeSlider;
-  float sNorm = constrain(map(structureSize, 0.01f, 0.2f, 0, 1), 0, 1);
-  drawSlider(sz, sNorm, "Size");
+  float sNorm = constrain(map(info.sharedSize, 0.01f, 0.2f, 0, 1), 0, 1);
+  String sizeLabel = info.sizeMixed ? "Size" : "Size (" + nf(info.sharedSize, 1, 3) + ")";
+  drawSlider(sz, sNorm, sizeLabel, false, !info.sizeMixed);
   registerUiTooltip(sz, tooltipFor("structures_size"));
 
-  // Angle offset slider (-180..180 deg)
+  // Angle slider (-180..180 deg)
   IntRect ang = layout.angleSlider;
-  float angDeg = degrees(structureAngleOffsetRad);
+  float angDeg = degrees(info.sharedAngleRad);
   float aNorm = constrain(map(angDeg, -180.0f, 180.0f, 0, 1), 0, 1);
-  drawSlider(ang, aNorm, "Angle offset (" + nf(angDeg, 1, 1) + " deg)", true);
+  String angLabel = info.angleMixed ? "Angle" : "Angle (" + nf(angDeg, 1, 1) + " deg)";
+  drawSlider(ang, aNorm, angLabel, true, !info.angleMixed);
   registerUiTooltip(ang, tooltipFor("structures_angle"));
 
   // Rectangle ratio slider (width/height)
   IntRect ratio = layout.ratioSlider;
-  float rNorm = constrain(map(structureAspectRatio, 0.3f, 3.0f, 0, 1), 0, 1);
-  drawSlider(ratio, rNorm, "Rectangle ratio (W/H): " + nf(structureAspectRatio, 1, 2));
+  float rNorm = constrain(map(info.sharedRatio, 0.3f, 3.0f, 0, 1), 0, 1);
+  String ratioLabel = info.ratioMixed ? "Rectangle ratio (W/H)" : "Rectangle ratio (W/H): " + nf(info.sharedRatio, 1, 2);
+  drawSlider(ratio, rNorm, ratioLabel, false, !info.ratioMixed);
   registerUiTooltip(ratio, tooltipFor("structures_ratio"));
 
-  // Shape buttons
-  String[] shapeLabels = { "Rect", "Square", "Circle", "Triangle", "Hex" };
-  for (int i = 0; i < layout.shapeButtons.size(); i++) {
-    IntRect b = layout.shapeButtons.get(i);
-    boolean active = (structureShape == StructureShape.values()[i]);
-    drawBevelButton(b.x, b.y, b.w, b.h, active);
-    fill(10);
-    textAlign(CENTER, CENTER);
-    text(shapeLabels[i], b.x + b.w / 2, b.y + b.h / 2);
-    registerUiTooltip(b, tooltipFor("structures_shape"));
-  }
+  // Shape selector
+  IntRect shSel = layout.shapeSelector;
+  StructureShape[] shapes = StructureShape.values();
+  int shapeIdx = max(0, min(shapes.length - 1, info.sharedShape.ordinal()));
+  float shNorm = (shapes.length > 1) ? shapeIdx / (float)(shapes.length - 1) : 0;
+  String shapeLabel = info.shapeMixed ? "Shape" : "Shape: " + structureShapeLabel(info.sharedShape);
+  drawSelectorSlider(shSel, shNorm, shapeLabel, shapes.length, !info.shapeMixed);
+  registerUiTooltip(shSel, tooltipFor("structures_shape"));
 
-  // Snap mode buttons
-  String[] snapModes = { "None", "Next", "Center" };
-  for (int i = 0; i < layout.snapButtons.size(); i++) {
-    IntRect b = layout.snapButtons.get(i);
-    boolean active = (structureSnapMode == StructureSnapMode.values()[i]);
-    drawBevelButton(b.x, b.y, b.w, b.h, active);
-    fill(10);
-    textAlign(CENTER, CENTER);
-    text(snapModes[i], b.x + b.w / 2, b.y + b.h / 2);
-    registerUiTooltip(b, tooltipFor("structures_snap_mode"));
-  }
+  // Alignment selector
+  IntRect snapSel = layout.alignmentSelector;
+  StructureSnapMode[] snaps = StructureSnapMode.values();
+  int snapIdx = max(0, min(snaps.length - 1, info.sharedAlignment.ordinal()));
+  float snapNorm = (snaps.length > 1) ? snapIdx / (float)(snaps.length - 1) : 0;
+  String snapLabel = info.alignmentMixed ? "Alignment" : "Alignment: " + structureAlignmentLabel(info.sharedAlignment);
+  drawSelectorSlider(snapSel, snapNorm, snapLabel, snaps.length, !info.alignmentMixed);
+  registerUiTooltip(snapSel, tooltipFor("structures_snap_mode"));
+
+  // Hue slider
+  IntRect hue = layout.hueSlider;
+  float hNorm = constrain(info.sharedHue, 0, 1);
+  drawSlider(hue, hNorm, "Hue", false, !info.hueMixed);
+  registerUiTooltip(hue, tooltipFor("structures_detail_hue"));
+
+  // Saturation slider
+  IntRect sat = layout.satSlider;
+  float satNorm = constrain(info.sharedSat, 0, 1);
+  drawSlider(sat, satNorm, "Saturation", false, !info.satMixed);
+  registerUiTooltip(sat, tooltipFor("structures_detail_sat"));
+
+  // Alpha slider (fill only)
+  IntRect alp = layout.alphaSlider;
+  float aNorm2 = constrain(info.sharedAlpha, 0, 1);
+  String alphaLabel = info.alphaMixed ? "Alpha" : "Alpha (" + nf(info.sharedAlpha * 100.0f, 1, 0) + "%)";
+  drawSlider(alp, aNorm2, alphaLabel, false, !info.alphaMixed);
+  registerUiTooltip(alp, tooltipFor("structures_detail_alpha"));
+
+  // Stroke weight slider
+  IntRect st = layout.strokeSlider;
+  float stNorm = constrain(map(info.sharedStroke, 0.5f, 4.0f, 0, 1), 0, 1);
+  String strokeLabel = info.strokeMixed ? "Stroke weight (px)" : "Stroke weight (" + nf(info.sharedStroke, 1, 2) + " px)";
+  drawSlider(st, stNorm, strokeLabel, false, !info.strokeMixed);
+  registerUiTooltip(st, tooltipFor("structures_detail_stroke"));
 
   drawControlsHint(layout.panel,
-                   "left-click: place",
+                   "left-click: place/move",
                    "right-click: pan",
                    "wheel: zoom");
 }
@@ -1471,13 +1531,6 @@ class StructuresListLayout {
   IntRect panel;
   int titleY;
   IntRect deselectBtn;
-  IntRect detailNameField;
-  IntRect detailSizeSlider;
-  IntRect detailAngleSlider;
-  IntRect detailHueSlider;
-  IntRect detailAlphaSlider;
-  IntRect detailSatSlider;
-  IntRect detailStrokeSlider;
   ArrayList<StructureRowLayout> rows = new ArrayList<StructureRowLayout>();
   int rowsStartY;
   int rowsViewH;
@@ -1505,24 +1558,7 @@ StructuresListLayout buildStructuresListLayout() {
 }
 
 int layoutStructureDetails(StructuresListLayout layout) {
-  int labelX = layout.panel.x + PANEL_PADDING;
-  int curY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP;
-  int fullW = layout.panel.w - 2 * PANEL_PADDING;
-  layout.detailNameField = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_BUTTON_H);
-  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
-  layout.detailSizeSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-  layout.detailAngleSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-  layout.detailHueSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-  layout.detailAlphaSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-  layout.detailSatSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-  layout.detailStrokeSlider = new IntRect(labelX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
-  return curY;
+  return layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP;
 }
 
 void populateStructuresListRows(StructuresListLayout layout, int startY) {
@@ -1577,84 +1613,11 @@ void drawStructuresListPanel() {
   textAlign(CENTER, CENTER);
   text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
 
-  Structure target = (selectedStructureIndex >= 0 && selectedStructureIndex < mapModel.structures.size()) ?
-    mapModel.structures.get(selectedStructureIndex) : null;
-
-  // Name field (selected struct only)
-  {
-    IntRect nf = layout.detailNameField;
-    boolean editingName = (target != null && editingStructureNameIndex == selectedStructureIndex);
-    fill(0);
-    textAlign(LEFT, BOTTOM);
-    text("Name", nf.x, nf.y - 4);
-    stroke(80);
-    fill(255);
-    rect(nf.x, nf.y, nf.w, nf.h);
-    fill(0);
-    textAlign(LEFT, CENTER);
-    String shownName;
-    if (target != null) {
-      shownName = editingName ? structureNameDraft : target.name;
-    } else {
-      shownName = "";
-    }
-    text(shownName, nf.x + 6, nf.y + nf.h / 2);
-    if (editingName) {
-      float caretX = nf.x + 6 + textWidth(structureNameDraft);
-      stroke(0);
-      line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
-    }
-    registerUiTooltip(nf, tooltipFor("structures_detail_name"));
-  }
-
-  float baseSize = (target != null) ? target.size : structureSize;
-  float baseAngDeg = (target != null) ? degrees(target.angle) : degrees(structureAngleOffsetRad);
-  float baseHue = (target != null) ? target.hue01 : structureHue01;
-  float baseSat = (target != null) ? target.sat01 : structureSat01;
-  float baseAlpha = (target != null) ? target.alpha01 : structureAlpha01;
-  float baseStroke = (target != null) ? target.strokeWeightPx : structureStrokePx;
-
-  // Size slider
-  IntRect ss = layout.detailSizeSlider;
-  float sNorm = constrain(map(baseSize, 0.01f, 0.2f, 0, 1), 0, 1);
-  drawSlider(ss, sNorm, "Size");
-  registerUiTooltip(ss, tooltipFor("structures_detail_size"));
-
-  // Angle slider
-  IntRect ang = layout.detailAngleSlider;
-  float aNorm = constrain(map(baseAngDeg, -180.0f, 180.0f, 0, 1), 0, 1);
-  drawSlider(ang, aNorm, "Angle (" + nf(baseAngDeg, 1, 1) + " deg)", true);
-  registerUiTooltip(ang, tooltipFor("structures_detail_angle"));
-
-  // Hue slider
-  IntRect hue = layout.detailHueSlider;
-  float hNorm = constrain(baseHue, 0, 1);
-  drawSlider(hue, hNorm, "Hue");
-  registerUiTooltip(hue, tooltipFor("structures_detail_hue"));
-
-  // Saturation slider
-  IntRect sat = layout.detailSatSlider;
-  float satNorm = constrain(baseSat, 0, 1);
-  drawSlider(sat, satNorm, "Saturation");
-  registerUiTooltip(sat, tooltipFor("structures_detail_sat"));
-
-  // Alpha slider (fill only)
-  IntRect alp = layout.detailAlphaSlider;
-  float aNorm2 = constrain(baseAlpha, 0, 1);
-  drawSlider(alp, aNorm2, "Alpha (" + nf(baseAlpha * 100.0f, 1, 0) + "%)");
-  registerUiTooltip(alp, tooltipFor("structures_detail_alpha"));
-
-  // Stroke weight slider
-  IntRect st = layout.detailStrokeSlider;
-  float stNorm = constrain(map(baseStroke, 0.5f, 4.0f, 0, 1), 0, 1);
-  drawSlider(st, stNorm, "Stroke weight (px)");
-  registerUiTooltip(st, tooltipFor("structures_detail_stroke"));
-
   for (int i = 0; i < layout.rows.size(); i++) {
     StructureRowLayout row = layout.rows.get(i);
     Structure s = (row.index >= 0 && row.index < mapModel.structures.size()) ? mapModel.structures.get(row.index) : null;
     if (s == null) continue;
-    boolean selected = (selectedStructureIndex == row.index);
+    boolean selected = isStructureSelected(row.index);
     drawRadioButton(row.selectRect, selected);
 
     drawBevelButton(row.nameRect.x, row.nameRect.y, row.nameRect.w, row.nameRect.h, selected);
@@ -2036,10 +1999,14 @@ void drawSectionHeader(IntRect header, String label, boolean isOpen) {
 }
 
 void drawSlider(IntRect r, float tNorm, String label) {
-  drawSlider(r, tNorm, label, false);
+  drawSlider(r, tNorm, label, false, true);
 }
 
 void drawSlider(IntRect r, float tNorm, String label, boolean zeroTick) {
+  drawSlider(r, tNorm, label, zeroTick, true);
+}
+
+void drawSlider(IntRect r, float tNorm, String label, boolean zeroTick, boolean showCursor) {
   if (r == null) return;
   float t = constrain(tNorm, 0, 1);
   int trackY = r.y + r.h / 2;
@@ -2056,20 +2023,22 @@ void drawSlider(IntRect r, float tNorm, String label, boolean zeroTick) {
     line(zx, trackY - r.h / 2, zx, trackY - r.h / 2 + 6);
   }
 
-  // Cursor with pointy tip
-  int cursorX = round(lerp(startX, endX, t));
-  int cursorW = max(8, round(r.h * 0.55f));
-  int cursorH = round(r.h * 0.8f);
-  int cursorY = r.y + (r.h - cursorH) / 2;
-  noStroke();
-  fill(236);
-  rect(cursorX - cursorW / 2, cursorY, cursorW, cursorH);
-  stroke(255);
-  line(cursorX - cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY);
-  line(cursorX - cursorW / 2, cursorY, cursorX - cursorW / 2, cursorY + cursorH);
-  stroke(96);
-  line(cursorX - cursorW / 2, cursorY + cursorH, cursorX + cursorW / 2, cursorY + cursorH);
-  line(cursorX + cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY + cursorH);
+  if (showCursor) {
+    // Cursor with pointy tip
+    int cursorX = round(lerp(startX, endX, t));
+    int cursorW = max(8, round(r.h * 0.55f));
+    int cursorH = round(r.h * 0.8f);
+    int cursorY = r.y + (r.h - cursorH) / 2;
+    noStroke();
+    fill(236);
+    rect(cursorX - cursorW / 2, cursorY, cursorW, cursorH);
+    stroke(255);
+    line(cursorX - cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY);
+    line(cursorX - cursorW / 2, cursorY, cursorX - cursorW / 2, cursorY + cursorH);
+    stroke(96);
+    line(cursorX - cursorW / 2, cursorY + cursorH, cursorX + cursorW / 2, cursorY + cursorH);
+    line(cursorX + cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY + cursorH);
+  }
 
   fill(0);
   textAlign(LEFT, BOTTOM);
@@ -2077,6 +2046,10 @@ void drawSlider(IntRect r, float tNorm, String label, boolean zeroTick) {
 }
 
 void drawSelectorSlider(IntRect r, float tNorm, String label, int divisions) {
+  drawSelectorSlider(r, tNorm, label, divisions, true);
+}
+
+void drawSelectorSlider(IntRect r, float tNorm, String label, int divisions, boolean showCursor) {
   if (r == null) return;
   int steps = max(2, divisions);
   float t = constrain(tNorm, 0, 1);
@@ -2095,20 +2068,22 @@ void drawSelectorSlider(IntRect r, float tNorm, String label, int divisions) {
     line(tx, trackY - r.h / 2, tx, trackY - r.h / 2 + 6);
   }
 
-  // Same pointer as sliders
-  int cursorX = round(lerp(startX, endX, t));
-  int cursorW = max(8, round(r.h * 0.55f));
-  int cursorH = round(r.h * 0.8f);
-  int cursorY = r.y + (r.h - cursorH) / 2;
-  noStroke();
-  fill(236);
-  rect(cursorX - cursorW / 2, cursorY, cursorW, cursorH);
-  stroke(255);
-  line(cursorX - cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY);
-  line(cursorX - cursorW / 2, cursorY, cursorX - cursorW / 2, cursorY + cursorH);
-  stroke(96);
-  line(cursorX - cursorW / 2, cursorY + cursorH, cursorX + cursorW / 2, cursorY + cursorH);
-  line(cursorX + cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY + cursorH);
+  if (showCursor) {
+    // Same pointer as sliders
+    int cursorX = round(lerp(startX, endX, t));
+    int cursorW = max(8, round(r.h * 0.55f));
+    int cursorH = round(r.h * 0.8f);
+    int cursorY = r.y + (r.h - cursorH) / 2;
+    noStroke();
+    fill(236);
+    rect(cursorX - cursorW / 2, cursorY, cursorW, cursorH);
+    stroke(255);
+    line(cursorX - cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY);
+    line(cursorX - cursorW / 2, cursorY, cursorX - cursorW / 2, cursorY + cursorH);
+    stroke(96);
+    line(cursorX - cursorW / 2, cursorY + cursorH, cursorX + cursorW / 2, cursorY + cursorH);
+    line(cursorX + cursorW / 2, cursorY, cursorX + cursorW / 2, cursorY + cursorH);
+  }
 
   fill(0);
   textAlign(LEFT, BOTTOM);
