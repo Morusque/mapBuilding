@@ -54,6 +54,7 @@ class MapRenderer {
     app.pushStyle();
     app.strokeCap(PConstants.ROUND);
     app.strokeJoin(PConstants.ROUND);
+    float biomeAlphaScale = (currentTool == Tool.EDIT_ELEVATION) ? 0.8f : 1.0f;
     for (Cell c : model.cells) {
       if (c.vertices == null || c.vertices.size() < 3) continue;
       int col = color(230);
@@ -72,7 +73,7 @@ class MapRenderer {
         col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
       }
 
-      app.fill(col);
+      app.fill(col, 255 * biomeAlphaScale);
       if (showBorders) {
         app.stroke(180);
         app.strokeWeight(1.0f / viewport.zoom);
@@ -210,6 +211,37 @@ class MapRenderer {
     for (MapLabel l : model.labels) {
       if (l == null) continue;
       l.draw(app); // use the same rendering as labels mode (zoom-invariant)
+    }
+    app.popStyle();
+  }
+
+  void drawZoneLabelsRender(PApplet app, RenderSettings s) {
+    if (model == null || model.zones == null || s == null) return;
+    if (!s.showLabelsZones) return;
+    app.pushStyle();
+    app.fill(0);
+    app.textAlign(CENTER, CENTER);
+    float baseSize = labelSizeDefault();
+    for (MapModel.MapZone z : model.zones) {
+      if (z == null || z.cells == null || z.cells.isEmpty()) continue;
+      float cx = 0;
+      float cy = 0;
+      int count = 0;
+      for (int ci : z.cells) {
+        if (ci < 0 || ci >= model.cells.size()) continue;
+        Cell c = model.cells.get(ci);
+        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+        PVector cen = model.cellCentroid(c);
+        cx += cen.x;
+        cy += cen.y;
+        count++;
+      }
+      if (count <= 0) continue;
+      cx /= count;
+      cy /= count;
+      float ts = baseSize / max(1e-6f, viewport.zoom);
+      app.textSize(ts);
+      app.text((z.name != null) ? z.name : "Zone", cx, cy);
     }
     app.popStyle();
   }
@@ -595,9 +627,9 @@ class MapRenderer {
     }
 
     // Coast outline
-    if (s.waterContourSizePx > 1e-4f && s.waterContourAlpha01 > 1e-4f) {
+    if (s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f) {
       HashSet<String> drawn = new HashSet<String>();
-      int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterContourAlpha01);
+      int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
       app.stroke(strokeCol);
       app.strokeWeight(max(0.1f, s.waterContourSizePx) / viewport.zoom);
       app.noFill();
@@ -646,27 +678,32 @@ class MapRenderer {
     }
 
     // Water ripples (distance-field contours)
-    if (s.waterRippleCount > 0 && s.waterContourAlpha01 > 1e-4f) {
+    if (s.waterRippleCount > 0 &&
+        s.waterRippleDistancePx > 1e-4f &&
+        (s.waterRippleAlphaStart01 > 1e-4f || s.waterRippleAlphaEnd01 > 1e-4f)) {
       int cols = max(80, min(200, (int)(sqrt(max(1, model.cells.size())) * 1.0f)));
       int rows = cols;
       MapModel.ContourGrid g = model.getCoastDistanceGrid(cols, rows, seaLevel);
       if (g != null) {
-        float spacingWorld = max(0.1f, s.waterRippleDistancePx) / max(1e-6f, viewport.zoom);
-        float maxIso = spacingWorld * s.waterRippleCount;
-        float strokePx = max(0.8f, s.waterContourSizePx) / max(1e-6f, viewport.zoom);
-        app.pushStyle();
-        app.noFill();
-        app.strokeCap(PConstants.ROUND);
-        app.strokeJoin(PConstants.ROUND);
-        app.strokeWeight(strokePx);
-        for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
-          float fade = (maxIso <= 1e-6f) ? 1.0f : 1.0f - ((iso - spacingWorld) / maxIso);
-          float a = constrain(fade * s.waterContourAlpha01, 0, 1);
-          int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, a);
-          app.stroke(strokeCol);
-          drawIsoLine(app, g, iso);
+        float spacingWorld = s.waterRippleDistancePx / max(1e-6f, viewport.zoom);
+        if (spacingWorld > 1e-6f) {
+          float maxIso = spacingWorld * s.waterRippleCount;
+          float strokePx = max(0.8f, s.waterContourSizePx) / max(1e-6f, viewport.zoom);
+          app.pushStyle();
+          app.noFill();
+          app.strokeCap(PConstants.ROUND);
+          app.strokeJoin(PConstants.ROUND);
+          app.strokeWeight(strokePx);
+          for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
+            float t = (maxIso <= spacingWorld + 1e-6f) ? 0.0f : constrain((iso - spacingWorld) / max(1e-6f, maxIso - spacingWorld), 0, 1);
+            float a = constrain(lerp(s.waterRippleAlphaStart01, s.waterRippleAlphaEnd01, t), 0, 1);
+            if (a <= 1e-4f) continue;
+            int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, a);
+            app.stroke(strokeCol);
+            drawIsoLine(app, g, iso);
+          }
+          app.popStyle();
         }
-        app.popStyle();
       }
     }
 
@@ -986,7 +1023,7 @@ class MapRenderer {
 
     boolean drawZones = s.zoneStrokeAlpha01 > 1e-4f;
     boolean drawBiomes = s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f);
-    boolean drawWater = s.waterContourSizePx > 1e-4f && s.waterContourAlpha01 > 1e-4f;
+    boolean drawWater = s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f;
 
     float eps2 = 1e-6f;
     float zoneW = 2.0f / viewport.zoom;
@@ -1135,9 +1172,9 @@ class MapRenderer {
         }
 
         if (drawWater && waterDiff) {
-          int coastCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterContourAlpha01);
-          if (aWater) lanesPos.add(new Lane(waterW, coastCol, s.waterContourAlpha01));
-          else lanesNeg.add(new Lane(waterW, coastCol, s.waterContourAlpha01));
+          int coastCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
+          if (aWater) lanesPos.add(new Lane(waterW, coastCol, s.waterCoastAlpha01));
+          else lanesNeg.add(new Lane(waterW, coastCol, s.waterCoastAlpha01));
         }
 
         Comparator<Lane> cmp = new Comparator<Lane>() {

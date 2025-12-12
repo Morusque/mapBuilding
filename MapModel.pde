@@ -269,6 +269,10 @@ class MapModel {
     renderer.drawLabelsRender(app, s);
   }
 
+  void drawZoneLabelsRender(PApplet app, RenderSettings s) {
+    renderer.drawZoneLabelsRender(app, s);
+  }
+
   void drawZoneOutlinesRender(PApplet app, RenderSettings s) {
     renderer.drawZoneOutlinesRender(app, s);
   }
@@ -483,7 +487,7 @@ class MapModel {
       s.snapBinding.segmentIndex = seg.segmentIndex;
       s.snapBinding.segA = a.copy();
       s.snapBinding.segB = b.copy();
-      s.snapBinding.snapPoint = (p != null) ? p.copy() : null;
+      s.snapBinding.snapPoint = p.copy();
       s.snapBinding.snapAngleRad = ang;
       return s;
     }
@@ -520,7 +524,7 @@ class MapModel {
       s.snapBinding.cellB = guide.cellB;
       s.snapBinding.segA = a.copy();
       s.snapBinding.segB = b.copy();
-      s.snapBinding.snapPoint = (p != null) ? p.copy() : null;
+      s.snapBinding.snapPoint = p.copy();
       s.snapBinding.snapAngleRad = ang;
       return s;
     }

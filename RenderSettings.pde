@@ -51,7 +51,10 @@ class RenderSettings {
   float waterContourHue01 = 0.0f;
   float waterContourSat01 = 0.0f;
   float waterContourBri01 = 0.0f;
-  float waterContourAlpha01 = 1.0f;
+  float waterContourAlpha01 = 1.0f; // legacy: keep for backward compat
+  float waterCoastAlpha01 = 1.0f;
+  float waterRippleAlphaStart01 = 1.0f;
+  float waterRippleAlphaEnd01 = 0.3f;
   int elevationLinesCount = 0;
   ElevationLinesStyle elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
   float elevationLinesAlpha01 = 0.3f;
@@ -113,7 +116,10 @@ class RenderSettings {
     c.waterContourHue01 = waterContourHue01;
     c.waterContourSat01 = waterContourSat01;
     c.waterContourBri01 = waterContourBri01;
-    c.waterContourAlpha01 = waterContourAlpha01;
+    c.waterContourAlpha01 = waterCoastAlpha01;
+    c.waterCoastAlpha01 = waterCoastAlpha01;
+    c.waterRippleAlphaStart01 = waterRippleAlphaStart01;
+    c.waterRippleAlphaEnd01 = waterRippleAlphaEnd01;
     c.elevationLinesCount = elevationLinesCount;
     c.elevationLinesStyle = elevationLinesStyle;
     c.elevationLinesAlpha01 = elevationLinesAlpha01;
@@ -173,7 +179,10 @@ class RenderSettings {
     waterContourHue01 = o.waterContourHue01;
     waterContourSat01 = o.waterContourSat01;
     waterContourBri01 = o.waterContourBri01;
-    waterContourAlpha01 = o.waterContourAlpha01;
+    waterContourAlpha01 = o.waterCoastAlpha01;
+    waterCoastAlpha01 = o.waterCoastAlpha01;
+    waterRippleAlphaStart01 = o.waterRippleAlphaStart01;
+    waterRippleAlphaEnd01 = o.waterRippleAlphaEnd01;
     elevationLinesCount = o.elevationLinesCount;
     elevationLinesStyle = o.elevationLinesStyle;
     elevationLinesAlpha01 = o.elevationLinesAlpha01;
@@ -231,6 +240,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSat01 = 0.0f;
     s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 1.0f;
+    s.waterCoastAlpha01 = 1.0f;
+    s.waterRippleAlphaStart01 = 1.0f;
+    s.waterRippleAlphaEnd01 = 0.3f;
     s.elevationLinesCount = 0;
     s.elevationLinesAlpha01 = 0.3f;
     s.pathSatScale01 = 1.0f;
@@ -278,6 +290,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSat01 = 0.3f;
     s.waterContourBri01 = 0.6f;
     s.waterContourAlpha01 = 0.3f;
+    s.waterCoastAlpha01 = 0.3f;
+    s.waterRippleAlphaStart01 = 0.25f;
+    s.waterRippleAlphaEnd01 = 0.08f;
     s.elevationLinesCount = 0;
     s.elevationLinesAlpha01 = 0.0f;
     s.pathSatScale01 = 0.7f;
@@ -325,6 +340,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSat01 = 0.25f;
     s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 1.0f;
+    s.waterCoastAlpha01 = 1.0f;
+    s.waterRippleAlphaStart01 = 0.9f;
+    s.waterRippleAlphaEnd01 = 0.25f;
     s.elevationLinesCount = 10;
     s.elevationLinesAlpha01 = 0.6f;
     s.pathSatScale01 = 1.0f;
@@ -372,6 +390,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSat01 = 0.0f;
     s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 1.0f;
+    s.waterCoastAlpha01 = 1.0f;
+    s.waterRippleAlphaStart01 = 0.8f;
+    s.waterRippleAlphaEnd01 = 0.25f;
     s.elevationLinesCount = 4;
     s.elevationLinesAlpha01 = 0.25f;
     s.pathSatScale01 = 0.8f;
@@ -419,6 +440,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSat01 = 0.0f;
     s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 1.0f;
+    s.waterCoastAlpha01 = 1.0f;
+    s.waterRippleAlphaStart01 = 0.8f;
+    s.waterRippleAlphaEnd01 = 0.25f;
     s.elevationLinesCount = 2;
     s.elevationLinesAlpha01 = 1.0f;
     s.pathSatScale01 = 0.0f;
@@ -467,6 +491,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSat01 = 1.0f;
     s.waterContourBri01 = 0.3f;
     s.waterContourAlpha01 = 1.0f;
+    s.waterCoastAlpha01 = 1.0f;
+    s.waterRippleAlphaStart01 = 0.8f;
+    s.waterRippleAlphaEnd01 = 0.25f;
     s.elevationLinesCount = 16;
     s.elevationLinesAlpha01 = 0.3f;
     s.pathSatScale01 = 1.0f;
@@ -515,6 +542,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSat01 = 0.25f;
     s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 0.5f;
+    s.waterCoastAlpha01 = 0.5f;
+    s.waterRippleAlphaStart01 = 0.35f;
+    s.waterRippleAlphaEnd01 = 0.15f;
     s.elevationLinesCount = 0;
     s.elevationLinesAlpha01 = 0.1f;
     s.pathSatScale01 = 0.8f;
@@ -561,6 +591,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSat01 = 0.25f;
     s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 1.0f;
+    s.waterCoastAlpha01 = 1.0f;
+    s.waterRippleAlphaStart01 = 0.8f;
+    s.waterRippleAlphaEnd01 = 0.25f;
     s.elevationLinesCount = 0;
     s.elevationLinesAlpha01 = 1.0f;
     s.pathSatScale01 = 0.8f;
@@ -607,6 +640,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSat01 = 1.0f;
     s.waterContourBri01 = 1.0f;
     s.waterContourAlpha01 = 1.0f;
+    s.waterCoastAlpha01 = 1.0f;
+    s.waterRippleAlphaStart01 = 0.8f;
+    s.waterRippleAlphaEnd01 = 0.25f;
     s.elevationLinesCount = 24;
     s.elevationLinesAlpha01 = 1.0f;
     s.pathSatScale01 = 0.3f;

@@ -1281,10 +1281,23 @@ boolean handleRenderPanelClick(int mx, int my) {
     if (layout.waterContourHSB[0].contains(mx, my)) { renderSettings.waterContourHue01 = constrain((mx - layout.waterContourHSB[0].x) / (float)layout.waterContourHSB[0].w, 0, 1); activeSlider = SLIDER_RENDER_WATER_CONTOUR_H; return true; }
     if (layout.waterContourHSB[1].contains(mx, my)) { renderSettings.waterContourSat01 = constrain((mx - layout.waterContourHSB[1].x) / (float)layout.waterContourHSB[1].w, 0, 1); activeSlider = SLIDER_RENDER_WATER_CONTOUR_S; return true; }
     if (layout.waterContourHSB[2].contains(mx, my)) { renderSettings.waterContourBri01 = constrain((mx - layout.waterContourHSB[2].x) / (float)layout.waterContourHSB[2].w, 0, 1); activeSlider = SLIDER_RENDER_WATER_CONTOUR_B; return true; }
-    if (layout.waterContourAlphaSlider.contains(mx, my)) {
-      float t = constrain((mx - layout.waterContourAlphaSlider.x) / (float)layout.waterContourAlphaSlider.w, 0, 1);
-      renderSettings.waterContourAlpha01 = t;
+    if (layout.waterContourCoastAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterContourCoastAlphaSlider.x) / (float)layout.waterContourCoastAlphaSlider.w, 0, 1);
+      renderSettings.waterCoastAlpha01 = t;
+      renderSettings.waterContourAlpha01 = renderSettings.waterCoastAlpha01; // keep legacy field in sync
       activeSlider = SLIDER_RENDER_WATER_CONTOUR_ALPHA;
+      return true;
+    }
+    if (layout.waterRippleAlphaStartSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterRippleAlphaStartSlider.x) / (float)layout.waterRippleAlphaStartSlider.w, 0, 1);
+      renderSettings.waterRippleAlphaStart01 = t;
+      activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_START;
+      return true;
+    }
+    if (layout.waterRippleAlphaEndSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterRippleAlphaEndSlider.x) / (float)layout.waterRippleAlphaEndSlider.w, 0, 1);
+      renderSettings.waterRippleAlphaEnd01 = t;
+      activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_END;
       return true;
     }
     if (layout.elevationLinesCountSlider.contains(mx, my)) {

@@ -652,8 +652,21 @@ void updateActiveSlider(int mx, int my) {
     }
     case SLIDER_RENDER_WATER_CONTOUR_ALPHA: {
       RenderLayout l = buildRenderLayout();
-      float t = constrain((mx - l.waterContourAlphaSlider.x) / (float)l.waterContourAlphaSlider.w, 0, 1);
-      renderSettings.waterContourAlpha01 = t;
+      float t = constrain((mx - l.waterContourCoastAlphaSlider.x) / (float)l.waterContourCoastAlphaSlider.w, 0, 1);
+      renderSettings.waterCoastAlpha01 = t;
+      renderSettings.waterContourAlpha01 = renderSettings.waterCoastAlpha01; // keep legacy field aligned
+      break;
+    }
+    case SLIDER_RENDER_WATER_RIPPLE_ALPHA_START: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterRippleAlphaStartSlider.x) / (float)l.waterRippleAlphaStartSlider.w, 0, 1);
+      renderSettings.waterRippleAlphaStart01 = t;
+      break;
+    }
+    case SLIDER_RENDER_WATER_RIPPLE_ALPHA_END: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterRippleAlphaEndSlider.x) / (float)l.waterRippleAlphaEndSlider.w, 0, 1);
+      renderSettings.waterRippleAlphaEnd01 = t;
       break;
     }
     case SLIDER_RENDER_ELEV_LINES_COUNT: {

@@ -1669,7 +1669,9 @@ class RenderLayout {
   IntRect waterRippleCountSlider;
   IntRect waterRippleDistanceSlider;
   IntRect[] waterContourHSB = new IntRect[3];
-  IntRect waterContourAlphaSlider;
+  IntRect waterContourCoastAlphaSlider;
+  IntRect waterRippleAlphaStartSlider;
+  IntRect waterRippleAlphaEndSlider;
   IntRect elevationLinesCountSlider;
   IntRect elevationLineStyleSelector;
   IntRect elevationLinesAlphaSlider;
@@ -1792,7 +1794,13 @@ RenderLayout buildRenderLayout() {
     l.waterContourHSB[2] = new IntRect(innerX + 2 * (shortSliderW + hsbGap), yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H*2 + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-    l.waterContourAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    l.waterContourCoastAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterRippleAlphaStartSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterRippleAlphaEndSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.elevationLinesCountSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
@@ -1924,8 +1932,10 @@ void drawRenderPanel() {
     drawSlider(layout.waterRippleCountSlider, constrain(renderSettings.waterRippleCount / 5.0f, 0, 1), "Number of ripples (" + renderSettings.waterRippleCount + ")");
     drawSlider(layout.waterRippleDistanceSlider, constrain(renderSettings.waterRippleDistancePx / 40.0f, 0, 1), "Ripple distance (" + nf(renderSettings.waterRippleDistancePx, 1, 1) + " px)");
     drawHSBRow(layout.waterContourHSB, "Water contours", renderSettings.waterContourHue01, renderSettings.waterContourSat01, renderSettings.waterContourBri01);
-    drawSlider(layout.waterContourAlphaSlider, renderSettings.waterContourAlpha01, "Water contours alpha (" + nf(renderSettings.waterContourAlpha01 * 100, 1, 0) + "%)");
-    registerUiTooltip(layout.waterContourAlphaSlider, tooltipFor("render_contours"));
+    drawSlider(layout.waterContourCoastAlphaSlider, renderSettings.waterCoastAlpha01, "Coastline alpha (" + nf(renderSettings.waterCoastAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.waterContourCoastAlphaSlider, tooltipFor("render_contours"));
+    drawSlider(layout.waterRippleAlphaStartSlider, renderSettings.waterRippleAlphaStart01, "Ripple near shore alpha (" + nf(renderSettings.waterRippleAlphaStart01 * 100, 1, 0) + "%)");
+    drawSlider(layout.waterRippleAlphaEndSlider, renderSettings.waterRippleAlphaEnd01, "Ripple far alpha (" + nf(renderSettings.waterRippleAlphaEnd01 * 100, 1, 0) + "%)");
     float elevCountNorm = constrain(renderSettings.elevationLinesCount / 24.0f, 0, 1);
     drawSlider(layout.elevationLinesCountSlider, elevCountNorm, "Elevation lines (" + renderSettings.elevationLinesCount + ")");
     if (layout.elevationLineStyleSelector != null) {

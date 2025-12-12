@@ -414,18 +414,20 @@ final int SLIDER_RENDER_WATER_CONTOUR_H = 48;
 final int SLIDER_RENDER_WATER_CONTOUR_S = 49;
 final int SLIDER_RENDER_WATER_CONTOUR_B = 50;
 final int SLIDER_RENDER_WATER_CONTOUR_ALPHA = 51;
-final int SLIDER_RENDER_ELEV_LINES_COUNT = 52;
-final int SLIDER_RENDER_ELEV_LINES_ALPHA = 53;
-final int SLIDER_RENDER_PATH_SAT = 54;
-final int SLIDER_RENDER_ZONE_ALPHA = 55;
-final int SLIDER_RENDER_ZONE_SAT = 56;
-final int SLIDER_RENDER_LABEL_OUTLINE_ALPHA = 57;
-final int SLIDER_RENDER_ELEV_LINES_STYLE = 58;
-final int SLIDER_RENDER_ZONE_BRI = 59;
-final int SLIDER_RENDER_PRESET_SELECT = 60;
-final int SLIDER_BIOME_GEN_MODE = 61;
-final int SLIDER_BIOME_GEN_VALUE = 62;
-final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 63;
+final int SLIDER_RENDER_WATER_RIPPLE_ALPHA_START = 52;
+final int SLIDER_RENDER_WATER_RIPPLE_ALPHA_END = 53;
+final int SLIDER_RENDER_ELEV_LINES_COUNT = 54;
+final int SLIDER_RENDER_ELEV_LINES_ALPHA = 55;
+final int SLIDER_RENDER_PATH_SAT = 56;
+final int SLIDER_RENDER_ZONE_ALPHA = 57;
+final int SLIDER_RENDER_ZONE_SAT = 58;
+final int SLIDER_RENDER_LABEL_OUTLINE_ALPHA = 59;
+final int SLIDER_RENDER_ELEV_LINES_STYLE = 60;
+final int SLIDER_RENDER_ZONE_BRI = 61;
+final int SLIDER_RENDER_PRESET_SELECT = 62;
+final int SLIDER_BIOME_GEN_MODE = 63;
+final int SLIDER_BIOME_GEN_VALUE = 64;
+final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 65;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -519,7 +521,9 @@ void applyBiomeGeneration() {
 
 void triggerRenderPrerequisites() {
   if (mapModel == null || renderSettings == null) return;
-  if (renderSettings.waterRippleCount > 0 && renderSettings.waterContourAlpha01 > 1e-4f) {
+  if (renderSettings.waterRippleCount > 0 &&
+      renderSettings.waterRippleDistancePx > 1e-4f &&
+      (renderSettings.waterRippleAlphaStart01 > 1e-4f || renderSettings.waterRippleAlphaEnd01 > 1e-4f)) {
     int cols = max(80, min(200, (int)(sqrt(max(1, mapModel.cells.size())))));
     int rows = cols;
     mapModel.getCoastDistanceGrid(cols, rows, seaLevel);
@@ -690,6 +694,9 @@ void draw() {
     triggerRenderPrerequisitesIfDirty();
     drawRenderView(this);
   } else if (currentTool == Tool.EDIT_PATHS) {
+    mapModel.drawCellsRender(this, showBorders, true);
+    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
+  } else if (currentTool == Tool.EDIT_ELEVATION) {
     mapModel.drawCellsRender(this, showBorders, true);
     mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
   } else if (currentTool == Tool.EDIT_STRUCTURES) {
@@ -891,9 +898,8 @@ void drawRenderView(PApplet app) {
   }
 
   // Labels
-  if (renderSettings.showLabelsArbitrary) {
-    mapModel.drawLabelsRender(app, renderSettings);
-  }
+  if (renderSettings.showLabelsZones) mapModel.drawZoneLabelsRender(app, renderSettings);
+  if (renderSettings.showLabelsArbitrary) mapModel.drawLabelsRender(app, renderSettings);
 }
 
 String exportPng() {
@@ -1104,7 +1110,10 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   contours.setFloat("waterContourHue01", s.waterContourHue01);
   contours.setFloat("waterContourSat01", s.waterContourSat01);
   contours.setFloat("waterContourBri01", s.waterContourBri01);
-  contours.setFloat("waterContourAlpha01", s.waterContourAlpha01);
+  contours.setFloat("waterContourAlpha01", s.waterCoastAlpha01);
+  contours.setFloat("waterCoastAlpha01", s.waterCoastAlpha01);
+  contours.setFloat("waterRippleAlphaStart01", s.waterRippleAlphaStart01);
+  contours.setFloat("waterRippleAlphaEnd01", s.waterRippleAlphaEnd01);
   contours.setInt("elevationLinesCount", s.elevationLinesCount);
   contours.setString("elevationLinesStyle", s.elevationLinesStyle.name());
   contours.setFloat("elevationLinesAlpha01", s.elevationLinesAlpha01);
@@ -1185,6 +1194,10 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.waterContourSat01 = b.getFloat("waterContourSat01", target.waterContourSat01);
     target.waterContourBri01 = b.getFloat("waterContourBri01", target.waterContourBri01);
     target.waterContourAlpha01 = b.getFloat("waterContourAlpha01", target.waterContourAlpha01);
+    target.waterCoastAlpha01 = b.getFloat("waterCoastAlpha01", target.waterContourAlpha01);
+    target.waterRippleAlphaStart01 = b.getFloat("waterRippleAlphaStart01", target.waterContourAlpha01);
+    target.waterRippleAlphaEnd01 = b.getFloat("waterRippleAlphaEnd01", target.waterRippleAlphaStart01);
+    target.waterContourAlpha01 = target.waterCoastAlpha01; // keep legacy field in sync
     target.elevationLinesCount = b.getInt("elevationLinesCount", target.elevationLinesCount);
     String style = b.getString("elevationLinesStyle", target.elevationLinesStyle.name());
     target.elevationLinesStyle = "ELEV_LINES_BASIC".equals(style) ? ElevationLinesStyle.ELEV_LINES_BASIC : target.elevationLinesStyle;
