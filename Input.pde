@@ -712,6 +712,12 @@ void updateActiveSlider(int mx, int my) {
       renderSettings.labelOutlineAlpha01 = t;
       break;
     }
+    case SLIDER_RENDER_STRUCT_SHADOW_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.structuresShadowAlphaSlider.x) / (float)l.structuresShadowAlphaSlider.w, 0, 1);
+      renderSettings.structureShadowAlpha01 = t;
+      break;
+    }
     case SLIDER_RENDER_ELEV_LINES_STYLE: {
       // Only one style for now; keep the slider responsive for consistency.
       renderSettings.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;

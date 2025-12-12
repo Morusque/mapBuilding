@@ -1368,6 +1368,12 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderSettings.mergeStructures = !renderSettings.mergeStructures;
       return true;
     }
+    if (layout.structuresShadowAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.structuresShadowAlphaSlider.x) / (float)layout.structuresShadowAlphaSlider.w, 0, 1);
+      renderSettings.structureShadowAlpha01 = t;
+      activeSlider = SLIDER_RENDER_STRUCT_SHADOW_ALPHA;
+      return true;
+    }
   }
 
   // Labels

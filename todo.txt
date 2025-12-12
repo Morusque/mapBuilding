@@ -27,7 +27,6 @@ Paths :
 (maybe) width definer similar to water but using pathfinding to define more important roads
 
 Structures :
-(soon) structures light shading on rendering mode
 (later) structures should be groupable
 (later) option to generate structs
 (later) exact meaning of angle (absolute vs offset)
@@ -41,7 +40,7 @@ Labels :
 (maybe) have type presets for label styles (like with path types)
 
 Rendering :
-(soon) choosing biomes "pattern" option yields "The file patterns/dots01.png contains bad image data, or may not be an image." while file is seems ok.
+(soon) make biomes "pattern" actually work
 (soon) allow paths labels (following paths like street names on maps)
 (soon) allow structure labels (either inside or next to them or disabled depending on space and zoom)
 (soon) path saturation button doesn't work

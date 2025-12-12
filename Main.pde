@@ -428,6 +428,7 @@ final int SLIDER_RENDER_PRESET_SELECT = 62;
 final int SLIDER_BIOME_GEN_MODE = 63;
 final int SLIDER_BIOME_GEN_VALUE = 64;
 final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 65;
+final int SLIDER_RENDER_STRUCT_SHADOW_ALPHA = 66;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -938,6 +939,9 @@ String exportPng() {
   viewport.centerY = innerWY + innerWH * 0.5f;
   viewport.zoom = newZoom;
 
+  // Ensure distance/elevation grids are ready before rendering/exporting
+  triggerRenderPrerequisites();
+
   g.beginDraw();
   g.background(245);
   // Temporarily redirect drawing to offscreen buffer
@@ -1135,6 +1139,7 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   structures.setBoolean("mergeStructures", s.mergeStructures);
   structures.setFloat("structureSatScale01", s.structureSatScale01);
   structures.setFloat("structureAlphaScale01", s.structureAlphaScale01);
+  structures.setFloat("structureShadowAlpha01", s.structureShadowAlpha01);
   r.setJSONObject("structures", structures);
 
   JSONObject labels = new JSONObject();
@@ -1223,6 +1228,7 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.mergeStructures = b.getBoolean("mergeStructures", target.mergeStructures);
     target.structureSatScale01 = b.getFloat("structureSatScale01", target.structureSatScale01);
     target.structureAlphaScale01 = b.getFloat("structureAlphaScale01", target.structureAlphaScale01);
+    target.structureShadowAlpha01 = b.getFloat("structureShadowAlpha01", target.structureShadowAlpha01);
   }
 
   if (r.hasKey("labels")) {

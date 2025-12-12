@@ -135,6 +135,11 @@ class MapRenderer {
   void drawStructuresRender(PApplet app, RenderSettings s) {
     if (model.structures == null || s == null) return;
     app.pushStyle();
+    float az = radians(s.elevationLightAzimuthDeg);
+    float altRad = radians(s.elevationLightAltitudeDeg);
+    PVector shadowDir = new PVector(-cos(az), -sin(az));
+    float tanAlt = max(0.1f, tan(altRad));
+    float shadowLenFactor = constrain(0.1f / tanAlt, 0.01f, 0.5f);
     for (int i = 0; i < model.structures.size(); i++) {
       Structure st = model.structures.get(i);
       if (st == null) continue;
@@ -144,55 +149,72 @@ class MapRenderer {
       float sat = constrain(hsb[1] * s.structureSatScale01, 0, 1);
       int col = hsb01ToRGB(hsb[0], sat, hsb[2]);
 
+      float shadowAlpha = baseAlpha * s.structureShadowAlpha01;
+      float shadowLen = st.size * shadowLenFactor;
+      if (shadowAlpha > 1e-4f && shadowLen > 1e-6f) {
+        PVector off = PVector.mult(shadowDir, shadowLen);
+        app.pushMatrix();
+        app.translate(st.x + off.x, st.y + off.y);
+        app.rotate(st.angle);
+        app.noStroke();
+        app.fill(0, 0, 0, shadowAlpha * 255);
+        drawStructureShape(app, st);
+        app.popMatrix();
+      }
+
       app.pushMatrix();
       app.translate(st.x, st.y);
       app.rotate(st.angle);
       app.stroke(0, 0, 0, baseAlpha * 255);
       app.strokeWeight(st.strokeWeightPx / viewport.zoom);
       app.fill(col, baseAlpha * 255);
-
-      float r = st.size;
-      switch (st.shape) {
-        case RECTANGLE: {
-          float w = r;
-          float h = (st.aspect != 0) ? (r / max(0.1f, st.aspect)) : r;
-          app.rectMode(CENTER);
-          app.rect(0, 0, w, h);
-          break;
-        }
-        case CIRCLE: {
-          app.ellipse(0, 0, r, r);
-          break;
-        }
-        case TRIANGLE: {
-          float h = r * 0.866f;
-          app.beginShape();
-          app.vertex(-r * 0.5f, h * 0.333f);
-          app.vertex(r * 0.5f, h * 0.333f);
-          app.vertex(0, -h * 0.666f);
-          app.endShape(CLOSE);
-          break;
-        }
-        case HEXAGON: {
-          float rad = r * 0.5f;
-          app.beginShape();
-          for (int v = 0; v < 6; v++) {
-            float a = radians(60 * v);
-            app.vertex(cos(a) * rad, sin(a) * rad);
-          }
-          app.endShape(CLOSE);
-          break;
-        }
-        default: {
-          float sHalf = r * 0.5f;
-          app.rectMode(CENTER);
-          app.rect(0, 0, sHalf * 2, sHalf * 2);
-          break;
-        }
-      }
+      drawStructureShape(app, st);
       app.popMatrix();
     }
     app.popStyle();
+  }
+
+  private void drawStructureShape(PApplet app, Structure st) {
+    if (st == null) return;
+    float r = st.size;
+    switch (st.shape) {
+      case RECTANGLE: {
+        float w = r;
+        float h = (st.aspect != 0) ? (r / max(0.1f, st.aspect)) : r;
+        app.rectMode(CENTER);
+        app.rect(0, 0, w, h);
+        break;
+      }
+      case CIRCLE: {
+        app.ellipse(0, 0, r, r);
+        break;
+      }
+      case TRIANGLE: {
+        float h = r * 0.866f;
+        app.beginShape();
+        app.vertex(-r * 0.5f, h * 0.333f);
+        app.vertex(r * 0.5f, h * 0.333f);
+        app.vertex(0, -h * 0.666f);
+        app.endShape(CLOSE);
+        break;
+      }
+      case HEXAGON: {
+        float rad = r * 0.5f;
+        app.beginShape();
+        for (int v = 0; v < 6; v++) {
+          float a = radians(60 * v);
+          app.vertex(cos(a) * rad, sin(a) * rad);
+        }
+        app.endShape(CLOSE);
+        break;
+      }
+      default: {
+        float sHalf = r * 0.5f;
+        app.rectMode(CENTER);
+        app.rect(0, 0, sHalf * 2, sHalf * 2);
+        break;
+      }
+    }
   }
 
   void drawLabels(PApplet app) {

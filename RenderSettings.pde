@@ -73,6 +73,7 @@ class RenderSettings {
   boolean mergeStructures = false; // placeholder
   float structureSatScale01 = 1.0f;
   float structureAlphaScale01 = 1.0f;
+  float structureShadowAlpha01 = 0.0f;
 
   // Labels
   boolean showLabelsArbitrary = true;
@@ -135,6 +136,7 @@ class RenderSettings {
     c.mergeStructures = mergeStructures;
     c.structureSatScale01 = structureSatScale01;
     c.structureAlphaScale01 = structureAlphaScale01;
+    c.structureShadowAlpha01 = structureShadowAlpha01;
     // Labels
     c.showLabelsArbitrary = showLabelsArbitrary;
     c.showLabelsZones = showLabelsZones;
@@ -198,6 +200,7 @@ class RenderSettings {
     mergeStructures = o.mergeStructures;
     structureSatScale01 = o.structureSatScale01;
     structureAlphaScale01 = o.structureAlphaScale01;
+    structureShadowAlpha01 = o.structureShadowAlpha01;
     // Labels
     showLabelsArbitrary = o.showLabelsArbitrary;
     showLabelsZones = o.showLabelsZones;
@@ -254,6 +257,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = true;
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
+    s.structureShadowAlpha01 = 0.0f;
     s.showLabelsArbitrary = true;
     s.showLabelsZones = true;
     s.showLabelsPaths = true;
@@ -304,6 +308,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = false;
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
+    s.structureShadowAlpha01 = 0.2f;
     s.showLabelsArbitrary = false;
     s.showLabelsZones = false;
     s.showLabelsPaths = false;
@@ -354,6 +359,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = false;
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
+    s.structureShadowAlpha01 = 0.2f;
     s.showLabelsArbitrary = true;
     s.showLabelsZones = true;
     s.showLabelsPaths = true;
@@ -404,6 +410,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = false;
     s.structureSatScale01 = 0.0f;
     s.structureAlphaScale01 = 1.0f;
+    s.structureShadowAlpha01 = 0.25f;
     s.showLabelsArbitrary = true;
     s.showLabelsZones = true;
     s.showLabelsPaths = true;
@@ -454,6 +461,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = false;
     s.structureSatScale01 = 0.0f;
     s.structureAlphaScale01 = 1.0f;
+    s.structureShadowAlpha01 = 0.25f;
     s.showLabelsArbitrary = true;
     s.showLabelsZones = true;
     s.showLabelsPaths = true;
@@ -505,6 +513,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = true;
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
+    s.structureShadowAlpha01 = 0.4f;
     s.showLabelsArbitrary = true;
     s.showLabelsZones = true;
     s.showLabelsPaths = true;
@@ -556,6 +565,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = true;
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
+    s.structureShadowAlpha01 = 0.2f;
     s.showLabelsArbitrary = true;
     s.showLabelsZones = true;
     s.showLabelsPaths = true;
@@ -605,6 +615,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = true;
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
+    s.structureShadowAlpha01 = 0.2f;
     s.showLabelsArbitrary = false;
     s.showLabelsZones = false;
     s.showLabelsPaths = false;
@@ -654,6 +665,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = true;
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
+    s.structureShadowAlpha01 = 0.25f;
     s.showLabelsArbitrary = false;
     s.showLabelsZones = false;
     s.showLabelsPaths = false;

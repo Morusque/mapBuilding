@@ -1685,6 +1685,7 @@ class RenderLayout {
 
   IntRect structuresShowCheckbox;
   IntRect structuresMergeCheckbox;
+  IntRect structuresShadowAlphaSlider;
 
   IntRect labelsArbitraryCheckbox;
   IntRect labelsZonesCheckbox;
@@ -1843,6 +1844,8 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
     l.structuresMergeCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
+    l.structuresShadowAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
   // ----- Labels -----
@@ -1962,6 +1965,7 @@ void drawRenderPanel() {
   if (renderSectionStructuresOpen) {
     drawCheckbox(layout.structuresShowCheckbox.x, layout.structuresShowCheckbox.y, layout.structuresShowCheckbox.w, renderSettings.showStructures, "Show structures");
     drawCheckbox(layout.structuresMergeCheckbox.x, layout.structuresMergeCheckbox.y, layout.structuresMergeCheckbox.w, renderSettings.mergeStructures, "Merge structures");
+    drawSlider(layout.structuresShadowAlphaSlider, renderSettings.structureShadowAlpha01, "Shadow alpha (" + nf(renderSettings.structureShadowAlpha01 * 100, 1, 0) + "%)");
   }
 
   drawSectionHeader(layout.headerLabels, "Labels", renderSectionLabelsOpen);
