@@ -2,88 +2,78 @@
 // this TODO file has tasked marked as (now) (soon) (later) (maybe) from more urgent to less urgent
 // done tasks should be marked as (done) for review before I delete them
 
-Loading bar :
+Mandatory for full generation milestone :
+(later) Structures : option to generate structs
+(later) Labels : option to generate labels
 
-Sites :
-(maybe) there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
-(maybe) anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
+Mandatory for full first use milestone :
+(later) make biomes "pattern" actually work screenspace
+(later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (find examples of this) lightning: build, optionally blur, gradient, dither, etc, then cache
+(later) some ugly dots sometimes appear between polygones
+(later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 
-Elevation :
-(maybe) use techtonic logic in addition to perlin or double multiplied perlin
-
-Biomes :
-(later) review "value" sliders
+Unfinished features :
+(later) Biomes : review "value" sliders
 (later) replace "beaches" by same logic but arbitrary elevation and use it instead of some "above" logics in the full generation process
+(later) Structures : exact meaning of angle (absolute vs offset)
+(later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
 
-Zones :
-(later) options to allow overlapping or not (two groups? allowed / not-allowed)
-(later) use polygon tracing as an alternative to brush
+Bugs :
+(later) Paths : taping sometimes wrong (probably needs doubly connected edges and propagation done right)
+(later) path saturation button doesn't work
+(later) write labels on top
+(later) trying to export with labels makes the thing crash with a NullPointerException or IllegalArgumentException: Width (0) and height (0) cannot be <= 0
 
-Paths :
-(later) taping sometimes wrong (probably needs doubly connected edges and propagation done right)
-(later) refine the way path generation works
-(later) option to have the color match with water
-(later) allow invisible (except on paths mode) path type (which means having alpha slider probably)
-(maybe) width definer similar to water but using pathfinding to define more important roads
+Should be easy :
+(later) add biomes outline brightness + saturation parameter in biomes mode
+(later) water rendering style : many horizontal lines to represent coastlines
+(later) background rendering : noise amount
+(later) Comments (associated with elements in lists) exportable as custom format
+(later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
+(later) are there existing formats for such tools to handle? (at least research)
+(later) write a more consistent readme file
 
-Structures :
-(later) structures should be groupable
-(later) option to generate structs
-(later) exact meaning of angle (absolute vs offset)
-(later) shrink big left menu a little
-(later) crosses (as on treasure maps)
-(maybe) use polygon tracing as a structure input mode
-
-Labels :
-(later) option to generate labels
-(maybe) optionally associate labels with map elements
-(maybe) have type presets for label styles (like with path types)
+Other :
+(maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
+(maybe) Sites : anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
+(maybe) Elevation : use techtonic logic in addition to perlin or double multiplied perlin
+(later) Zones : options to allow overlapping or not (two groups? allowed / not-allowed)
+(later) Zones : use polygon tracing as an alternative to brush
+(later) Paths : refine the way path generation works
+(later) Paths : option to have the color match with water
+(later) Paths : allow invisible (except on paths mode) path type (which means having alpha slider probably)
+(maybe) Paths : width definer similar to water but using pathfinding to define more important roads
+(later) Structures : structures should be groupable
+(later) Structures : shrink big left menu a little
+(later) Structures : crosses (as on treasure maps)
+(maybe) Structures : use polygon tracing as a structure input mode
+(maybe) Labels : optionally associate labels with map elements
+(maybe) Labels : have type presets for label styles (like with path types)
+(later) Export : path rendering slightly differ from their rendering in rendering mode (should be similar)
+(later) Export : rendering shoud look exactly like the picture to be rendered (including points on paths and resolution, this should be cached, use loading bar)
+(maybe) Export : importing from picture
 
 Rendering :
-(later) make biomes "pattern" actually work screenspace
-(later) path saturation button doesn't work
+(later) parametrable label outline (per label type)
 (later) better paths labels
-(later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (find examples of this)
 (later) LOD rules: hide/show groups vs members depending on zoom, optional merging visually of dense structures.
 (later) Rendering/exporting the legend for reference.
 (later) take inspiration from real map pictures (eg ign maps)
-(later) some ugly dots sometimes appear between polygones
 (later) ripple lines are approximative, so either we optimize them or we make tem display below lands. make sure water contour lines never cross actual coastline
 (later) make outline display apply to all kinds of outlines that share the same border all-together at once
 (later) parametrable label font (per label type)
 (later) label size (per label type) should be handled better (typo appears blurry)
 (later) parametrable label color fill (per label type)
-(later) parametrable label outline (per label type)
-(later) labels outline don't work well
-(maybe) a "save preset" button
 (later) water contour lines distance should be zoom-dependant
-(later) add biomes outline brightness + saturation parameter
 (later) structures sat and alpha variables exist but show no slider
-(later) lightning: build, optionally blur, gradient, dither, etc, then cache
-(later) water rendering style : many horizontal lines to represent coastlines
-(later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
-(later) background rendering : noise amount
 (later) push labels so they don't overlap, cache positions
-(later) write labels on top
-
-Export :
-(later) trying to export with labels makes the thing crash with a NullPointerException or IllegalArgumentException: Width (0) and height (0) cannot be <= 0
-(later) Comments (associated with elements in lists) exportable as custom format
-(later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
-(later) are there existing formats for such tools to handle?
-(later) path rendering slightly differ from their rendering in rendering mode (should be similar)
-(later) rendering shoud look exactly like the picture to be rendered (including points on paths and resolution, this should be cached, use loading bar)
-(maybe) importing from picture
+(maybe) a "save preset" button
 
 General :
-(later) investigate caching options
-(later) Refactor, optimize etc.
+(later) investigate caching options, Refactor, optimize etc.
 (later) undo states
 (later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
-(later) write a more consistent readme file
 (later) a "fully generate" button once all generate methods have been implemented (keep things already defined though)
-(later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
-(later) use appropriate caps for strokes (probably round)
 (later) correctly merge strokes that overlap with alpha
 (maybe) option to generate details (about everything) for zooming
 (maybe) use HSB directly instead of converting?
