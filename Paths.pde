@@ -14,6 +14,8 @@ class Path {
   void draw(PApplet app, float baseWeight, boolean taper, HashMap<String, Float> segWeights, int pathIndex, boolean showNodes, float sat) {
     if (routes.isEmpty()) return;
     float[] hsbScratch = new float[3];
+    float baseAlpha = app.alpha(app.g.strokeColor) / 255.0f;
+    float satScale = sat;
 
     for (int ri = 0; ri < routes.size(); ri++) {
       ArrayList<PVector> seg = routes.get(ri);
@@ -39,8 +41,10 @@ class Path {
         }
         app.pushStyle();
         rgbToHSB01(app.g.strokeColor, hsbScratch);
-        hsbScratch[1] = constrain(hsbScratch[1] * sat, 0, 1);
-        int col = hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]);
+        hsbScratch[1] = constrain(hsbScratch[1] * satScale, 0, 1);
+        int rgb = hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]);
+        float alpha = constrain(baseAlpha * satScale, 0, 1);
+        int col = app.color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, alpha * 255);
         app.stroke(col);
         app.strokeCap(PConstants.ROUND);
         app.strokeJoin(PConstants.ROUND);

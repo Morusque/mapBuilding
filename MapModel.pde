@@ -273,6 +273,14 @@ class MapModel {
     renderer.drawZoneLabelsRender(app, s);
   }
 
+  void drawPathLabelsRender(PApplet app, RenderSettings s) {
+    renderer.drawPathLabelsRender(app, s);
+  }
+
+  void drawStructureLabelsRender(PApplet app, RenderSettings s) {
+    renderer.drawStructureLabelsRender(app, s);
+  }
+
   void drawZoneOutlinesRender(PApplet app, RenderSettings s) {
     renderer.drawZoneOutlinesRender(app, s);
   }
@@ -1600,11 +1608,11 @@ class MapModel {
       if (p.routes.isEmpty()) continue;
       PathType pt = getPathType(p.typeId);
       int baseCol = (pt != null) ? pt.col : app.color(80);
-      rgbToHSB01(baseCol, hsbScratch);
-      float scaledSat = constrain(hsbScratch[1] * s.pathSatScale01, 0, 1);
-      int col = hsb01ToRGB(hsbScratch[0], scaledSat, hsbScratch[2]);
+      int col = baseCol;
       float w = (pt != null) ? pt.weightPx : 2.0f;
       if (w <= 0.01f) continue;
+      float alphaScale = constrain(s.pathSatScale01, 0, 1);
+      if (alphaScale <= 1e-4f) continue;
       app.stroke(col);
       boolean taperOn = (pt != null && pt.taperOn);
       HashMap<String, Float> taperW = null;
@@ -1616,7 +1624,7 @@ class MapModel {
           taperCache.put(p.typeId, taperW);
         }
       }
-      p.draw(app, w, taperOn, taperW, i, false, 1);
+      p.draw(app, w, taperOn, taperW, i, false, alphaScale);
     }
     app.popStyle();
   }

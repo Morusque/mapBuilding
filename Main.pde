@@ -900,6 +900,8 @@ void drawRenderView(PApplet app) {
 
   // Labels
   if (renderSettings.showLabelsZones) mapModel.drawZoneLabelsRender(app, renderSettings);
+  if (renderSettings.showLabelsPaths) mapModel.drawPathLabelsRender(app, renderSettings);
+  if (renderSettings.showLabelsStructures) mapModel.drawStructureLabelsRender(app, renderSettings);
   if (renderSettings.showLabelsArbitrary) mapModel.drawLabelsRender(app, renderSettings);
 }
 

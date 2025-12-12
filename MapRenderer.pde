@@ -268,6 +268,68 @@ class MapRenderer {
     app.popStyle();
   }
 
+  void drawPathLabelsRender(PApplet app, RenderSettings s) {
+    if (model == null || model.paths == null || s == null) return;
+    if (!s.showLabelsPaths) return;
+    app.pushStyle();
+    app.fill(0);
+    app.textAlign(CENTER, CENTER);
+    float baseSize = labelSizeDefault();
+    for (Path p : model.paths) {
+      if (p == null || p.routes == null || p.routes.isEmpty()) continue;
+      String txt = (p.name != null && p.name.length() > 0) ? p.name : "Path";
+      PVector bestA = null, bestB = null;
+      float bestLenSq = -1;
+      for (ArrayList<PVector> route : p.routes) {
+        if (route == null || route.size() < 2) continue;
+        for (int i = 0; i < route.size() - 1; i++) {
+          PVector a = route.get(i);
+          PVector b = route.get(i + 1);
+          float dx = b.x - a.x;
+          float dy = b.y - a.y;
+          float lenSq = dx * dx + dy * dy;
+          if (lenSq > bestLenSq) {
+            bestLenSq = lenSq;
+            bestA = a;
+            bestB = b;
+          }
+        }
+      }
+      if (bestA == null || bestB == null || bestLenSq <= 1e-8f) continue;
+      float ts = baseSize / max(1e-6f, viewport.zoom);
+      float angle = atan2(bestB.y - bestA.y, bestB.x - bestA.x);
+      float mx = (bestA.x + bestB.x) * 0.5f;
+      float my = (bestA.y + bestB.y) * 0.5f;
+      app.pushMatrix();
+      app.translate(mx, my);
+      app.rotate(angle);
+      app.textSize(ts);
+      app.text(txt, 0, 0);
+      app.popMatrix();
+    }
+    app.popStyle();
+  }
+
+  void drawStructureLabelsRender(PApplet app, RenderSettings s) {
+    if (model == null || model.structures == null || s == null) return;
+    if (!s.showLabelsStructures) return;
+    app.pushStyle();
+    app.fill(0);
+    app.textAlign(CENTER, CENTER);
+    float baseSize = labelSizeDefault();
+    for (Structure st : model.structures) {
+      if (st == null) continue;
+      String txt = (st.name != null && st.name.length() > 0) ? st.name : "Structure";
+      float ts = baseSize / max(1e-6f, viewport.zoom);
+      app.pushMatrix();
+      app.translate(st.x, st.y);
+      app.textSize(ts);
+      app.text(txt, 0, 0);
+      app.popMatrix();
+    }
+    app.popStyle();
+  }
+
   int labelPriority(LabelTarget t) {
     switch (t) {
       case ZONE: return 4;
@@ -793,8 +855,8 @@ class MapRenderer {
     app.tint(tintCol, constrain(alpha01, 0, 1) * 255);
     app.beginShape();
     app.texture(pattern);
-    float pw = max(1, pattern.width);
-    float ph = max(1, pattern.height);
+    float pw = max(1, pattern.width / max(1e-6f, viewport.zoom)); // keep pattern density stable across zooms
+    float ph = max(1, pattern.height / max(1e-6f, viewport.zoom));
     for (PVector v : verts) {
       float u = wrap01(v.x / pw);
       float vv = wrap01(v.y / ph);
