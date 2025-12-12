@@ -298,6 +298,7 @@ class MapRenderer {
       if (bestA == null || bestB == null || bestLenSq <= 1e-8f) continue;
       float ts = baseSize / max(1e-6f, viewport.zoom);
       float angle = atan2(bestB.y - bestA.y, bestB.x - bestA.x);
+      if (angle > HALF_PI || angle < -HALF_PI) angle += PI; // keep text upright
       float mx = (bestA.x + bestB.x) * 0.5f;
       float my = (bestA.y + bestB.y) * 0.5f;
       app.pushMatrix();
@@ -323,6 +324,7 @@ class MapRenderer {
       float ts = baseSize / max(1e-6f, viewport.zoom);
       app.pushMatrix();
       app.translate(st.x, st.y);
+      app.rotate(0);
       app.textSize(ts);
       app.text(txt, 0, 0);
       app.popMatrix();
@@ -855,11 +857,13 @@ class MapRenderer {
     app.tint(tintCol, constrain(alpha01, 0, 1) * 255);
     app.beginShape();
     app.texture(pattern);
-    float pw = max(1, pattern.width / max(1e-6f, viewport.zoom)); // keep pattern density stable across zooms
-    float ph = max(1, pattern.height / max(1e-6f, viewport.zoom));
+    // Keep 1:1 pixel density regardless of zoom; use raw pixel dimensions
+    float pw = max(1, pattern.width);
+    float ph = max(1, pattern.height);
     for (PVector v : verts) {
-      float u = wrap01(v.x / pw);
-      float vv = wrap01(v.y / ph);
+      // Map world coords to screen pixels via viewport zoom to keep 1:1 pixel density
+      float u = wrap01((v.x * viewport.zoom) / pw);
+      float vv = wrap01((v.y * viewport.zoom) / ph);
       app.vertex(v.x, v.y, u, vv);
     }
     app.endShape(PConstants.CLOSE);
@@ -888,6 +892,7 @@ class MapRenderer {
       patternCache.put(name, null);
       return null;
     }
+    // Normalize to grayscale but keep full alpha; tint will supply color while grayscale keeps pattern visible.
     img.format = PConstants.ARGB;
     img.loadPixels();
     for (int i = 0; i < img.pixels.length; i++) {
@@ -896,8 +901,7 @@ class MapRenderer {
       int g = (c >> 8) & 0xFF;
       int b = c & 0xFF;
       int gray = (r + g + b) / 3;
-      int a = 255 - gray; // black -> opaque, white -> transparent
-      img.pixels[i] = app.color(255, 255, 255, a);
+      img.pixels[i] = app.color(gray, gray, gray, 255);
     }
     img.updatePixels();
     patternCache.put(name, img);

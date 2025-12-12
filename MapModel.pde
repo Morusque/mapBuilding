@@ -114,6 +114,22 @@ class MapModel {
     if (paths == null || paths.isEmpty()) return weights;
     PathType t = getPathType(typeId);
     if (t == null || !t.taperOn) return weights;
+    ensureCellNeighborsComputed();
+
+    // Collect all water-touching vertices across routes of this type (including junctions)
+    HashSet<String> waterKeys = new HashSet<String>();
+    for (int pi = 0; pi < paths.size(); pi++) {
+      Path p = paths.get(pi);
+      if (p == null || p.typeId != typeId || p.routes == null) continue;
+      for (ArrayList<PVector> seg : p.routes) {
+        if (seg == null) continue;
+        for (PVector v : seg) {
+          if (pointTouchesWater(v.x, v.y, seaLevel)) {
+            waterKeys.add(keyFor(v.x, v.y));
+          }
+        }
+      }
+    }
 
     // Per-route taper: start weight depends on start touching water, end weight on end touching water.
     // Anything not touching water uses the minimum weight.
@@ -124,36 +140,58 @@ class MapModel {
       for (int ri = 0; ri < p.routes.size(); ri++) {
         ArrayList<PVector> seg = p.routes.get(ri);
         if (seg == null || seg.size() < 2) continue;
-        boolean startWater = sampleElevationAt(seg.get(0).x, seg.get(0).y, seaLevel) <= seaLevel;
-        boolean endWater = sampleElevationAt(seg.get(seg.size() - 1).x, seg.get(seg.size() - 1).y, seaLevel) <= seaLevel;
-        float startW = startWater ? baseWeight : minWeight;
-        float endW = endWater ? baseWeight : minWeight;
-
-        // Total length for interpolation; fall back to index-based if degenerate.
-        float totalLen = 0;
-        float[] segLen = new float[seg.size() - 1];
-        for (int si = 0; si < seg.size() - 1; si++) {
+        int n = seg.size();
+        float[] prefix = new float[n];
+        float[] segLen = new float[n - 1];
+        for (int si = 0; si < n - 1; si++) {
           PVector a = seg.get(si);
           PVector b = seg.get(si + 1);
-          float dx = b.x - a.x;
-          float dy = b.y - a.y;
-          float len = sqrt(dx * dx + dy * dy);
+          float len = dist(a.x, a.y, b.x, b.y);
           segLen[si] = len;
-          totalLen += len;
+          prefix[si + 1] = prefix[si] + len;
         }
-        float acc = 0;
-        for (int si = 0; si < seg.size() - 1; si++) {
-          float midT;
-          if (totalLen > 1e-6f) {
-            midT = (acc + segLen[si] * 0.5f) / totalLen;
-          } else {
-            midT = (seg.size() <= 1) ? 0 : (si / max(1.0f, (seg.size() - 1.0f)));
+
+        boolean[] water = new boolean[n];
+        ArrayList<Integer> waterIdx = new ArrayList<Integer>();
+        for (int vi = 0; vi < n; vi++) {
+          PVector v = seg.get(vi);
+          water[vi] = pointTouchesWater(v.x, v.y, seaLevel) || waterKeys.contains(keyFor(v.x, v.y));
+          if (water[vi]) waterIdx.add(vi);
+        }
+
+        if (waterIdx.isEmpty()) {
+          float midW = lerp(minWeight, baseWeight, 0.5f);
+          for (int si = 0; si < n - 1; si++) {
+            String ek = pi + ":" + ri + ":" + si;
+            weights.put(ek, midW);
           }
-          float w = lerp(startW, endW, constrain(midT, 0, 1));
+          continue;
+        }
+
+        float maxDist = 0;
+        float[] distToWater = new float[n];
+        for (int vi = 0; vi < n; vi++) {
+          float d = Float.MAX_VALUE;
+          float pos = prefix[vi];
+          for (int wi : waterIdx) {
+            d = min(d, abs(pos - prefix[wi]));
+          }
+          distToWater[vi] = d;
+          maxDist = max(maxDist, d);
+        }
+        if (maxDist < 1e-6f) maxDist = 1e-6f;
+
+        for (int si = 0; si < n - 1; si++) {
+          float midPos = prefix[si] + segLen[si] * 0.5f;
+          float d = Float.MAX_VALUE;
+          for (int wi : waterIdx) {
+            d = min(d, abs(midPos - prefix[wi]));
+          }
+          float tNorm = constrain(d / maxDist, 0, 1);
+          float w = lerp(baseWeight, minWeight, tNorm);
           w = constrain(w, minWeight, baseWeight);
           String ek = pi + ":" + ri + ":" + si;
           weights.put(ek, w);
-          acc += segLen[si];
         }
       }
     }
@@ -1608,11 +1646,14 @@ class MapModel {
       if (p.routes.isEmpty()) continue;
       PathType pt = getPathType(p.typeId);
       int baseCol = (pt != null) ? pt.col : app.color(80);
-      int col = baseCol;
-      float w = (pt != null) ? pt.weightPx : 2.0f;
-      if (w <= 0.01f) continue;
+      rgbToHSB01(baseCol, hsbScratch);
       float alphaScale = constrain(s.pathSatScale01, 0, 1);
       if (alphaScale <= 1e-4f) continue;
+      hsbScratch[1] = constrain(hsbScratch[1] * alphaScale, 0, 1);
+      int rgb = hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]);
+      int col = app.color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, alphaScale * 255);
+      float w = (pt != null) ? pt.weightPx : 2.0f;
+      if (w <= 0.01f) continue;
       app.stroke(col);
       boolean taperOn = (pt != null && pt.taperOn);
       HashMap<String, Float> taperW = null;
@@ -1624,7 +1665,7 @@ class MapModel {
           taperCache.put(p.typeId, taperW);
         }
       }
-      p.draw(app, w, taperOn, taperW, i, false, alphaScale);
+      p.draw(app, w, taperOn, taperW, i, false, 1.0f);
     }
     app.popStyle();
   }
@@ -2991,12 +3032,41 @@ class MapModel {
 
   // ---------- Zones / cells picking ----------
 
-  Cell findCellContaining(float wx, float wy) {
-    for (Cell c : cells) {
-      if (pointInPolygon(wx, wy, c.vertices)) return c;
-    }
-    return null;
+Cell findCellContaining(float wx, float wy) {
+  for (Cell c : cells) {
+    if (pointInPolygon(wx, wy, c.vertices)) return c;
   }
+  return null;
+}
+
+int findCellIndexContaining(float wx, float wy) {
+  if (cells == null) return -1;
+  for (int i = 0; i < cells.size(); i++) {
+    Cell c = cells.get(i);
+    if (c == null) continue;
+    if (pointInPolygon(wx, wy, c.vertices)) return i;
+  }
+  return -1;
+}
+
+boolean pointTouchesWater(float wx, float wy, float sea) {
+  int ci = findCellIndexContaining(wx, wy);
+  if (ci < 0 || ci >= cells.size()) return false;
+  Cell c = cells.get(ci);
+  if (c == null) return false;
+  if (c.elevation <= sea) return true;
+  ensureCellNeighborsComputed();
+  ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
+  if (nbs != null) {
+    for (int nb : nbs) {
+      if (nb < 0 || nb >= cells.size()) continue;
+      Cell nc = cells.get(nb);
+      if (nc == null) continue;
+      if (nc.elevation <= sea) return true;
+    }
+  }
+  return false;
+}
 
   boolean pointInPolygon(float x, float y, ArrayList<PVector> poly) {
     if (poly == null || poly.size() < 3) return false;

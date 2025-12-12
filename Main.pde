@@ -806,6 +806,11 @@ void draw() {
   }
   if (currentTool != Tool.EDIT_RENDER && renderShowLabels) {
     mapModel.drawLabels(this);
+    if (currentTool == Tool.EDIT_LABELS) {
+      if (renderSettings.showLabelsZones) mapModel.drawZoneLabelsRender(this, renderSettings);
+      if (renderSettings.showLabelsPaths) mapModel.drawPathLabelsRender(this, renderSettings);
+      if (renderSettings.showLabelsStructures) mapModel.drawStructureLabelsRender(this, renderSettings);
+    }
   }
 
   if (currentTool == Tool.EDIT_STRUCTURES) {
