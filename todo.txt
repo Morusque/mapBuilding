@@ -25,9 +25,7 @@ Bugs :
 (later) trying to export with labels makes the thing crash with a NullPointerException or IllegalArgumentException: Width (0) and height (0) cannot be <= 0
 
 Should be easy :
-(later) add biomes outline brightness + saturation parameter in biomes mode
 (later) water rendering style : many horizontal lines to represent coastlines
-(later) background rendering : noise amount
 (later) Comments (associated with elements in lists) exportable as custom format
 (later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 (later) are there existing formats for such tools to handle? (at least research)

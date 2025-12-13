@@ -11,6 +11,8 @@ class MapRenderer {
   private int cachedBiomeOutlineCellCount = -1;
   private int cachedBiomeOutlineChecksum = 0;
   private float cachedBiomeOutlineSeaLevel = Float.MAX_VALUE;
+  private PImage noiseTex;
+  private final int NOISE_TEX_SIZE = 1024;
 
   MapRenderer(MapModel model) {
     this.model = model;
@@ -610,6 +612,30 @@ class MapRenderer {
       }
     }
 
+    // Background noise overlay (monochrome, tiled texture cached once)
+    if (s.backgroundNoiseAlpha01 > 1e-4f) {
+      PImage ntex = getNoiseTexture(app);
+      if (ntex != null) {
+        float a = s.backgroundNoiseAlpha01;
+        app.pushStyle();
+        app.textureMode(PConstants.NORMAL);
+        app.textureWrap(PConstants.REPEAT);
+        // Land
+        for (Cell c : model.cells) {
+          if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+          if (c.elevation < seaLevel) continue;
+          drawPatternPoly(app, c.vertices, ntex, landBase, a);
+        }
+        // Water
+        for (Cell c : model.cells) {
+          if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+          if (c.elevation >= seaLevel) continue;
+          drawPatternPoly(app, c.vertices, ntex, waterBase, a);
+        }
+        app.popStyle();
+      }
+    }
+
     // Biome fills
     if (s.biomeFillAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f) {
       app.noStroke();
@@ -857,13 +883,13 @@ class MapRenderer {
     app.tint(tintCol, constrain(alpha01, 0, 1) * 255);
     app.beginShape();
     app.texture(pattern);
-    // Keep 1:1 pixel density regardless of zoom; use raw pixel dimensions
+    // Keep 1:1 pixel density regardless of zoom; map using screen-space coords
     float pw = max(1, pattern.width);
     float ph = max(1, pattern.height);
     for (PVector v : verts) {
-      // Map world coords to screen pixels via viewport zoom to keep 1:1 pixel density
-      float u = wrap01((v.x * viewport.zoom) / pw);
-      float vv = wrap01((v.y * viewport.zoom) / ph);
+      PVector s = viewport.worldToScreen(v.x, v.y);
+      float u = s.x / pw;
+      float vv = s.y / ph;
       app.vertex(v.x, v.y, u, vv);
     }
     app.endShape(PConstants.CLOSE);
@@ -872,6 +898,17 @@ class MapRenderer {
 
   // ------- Pattern cache -------
   private HashMap<String, PImage> patternCache = new HashMap<String, PImage>();
+  private PImage getNoiseTexture(PApplet app) {
+    if (noiseTex != null && noiseTex.width == NOISE_TEX_SIZE && noiseTex.height == NOISE_TEX_SIZE) return noiseTex;
+    noiseTex = app.createImage(NOISE_TEX_SIZE, NOISE_TEX_SIZE, PConstants.ARGB);
+    noiseTex.loadPixels();
+    for (int i = 0; i < noiseTex.pixels.length; i++) {
+      int gray = (int)app.random(0, 256);
+      noiseTex.pixels[i] = app.color(gray, gray, gray, 255);
+    }
+    noiseTex.updatePixels();
+    return noiseTex;
+  }
 
   PImage getPattern(PApplet app, String name) {
     if (name == null || name.length() == 0) return null;
@@ -1325,4 +1362,16 @@ class MapRenderer {
       return bx + "," + by + "-" + ax + "," + ay;
     }
   }
+}
+
+PImage generateNoiseTexture() {
+  PImage im = new PImage(1000,1000);
+  im.loadPixels();
+  for (int x=0;x<im.width;x++) {
+    for (int y=0;y<im.height;y++) {
+      im.pixels[y*im.width+x] = color(random(0x100));
+    }
+  }
+  im.updatePixels();
+  return im;
 }

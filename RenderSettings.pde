@@ -28,6 +28,7 @@ class RenderSettings {
   float waterSat01 = 0.28f;
   float waterBri01 = 0.35f;
   float cellBorderAlpha01 = 0.0f;
+  float backgroundNoiseAlpha01 = 0.0f;
 
   // Biomes
   float biomeFillAlpha01 = 0.5f;
@@ -97,6 +98,7 @@ class RenderSettings {
     c.waterSat01 = waterSat01;
     c.waterBri01 = waterBri01;
     c.cellBorderAlpha01 = cellBorderAlpha01;
+    c.backgroundNoiseAlpha01 = backgroundNoiseAlpha01;
     // Biomes
     c.biomeFillAlpha01 = biomeFillAlpha01;
     c.biomeSatScale01 = biomeSatScale01;
@@ -161,6 +163,7 @@ class RenderSettings {
     waterSat01 = o.waterSat01;
     waterBri01 = o.waterBri01;
     cellBorderAlpha01 = o.cellBorderAlpha01;
+    backgroundNoiseAlpha01 = o.backgroundNoiseAlpha01;
     // Biomes
     biomeFillAlpha01 = o.biomeFillAlpha01;
     biomeSatScale01 = o.biomeSatScale01;
@@ -227,6 +230,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterSat01 = 0.28f;
     s.waterBri01 = 0.35f;
     s.cellBorderAlpha01 = 0.0f;
+    s.backgroundNoiseAlpha01 = 0.0f;
     s.biomeFillAlpha01 = 0.5f;
     s.biomeSatScale01 = 1.0f;
     s.biomeOutlineSizePx = 0.0f;

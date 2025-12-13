@@ -1187,6 +1187,12 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_CELL_BORDER_ALPHA;
       return true;
     }
+    if (layout.backgroundNoiseSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.backgroundNoiseSlider.x) / (float)layout.backgroundNoiseSlider.w, 0, 1);
+      renderSettings.backgroundNoiseAlpha01 = t;
+      activeSlider = SLIDER_RENDER_BACKGROUND_NOISE;
+      return true;
+    }
   }
 
   // Biomes

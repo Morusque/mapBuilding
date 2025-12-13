@@ -147,6 +147,24 @@ void mouseDragged() {
         activeSlider = SLIDER_BIOME_HUE;
         return;
       }
+      if (layout.satSlider != null && layout.satSlider.contains(mouseX, mouseY)) {
+        float t = (mouseX - layout.satSlider.x) / (float)layout.satSlider.w;
+        t = constrain(t, 0, 1);
+        ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+        active.sat01 = t;
+        active.updateColorFromHSB();
+        activeSlider = SLIDER_BIOME_SAT;
+        return;
+      }
+      if (layout.briSlider != null && layout.briSlider.contains(mouseX, mouseY)) {
+        float t = (mouseX - layout.briSlider.x) / (float)layout.briSlider.w;
+        t = constrain(t, 0, 1);
+        ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+        active.bri01 = t;
+        active.updateColorFromHSB();
+        activeSlider = SLIDER_BIOME_BRI;
+        return;
+      }
     }
 
     if (layout.brushSlider.contains(mouseX, mouseY)) {
@@ -280,6 +298,28 @@ void updateActiveSlider(int mx, int my) {
       if (mapModel.biomeTypes != null && activeBiomeIndex >= 0 && activeBiomeIndex < mapModel.biomeTypes.size()) {
         ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
         active.hue01 = t;
+        active.updateColorFromHSB();
+      }
+      break;
+    }
+    case SLIDER_BIOME_SAT: {
+      BiomesLayout l = buildBiomesLayout();
+      float t = (mx - l.satSlider.x) / (float)l.satSlider.w;
+      t = constrain(t, 0, 1);
+      if (mapModel.biomeTypes != null && activeBiomeIndex >= 0 && activeBiomeIndex < mapModel.biomeTypes.size()) {
+        ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+        active.sat01 = t;
+        active.updateColorFromHSB();
+      }
+      break;
+    }
+    case SLIDER_BIOME_BRI: {
+      BiomesLayout l = buildBiomesLayout();
+      float t = (mx - l.briSlider.x) / (float)l.briSlider.w;
+      t = constrain(t, 0, 1);
+      if (mapModel.biomeTypes != null && activeBiomeIndex >= 0 && activeBiomeIndex < mapModel.biomeTypes.size()) {
+        ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+        active.bri01 = t;
         active.updateColorFromHSB();
       }
       break;
@@ -710,6 +750,12 @@ void updateActiveSlider(int mx, int my) {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.labelsOutlineAlphaSlider.x) / (float)l.labelsOutlineAlphaSlider.w, 0, 1);
       renderSettings.labelOutlineAlpha01 = t;
+      break;
+    }
+    case SLIDER_RENDER_BACKGROUND_NOISE: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.backgroundNoiseSlider.x) / (float)l.backgroundNoiseSlider.w, 0, 1);
+      renderSettings.backgroundNoiseAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_STRUCT_SHADOW_ALPHA: {

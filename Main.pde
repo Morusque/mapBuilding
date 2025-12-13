@@ -429,6 +429,9 @@ final int SLIDER_BIOME_GEN_MODE = 63;
 final int SLIDER_BIOME_GEN_VALUE = 64;
 final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 65;
 final int SLIDER_RENDER_STRUCT_SHADOW_ALPHA = 66;
+final int SLIDER_BIOME_SAT = 67;
+final int SLIDER_BIOME_BRI = 68;
+final int SLIDER_RENDER_BACKGROUND_NOISE = 69;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -1096,6 +1099,7 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   r.setFloat("waterSat01", s.waterSat01);
   r.setFloat("waterBri01", s.waterBri01);
   r.setFloat("cellBorderAlpha01", s.cellBorderAlpha01);
+  r.setFloat("backgroundNoiseAlpha01", s.backgroundNoiseAlpha01);
 
   JSONObject biomes = new JSONObject();
   biomes.setFloat("fillAlpha01", s.biomeFillAlpha01);
@@ -1175,6 +1179,7 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
   target.waterSat01 = r.getFloat("waterSat01", target.waterSat01);
   target.waterBri01 = r.getFloat("waterBri01", target.waterBri01);
   target.cellBorderAlpha01 = r.getFloat("cellBorderAlpha01", target.cellBorderAlpha01);
+  target.backgroundNoiseAlpha01 = r.getFloat("backgroundNoiseAlpha01", target.backgroundNoiseAlpha01);
 
   if (r.hasKey("biomes")) {
     JSONObject b = r.getJSONObject("biomes");

@@ -212,6 +212,8 @@ class BiomesLayout {
   ArrayList<IntRect> swatches = new ArrayList<IntRect>();
   IntRect nameField;
   IntRect hueSlider;
+  IntRect satSlider;
+  IntRect briSlider;
   IntRect brushSlider;
 }
 
@@ -265,6 +267,12 @@ BiomesLayout buildBiomesLayout() {
   curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   l.hueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.satSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+  l.briSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   l.brushSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
@@ -403,6 +411,16 @@ void drawBiomesPanel() {
     float hNorm = constrain(active.hue01, 0, 1);
     drawSlider(hue, hNorm, "Hue for \"" + active.name + "\": " + nf(active.hue01, 1, 2));
     registerUiTooltip(hue, tooltipFor("biome_hue"));
+
+    if (layout.satSlider != null) {
+      float sNorm = constrain(active.sat01, 0, 1);
+      drawSlider(layout.satSlider, sNorm, "Saturation for \"" + active.name + "\"");
+    }
+
+    if (layout.briSlider != null) {
+      float bNorm = constrain(active.bri01, 0, 1);
+      drawSlider(layout.briSlider, bNorm, "Brightness for \"" + active.name + "\"");
+    }
   }
 
   // Brush radius slider
@@ -1652,6 +1670,7 @@ class RenderLayout {
   IntRect[] landHSB = new IntRect[3];
   IntRect[] waterHSB = new IntRect[3];
   IntRect cellBordersAlphaSlider;
+  IntRect backgroundNoiseSlider;
 
   IntRect biomeFillAlphaSlider;
   IntRect biomeSatSlider;
@@ -1730,6 +1749,9 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_LABEL_H*2 + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.cellBordersAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.backgroundNoiseSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
@@ -1899,6 +1921,7 @@ void drawRenderPanel() {
     drawHSBRow(layout.landHSB, "Land base", renderSettings.landHue01, renderSettings.landSat01, renderSettings.landBri01);
     drawHSBRow(layout.waterHSB, "Water base", renderSettings.waterHue01, renderSettings.waterSat01, renderSettings.waterBri01);
     drawSlider(layout.cellBordersAlphaSlider, renderSettings.cellBorderAlpha01, "Cell borders alpha (" + nf(renderSettings.cellBorderAlpha01 * 100, 1, 0) + "%)");
+    drawSlider(layout.backgroundNoiseSlider, renderSettings.backgroundNoiseAlpha01, "Background noise (" + nf(renderSettings.backgroundNoiseAlpha01 * 100, 1, 0) + "%)");
   }
 
   drawSectionHeader(layout.headerBiomes, "Biomes", renderSectionBiomesOpen);
