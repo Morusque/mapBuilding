@@ -1,7 +1,4 @@
 
-// this TODO file has tasked marked as (now) (soon) (later) (maybe) from more urgent to less urgent
-// done tasks should be marked as (done) for review before I delete them
-
 Mandatory for full generation milestone :
 (later) Structures : option to generate structs
 (later) Labels : option to generate labels
@@ -27,7 +24,6 @@ Bugs :
 Should be easy :
 (later) water rendering style : many horizontal lines to represent coastlines
 (later) Comments (associated with elements in lists) exportable as custom format
-(later) SVG export with layers (background, borders, paths, structures, labels, legend) and data-* / class attributes for type ids.
 (later) are there existing formats for such tools to handle? (at least research)
 (later) write a more consistent readme file
 

@@ -5,6 +5,7 @@ class ExportLayout {
   int titleY;
   int bodyY;
   IntRect pngBtn;
+  IntRect svgBtn;
   IntRect scaleSlider;
   IntRect mapExportBtn;
   IntRect mapImportBtn;
@@ -19,6 +20,7 @@ ExportLayout buildExportLayout() {
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
   l.pngBtn = new IntRect(l.panel.x + PANEL_PADDING, curY, 140, PANEL_BUTTON_H);
+  l.svgBtn = new IntRect(l.pngBtn.x + l.pngBtn.w + PANEL_ROW_GAP, curY, 140, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
   l.scaleSlider = new IntRect(l.panel.x + PANEL_PADDING, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
@@ -52,6 +54,12 @@ void drawExportPanel() {
   textAlign(CENTER, CENTER);
   text("Export PNG", layout.pngBtn.x + layout.pngBtn.w / 2, layout.pngBtn.y + layout.pngBtn.h / 2);
   registerUiTooltip(layout.pngBtn, tooltipFor("export_png"));
+
+  drawBevelButton(layout.svgBtn.x, layout.svgBtn.y, layout.svgBtn.w, layout.svgBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Export SVG", layout.svgBtn.x + layout.svgBtn.w / 2, layout.svgBtn.y + layout.svgBtn.h / 2);
+  registerUiTooltip(layout.svgBtn, tooltipFor("export_svg"));
 
   // Resolution scale slider
   if (layout.scaleSlider != null) {
