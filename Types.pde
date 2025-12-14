@@ -169,6 +169,7 @@ int hsb01ToRGB(float h, float s, float b) {
 
 class StructureAttributes {
   String name = "";
+  String comment = "";
   float size = 0.02f;
   float angleOffsetRad = 0.0f;
   StructureShape shape = StructureShape.SQUARE;
@@ -182,6 +183,7 @@ class StructureAttributes {
   StructureAttributes copy() {
     StructureAttributes c = new StructureAttributes();
     c.name = name;
+    c.comment = comment;
     c.size = size;
     c.angleOffsetRad = angleOffsetRad;
     c.shape = shape;
@@ -197,6 +199,7 @@ class StructureAttributes {
   void applyTo(Structure s) {
     if (s == null) return;
     s.name = (name != null) ? name : "";
+    s.comment = (comment != null) ? comment : "";
     s.size = size;
     s.shape = shape;
     s.aspect = aspectRatio;
@@ -253,6 +256,7 @@ class Structure {
   float strokeWeightPx = 1.4f;
   int fillCol = color(245, 245, 235, 180);
   StructureSnapBinding snapBinding = new StructureSnapBinding();
+  String comment = "";
 
   Structure(float x, float y) {
     this.x = x;
@@ -347,6 +351,7 @@ StructureAttributes structureAttributesFromStructure(Structure s) {
   StructureAttributes a = new StructureAttributes();
   if (s == null) return a;
   a.name = s.name;
+  a.comment = s.comment;
   a.size = s.size;
   a.shape = s.shape;
   a.alignment = s.alignment;
@@ -368,6 +373,7 @@ class MapLabel {
   String text;
   LabelTarget target = LabelTarget.FREE;
   float size = labelSizeDefault();
+  String comment = "";
 
   MapLabel(float x, float y, String text) {
     this.x = x;

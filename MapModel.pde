@@ -90,6 +90,7 @@ class MapModel {
     float hue01 = 0.0f;
     float sat01 = 0.5f;
     float bri01 = 0.9f;
+    String comment = "";
     ArrayList<Integer> cells = new ArrayList<Integer>(); // indices into cells array
 
     MapZone(String name, int col) {

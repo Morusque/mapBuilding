@@ -3,6 +3,7 @@ class Path {
   ArrayList<ArrayList<PVector>> routes = new ArrayList<ArrayList<PVector>>();
   int typeId = 0;
   String name = "";
+  String comment = "";
 
   void addRoute(ArrayList<PVector> pts) {
     if (pts == null || pts.size() < 2) return;

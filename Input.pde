@@ -909,6 +909,29 @@ void keyPressed() {
     }
   }
 
+  // Inline text editing for zone comment (single-line)
+  if (editingZoneComment) {
+    if (key == ENTER || key == RETURN) {
+      if (activeZoneIndex >= 0 && activeZoneIndex < mapModel.zones.size()) {
+        mapModel.zones.get(activeZoneIndex).comment = zoneCommentDraft;
+      }
+      editingZoneComment = false;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (zoneCommentDraft.length() > 0) zoneCommentDraft = zoneCommentDraft.substring(0, zoneCommentDraft.length() - 1);
+      if (activeZoneIndex >= 0 && activeZoneIndex < mapModel.zones.size()) {
+        mapModel.zones.get(activeZoneIndex).comment = zoneCommentDraft;
+      }
+      return;
+    } else if (key >= 32) {
+      zoneCommentDraft += key;
+      if (activeZoneIndex >= 0 && activeZoneIndex < mapModel.zones.size()) {
+        mapModel.zones.get(activeZoneIndex).comment = zoneCommentDraft;
+      }
+      return;
+    }
+  }
+
   // Inline text editing for labels
   if (editingLabelIndex >= 0) {
     if (key == ENTER || key == RETURN) {
@@ -924,6 +947,29 @@ void keyPressed() {
     } else if (key >= 32) {
       labelDraft += key;
       if (editingLabelIndex < mapModel.labels.size()) mapModel.labels.get(editingLabelIndex).text = labelDraft;
+      return;
+    }
+  }
+
+  // Inline text editing for label comment (single-line)
+  if (editingLabelCommentIndex >= 0) {
+    if (key == ENTER || key == RETURN) {
+      if (editingLabelCommentIndex < mapModel.labels.size()) {
+        mapModel.labels.get(editingLabelCommentIndex).comment = labelCommentDraft;
+      }
+      editingLabelCommentIndex = -1;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (labelCommentDraft.length() > 0) labelCommentDraft = labelCommentDraft.substring(0, labelCommentDraft.length() - 1);
+      if (editingLabelCommentIndex < mapModel.labels.size() && editingLabelCommentIndex >= 0) {
+        mapModel.labels.get(editingLabelCommentIndex).comment = labelCommentDraft;
+      }
+      return;
+    } else if (key >= 32) {
+      labelCommentDraft += key;
+      if (editingLabelCommentIndex < mapModel.labels.size() && editingLabelCommentIndex >= 0) {
+        mapModel.labels.get(editingLabelCommentIndex).comment = labelCommentDraft;
+      }
       return;
     }
   }
@@ -955,6 +1001,38 @@ void keyPressed() {
         for (int idx : selectedStructureIndices) {
           if (idx < 0 || idx >= mapModel.structures.size()) continue;
           mapModel.structures.get(idx).name = structureNameDraft;
+        }
+      }
+      return;
+    }
+  }
+
+  // Inline text editing for structures (comment, single-line)
+  if (editingStructureComment) {
+    if (key == ENTER || key == RETURN) {
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).comment = structureCommentDraft;
+        }
+      }
+      editingStructureComment = false;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (structureCommentDraft.length() > 0) structureCommentDraft = structureCommentDraft.substring(0, structureCommentDraft.length() - 1);
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).comment = structureCommentDraft;
+        }
+      }
+      return;
+    } else if (key >= 32) {
+      structureCommentDraft += key;
+      if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
+        for (int idx : selectedStructureIndices) {
+          if (idx < 0 || idx >= mapModel.structures.size()) continue;
+          mapModel.structures.get(idx).comment = structureCommentDraft;
         }
       }
       return;
@@ -1002,6 +1080,28 @@ void keyPressed() {
       return;
     } else if (key >= 32) {
       pathNameDraft += key;
+      return;
+    }
+  }
+  // Inline text editing for path comment (single-line)
+  if (editingPathCommentIndex >= 0) {
+    if (key == ENTER || key == RETURN) {
+      if (editingPathCommentIndex < mapModel.paths.size()) {
+        mapModel.paths.get(editingPathCommentIndex).comment = pathCommentDraft;
+      }
+      editingPathCommentIndex = -1;
+      return;
+    } else if (key == BACKSPACE || key == DELETE) {
+      if (pathCommentDraft.length() > 0) pathCommentDraft = pathCommentDraft.substring(0, pathCommentDraft.length() - 1);
+      if (editingPathCommentIndex < mapModel.paths.size() && editingPathCommentIndex >= 0) {
+        mapModel.paths.get(editingPathCommentIndex).comment = pathCommentDraft;
+      }
+      return;
+    } else if (key >= 32) {
+      pathCommentDraft += key;
+      if (editingPathCommentIndex < mapModel.paths.size() && editingPathCommentIndex >= 0) {
+        mapModel.paths.get(editingPathCommentIndex).comment = pathCommentDraft;
+      }
       return;
     }
   }

@@ -148,6 +148,8 @@ int editingBiomeNameIndex = -1;
 String biomeNameDraft = "";
 int editingZoneNameIndex = -1;
 String zoneNameDraft = "";
+boolean editingZoneComment = false;
+String zoneCommentDraft = "";
 
 // Biome generation settings
 String[] biomeGenerateModes = {
@@ -173,6 +175,8 @@ int selectedLabelIndex = -1;
 String labelDraft = "label";
 LabelTarget labelTargetMode = LabelTarget.FREE;
 float labelSizeDefaultVal = 12;
+int editingLabelCommentIndex = -1;
+String labelCommentDraft = "";
 
 // Path type editing state
 int editingPathTypeNameIndex = -1;
@@ -181,6 +185,8 @@ String pathTypeNameDraft = "";
 // Path name editing state
 int editingPathNameIndex = -1;
 String pathNameDraft = "";
+int editingPathCommentIndex = -1;
+String pathCommentDraft = "";
 
 // Structure selection state
 HashSet<Integer> selectedStructureIndices = new HashSet<Integer>();
@@ -188,6 +194,8 @@ int primaryStructureIndex = -1;
 boolean editingStructureName = false;
 int editingStructureNameIndex = -1;
 String structureNameDraft = "";
+boolean editingStructureComment = false;
+String structureCommentDraft = "";
 
 class StructureSelectionInfo {
   boolean hasSelection = false;
@@ -201,8 +209,10 @@ class StructureSelectionInfo {
   boolean satMixed = false;
   boolean alphaMixed = false;
   boolean strokeMixed = false;
+  boolean commentMixed = false;
 
   String sharedName = "";
+  String sharedComment = "";
   float sharedSize = 0.02f;
   float sharedAngleRad = 0.0f;
   float sharedAngleOffsetRad = 0.0f;
@@ -218,6 +228,7 @@ class StructureSelectionInfo {
 StructureSelectionInfo gatherStructureSelectionInfo() {
   StructureSelectionInfo info = new StructureSelectionInfo();
   info.sharedName = structureNameDraft;
+  info.sharedComment = structureCommentDraft;
   info.sharedSize = structureSize;
   info.sharedAngleRad = structureAngleOffsetRad;
   info.sharedAngleOffsetRad = structureAngleOffsetRad;
@@ -247,6 +258,7 @@ StructureSelectionInfo gatherStructureSelectionInfo() {
     }
     if (first) {
       info.sharedName = (s.name != null) ? s.name : "";
+      info.sharedComment = (s.comment != null) ? s.comment : "";
       info.sharedSize = s.size;
       info.sharedAngleRad = s.angle;
       float snapAngle = (s.snapBinding != null) ? s.snapBinding.snapAngleRad : 0.0f;
@@ -264,6 +276,10 @@ StructureSelectionInfo gatherStructureSelectionInfo() {
     if (!info.nameMixed) {
       String nm = (s.name != null) ? s.name : "";
       info.nameMixed = !nm.equals(info.sharedName);
+    }
+    if (!info.commentMixed) {
+      String cm = (s.comment != null) ? s.comment : "";
+      info.commentMixed = !cm.equals(info.sharedComment);
     }
     if (!info.sizeMixed && abs(info.sharedSize - s.size) > 1e-6f) info.sizeMixed = true;
     if (!info.angleMixed && abs(info.sharedAngleRad - s.angle) > 1e-6f) info.angleMixed = true;
@@ -285,6 +301,7 @@ StructureSelectionInfo gatherStructureSelectionInfo() {
 
   // Keep UI draft values in sync when there's a clear consensus.
   if (!info.nameMixed) structureNameDraft = info.sharedName;
+  if (!info.commentMixed) structureCommentDraft = info.sharedComment;
   if (!info.sizeMixed) structureSize = info.sharedSize;
   if (!info.angleMixed) structureAngleOffsetRad = info.sharedAngleOffsetRad;
   if (!info.ratioMixed) structureAspectRatio = info.sharedRatio;
@@ -306,6 +323,7 @@ void clearStructureSelection() {
   primaryStructureIndex = -1;
   editingStructureName = false;
   editingStructureNameIndex = -1;
+  editingStructureComment = false;
 }
 
 void toggleStructureSelection(int idx) {
@@ -1141,7 +1159,7 @@ String exportSvg() {
         sb.append("    <path d=\"").append(path.toString()).append("\" fill=\"none\" stroke=\"").append(stroke)
           .append("\" stroke-width=\"1\" stroke-linejoin=\"round\" stroke-linecap=\"round\" stroke-opacity=\"")
           .append(fmt.apply(s.zoneStrokeAlpha01)).append("\" class=\"zone zone-").append(zi)
-          .append("\" data-zone-id=\"").append(zi).append("\"/>\n");
+          .append("\" data-zone-id=\"").append(zi).append("\" data-comment=\"").append(esc.apply(z.comment != null ? z.comment : "")).append("\"/>\n");
       }
     }
   }
@@ -1188,7 +1206,8 @@ String exportSvg() {
           .append("\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"path type-")
           .append(typeId).append("\" data-type-id=\"").append(typeId)
           .append("\" data-path-id=\"").append(pi).append("\" data-name=\"")
-          .append(esc.apply(name)).append("\"/>\n");
+          .append(esc.apply(name)).append("\" data-comment=\"").append(esc.apply(p.comment != null ? p.comment : ""))
+          .append("\"/>\n");
       }
     }
   }
@@ -1210,7 +1229,8 @@ String exportSvg() {
       sb.append("    <g transform=\"translate(").append(fmt.apply(sp.x)).append(",").append(fmt.apply(sp.y))
         .append(") rotate(").append(fmt.apply(angleDeg)).append(")\" class=\"structure type-")
         .append(st.typeId).append("\" data-type-id=\"").append(st.typeId)
-        .append("\" data-structure-id=\"").append(si).append("\" data-name=\"").append(esc.apply(name)).append("\">");
+        .append("\" data-structure-id=\"").append(si).append("\" data-name=\"").append(esc.apply(name))
+        .append("\" data-comment=\"").append(esc.apply(st.comment != null ? st.comment : "")).append("\">");
       switch (st.shape) {
         case RECTANGLE: {
           float w = sizePx;
@@ -1289,7 +1309,8 @@ String exportSvg() {
       sb.append("    <text x=\"").append(fmt.apply(sp.x)).append("\" y=\"").append(fmt.apply(sp.y))
         .append("\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"")
         .append(fmt.apply(baseLabelSize)).append("\" class=\"label zone\" data-name=\"")
-        .append(esc.apply(name)).append("\">").append(esc.apply(name)).append("</text>\n");
+        .append(esc.apply(name)).append("\" data-comment=\"").append(esc.apply(z.comment != null ? z.comment : ""))
+        .append("\">").append(esc.apply(name)).append("</text>\n");
     }
   }
   if (s.showLabelsPaths && mapModel.paths != null) {
@@ -1325,7 +1346,8 @@ String exportSvg() {
         .append(fmt.apply(baseLabelSize)).append("\" transform=\"rotate(").append(fmt.apply(angle))
         .append(" ").append(fmt.apply(sp.x)).append(" ").append(fmt.apply(sp.y))
         .append(")\" class=\"label path\" data-path-id=\"").append(pi).append("\" data-name=\"")
-        .append(esc.apply(txt)).append("\">").append(esc.apply(txt)).append("</text>\n");
+        .append(esc.apply(txt)).append("\" data-comment=\"").append(esc.apply(p.comment != null ? p.comment : ""))
+        .append("\">").append(esc.apply(txt)).append("</text>\n");
     }
   }
   if (s.showLabelsStructures && mapModel.structures != null) {
@@ -1337,7 +1359,8 @@ String exportSvg() {
       sb.append("    <text x=\"").append(fmt.apply(sp.x)).append("\" y=\"").append(fmt.apply(sp.y))
         .append("\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"")
         .append(fmt.apply(baseLabelSize)).append("\" class=\"label structure\" data-structure-id=\"")
-        .append(si).append("\" data-name=\"").append(esc.apply(txt)).append("\">")
+        .append(si).append("\" data-name=\"").append(esc.apply(txt)).append("\" data-comment=\"")
+        .append(esc.apply(st.comment != null ? st.comment : "")).append("\">")
         .append(esc.apply(txt)).append("</text>\n");
     }
   }
@@ -1349,7 +1372,8 @@ String exportSvg() {
       sb.append("    <text x=\"").append(fmt.apply(sp.x)).append("\" y=\"").append(fmt.apply(sp.y))
         .append("\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"")
         .append(fmt.apply(l.size)).append("\" class=\"label arbitrary\" data-label-id=\"")
-        .append(li).append("\">").append(esc.apply(l.text)).append("</text>\n");
+        .append(li).append("\" data-comment=\"").append(esc.apply(l.comment != null ? l.comment : ""))
+        .append("\">").append(esc.apply(l.text)).append("</text>\n");
     }
   }
   sb.append("  </g>\n");
@@ -1759,6 +1783,7 @@ JSONArray serializeZones(ArrayList<MapModel.MapZone> list) {
     JSONObject o = new JSONObject();
     o.setInt("id", i);
     o.setString("name", z.name);
+    o.setString("comment", (z.comment != null) ? z.comment : "");
     o.setInt("col", z.col);
     o.setFloat("hue01", z.hue01);
     o.setFloat("sat01", z.sat01);
@@ -1783,6 +1808,7 @@ JSONArray serializePaths(ArrayList<Path> list) {
     o.setInt("id", i);
     o.setInt("typeId", p.typeId);
     o.setString("name", p.name);
+    o.setString("comment", (p.comment != null) ? p.comment : "");
     JSONArray routes = new JSONArray();
     if (p.routes != null) {
       for (ArrayList<PVector> seg : p.routes) {
@@ -1814,6 +1840,7 @@ JSONArray serializeStructures(ArrayList<Structure> list) {
     o.setInt("id", i);
     o.setInt("typeId", s.typeId);
     o.setString("name", s.name);
+    o.setString("comment", (s.comment != null) ? s.comment : "");
     o.setFloat("x", s.x);
     o.setFloat("y", s.y);
     o.setFloat("angle", s.angle);
@@ -1867,6 +1894,7 @@ JSONArray serializeLabels(ArrayList<MapLabel> list) {
     o.setString("text", (l.text != null) ? l.text : "");
     o.setString("target", l.target.name());
     o.setFloat("size", l.size);
+    o.setString("comment", (l.comment != null) ? l.comment : "");
     arr.append(o);
   }
   return arr;
@@ -1984,6 +2012,7 @@ ArrayList<Path> deserializePaths(JSONArray arr) {
     Path p = new Path();
     p.typeId = o.getInt("typeId", 0);
     p.name = o.getString("name", "Path");
+    p.comment = o.getString("comment", "");
     JSONArray routesArr = o.getJSONArray("routes");
     if (routesArr != null) {
       for (int ri = 0; ri < routesArr.size(); ri++) {
@@ -2015,6 +2044,7 @@ ArrayList<Structure> deserializeStructures(JSONArray arr) {
     Structure s = new Structure(x, y);
     s.typeId = o.getInt("typeId", 0);
     s.name = o.getString("name", "");
+    s.comment = o.getString("comment", "");
     s.angle = o.getFloat("angle", 0);
     s.size = o.getFloat("size", s.size);
     try { s.shape = StructureShape.valueOf(o.getString("shape", s.shape.name())); } catch (Exception e) {}
@@ -2065,6 +2095,7 @@ ArrayList<MapLabel> deserializeLabels(JSONArray arr) {
     try { target = LabelTarget.valueOf(targetStr); } catch (Exception e) {}
     MapLabel l = new MapLabel(x, y, text, target);
     l.size = o.getFloat("size", l.size);
+    l.comment = o.getString("comment", "");
     list.add(l);
   }
   return list;

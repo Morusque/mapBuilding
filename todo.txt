@@ -23,7 +23,6 @@ Bugs :
 
 Should be easy :
 (later) water rendering style : many horizontal lines to represent coastlines
-(later) Comments (associated with elements in lists) exportable as custom format
 (later) are there existing formats for such tools to handle? (at least research)
 (later) write a more consistent readme file
 

@@ -445,6 +445,7 @@ class ZonesLayout {
   IntRect exclusiveBtn;
   IntRect fourColorBtn;
   IntRect listPanel;
+  IntRect commentField;
 }
 
 class ZoneRowLayout {
@@ -602,6 +603,9 @@ ZonesLayout buildZonesLayout() {
   l.fourColorBtn = new IntRect(innerX, curY, 150, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
+  l.commentField = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
   // Right-side list panel reserved space
   l.listPanel = new IntRect(width - RIGHT_PANEL_W - PANEL_PADDING, panelTop(), RIGHT_PANEL_W, height - panelTop() - PANEL_PADDING);
 
@@ -618,6 +622,31 @@ void drawZonesPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Zones", labelX, layout.titleY);
+
+  // Comment field (selected zone, single-line)
+  {
+    IntRect cf = layout.commentField;
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Comment", cf.x, cf.y - 4);
+    stroke(80);
+    fill(255);
+    rect(cf.x, cf.y, cf.w, cf.h);
+    fill(0);
+    textAlign(LEFT, CENTER);
+    String shown = "";
+    if (activeZoneIndex >= 0 && activeZoneIndex < mapModel.zones.size()) {
+      MapModel.MapZone z = mapModel.zones.get(activeZoneIndex);
+      if (z != null && z.comment != null && !editingZoneComment) shown = z.comment;
+      if (editingZoneComment) shown = zoneCommentDraft;
+    }
+    text(shown, cf.x + 6, cf.y + cf.h / 2);
+    if (editingZoneComment) {
+      float caretX = cf.x + 6 + textWidth(zoneCommentDraft);
+      stroke(0);
+      line(caretX, cf.y + 4, caretX, cf.y + cf.h - 4);
+    }
+  }
 
   // Reset and regenerate
   // Use explicit rectMode(CORNER) to avoid bleed from world draw state
@@ -682,6 +711,7 @@ class PathsLayout {
   IntRect typeMinWeightSlider;
   ArrayList<IntRect> typeSwatches = new ArrayList<IntRect>();
   IntRect nameField;
+  IntRect commentField;
   IntRect typeHueSlider;
   IntRect typeSatSlider;
   IntRect typeBriSlider;
@@ -748,6 +778,9 @@ PathsLayout buildPathsLayout() {
   curY = paletteBottom + PANEL_ROW_GAP;
 
   l.nameField = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_SECTION_GAP;
+
+  l.commentField = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_BUTTON_H);
   curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   l.typeHueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
@@ -860,6 +893,31 @@ void drawPathsPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Paths", labelX, layout.titleY);
+
+  // Comment for selected path (single-line for now)
+  {
+    IntRect cf = layout.commentField;
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Comment", cf.x, cf.y - 4);
+    stroke(80);
+    fill(255);
+    rect(cf.x, cf.y, cf.w, cf.h);
+    fill(0);
+    textAlign(LEFT, CENTER);
+    String shown = "";
+    if (selectedPathIndex >= 0 && selectedPathIndex < mapModel.paths.size()) {
+      Path p = mapModel.paths.get(selectedPathIndex);
+      if (p != null && p.comment != null && editingPathCommentIndex != selectedPathIndex) shown = p.comment;
+      if (editingPathCommentIndex == selectedPathIndex) shown = pathCommentDraft;
+    }
+    text(shown, cf.x + 6, cf.y + cf.h / 2);
+    if (editingPathCommentIndex == selectedPathIndex) {
+      float caretX = cf.x + 6 + textWidth(pathCommentDraft);
+      stroke(0);
+      line(caretX, cf.y + 4, caretX, cf.y + cf.h - 4);
+    }
+  }
 
   // Route mode slider (discrete)
   IntRect rs = layout.routeSlider;
@@ -1197,6 +1255,7 @@ void drawElevationPanel() {
 class LabelsLayout {
   IntRect panel;
   int titleY;
+  IntRect commentField;
 }
 
 class LabelsListLayout {
@@ -1224,6 +1283,8 @@ LabelsLayout buildLabelsLayout() {
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+  l.commentField = new IntRect(l.panel.x + PANEL_PADDING, curY + PANEL_LABEL_H, PANEL_W - 2 * PANEL_PADDING, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
   curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
   return l;
@@ -1237,6 +1298,31 @@ void drawLabelsPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Labels", labelX, layout.titleY);
+
+  // Comment field (selected label)
+  {
+    IntRect cf = layout.commentField;
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Comment", cf.x, cf.y - 4);
+    stroke(80);
+    fill(255);
+    rect(cf.x, cf.y, cf.w, cf.h);
+    fill(0);
+    textAlign(LEFT, CENTER);
+    String shown = "";
+    if (selectedLabelIndex >= 0 && selectedLabelIndex < mapModel.labels.size()) {
+      MapLabel l = mapModel.labels.get(selectedLabelIndex);
+      if (l != null && l.comment != null && editingLabelCommentIndex != selectedLabelIndex) shown = l.comment;
+      if (editingLabelCommentIndex == selectedLabelIndex) shown = labelCommentDraft;
+    }
+    text(shown, cf.x + 6, cf.y + cf.h / 2);
+    if (editingLabelCommentIndex == selectedLabelIndex) {
+      float caretX = cf.x + 6 + textWidth(labelCommentDraft);
+      stroke(0);
+      line(caretX, cf.y + 4, caretX, cf.y + cf.h - 4);
+    }
+  }
 
   drawControlsHint(layout.panel,
                    "left-click: place",
@@ -1383,6 +1469,7 @@ class StructuresLayout {
   IntRect panel;
   int titleY;
   IntRect nameField;
+  IntRect commentField;
   IntRect sizeSlider;
   IntRect angleSlider;
   IntRect ratioSlider;
@@ -1405,6 +1492,9 @@ StructuresLayout buildStructuresLayout() {
 
   int fullW = l.panel.w - 2 * PANEL_PADDING;
   l.nameField = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_BUTTON_H);
+  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+  l.commentField = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_BUTTON_H);
   curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
 
   l.sizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
@@ -1470,6 +1560,31 @@ void drawStructuresPanelUI() {
       line(caretX, nf.y + 4, caretX, nf.y + nf.h - 4);
     }
     registerUiTooltip(nf, tooltipFor("structures_detail_name"));
+  }
+
+  // Comment field (single-line for now)
+  {
+    IntRect cf = layout.commentField;
+    fill(0);
+    textAlign(LEFT, BOTTOM);
+    text("Comment", cf.x, cf.y - 4);
+    stroke(80);
+    fill(255);
+    rect(cf.x, cf.y, cf.w, cf.h);
+    fill(0);
+    textAlign(LEFT, CENTER);
+    String shown = "";
+    if (info.hasSelection && !info.commentMixed && !editingStructureComment) {
+      shown = info.sharedComment;
+    } else if (editingStructureComment) {
+      shown = structureCommentDraft;
+    }
+    text(shown, cf.x + 6, cf.y + cf.h / 2);
+    if (editingStructureComment) {
+      float caretX = cf.x + 6 + textWidth(structureCommentDraft);
+      stroke(0);
+      line(caretX, cf.y + 4, caretX, cf.y + cf.h - 4);
+    }
   }
 
   // Size slider

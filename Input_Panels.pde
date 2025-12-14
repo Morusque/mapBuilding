@@ -325,6 +325,7 @@ boolean handleZonesPanelClick(int mx, int my) {
     mapModel.resetAllZonesToNone();
     activeZoneIndex = -1;
     editingZoneNameIndex = -1;
+    editingZoneComment = false;
   }})) return true;
 
   if (queueButtonAction(layout.regenerateBtn, new Runnable() { public void run() {
@@ -332,7 +333,22 @@ boolean handleZonesPanelClick(int mx, int my) {
     mapModel.regenerateRandomZones(target);
     activeZoneIndex = -1;
     editingZoneNameIndex = -1;
+    editingZoneComment = false;
   }})) return true;
+
+  if (layout.commentField.contains(mx, my)) {
+    if (activeZoneIndex >= 0 && activeZoneIndex < mapModel.zones.size()) {
+      MapModel.MapZone z = mapModel.zones.get(activeZoneIndex);
+      zoneCommentDraft = (z != null && z.comment != null) ? z.comment : "";
+      editingZoneComment = true;
+    } else {
+      zoneCommentDraft = "";
+      editingZoneComment = false;
+    }
+    return true;
+  } else {
+    editingZoneComment = false;
+  }
 
   return false;
 }
@@ -345,6 +361,7 @@ boolean handleZonesListPanelClick(int mx, int my) {
   if (queueButtonAction(layout.deselectBtn, new Runnable() { public void run() {
     activeZoneIndex = -1;
     editingZoneNameIndex = -1;
+    editingZoneComment = false;
   }})) return true;
 
   if (queueButtonAction(layout.newBtn, new Runnable() { public void run() {
@@ -360,12 +377,14 @@ boolean handleZonesListPanelClick(int mx, int my) {
     if (queueButtonAction(row.selectRect, new Runnable() { public void run() {
       activeZoneIndex = row.index;
       editingZoneNameIndex = -1;
+      editingZoneComment = false;
     }})) return true;
 
     if (queueButtonAction(row.nameRect, new Runnable() { public void run() {
       activeZoneIndex = row.index;
       editingZoneNameIndex = row.index;
       zoneNameDraft = az.name;
+      editingZoneComment = false;
     }})) return true;
 
     if (row.hueSlider.contains(mx, my)) {
@@ -717,6 +736,20 @@ boolean handlePathsPanelClick(int mx, int my) {
     pathEraserMode = !pathEraserMode;
     pendingPathStart = null;
   }})) return true;
+  // Comment field
+  if (layout.commentField.contains(mx, my)) {
+    if (selectedPathIndex >= 0 && selectedPathIndex < mapModel.paths.size()) {
+      Path p = mapModel.paths.get(selectedPathIndex);
+      pathCommentDraft = (p != null && p.comment != null) ? p.comment : "";
+      editingPathCommentIndex = selectedPathIndex;
+    } else {
+      pathCommentDraft = "";
+      editingPathCommentIndex = -1;
+    }
+    return true;
+  } else {
+    editingPathCommentIndex = -1;
+  }
   if (queueButtonAction(layout.generateBtn, new Runnable() { public void run() {
     startLoading();
     loadingPct = 0;
@@ -839,6 +872,20 @@ boolean handlePathsPanelClick(int mx, int my) {
 
 boolean handleLabelsPanelClick(int mx, int my) {
   if (!isInLabelsPanel(mx, my)) return false;
+  LabelsLayout layout = buildLabelsLayout();
+  if (layout.commentField.contains(mx, my)) {
+    if (selectedLabelIndex >= 0 && selectedLabelIndex < mapModel.labels.size()) {
+      MapLabel l = mapModel.labels.get(selectedLabelIndex);
+      labelCommentDraft = (l != null && l.comment != null) ? l.comment : "";
+      editingLabelCommentIndex = selectedLabelIndex;
+    } else {
+      labelCommentDraft = "";
+      editingLabelCommentIndex = -1;
+    }
+    return true;
+  } else {
+    editingLabelCommentIndex = -1;
+  }
   return false;
 }
 
@@ -850,6 +897,7 @@ boolean handleLabelsListPanelClick(int mx, int my) {
   if (queueButtonAction(layout.deselectBtn, new Runnable() { public void run() {
     selectedLabelIndex = -1;
     editingLabelIndex = -1;
+    editingLabelCommentIndex = -1;
     labelDraft = "label";
   }})) return true;
 
@@ -869,16 +917,18 @@ boolean handleLabelsListPanelClick(int mx, int my) {
     LabelRowLayout row = layout.rows.get(i);
     if (row.index < 0 || row.index >= mapModel.labels.size()) continue;
     MapLabel lbl = mapModel.labels.get(row.index);
-    if (queueButtonAction(row.selectRect, new Runnable() { public void run() {
-      selectedLabelIndex = row.index;
-      editingLabelIndex = -1;
-      labelDraft = lbl.text;
-    }})) return true;
-    if (queueButtonAction(row.nameRect, new Runnable() { public void run() {
-      selectedLabelIndex = row.index;
-      editingLabelIndex = row.index;
-      labelDraft = lbl.text;
-    }})) return true;
+  if (queueButtonAction(row.selectRect, new Runnable() { public void run() {
+    selectedLabelIndex = row.index;
+    editingLabelIndex = -1;
+    editingLabelCommentIndex = -1;
+    labelDraft = lbl.text;
+  }})) return true;
+  if (queueButtonAction(row.nameRect, new Runnable() { public void run() {
+    selectedLabelIndex = row.index;
+    editingLabelIndex = row.index;
+    editingLabelCommentIndex = -1;
+    labelDraft = lbl.text;
+  }})) return true;
     if (queueButtonAction(row.delRect, new Runnable() { public void run() {
       mapModel.labels.remove(row.index);
       if (selectedLabelIndex == row.index) selectedLabelIndex = -1;
@@ -936,6 +986,7 @@ boolean handlePathsListPanelClick(int mx, int my) {
         syncActivePathTypeGlobals();
       }
       editingPathNameIndex = -1;
+      editingPathCommentIndex = -1;
       pendingPathStart = null;
     }})) return true;
     if (queueButtonAction(row.nameRect, new Runnable() { public void run() {
@@ -946,6 +997,7 @@ boolean handlePathsListPanelClick(int mx, int my) {
       }
       editingPathNameIndex = row.index;
       pathNameDraft = (p.name != null) ? p.name : "";
+      editingPathCommentIndex = -1;
     }})) return true;
     if (queueButtonAction(row.delRect, new Runnable() { public void run() {
       mapModel.paths.remove(row.index);
@@ -986,6 +1038,14 @@ boolean handleStructuresPanelClick(int mx, int my) {
     if (hasSelection && !info.nameMixed) structureNameDraft = info.sharedName;
     else if (hasSelection && info.nameMixed) structureNameDraft = "";
     return true;
+  }
+  if (layout.commentField.contains(mx, my)) {
+    editingStructureComment = true;
+    if (hasSelection && !info.commentMixed) structureCommentDraft = info.sharedComment;
+    else structureCommentDraft = "";
+    return true;
+  } else {
+    editingStructureComment = false;
   }
 
   if (layout.sizeSlider.contains(mx, my)) {
