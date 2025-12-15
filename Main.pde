@@ -548,6 +548,53 @@ void applyBiomeGeneration() {
   mapModel.snapDirty = true;
 }
 
+// Full auto-pipeline starting from existing cells
+void generateEverythingFromCells() {
+  if (mapModel == null) return;
+  startLoading();
+  loadingPct = 0;
+  try {
+    // Elevation
+    noiseSeed((int)random(Integer.MAX_VALUE));
+    mapModel.generateElevationNoise(elevationNoiseScale, 1.0f, seaLevel);
+    for (int i = 0; i < 5; i++) {
+      mapModel.makePlateaus(seaLevel);
+    }
+
+    // Biomes (full pipeline)
+    biomeGenerateModeIndex = max(0, biomeGenerateModes.length - 1);
+    applyBiomeGeneration();
+
+    // Zones
+    int targetZones = (mapModel.zones == null || mapModel.zones.isEmpty()) ? 5 : mapModel.zones.size();
+    mapModel.regenerateRandomZones(targetZones);
+    activeZoneIndex = -1;
+    editingZoneNameIndex = -1;
+    editingZoneComment = false;
+    mapModel.removeUnderwaterCellsFromZone(-1, seaLevel);
+
+    // Paths
+    selectedPathIndex = -1;
+    pendingPathStart = null;
+    mapModel.generatePathsAuto(seaLevel);
+
+    // Structures
+    mapModel.generateStructuresAuto(structGenTownCount, structGenBuildingDensity, seaLevel);
+    clearStructureSelection();
+
+    // Labels
+    mapModel.generateArbitraryLabels(seaLevel);
+    selectedLabelIndex = -1;
+    editingLabelIndex = -1;
+    editingLabelCommentIndex = -1;
+
+    renderContoursDirty = true;
+    loadingPct = 1.0f;
+  } finally {
+    stopLoading();
+  }
+}
+
 void triggerRenderPrerequisites() {
   if (mapModel == null || renderSettings == null) return;
   if (renderSettings.waterRippleCount > 0 &&

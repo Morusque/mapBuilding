@@ -167,6 +167,11 @@ boolean handleSitesPanelClick(int mx, int my) {
     mapModel.generateSites(currentPlacementMode(), siteTargetCount, keepPropertiesOnGenerate);
   }})) return true;
 
+  // Full auto pipeline
+  if (queueButtonAction(layout.fullGenerateBtn, new Runnable() { public void run() {
+    generateEverythingFromCells();
+  }})) return true;
+
   // Keep properties toggle
   if (layout.keepCheckbox.contains(mx, my)) {
     keepPropertiesOnGenerate = !keepPropertiesOnGenerate;

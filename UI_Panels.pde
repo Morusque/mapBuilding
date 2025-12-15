@@ -104,6 +104,7 @@ class SitesLayout {
   IntRect fuzzSlider;
   IntRect modeSlider;
   IntRect generateBtn;
+  IntRect fullGenerateBtn;
   IntRect keepCheckbox;
 }
 
@@ -121,6 +122,9 @@ SitesLayout buildSitesLayout() {
                                curY + (PANEL_BUTTON_H - PANEL_CHECK_SIZE) / 2,
                                PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
   curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+  l.fullGenerateBtn = new IntRect(innerX, curY, 180, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   int sliderW = 200;
   l.densitySlider = new IntRect(innerX, curY + PANEL_LABEL_H, sliderW, PANEL_SLIDER_H);
@@ -174,6 +178,14 @@ void drawSitesPanel() {
   textAlign(CENTER, CENTER);
   text("Generate", g.x + g.w / 2, g.y + g.h / 2);
   registerUiTooltip(g, tooltipFor("sites_generate"));
+
+  // ---------- Full generate button ----------
+  IntRect fg = layout.fullGenerateBtn;
+  drawBevelButton(fg.x, fg.y, fg.w, fg.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Generate everything from there", fg.x + fg.w / 2, fg.y + fg.h / 2);
+  registerUiTooltip(fg, "Run a full pipeline: elevation, plateaux, biomes, zones, paths, structures, labels.");
 
   // Keep properties toggle
   IntRect c = layout.keepCheckbox;

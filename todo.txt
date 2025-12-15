@@ -1,8 +1,4 @@
 
-Mandatory for full generation milestone :
-(later) Labels : option to generate labels
-(later) a "fully generate" button once all generate methods have been implemented (keep things already defined though)
-
 Mandatory for full first use milestone :
 (later) make biomes "pattern" actually work screenspace
 (later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (find examples of this) lightning: build, optionally blur, gradient, dither, etc, then cache
