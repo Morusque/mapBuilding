@@ -112,12 +112,13 @@ class MapRenderer {
         float h = (s.shape == StructureShape.RECTANGLE && s.aspect != 0) ? (s.size / max(0.1f, s.aspect)) : s.size;
         switch (s.shape) {
           case RECTANGLE:
-          case SQUARE:
             app.rect(0, 0, w + pad * 2, h + pad * 2);
             break;
-          case CIRCLE:
-            app.ellipse(0, 0, w + pad * 2, w + pad * 2);
+          case CIRCLE: {
+            float eh = s.size / max(0.1f, s.aspect);
+            app.ellipse(0, 0, w + pad * 2, eh + pad * 2);
             break;
+          }
           case TRIANGLE:
           case HEXAGON:
             app.scale(1.05f); // small inflate
@@ -179,20 +180,23 @@ class MapRenderer {
   private void drawStructureShape(PApplet app, Structure st) {
     if (st == null) return;
     float r = st.size;
+    float aspect = max(0.1f, st.aspect);
     switch (st.shape) {
       case RECTANGLE: {
         float w = r;
-        float h = (st.aspect != 0) ? (r / max(0.1f, st.aspect)) : r;
+        float h = r / aspect;
         app.rectMode(CENTER);
         app.rect(0, 0, w, h);
         break;
       }
       case CIRCLE: {
-        app.ellipse(0, 0, r, r);
+        float w = r;
+        float h = r / aspect;
+        app.ellipse(0, 0, w, h);
         break;
       }
       case TRIANGLE: {
-        float h = r * 0.866f;
+        float h = (r / aspect) * 0.866f;
         app.beginShape();
         app.vertex(-r * 0.5f, h * 0.333f);
         app.vertex(r * 0.5f, h * 0.333f);
@@ -202,10 +206,12 @@ class MapRenderer {
       }
       case HEXAGON: {
         float rad = r * 0.5f;
+        float sx = 1.0f;
+        float sy = 1.0f / aspect;
         app.beginShape();
         for (int v = 0; v < 6; v++) {
           float a = radians(60 * v);
-          app.vertex(cos(a) * rad, sin(a) * rad);
+          app.vertex(cos(a) * rad * sx, sin(a) * rad * sy);
         }
         app.endShape(CLOSE);
         break;
@@ -213,7 +219,7 @@ class MapRenderer {
       default: {
         float sHalf = r * 0.5f;
         app.rectMode(CENTER);
-        app.rect(0, 0, sHalf * 2, sHalf * 2);
+        app.rect(0, 0, sHalf * 2, sHalf * 2 / aspect);
         break;
       }
     }

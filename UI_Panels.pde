@@ -1452,7 +1452,7 @@ String structureShapeLabel(StructureShape sh) {
     case CIRCLE: return "Circle";
     case TRIANGLE: return "Triangle";
     case HEXAGON: return "Hex";
-    default: return "Square";
+    default: return "Rect";
   }
 }
 

@@ -172,7 +172,7 @@ class StructureAttributes {
   String comment = "";
   float size = 0.02f;
   float angleOffsetRad = 0.0f;
-  StructureShape shape = StructureShape.SQUARE;
+  StructureShape shape = StructureShape.RECTANGLE;
   StructureSnapMode alignment = StructureSnapMode.NEXT_TO_PATH;
   float aspectRatio = 1.0f;
   float hue01 = 0.0f;
@@ -245,7 +245,7 @@ class Structure {
   int typeId = 0;
   float angle = 0;
   float size = 0.02f; // world units square side
-  StructureShape shape = StructureShape.SQUARE;
+  StructureShape shape = StructureShape.RECTANGLE;
   float aspect = 1.0f; // width / height for rectangle
   StructureSnapMode alignment = StructureSnapMode.NEXT_TO_PATH;
   String name = "";
@@ -306,20 +306,23 @@ class Structure {
     app.fill(fillCol);
 
     float r = size;
+    float asp = max(0.1f, aspect);
     switch (shape) {
       case RECTANGLE: {
         float w = r;
-        float h = (aspect != 0) ? (r / max(0.1f, aspect)) : r;
+        float h = r / asp;
         app.rectMode(CENTER);
         app.rect(0, 0, w, h);
         break;
       }
       case CIRCLE: {
-        app.ellipse(0, 0, r, r);
+        float w = r;
+        float h = r / asp;
+        app.ellipse(0, 0, w, h);
         break;
       }
       case TRIANGLE: {
-        float h = r * 0.866f; // sqrt(3)/2 * r for equilateral, r is side
+        float h = (r / asp) * 0.866f; // scaled by aspect
         app.beginShape();
         app.vertex(-r * 0.5f, h * 0.333f);
         app.vertex(r * 0.5f, h * 0.333f);
@@ -332,14 +335,14 @@ class Structure {
         app.beginShape();
         for (int i = 0; i < 6; i++) {
           float a = radians(60 * i);
-          app.vertex(cos(a) * rad, sin(a) * rad);
+          app.vertex(cos(a) * rad, sin(a) * rad / asp);
         }
         app.endShape(CLOSE);
         break;
       }
       default: {
         app.rectMode(CENTER);
-        app.rect(0, 0, r, r);
+        app.rect(0, 0, r, r / asp);
         break;
       }
     }

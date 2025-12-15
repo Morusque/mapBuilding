@@ -34,7 +34,6 @@ enum StructureSnapMode {
 
 enum StructureShape {
   RECTANGLE,
-  SQUARE,
   CIRCLE,
   TRIANGLE,
   HEXAGON

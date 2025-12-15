@@ -71,3 +71,4 @@ General :
 (maybe) option to generate details (about everything) for zooming
 (maybe) use HSB directly instead of converting?
 (maybe) Editable types: visually show which parameters "belong" to a type or to a more general part of the interface.
+(later) Update comments to multiline

@@ -26,7 +26,7 @@ float structureSize = 0.02f; // world units
 float structureAngleOffsetRad = 0.0f;
 float lastStructureSnapAngle = 0.0f;
 StructureSnapMode structureSnapMode = StructureSnapMode.NEXT_TO_PATH;
-StructureShape structureShape = StructureShape.SQUARE;
+StructureShape structureShape = StructureShape.RECTANGLE;
 float structureAspectRatio = 1.0f; // width/height for rectangle shape
 float structureHue01 = 0.0f;
 float structureSat01 = 0.0f;
@@ -217,7 +217,7 @@ class StructureSelectionInfo {
   float sharedAngleRad = 0.0f;
   float sharedAngleOffsetRad = 0.0f;
   float sharedRatio = 1.0f;
-  StructureShape sharedShape = StructureShape.SQUARE;
+  StructureShape sharedShape = StructureShape.RECTANGLE;
   StructureSnapMode sharedAlignment = StructureSnapMode.NEXT_TO_PATH;
   float sharedHue = 0.0f;
   float sharedSat = 0.0f;
@@ -2047,7 +2047,11 @@ ArrayList<Structure> deserializeStructures(JSONArray arr) {
     s.comment = o.getString("comment", "");
     s.angle = o.getFloat("angle", 0);
     s.size = o.getFloat("size", s.size);
-    try { s.shape = StructureShape.valueOf(o.getString("shape", s.shape.name())); } catch (Exception e) {}
+    try {
+      String sh = o.getString("shape", s.shape.name());
+      if ("SQUARE".equals(sh)) sh = StructureShape.RECTANGLE.name();
+      s.shape = StructureShape.valueOf(sh);
+    } catch (Exception e) {}
     try { s.alignment = StructureSnapMode.valueOf(o.getString("alignment", s.alignment.name())); } catch (Exception e) {}
     s.aspect = o.getFloat("aspect", s.aspect);
     s.hue01 = o.getFloat("hue01", s.hue01);
