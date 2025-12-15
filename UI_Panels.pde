@@ -1255,6 +1255,7 @@ void drawElevationPanel() {
 class LabelsLayout {
   IntRect panel;
   int titleY;
+  IntRect genButton;
   IntRect commentField;
 }
 
@@ -1283,6 +1284,8 @@ LabelsLayout buildLabelsLayout() {
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+  l.genButton = new IntRect(l.panel.x + PANEL_PADDING, curY, 140, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
   l.commentField = new IntRect(l.panel.x + PANEL_PADDING, curY + PANEL_LABEL_H, PANEL_W - 2 * PANEL_PADDING, PANEL_BUTTON_H);
   curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
   curY += hintHeight(3);
@@ -1298,6 +1301,15 @@ void drawLabelsPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Labels", labelX, layout.titleY);
+
+  // Generate button
+  {
+    IntRect gb = layout.genButton;
+    drawBevelButton(gb.x, gb.y, gb.w, gb.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("Generate labels", gb.x + gb.w / 2, gb.y + gb.h / 2);
+  }
 
   // Comment field (selected label)
   {

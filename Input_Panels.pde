@@ -868,6 +868,11 @@ boolean handlePathsPanelClick(int mx, int my) {
 boolean handleLabelsPanelClick(int mx, int my) {
   if (!isInLabelsPanel(mx, my)) return false;
   LabelsLayout layout = buildLabelsLayout();
+  if (queueButtonAction(layout.genButton, new Runnable() { public void run() {
+    if (mapModel != null) {
+      mapModel.generateArbitraryLabels(seaLevel);
+    }
+  }})) return true;
   if (layout.commentField.contains(mx, my)) {
     if (selectedLabelIndex >= 0 && selectedLabelIndex < mapModel.labels.size()) {
       MapLabel l = mapModel.labels.get(selectedLabelIndex);

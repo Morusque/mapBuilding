@@ -4937,4 +4937,114 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
 
     structures.addAll(newStructs);
   }
+
+  // ---------- Arbitrary label auto-generation ----------
+  void generateArbitraryLabels(float sea) {
+    if (labels == null) labels = new ArrayList<MapLabel>();
+    int target = (int)random(1, 11); // 1..10 labels
+    float baseSize = labelSizeDefault();
+    float worldW = maxX - minX;
+    float worldH = maxY - minY;
+    float spacing = max(worldW, worldH) * 0.01f;
+
+    class LabelCand {
+      PVector p;
+      float score;
+      boolean land;
+      LabelCand(PVector p, float s, boolean land) { this.p = p; this.score = s; this.land = land; }
+    }
+
+    ArrayList<LabelCand> cands = new ArrayList<LabelCand>();
+    boolean hasLand = false;
+    if (cells != null && !cells.isEmpty()) {
+      for (Cell c : cells) {
+        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+        PVector cen = cellCentroid(c);
+        if (cen == null) continue;
+        boolean land = c.elevation >= sea;
+        if (land) hasLand = true;
+        float elevScore = land ? 1.0f : 0.4f;
+        cands.add(new LabelCand(cen, elevScore, land));
+      }
+    }
+
+    // Fallback candidates if no cells
+    if (cands.isEmpty()) {
+      cands.add(new LabelCand(new PVector((minX + maxX) * 0.5f, (minY + maxY) * 0.5f), 1.0f, true));
+      cands.add(new LabelCand(new PVector(minX + worldW * 0.25f, minY + worldH * 0.25f), 0.6f, true));
+      cands.add(new LabelCand(new PVector(minX + worldW * 0.75f, minY + worldH * 0.75f), 0.6f, true));
+    }
+
+    Collections.shuffle(cands);
+    Collections.sort(cands, new Comparator<LabelCand>() {
+      public int compare(LabelCand a, LabelCand b) { return Float.compare(b.score, a.score); }
+    });
+
+    ArrayList<MapLabel> newLabels = new ArrayList<MapLabel>();
+
+    for (LabelCand cand : cands) {
+      if (newLabels.size() >= target) break;
+      if (hasLand && !cand.land) continue; // prefer land when available
+
+      String name = randomLabelName();
+      float rad = estimateLabelRadius(name, baseSize) + spacing;
+      if (!labelSpotFree(cand.p.x, cand.p.y, rad, labels)) continue;
+      if (!labelSpotFree(cand.p.x, cand.p.y, rad, newLabels)) continue;
+
+      MapLabel lbl = new MapLabel(cand.p.x, cand.p.y, name);
+      lbl.size = baseSize;
+      newLabels.add(lbl);
+    }
+
+    // If still nothing, drop a couple in the center area
+    int fallbackAttempts = 0;
+    while (newLabels.size() < target && newLabels.size() < 3 && fallbackAttempts < 200) {
+      fallbackAttempts++;
+      float px = random(minX + worldW * 0.25f, maxX - worldW * 0.25f);
+      float py = random(minY + worldH * 0.25f, maxY - worldH * 0.25f);
+      String name = randomLabelName();
+      float rad = estimateLabelRadius(name, baseSize) + spacing;
+      if (!labelSpotFree(px, py, rad, labels)) continue;
+      if (!labelSpotFree(px, py, rad, newLabels)) continue;
+      MapLabel lbl = new MapLabel(px, py, name);
+      lbl.size = baseSize;
+      newLabels.add(lbl);
+    }
+
+    labels.addAll(newLabels);
+  }
+
+  String randomLabelName() {
+    String[] syll = {
+      "an","bar","bel","cal","dun","el","fal","gal","hal","ir","jor","kel","lor","mor","nar","or","per","quil","ran","sar","tor","ur","val","wen","yor","zan","ther","lin","mon","ros","ith","del","mir","tash","glen","fen","sta","ver","dul","kri","sha"
+    };
+    int parts = 2 + (int)random(0, 2); // 2-3 parts
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < parts; i++) {
+      sb.append(syll[(int)random(syll.length)]);
+    }
+    String raw = sb.toString();
+    if (raw.length() == 0) return "Label";
+    return raw.substring(0, 1).toUpperCase() + raw.substring(1).toLowerCase();
+  }
+
+  float estimateLabelRadius(String txt, float size) {
+    if (txt == null || txt.length() == 0) return size;
+    float len = txt.length();
+    return max(size * 0.6f, size * 0.32f * len);
+  }
+
+  boolean labelSpotFree(float x, float y, float radius, ArrayList<MapLabel> list) {
+    if (list == null) return true;
+    float r2 = radius * radius;
+    for (MapLabel l : list) {
+      if (l == null || l.text == null) continue;
+      float otherR = estimateLabelRadius(l.text, l.size);
+      float dx = l.x - x;
+      float dy = l.y - y;
+      float minDist = radius + otherR;
+      if (dx * dx + dy * dy < minDist * minDist) return false;
+    }
+    return true;
+  }
 }

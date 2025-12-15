@@ -16,6 +16,7 @@ boolean isPanning = false;
 int lastMouseX;
 int lastMouseY;
 
+
 // Site dragging state
 Site draggingSite = null;
 boolean isDraggingSite = false;
