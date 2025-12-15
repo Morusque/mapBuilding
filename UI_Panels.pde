@@ -1479,6 +1479,9 @@ class StructuresLayout {
   IntRect alphaSlider;
   IntRect satSlider;
   IntRect strokeSlider;
+  IntRect genTownSlider;
+  IntRect genBuildingSlider;
+  IntRect genButton;
 }
 
 StructuresLayout buildStructuresLayout() {
@@ -1523,6 +1526,14 @@ StructuresLayout buildStructuresLayout() {
 
   l.strokeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  // Generation controls
+  l.genTownSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  l.genBuildingSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  l.genButton = new IntRect(innerX, curY, 140, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
 
   curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
@@ -1652,6 +1663,24 @@ void drawStructuresPanelUI() {
   String strokeLabel = info.strokeMixed ? "Stroke weight (px)" : "Stroke weight (" + nf(info.sharedStroke, 1, 2) + " px)";
   drawSlider(st, stNorm, strokeLabel, false, !info.strokeMixed);
   registerUiTooltip(st, tooltipFor("structures_detail_stroke"));
+
+  // Generation controls
+  {
+    IntRect ts = layout.genTownSlider;
+    float tNorm = constrain(structGenTownCount / 8.0f, 0, 1);
+    drawSlider(ts, tNorm, "Town count (" + structGenTownCount + ")");
+  }
+  {
+    IntRect bs = layout.genBuildingSlider;
+    drawSlider(bs, structGenBuildingDensity, "Building density (" + nf(structGenBuildingDensity * 100, 1, 0) + "%)");
+  }
+  {
+    IntRect gb = layout.genButton;
+    drawBevelButton(gb.x, gb.y, gb.w, gb.h, false);
+    fill(10);
+    textAlign(CENTER, CENTER);
+    text("Generate", gb.x + gb.w / 2, gb.y + gb.h / 2);
+  }
 
   drawControlsHint(layout.panel,
                    "left-click: place/move",

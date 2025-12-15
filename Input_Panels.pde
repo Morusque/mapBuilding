@@ -1180,6 +1180,20 @@ boolean handleStructuresPanelClick(int mx, int my) {
     }
     return true;
   }
+  if (layout.genTownSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.genTownSlider.x) / (float)layout.genTownSlider.w, 0, 1);
+    structGenTownCount = constrain(round(t * 8), 0, 8);
+    return true;
+  }
+  if (layout.genBuildingSlider.contains(mx, my)) {
+    float t = constrain((mx - layout.genBuildingSlider.x) / (float)layout.genBuildingSlider.w, 0, 1);
+    structGenBuildingDensity = constrain(t, 0, 1);
+    return true;
+  }
+  if (queueButtonAction(layout.genButton, new Runnable() { public void run() {
+    mapModel.generateStructuresAuto(structGenTownCount, structGenBuildingDensity, seaLevel);
+    clearStructureSelection();
+  }})) return true;
   return false;
 }
 

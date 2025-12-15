@@ -196,6 +196,8 @@ int editingStructureNameIndex = -1;
 String structureNameDraft = "";
 boolean editingStructureComment = false;
 String structureCommentDraft = "";
+int structGenTownCount = 3;
+float structGenBuildingDensity = 0.5f; // 0..1
 
 class StructureSelectionInfo {
   boolean hasSelection = false;

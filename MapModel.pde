@@ -1538,6 +1538,19 @@ class MapModel {
     return xi + ":" + yi;
   }
 
+  PVector parseKey(String k) {
+    if (k == null) return null;
+    String[] parts = split(k, ':');
+    if (parts == null || parts.length != 2) return null;
+    try {
+      float x = Integer.parseInt(parts[0]) / 10000.0f;
+      float y = Integer.parseInt(parts[1]) / 10000.0f;
+      return new PVector(x, y);
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
   float sampleElevationAt(float x, float y, float fallback) {
     Cell c = findCellContaining(x, y);
     if (c != null) return c.elevation;
@@ -3040,6 +3053,24 @@ Cell findCellContaining(float wx, float wy) {
   return null;
 }
 
+Cell nearestCell(float wx, float wy) {
+  if (cells == null || cells.isEmpty()) return null;
+  Cell best = null;
+  float bestD2 = Float.MAX_VALUE;
+  for (Cell c : cells) {
+    if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+    PVector cen = cellCentroid(c);
+    float dx = cen.x - wx;
+    float dy = cen.y - wy;
+    float d2 = dx * dx + dy * dy;
+    if (d2 < bestD2) {
+      bestD2 = d2;
+      best = c;
+    }
+  }
+  return best;
+}
+
 int findCellIndexContaining(float wx, float wy) {
   if (cells == null) return -1;
   for (int i = 0; i < cells.size(); i++) {
@@ -3065,6 +3096,24 @@ boolean pointTouchesWater(float wx, float wy, float sea) {
       if (nc == null) continue;
       if (nc.elevation <= sea) return true;
     }
+  }
+  return false;
+}
+
+float structureRadius(float size, float aspect) {
+  return size * 0.5f * max(1.0f, aspect);
+}
+
+boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float size, float aspect, float slack) {
+  float r = structureRadius(size, aspect);
+  for (Structure s : list) {
+    if (s == null) continue;
+    float ra = structureRadius(s.size, s.aspect);
+    float dx = s.x - x;
+    float dy = s.y - y;
+    float d2 = dx * dx + dy * dy;
+    float rr = r + ra;
+    if (d2 < rr * rr * slack) return true;
   }
   return false;
 }
@@ -4648,5 +4697,204 @@ boolean pointTouchesWater(float wx, float wy, float sea) {
 
     lastPathfindExpanded = expanded;
     return result;
+  }
+
+  // ---------- Structure auto-generation ----------
+  void generateStructuresAuto(int townCount, float buildingDensity, float sea) {
+    if (townCount < 0) townCount = 0;
+    buildingDensity = constrain(buildingDensity, 0, 1);
+    if (structures == null) structures = new ArrayList<Structure>();
+
+    // Base size heuristic from existing structures
+    float baseSize = 0.02f;
+    if (!structures.isEmpty()) {
+      ArrayList<Float> sizes = new ArrayList<Float>();
+      for (Structure s : structures) if (s != null && s.size > 1e-6f) sizes.add(s.size);
+      if (!sizes.isEmpty()) {
+        Collections.sort(sizes);
+        baseSize = sizes.get(sizes.size() / 2);
+      }
+    }
+    float townSize = baseSize * 2.5f;
+    float buildingSize = baseSize * (0.4f + 0.5f * (1 - buildingDensity));
+    float townKeepout = townSize * 3.0f;
+
+    // Collect candidate points for towns
+    class Cand {
+      PVector p;
+      float score;
+      Cand(PVector p, float s) { this.p = p; this.score = s; }
+    }
+    ArrayList<Cand> cands = new ArrayList<Cand>();
+
+    // Zone centroids
+    if (zones != null && !zones.isEmpty()) {
+      for (MapZone z : zones) {
+        if (z == null || z.cells == null || z.cells.isEmpty()) continue;
+        float cx = 0, cy = 0; int count = 0;
+        for (int ci : z.cells) {
+          if (ci < 0 || ci >= cells.size()) continue;
+          Cell c = cells.get(ci);
+          if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+          PVector cen = cellCentroid(c);
+          cx += cen.x; cy += cen.y; count++;
+        }
+        if (count > 0) {
+          cx /= count; cy /= count;
+          cands.add(new Cand(new PVector(cx, cy), 1.0f));
+        }
+      }
+    }
+
+    // Path junctions (degree >= 3)
+    if (paths != null) {
+      HashMap<String, Integer> deg = new HashMap<String, Integer>();
+      for (Path p : paths) {
+        if (p == null || p.routes == null) continue;
+        for (ArrayList<PVector> seg : p.routes) {
+          if (seg == null || seg.size() < 2) continue;
+          for (int i = 0; i < seg.size(); i++) {
+            PVector v = seg.get(i);
+            String key = keyFor(v.x, v.y);
+            deg.put(key, deg.getOrDefault(key, 0) + 1);
+          }
+        }
+      }
+      for (Map.Entry<String, Integer> e : deg.entrySet()) {
+        if (e.getValue() < 3) continue;
+        PVector v = parseKey(e.getKey());
+        if (v != null) cands.add(new Cand(v, 0.8f));
+      }
+    }
+
+    // Coastline-adjacent land cells
+    if (cells != null) {
+      ensureCellNeighborsComputed();
+      for (int ci = 0; ci < cells.size(); ci++) {
+        Cell a = cells.get(ci);
+        if (a == null || a.vertices == null) continue;
+        if (a.elevation < sea) continue;
+        ArrayList<Integer> nbs = (ci < cellNeighbors.size()) ? cellNeighbors.get(ci) : null;
+        if (nbs == null) continue;
+        boolean coastal = false;
+        for (int nb : nbs) {
+          if (nb < 0 || nb >= cells.size()) continue;
+          Cell b = cells.get(nb);
+          if (b != null && b.elevation < sea) { coastal = true; break; }
+        }
+        if (coastal) {
+          PVector cen = cellCentroid(a);
+          cands.add(new Cand(cen, 0.6f));
+        }
+      }
+    }
+
+    // Prefer low/mid elevation (penalize high)
+    float elevMin = sea;
+    float elevMax = sea + 0.5f;
+    for (Cand c : cands) {
+      float e = elevMin;
+      Cell nearest = nearestCell(c.p.x, c.p.y);
+      if (nearest != null) e = nearest.elevation;
+      float elevScore = 1.0f - constrain(map(e, elevMin, elevMax, 0, 1), 0, 1);
+      c.score *= 0.4f + 0.6f * elevScore;
+    }
+
+    // Sort by score
+    Collections.sort(cands, new Comparator<Cand>() {
+      public int compare(Cand a, Cand b) { return Float.compare(b.score, a.score); }
+    });
+
+    // Place towns
+    int placedTowns = 0;
+    ArrayList<Structure> newStructs = new ArrayList<Structure>();
+    for (Cand c : cands) {
+      if (placedTowns >= townCount) break;
+      if (structuresOverlap(structures, c.p.x, c.p.y, townSize, 1.0f, 1.2f)) continue;
+      if (structuresOverlap(newStructs, c.p.x, c.p.y, townSize, 1.0f, 1.2f)) continue;
+      // Main circle
+      Structure main = new Structure(c.p.x, c.p.y);
+      main.shape = StructureShape.CIRCLE;
+      main.aspect = 1.0f;
+      main.size = townSize;
+      main.setColor(color(255), 1.0f);
+      main.strokeWeightPx = 1.5f;
+      main.alpha01 = 1.0f;
+      main.name = "Town " + (placedTowns + 1);
+      newStructs.add(main);
+
+      int satellites = (int)random(1, 6);
+      for (int i = 0; i < satellites; i++) {
+        float ang = random(TWO_PI);
+        float dist = townSize * random(0.8f, 1.6f);
+        float sx = c.p.x + cos(ang) * dist;
+        float sy = c.p.y + sin(ang) * dist;
+        if (structuresOverlap(structures, sx, sy, townSize * 0.8f, 1.0f, 1.0f)) continue;
+        if (structuresOverlap(newStructs, sx, sy, townSize * 0.8f, 1.0f, 1.0f)) continue;
+        Structure sat = new Structure(sx, sy);
+        sat.shape = StructureShape.CIRCLE;
+        sat.aspect = 1.0f;
+        sat.size = townSize * random(0.5f, 0.9f);
+        sat.setColor(color(255), 1.0f);
+        sat.strokeWeightPx = 1.5f;
+        sat.alpha01 = 1.0f;
+        sat.name = main.name;
+        newStructs.add(sat);
+      }
+      placedTowns++;
+    }
+
+    // Buildings along paths
+    if (paths != null && buildingDensity > 1e-4f) {
+      float spacing = buildingSize * map(1 - buildingDensity, 0, 1, 2.5f, 6.0f);
+      for (int pi = 0; pi < paths.size(); pi++) {
+        Path p = paths.get(pi);
+        if (p == null || p.routes == null) continue;
+        for (ArrayList<PVector> route : p.routes) {
+          if (route == null || route.size() < 2) continue;
+          for (int i = 0; i < route.size() - 1; i++) {
+            PVector a = route.get(i);
+            PVector b = route.get(i + 1);
+            float dx = b.x - a.x;
+            float dy = b.y - a.y;
+            float segLen = max(1e-6f, sqrt(dx * dx + dy * dy));
+            int steps = max(1, (int)floor(segLen / spacing));
+            float nx = -dy / segLen;
+            float ny = dx / segLen;
+            for (int s = 0; s < steps; s++) {
+              float t = (s + 0.5f) / steps;
+              float px = lerp(a.x, b.x, t);
+              float py = lerp(a.y, b.y, t);
+              float offset = buildingSize * random(0.6f, 1.2f);
+              float sx = px + nx * offset;
+              float sy = py + ny * offset;
+              float asp = random(0.8f, 1.4f);
+              if (structuresOverlap(structures, sx, sy, buildingSize, asp, 0.9f)) continue;
+              if (structuresOverlap(newStructs, sx, sy, buildingSize, asp, 0.9f)) continue;
+
+              StructureAttributes at = new StructureAttributes();
+              at.name = "";
+              at.size = buildingSize;
+              at.shape = StructureShape.RECTANGLE;
+              at.aspectRatio = asp;
+              at.alignment = StructureSnapMode.NEXT_TO_PATH;
+              at.hue01 = 0;
+              at.sat01 = 0;
+              at.alpha01 = 1.0f;
+              at.strokeWeightPx = 1.2f;
+              Structure st = computeSnappedStructure(sx, sy, at);
+              st.setColor(color(255), 1.0f);
+              st.strokeWeightPx = 1.2f;
+              st.alpha01 = 1.0f;
+              st.aspect = asp;
+              st.name = "";
+              newStructs.add(st);
+            }
+          }
+        }
+      }
+    }
+
+    structures.addAll(newStructs);
   }
 }
