@@ -645,7 +645,7 @@ class MapRenderer {
     // Biome fills
     if (s.biomeFillAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f) {
       app.noStroke();
-      boolean usePattern = (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN);
+      boolean usePattern = (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN || s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN_BG);
       for (Cell c : model.cells) {
         if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
         boolean isWater = c.elevation < seaLevel;
@@ -660,6 +660,7 @@ class MapRenderer {
           ZoneType zt = model.biomeTypes.get(c.biomeId);
           float[] hsb = model.rgbToHSB(zt.col);
           hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
+          hsb[2] = constrain(hsb[2] * s.biomeBriScale01, 0, 1);
           col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
           patName = model.biomePatternNameForIndex(zt.patternIndex, patName);
         }
@@ -670,11 +671,15 @@ class MapRenderer {
           pattern = getPattern(app, patName);
           canPattern = (pattern != null);
         }
-        if (usePattern && canPattern) {
+        if (usePattern && canPattern && s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN) {
           drawPatternPoly(app, c.vertices, pattern, col, a);
         } else {
           app.fill(col, a * 255);
           drawPoly(app, c.vertices);
+          if (usePattern && canPattern && s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN_BG) {
+            // Overlay black pattern on top of color
+            drawPatternPoly(app, c.vertices, pattern, color(0, 0, 0), a);
+          }
         }
       }
     }
@@ -708,6 +713,7 @@ class MapRenderer {
           ZoneType zt = model.biomeTypes.get(biomeId);
           float[] hsb = model.rgbToHSB(zt.col);
           hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
+          hsb[2] = constrain(hsb[2] * s.biomeBriScale01, 0, 1);
           col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
         }
         float outlineAlpha = underwaterEdge ? min(s.biomeOutlineAlpha01, s.biomeUnderwaterAlpha01) : s.biomeOutlineAlpha01;
@@ -941,7 +947,7 @@ class MapRenderer {
       patternCache.put(name, null);
       return null;
     }
-    // Normalize to grayscale but keep full alpha; tint will supply color while grayscale keeps pattern visible.
+    // Convert to alpha mask: black = opaque, white = transparent; keep tint-driven color.
     img.format = PConstants.ARGB;
     img.loadPixels();
     for (int i = 0; i < img.pixels.length; i++) {
@@ -949,8 +955,12 @@ class MapRenderer {
       int r = (c >> 16) & 0xFF;
       int g = (c >> 8) & 0xFF;
       int b = c & 0xFF;
+      int a = (c >> 24) & 0xFF;
       int gray = (r + g + b) / 3;
-      img.pixels[i] = app.color(gray, gray, gray, 255);
+      // Black -> alpha 255, white -> alpha 0
+      int alpha = 255 - gray;
+      alpha = (int)constrain(alpha * (a / 255.0f), 0, 255);
+      img.pixels[i] = app.color(255, 255, 255, alpha);
     }
     img.updatePixels();
     patternCache.put(name, img);

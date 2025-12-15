@@ -2,7 +2,8 @@
 
 enum RenderFillType {
   RENDER_FILL_COLOR,
-  RENDER_FILL_PATTERN
+  RENDER_FILL_PATTERN,
+  RENDER_FILL_PATTERN_BG
 }
 
 enum ElevationLinesStyle {
@@ -33,6 +34,7 @@ class RenderSettings {
   // Biomes
   float biomeFillAlpha01 = 0.5f;
   float biomeSatScale01 = 1.0f;
+  float biomeBriScale01 = 1.0f;
   RenderFillType biomeFillType = RenderFillType.RENDER_FILL_COLOR;
   String biomePatternName = "dots01.png";
   float biomeOutlineSizePx = 0.0f;
@@ -102,6 +104,7 @@ class RenderSettings {
     // Biomes
     c.biomeFillAlpha01 = biomeFillAlpha01;
     c.biomeSatScale01 = biomeSatScale01;
+    c.biomeBriScale01 = biomeBriScale01;
     c.biomeFillType = biomeFillType;
     c.biomePatternName = biomePatternName;
     c.biomeOutlineSizePx = biomeOutlineSizePx;
@@ -167,6 +170,7 @@ class RenderSettings {
     // Biomes
     biomeFillAlpha01 = o.biomeFillAlpha01;
     biomeSatScale01 = o.biomeSatScale01;
+    biomeBriScale01 = o.biomeBriScale01;
     biomeFillType = o.biomeFillType;
     biomePatternName = o.biomePatternName;
     biomeOutlineSizePx = o.biomeOutlineSizePx;
@@ -233,6 +237,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.backgroundNoiseAlpha01 = 0.0f;
     s.biomeFillAlpha01 = 0.5f;
     s.biomeSatScale01 = 1.0f;
+    s.biomeBriScale01 = 1.0f;
     s.biomeOutlineSizePx = 0.0f;
     s.biomeOutlineAlpha01 = 1.0f;
     s.biomeUnderwaterAlpha01 = 0.0f;
@@ -541,6 +546,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.cellBorderAlpha01 = 0.0f;
     s.biomeFillAlpha01 = 0.3f;
     s.biomeSatScale01 = 0.3f;
+    s.biomeBriScale01 = 1.0f;
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
     s.biomeUnderwaterAlpha01 = 1.0f;

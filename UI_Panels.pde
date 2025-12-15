@@ -1942,6 +1942,7 @@ class RenderLayout {
 
   IntRect biomeFillAlphaSlider;
   IntRect biomeSatSlider;
+  IntRect biomeBriSlider;
   ArrayList<IntRect> biomeFillTypeButtons = new ArrayList<IntRect>();
   IntRect biomeOutlineSizeSlider;
   IntRect biomeOutlineAlphaSlider;
@@ -2036,8 +2037,11 @@ RenderLayout buildRenderLayout() {
     l.biomeSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
+    l.biomeBriSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
     int btnW = 90;
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 3; i++) {
       l.biomeFillTypeButtons.add(new IntRect(innerX + i * (btnW + 8), curY, btnW, PANEL_BUTTON_H));
     }
     curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
@@ -2197,10 +2201,14 @@ void drawRenderPanel() {
     drawSlider(layout.biomeFillAlphaSlider, renderSettings.biomeFillAlpha01, "Emerged biomes alpha (" + nf(renderSettings.biomeFillAlpha01 * 100, 1, 0) + "%)");
     drawSlider(layout.biomeUnderwaterAlphaSlider, renderSettings.biomeUnderwaterAlpha01, "Underwater biomes alpha (" + nf(renderSettings.biomeUnderwaterAlpha01 * 100, 1, 0) + "%)");
     drawSlider(layout.biomeSatSlider, renderSettings.biomeSatScale01, "Biomes saturation (" + nf(renderSettings.biomeSatScale01 * 100, 1, 0) + "%)");
-    String[] fillLabels = { "Color", "Pattern" };
+    drawSlider(layout.biomeBriSlider, renderSettings.biomeBriScale01, "Biomes brightness (" + nf(renderSettings.biomeBriScale01 * 100, 1, 0) + "%)");
+    String[] fillLabels = { "Color", "Pattern", "Pattern background" };
     for (int i = 0; i < layout.biomeFillTypeButtons.size(); i++) {
       IntRect b = layout.biomeFillTypeButtons.get(i);
-      boolean active = (renderSettings.biomeFillType == ((i == 0) ? RenderFillType.RENDER_FILL_COLOR : RenderFillType.RENDER_FILL_PATTERN));
+      RenderFillType mode = RenderFillType.RENDER_FILL_COLOR;
+      if (i == 1) mode = RenderFillType.RENDER_FILL_PATTERN;
+      else if (i == 2) mode = RenderFillType.RENDER_FILL_PATTERN_BG;
+      boolean active = (renderSettings.biomeFillType == mode);
       drawBevelButton(b.x, b.y, b.w, b.h, active);
       fill(10);
       textAlign(CENTER, CENTER);

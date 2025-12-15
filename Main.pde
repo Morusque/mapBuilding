@@ -448,15 +448,16 @@ final int SLIDER_RENDER_ZONE_ALPHA = 57;
 final int SLIDER_RENDER_ZONE_SAT = 58;
 final int SLIDER_RENDER_LABEL_OUTLINE_ALPHA = 59;
 final int SLIDER_RENDER_ELEV_LINES_STYLE = 60;
-final int SLIDER_RENDER_ZONE_BRI = 61;
-final int SLIDER_RENDER_PRESET_SELECT = 62;
-final int SLIDER_BIOME_GEN_MODE = 63;
-final int SLIDER_BIOME_GEN_VALUE = 64;
-final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 65;
-final int SLIDER_RENDER_STRUCT_SHADOW_ALPHA = 66;
-final int SLIDER_BIOME_SAT = 67;
-final int SLIDER_BIOME_BRI = 68;
-final int SLIDER_RENDER_BACKGROUND_NOISE = 69;
+final int SLIDER_RENDER_BIOME_BRI = 61;
+final int SLIDER_RENDER_ZONE_BRI = 62;
+final int SLIDER_RENDER_PRESET_SELECT = 63;
+final int SLIDER_BIOME_GEN_MODE = 64;
+final int SLIDER_BIOME_GEN_VALUE = 65;
+final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 66;
+final int SLIDER_RENDER_STRUCT_SHADOW_ALPHA = 67;
+final int SLIDER_BIOME_SAT = 68;
+final int SLIDER_BIOME_BRI = 69;
+final int SLIDER_RENDER_BACKGROUND_NOISE = 70;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -1171,6 +1172,7 @@ String exportSvg() {
       if (zt == null) continue;
       float[] hsb = mapModel.rgbToHSB(zt.col);
       hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
+      hsb[2] = constrain(hsb[2] * s.biomeBriScale01, 0, 1);
       int rgb = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
       String fill = toHex.apply(rgb);
       StringBuilder path = new StringBuilder();
@@ -1593,7 +1595,11 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   JSONObject biomes = new JSONObject();
   biomes.setFloat("fillAlpha01", s.biomeFillAlpha01);
   biomes.setFloat("satScale01", s.biomeSatScale01);
-  biomes.setString("fillType", (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN) ? "pattern" : "color");
+  biomes.setFloat("briScale01", s.biomeBriScale01);
+  String fillType = "color";
+  if (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN) fillType = "pattern";
+  else if (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN_BG) fillType = "pattern_bg";
+  biomes.setString("fillType", fillType);
   biomes.setString("patternName", s.biomePatternName);
   biomes.setFloat("outlineSizePx", s.biomeOutlineSizePx);
   biomes.setFloat("outlineAlpha01", s.biomeOutlineAlpha01);
@@ -1674,9 +1680,11 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     JSONObject b = r.getJSONObject("biomes");
     target.biomeFillAlpha01 = b.getFloat("fillAlpha01", target.biomeFillAlpha01);
     target.biomeSatScale01 = b.getFloat("satScale01", target.biomeSatScale01);
-    target.biomeFillType = "pattern".equals(b.getString("fillType", "color"))
-      ? RenderFillType.RENDER_FILL_PATTERN
-      : RenderFillType.RENDER_FILL_COLOR;
+    target.biomeBriScale01 = b.getFloat("briScale01", target.biomeBriScale01);
+    String ft = b.getString("fillType", "color");
+    if ("pattern".equals(ft)) target.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
+    else if ("pattern_bg".equals(ft)) target.biomeFillType = RenderFillType.RENDER_FILL_PATTERN_BG;
+    else target.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
     target.biomePatternName = b.getString("patternName", target.biomePatternName);
     target.biomeOutlineSizePx = b.getFloat("outlineSizePx", target.biomeOutlineSizePx);
     target.biomeOutlineAlpha01 = b.getFloat("outlineAlpha01", target.biomeOutlineAlpha01);

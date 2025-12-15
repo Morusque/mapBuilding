@@ -612,6 +612,12 @@ void updateActiveSlider(int mx, int my) {
       renderSettings.biomeSatScale01 = t;
       break;
     }
+    case SLIDER_RENDER_BIOME_BRI: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.biomeBriSlider.x) / (float)l.biomeBriSlider.w, 0, 1);
+      renderSettings.biomeBriScale01 = t;
+      break;
+    }
     case SLIDER_RENDER_BIOME_OUTLINE_SIZE: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.biomeOutlineSizeSlider.x) / (float)l.biomeOutlineSizeSlider.w, 0, 1);

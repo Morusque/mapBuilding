@@ -1336,10 +1336,18 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_BIOME_SAT;
       return true;
     }
+    if (layout.biomeBriSlider != null && layout.biomeBriSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.biomeBriSlider.x) / (float)layout.biomeBriSlider.w, 0, 1);
+      renderSettings.biomeBriScale01 = t;
+      activeSlider = SLIDER_RENDER_BIOME_BRI;
+      return true;
+    }
     for (int i = 0; i < layout.biomeFillTypeButtons.size(); i++) {
       IntRect b = layout.biomeFillTypeButtons.get(i);
       if (b.contains(mx, my)) {
-        renderSettings.biomeFillType = (i == 0) ? RenderFillType.RENDER_FILL_COLOR : RenderFillType.RENDER_FILL_PATTERN;
+        if (i == 0) renderSettings.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
+        else if (i == 1) renderSettings.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
+        else renderSettings.biomeFillType = RenderFillType.RENDER_FILL_PATTERN_BG;
         return true;
       }
     }
