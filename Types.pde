@@ -6,6 +6,7 @@ class ZoneType {
   float hue01;
   float sat01;
   float bri01;
+  int patternIndex = 0;
 
   ZoneType(String name, int col) {
     this.name = name;

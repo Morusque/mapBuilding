@@ -226,6 +226,7 @@ class BiomesLayout {
   IntRect hueSlider;
   IntRect satSlider;
   IntRect briSlider;
+  IntRect patternSlider;
   IntRect brushSlider;
 }
 
@@ -285,6 +286,9 @@ BiomesLayout buildBiomesLayout() {
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
   l.briSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
+  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+
+  l.patternSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 200, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
   l.brushSlider = new IntRect(innerX, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
@@ -432,6 +436,19 @@ void drawBiomesPanel() {
     if (layout.briSlider != null) {
       float bNorm = constrain(active.bri01, 0, 1);
       drawSlider(layout.briSlider, bNorm, "Brightness for \"" + active.name + "\"");
+    }
+
+    // Pattern selector
+    if (layout.patternSlider != null && mapModel != null) {
+      int patCount = max(1, mapModel.biomePatternCount);
+      int clamped = ((active.patternIndex % patCount) + patCount) % patCount;
+      String fallbackPat = renderSettings.biomePatternName;
+      if ((fallbackPat == null || fallbackPat.length() == 0) && mapModel.biomePatternFiles != null && !mapModel.biomePatternFiles.isEmpty()) {
+        fallbackPat = mapModel.biomePatternFiles.get(0);
+      }
+      String patName = mapModel.biomePatternNameForIndex(clamped, fallbackPat);
+      float pNorm = (patCount > 1) ? clamped / (float)(patCount - 1) : 0;
+      drawSelectorSlider(layout.patternSlider, pNorm, "Pattern: " + patName, patCount);
     }
   }
 

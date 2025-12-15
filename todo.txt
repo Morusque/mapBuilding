@@ -1,9 +1,9 @@
 
 Mandatory for full first use milestone :
-(later) make biomes "pattern" actually work screenspace
 (later) elevation lightning could feel more gradient-like or dither-like rather than just unified polygons (find examples of this) lightning: build, optionally blur, gradient, dither, etc, then cache
 (later) some ugly dots sometimes appear between polygones
 (later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
+(later) make sure everything can be bitmap
 
 Unfinished features :
 (later) Biomes : review "value" sliders

@@ -51,6 +51,8 @@ class MapModel {
   // Biomes / zone types
   ArrayList<ZoneType> biomeTypes = new ArrayList<ZoneType>();
   ArrayList<MapZone> zones = new ArrayList<MapZone>();
+  ArrayList<String> biomePatternFiles = new ArrayList<String>();
+  int biomePatternCount = 1;
 
   // Cell adjacency (rebuilt when Voronoi is recomputed)
   ArrayList<ArrayList<Integer>> cellNeighbors = new ArrayList<ArrayList<Integer>>();
@@ -4496,6 +4498,37 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
 
   // ---------- Biome type management ----------
 
+  int defaultPatternIndexForBiome(int biomeIdx) {
+    if (biomePatternCount <= 0) return 0;
+    return ((biomeIdx % biomePatternCount) + biomePatternCount) % biomePatternCount;
+  }
+
+  void setBiomePatternFiles(ArrayList<String> files) {
+    biomePatternFiles = (files != null) ? new ArrayList<String>(files) : new ArrayList<String>();
+    biomePatternCount = max(1, biomePatternFiles.size());
+    syncBiomePatternAssignments();
+  }
+
+  void syncBiomePatternAssignments() {
+    if (biomeTypes == null) return;
+    for (int i = 0; i < biomeTypes.size(); i++) {
+      ZoneType z = biomeTypes.get(i);
+      if (z == null) continue;
+      if (z.patternIndex < 0 || z.patternIndex >= biomePatternCount) {
+        z.patternIndex = defaultPatternIndexForBiome(i);
+      }
+    }
+  }
+
+  String biomePatternNameForIndex(int patternIdx, String fallback) {
+    if (biomePatternFiles == null || biomePatternFiles.isEmpty() || biomePatternCount <= 0) return fallback;
+    int idx = ((patternIdx % biomePatternFiles.size()) + biomePatternFiles.size()) % biomePatternFiles.size();
+    idx = min(idx, biomePatternFiles.size() - 1);
+    String name = biomePatternFiles.get(idx);
+    if (name == null || name.length() == 0) return fallback;
+    return name;
+  }
+
   boolean biomeNameExists(String name) {
     if (name == null || biomeTypes == null) return false;
     for (ZoneType zt : biomeTypes) {
@@ -4516,7 +4549,9 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     }
 
     if (preset != null) {
-      biomeTypes.add(new ZoneType(preset.name, preset.col));
+      ZoneType z = new ZoneType(preset.name, preset.col);
+      z.patternIndex = defaultPatternIndexForBiome(biomeTypes.size());
+      biomeTypes.add(z);
     } else {
       // Fallback: rotate hue from last type
       int n = biomeTypes.size();
@@ -4532,7 +4567,9 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
       int newIndex = n;
       String name = "Type " + newIndex;
       int col = hsb01ToRGB(baseHue, baseSat, baseBri);
-      biomeTypes.add(new ZoneType(name, col));
+      ZoneType z = new ZoneType(name, col);
+      z.patternIndex = defaultPatternIndexForBiome(biomeTypes.size());
+      biomeTypes.add(z);
     }
   }
 

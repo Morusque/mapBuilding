@@ -278,6 +278,17 @@ boolean handleBiomesPanelClick(int mx, int my) {
     }
   }
 
+  // Pattern selector
+  if (activeBiomeIndex >= 0 && activeBiomeIndex < n && layout.patternSlider.contains(mx, my)) {
+    int patCount = max(1, mapModel.biomePatternCount);
+    float t = constrain((mx - layout.patternSlider.x) / (float)layout.patternSlider.w, 0, 1);
+    int idx = (patCount > 1) ? round(t * (patCount - 1)) : 0;
+    idx = constrain(idx, 0, patCount - 1);
+    ZoneType active = mapModel.biomeTypes.get(activeBiomeIndex);
+    active.patternIndex = idx;
+    return true;
+  }
+
   // Brush radius slider
   if (layout.brushSlider.contains(mx, my)) {
     float t = constrain((mx - layout.brushSlider.x) / (float)layout.brushSlider.w, 0, 1);

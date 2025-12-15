@@ -3,6 +3,7 @@ import processing.event.MouseEvent;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Collections;
 import java.io.File;
 
 Viewport viewport;
@@ -15,7 +16,6 @@ Tool currentTool = Tool.EDIT_SITES;
 boolean isPanning = false;
 int lastMouseX;
 int lastMouseY;
-
 
 // Site dragging state
 Site draggingSite = null;
@@ -632,7 +632,9 @@ int ensureBiomeType(String name) {
       break;
     }
   }
-  mapModel.biomeTypes.add(new ZoneType(name, col));
+  ZoneType z = new ZoneType(name, col);
+  z.patternIndex = mapModel.defaultPatternIndexForBiome(mapModel.biomeTypes.size());
+  mapModel.biomeTypes.add(z);
   return mapModel.biomeTypes.size() - 1;
 }
 
@@ -656,6 +658,7 @@ void setup() {
   viewport = new Viewport();
   mapModel = new MapModel();
   applyRenderPreset(0);
+  loadBiomePatternList();
   initBiomeTypes();
   initZones();
   initPathTypes();
@@ -667,14 +670,19 @@ void setup() {
 
 void initBiomeTypes() {
   mapModel.biomeTypes.clear();
-  mapModel.biomeTypes.add(new ZoneType("None",  color(235)));
+  ZoneType none = new ZoneType("None",  color(235));
+  none.patternIndex = mapModel.defaultPatternIndexForBiome(mapModel.biomeTypes.size());
+  mapModel.biomeTypes.add(none);
 
   // Seed with the first few presets for quick access; more can be added via "+".
   int initialCount = 5;
   for (int i = 0; i < initialCount && i < ZONE_PRESETS.length; i++) {
     ZonePreset zp = ZONE_PRESETS[i];
-    mapModel.biomeTypes.add(new ZoneType(zp.name, zp.col));
+    ZoneType z = new ZoneType(zp.name, zp.col);
+    z.patternIndex = mapModel.defaultPatternIndexForBiome(mapModel.biomeTypes.size());
+    mapModel.biomeTypes.add(z);
   }
+  mapModel.syncBiomePatternAssignments();
 }
 
 void initZones() {
@@ -1535,6 +1543,7 @@ String importMapJson() {
       JSONObject types = root.getJSONObject("types");
       mapModel.pathTypes = deserializePathTypes(types.getJSONArray("pathTypes"));
       mapModel.biomeTypes = deserializeZoneTypes(types.getJSONArray("biomeTypes"));
+      mapModel.syncBiomePatternAssignments();
     }
 
     if (root.hasKey("sites")) mapModel.sites = deserializeSites(root.getJSONArray("sites"));
@@ -1778,6 +1787,7 @@ JSONArray serializeZoneTypes(ArrayList<ZoneType> list) {
     o.setFloat("hue01", z.hue01);
     o.setFloat("sat01", z.sat01);
     o.setFloat("bri01", z.bri01);
+    o.setInt("patternIndex", z.patternIndex);
     arr.append(o);
   }
   return arr;
@@ -1985,9 +1995,41 @@ ArrayList<ZoneType> deserializeZoneTypes(JSONArray arr) {
     z.sat01 = o.getFloat("sat01", z.sat01);
     z.bri01 = o.getFloat("bri01", z.bri01);
     z.updateColorFromHSB();
+    int defPat = (mapModel != null) ? mapModel.defaultPatternIndexForBiome(i) : 0;
+    z.patternIndex = o.getInt("patternIndex", defPat);
     list.add(z);
   }
   return list;
+}
+
+void loadBiomePatternList() {
+  ArrayList<String> names = new ArrayList<String>();
+  HashSet<String> seen = new HashSet<String>();
+  String[] roots = { dataPath("patterns"), sketchPath("patterns") };
+  for (String root : roots) {
+    try {
+      if (root == null) continue;
+      File dir = new File(root);
+      if (!dir.exists() || !dir.isDirectory()) continue;
+      File[] files = dir.listFiles();
+      if (files == null) continue;
+      for (File f : files) {
+        if (f == null || !f.isFile() || f.isHidden()) continue;
+        String name = f.getName();
+        if (name == null) continue;
+        String low = name.toLowerCase();
+        if (!low.endsWith(".png")) continue;
+        if (seen.contains(name)) continue;
+        seen.add(name);
+        names.add(name);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+  Collections.sort(names);
+  if (names.isEmpty()) names.add("dots01.png");
+  if (mapModel != null) mapModel.setBiomePatternFiles(names);
 }
 
 ArrayList<Site> deserializeSites(JSONArray arr) {

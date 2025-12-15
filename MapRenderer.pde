@@ -646,25 +646,31 @@ class MapRenderer {
     if (s.biomeFillAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f) {
       app.noStroke();
       boolean usePattern = (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN);
-      PImage pattern = null;
-      if (usePattern) {
-        pattern = getPattern(app, s.biomePatternName);
-        usePattern = (pattern != null);
-      }
       for (Cell c : model.cells) {
         if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
         boolean isWater = c.elevation < seaLevel;
         if (isWater && s.biomeUnderwaterAlpha01 <= 1e-4f) continue;
         if (!isWater && s.biomeFillAlpha01 <= 1e-4f) continue;
         int col = landBase;
+        String patName = s.biomePatternName;
+        if ((patName == null || patName.length() == 0) && model.biomePatternFiles != null && !model.biomePatternFiles.isEmpty()) {
+          patName = model.biomePatternFiles.get(0);
+        }
         if (model.biomeTypes != null && c.biomeId >= 0 && c.biomeId < model.biomeTypes.size()) {
           ZoneType zt = model.biomeTypes.get(c.biomeId);
           float[] hsb = model.rgbToHSB(zt.col);
           hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
           col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+          patName = model.biomePatternNameForIndex(zt.patternIndex, patName);
         }
         float a = isWater ? s.biomeUnderwaterAlpha01 : s.biomeFillAlpha01;
-        if (usePattern && pattern != null) {
+        PImage pattern = null;
+        boolean canPattern = false;
+        if (usePattern && patName != null) {
+          pattern = getPattern(app, patName);
+          canPattern = (pattern != null);
+        }
+        if (usePattern && canPattern) {
           drawPatternPoly(app, c.vertices, pattern, col, a);
         } else {
           app.fill(col, a * 255);
