@@ -1,7 +1,7 @@
 // ---------- UI DRAWING ----------
 
 int panelTop() {
-  // Base panel top (top bar + tool bar). Snap settings are handled separately in Structures mode.
+  // Base panel top (top bar + tool bar).
   return snapPanelTop();
 }
 

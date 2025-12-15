@@ -1468,6 +1468,11 @@ String structureAlignmentLabel(StructureSnapMode mode) {
 class StructuresLayout {
   IntRect panel;
   int titleY;
+  IntRect headerGen;
+  IntRect headerSnap;
+  IntRect headerAttr;
+  ArrayList<IntRect> snapChecks = new ArrayList<IntRect>();
+  IntRect snapElevationSlider;
   IntRect nameField;
   IntRect commentField;
   IntRect sizeSlider;
@@ -1486,54 +1491,83 @@ class StructuresLayout {
 
 StructuresLayout buildStructuresLayout() {
   StructuresLayout l = new StructuresLayout();
-  int yTop = snapPanelTop() + snapSettingsPanelHeight(); // leave space for snap settings block
-  l.panel = new IntRect(PANEL_X, yTop, PANEL_W, 0);
+  l.panel = new IntRect(PANEL_X, panelTop(), PANEL_W, 0);
   int innerX = l.panel.x + PANEL_PADDING;
   int curY = l.panel.y + PANEL_PADDING;
+  int fullW = l.panel.w - 2 * PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
 
-  int fullW = l.panel.w - 2 * PANEL_PADDING;
-  l.nameField = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_BUTTON_H);
-  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
+  // Generate section
+  l.headerGen = new IntRect(innerX, curY, fullW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (structSectionGenOpen) {
+    l.genButton = new IntRect(innerX, curY, 140, PANEL_BUTTON_H);
+    curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+    l.genTownSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.genBuildingSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  }
 
-  l.commentField = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_BUTTON_H);
-  curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
+  // Snap section
+  l.headerSnap = new IntRect(innerX, curY, fullW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (structSectionSnapOpen) {
+    String[] snapLabels = {
+      "Water",
+      "Biomes",
+      "Underwater biomes",
+      "Zones",
+      "Paths",
+      "Other structures",
+      "Elevation"
+    };
+    for (int i = 0; i < snapLabels.length; i++) {
+      l.snapChecks.add(new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE));
+      curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    }
+    l.snapElevationSlider = new IntRect(innerX + PANEL_CHECK_SIZE + 8, curY + PANEL_LABEL_H, 160, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  }
 
-  l.sizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+  // Attributes section
+  l.headerAttr = new IntRect(innerX, curY, fullW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (structSectionAttrOpen) {
+    l.nameField = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_BUTTON_H);
+    curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
 
-  l.angleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.commentField = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_BUTTON_H);
+    curY += PANEL_LABEL_H + PANEL_BUTTON_H + PANEL_ROW_GAP;
 
-  l.ratioSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+    l.sizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  l.shapeSelector = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.angleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  l.alignmentSelector = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+    l.ratioSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
-  l.hueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.shapeSelector = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  l.satSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.alignmentSelector = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
 
-  l.alphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.hueSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  l.strokeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+    l.satSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-  // Generation controls
-  l.genTownSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-  l.genBuildingSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
-  curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-  l.genButton = new IntRect(innerX, curY, 140, PANEL_BUTTON_H);
-  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
+    l.alphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.strokeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, fullW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  }
 
   curY += hintHeight(3);
   l.panel.h = curY - l.panel.y;
@@ -1548,8 +1582,75 @@ void drawStructuresPanelUI() {
   StructureSelectionInfo info = gatherStructureSelectionInfo();
   fill(0);
   textAlign(LEFT, TOP);
-  text("Attributes", labelX, layout.titleY);
+  text("Structures", labelX, layout.titleY);
 
+  // Generate section
+  drawSectionHeader(layout.headerGen, "Generate", structSectionGenOpen);
+  if (structSectionGenOpen) {
+    {
+      IntRect gb = layout.genButton;
+      drawBevelButton(gb.x, gb.y, gb.w, gb.h, false);
+      fill(10);
+      textAlign(CENTER, CENTER);
+      text("Generate", gb.x + gb.w / 2, gb.y + gb.h / 2);
+    }
+    IntRect ts = layout.genTownSlider;
+    float tNorm = constrain(structGenTownCount / 8.0f, 0, 1);
+    drawSlider(ts, tNorm, "Circle count (" + structGenTownCount + ")");
+    IntRect bs = layout.genBuildingSlider;
+    drawSlider(bs, structGenBuildingDensity, "Rectangle density (" + nf(structGenBuildingDensity * 100, 1, 0) + "%)");
+  }
+
+  // Snapping guides
+  drawSectionHeader(layout.headerSnap, "Snapping guides", structSectionSnapOpen);
+  if (structSectionSnapOpen) {
+    String[] labels = {
+      "Water",
+      "Biomes",
+      "Underwater biomes",
+      "Zones",
+      "Paths",
+      "Other structures",
+      "Elevation"
+    };
+    String[] snapKeys = {
+      "snap_water",
+      "snap_biomes",
+      "snap_underwater_biomes",
+      "snap_zones",
+      "snap_paths",
+      "snap_structures",
+      "snap_elevation"
+    };
+    boolean[] values = {
+      snapWaterEnabled,
+      snapBiomesEnabled,
+      snapUnderwaterBiomesEnabled,
+      snapZonesEnabled,
+      snapPathsEnabled,
+      snapStructuresEnabled,
+      snapElevationEnabled
+    };
+    for (int i = 0; i < labels.length && i < layout.snapChecks.size(); i++) {
+      IntRect b = layout.snapChecks.get(i);
+      drawCheckbox(b.x, b.y, b.w, values[i], labels[i]);
+      if (i < snapKeys.length) {
+        int hintW = layout.panel.w - 2 * PANEL_PADDING;
+        registerUiTooltip(new IntRect(b.x, b.y, hintW, b.h), tooltipFor(snapKeys[i]));
+      }
+    }
+
+    IntRect es = layout.snapElevationSlider;
+    int divMin = 2;
+    int divMax = 24;
+    float t = constrain((snapElevationDivisions - divMin) / (float)(divMax - divMin), 0, 1);
+    drawSlider(es, t, "Elevation divisions: " + snapElevationDivisions);
+    registerUiTooltip(es, tooltipFor("snap_elevation_divisions"));
+  }
+
+  // Attributes section
+  drawSectionHeader(layout.headerAttr, "Attributes", structSectionAttrOpen);
+  if (!structSectionAttrOpen) return;
   // Name field
   {
     IntRect nf = layout.nameField;
@@ -1616,7 +1717,7 @@ void drawStructuresPanelUI() {
   // Rectangle ratio slider (width/height)
   IntRect ratio = layout.ratioSlider;
   float rNorm = constrain(map(info.sharedRatio, 0.3f, 3.0f, 0, 1), 0, 1);
-  String ratioLabel = info.ratioMixed ? "Rectangle ratio (W/H)" : "Rectangle ratio (W/H): " + nf(info.sharedRatio, 1, 2);
+  String ratioLabel = info.ratioMixed ? "Aspect ratio (W/H)" : "Aspect ratio (W/H): " + nf(info.sharedRatio, 1, 2);
   drawSlider(ratio, rNorm, ratioLabel, false, !info.ratioMixed);
   registerUiTooltip(ratio, tooltipFor("structures_ratio"));
 
@@ -1663,24 +1764,6 @@ void drawStructuresPanelUI() {
   String strokeLabel = info.strokeMixed ? "Stroke weight (px)" : "Stroke weight (" + nf(info.sharedStroke, 1, 2) + " px)";
   drawSlider(st, stNorm, strokeLabel, false, !info.strokeMixed);
   registerUiTooltip(st, tooltipFor("structures_detail_stroke"));
-
-  // Generation controls
-  {
-    IntRect ts = layout.genTownSlider;
-    float tNorm = constrain(structGenTownCount / 8.0f, 0, 1);
-    drawSlider(ts, tNorm, "Town count (" + structGenTownCount + ")");
-  }
-  {
-    IntRect bs = layout.genBuildingSlider;
-    drawSlider(bs, structGenBuildingDensity, "Building density (" + nf(structGenBuildingDensity * 100, 1, 0) + "%)");
-  }
-  {
-    IntRect gb = layout.genButton;
-    drawBevelButton(gb.x, gb.y, gb.w, gb.h, false);
-    fill(10);
-    textAlign(CENTER, CENTER);
-    text("Generate", gb.x + gb.w / 2, gb.y + gb.h / 2);
-  }
 
   drawControlsHint(layout.panel,
                    "left-click: place/move",

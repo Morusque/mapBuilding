@@ -522,11 +522,6 @@ void mousePressed() {
     if (handleToolButtonClick(mouseY)) return;
   }
 
-  // Snap settings (Structures mode only)
-  if (mouseButton == LEFT && currentTool == Tool.EDIT_STRUCTURES) {
-    if (handleSnapSettingsClick(mouseX, mouseY)) return;
-  }
-
   // Sites panel
   if (mouseButton == LEFT && currentTool == Tool.EDIT_SITES) {
     if (handleSitesPanelClick(mouseX, mouseY)) return;
@@ -1027,6 +1022,57 @@ boolean handleStructuresPanelClick(int mx, int my) {
   StructureSelectionInfo info = gatherStructureSelectionInfo();
   boolean hasSelection = info.hasSelection;
 
+  // Section toggles
+  if (queueButtonAction(layout.headerGen, new Runnable() { public void run() { structSectionGenOpen = !structSectionGenOpen; }})) return true;
+  if (queueButtonAction(layout.headerSnap, new Runnable() { public void run() { structSectionSnapOpen = !structSectionSnapOpen; }})) return true;
+  if (queueButtonAction(layout.headerAttr, new Runnable() { public void run() { structSectionAttrOpen = !structSectionAttrOpen; }})) return true;
+
+  // Generate controls
+  if (structSectionGenOpen) {
+    if (layout.genTownSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.genTownSlider.x) / (float)layout.genTownSlider.w, 0, 1);
+      structGenTownCount = constrain(round(t * 8), 0, 8);
+      return true;
+    }
+    if (layout.genBuildingSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.genBuildingSlider.x) / (float)layout.genBuildingSlider.w, 0, 1);
+      structGenBuildingDensity = constrain(t, 0, 1);
+      return true;
+    }
+    if (queueButtonAction(layout.genButton, new Runnable() { public void run() {
+      mapModel.generateStructuresAuto(structGenTownCount, structGenBuildingDensity, seaLevel);
+      clearStructureSelection();
+    }})) return true;
+  }
+
+  // Snap guides
+  if (structSectionSnapOpen) {
+    for (int i = 0; i < layout.snapChecks.size(); i++) {
+      IntRect b = layout.snapChecks.get(i);
+      if (!b.contains(mx, my)) continue;
+      switch (i) {
+        case 0: snapWaterEnabled = !snapWaterEnabled; break;
+        case 1: snapBiomesEnabled = !snapBiomesEnabled; break;
+        case 2: snapUnderwaterBiomesEnabled = !snapUnderwaterBiomesEnabled; break;
+        case 3: snapZonesEnabled = !snapZonesEnabled; break;
+        case 4: snapPathsEnabled = !snapPathsEnabled; break;
+        case 5: snapStructuresEnabled = !snapStructuresEnabled; break;
+        case 6: snapElevationEnabled = !snapElevationEnabled; break;
+      }
+      return true;
+    }
+
+    if (layout.snapElevationSlider != null && layout.snapElevationSlider.contains(mx, my)) {
+      int divMin = 2;
+      int divMax = 24;
+      float t = constrain((mx - layout.snapElevationSlider.x) / (float)layout.snapElevationSlider.w, 0, 1);
+      snapElevationDivisions = round(lerp(divMin, divMax, t));
+      return true;
+    }
+  }
+
+  if (!structSectionAttrOpen) return false;
+
   if (!layout.nameField.contains(mx, my)) {
     editingStructureName = false;
     editingStructureNameIndex = -1;
@@ -1180,20 +1226,6 @@ boolean handleStructuresPanelClick(int mx, int my) {
     }
     return true;
   }
-  if (layout.genTownSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.genTownSlider.x) / (float)layout.genTownSlider.w, 0, 1);
-    structGenTownCount = constrain(round(t * 8), 0, 8);
-    return true;
-  }
-  if (layout.genBuildingSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.genBuildingSlider.x) / (float)layout.genBuildingSlider.w, 0, 1);
-    structGenBuildingDensity = constrain(t, 0, 1);
-    return true;
-  }
-  if (queueButtonAction(layout.genButton, new Runnable() { public void run() {
-    mapModel.generateStructuresAuto(structGenTownCount, structGenBuildingDensity, seaLevel);
-    clearStructureSelection();
-  }})) return true;
   return false;
 }
 

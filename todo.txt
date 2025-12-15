@@ -1,7 +1,7 @@
 
 Mandatory for full generation milestone :
-(later) Structures : option to generate structs
 (later) Labels : option to generate labels
+(later) a "fully generate" button once all generate methods have been implemented (keep things already defined though)
 
 Mandatory for full first use milestone :
 (later) make biomes "pattern" actually work screenspace
@@ -66,9 +66,9 @@ General :
 (later) investigate caching options, Refactor, optimize etc.
 (later) undo states
 (later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
-(later) a "fully generate" button once all generate methods have been implemented (keep things already defined though)
 (later) correctly merge strokes that overlap with alpha
 (maybe) option to generate details (about everything) for zooming
 (maybe) use HSB directly instead of converting?
 (maybe) Editable types: visually show which parameters "belong" to a type or to a more general part of the interface.
 (later) Update comments to multiline
+(later) make the generations better overall

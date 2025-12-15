@@ -196,7 +196,7 @@ class MapRenderer {
         break;
       }
       case TRIANGLE: {
-        float h = (r / aspect) * 0.866f;
+        float h = (r / max(1e-3f, sqrt(aspect))) * 0.866f; // keep triangle area reasonable when highly squashed
         app.beginShape();
         app.vertex(-r * 0.5f, h * 0.333f);
         app.vertex(r * 0.5f, h * 0.333f);
@@ -207,7 +207,7 @@ class MapRenderer {
       case HEXAGON: {
         float rad = r * 0.5f;
         float sx = 1.0f;
-        float sy = 1.0f / aspect;
+        float sy = 1.0f / max(1e-3f, sqrt(aspect)); // soften distortion
         app.beginShape();
         for (int v = 0; v < 6; v++) {
           float a = radians(60 * v);

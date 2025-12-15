@@ -4741,7 +4741,10 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
         }
         if (count > 0) {
           cx /= count; cy /= count;
-          cands.add(new Cand(new PVector(cx, cy), 1.0f));
+          Cell nearest = nearestCell(cx, cy);
+          if (nearest == null || nearest.elevation >= sea) {
+            cands.add(new Cand(new PVector(cx, cy), 1.0f));
+          }
         }
       }
     }
@@ -4763,7 +4766,12 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
       for (Map.Entry<String, Integer> e : deg.entrySet()) {
         if (e.getValue() < 3) continue;
         PVector v = parseKey(e.getKey());
-        if (v != null) cands.add(new Cand(v, 0.8f));
+        if (v != null) {
+          Cell nearest = nearestCell(v.x, v.y);
+          if (nearest == null || nearest.elevation >= sea) {
+            cands.add(new Cand(v, 0.8f));
+          }
+        }
       }
     }
 
@@ -4789,6 +4797,23 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
       }
     }
 
+    // Fallback when no interesting spots are found
+    if (cands.isEmpty()) {
+      if (cells != null && !cells.isEmpty()) {
+        for (int i = 0; i < min(8, cells.size()); i++) {
+          Cell c = cells.get((i * 997) % cells.size());
+          if (c == null || c.vertices == null || c.vertices.isEmpty()) continue;
+          PVector cen = cellCentroid(c);
+          if (cen == null) continue;
+          float score = 0.4f;
+          if (c.elevation >= sea) score = 0.8f;
+          cands.add(new Cand(cen, score));
+        }
+      } else {
+        cands.add(new Cand(new PVector(0, 0), 0.5f));
+      }
+    }
+
     // Prefer low/mid elevation (penalize high)
     float elevMin = sea;
     float elevMax = sea + 0.5f;
@@ -4808,6 +4833,7 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     // Place towns
     int placedTowns = 0;
     ArrayList<Structure> newStructs = new ArrayList<Structure>();
+    ArrayList<PVector> townCenters = new ArrayList<PVector>();
     for (Cand c : cands) {
       if (placedTowns >= townCount) break;
       if (structuresOverlap(structures, c.p.x, c.p.y, townSize, 1.0f, 1.2f)) continue;
@@ -4822,6 +4848,7 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
       main.alpha01 = 1.0f;
       main.name = "Town " + (placedTowns + 1);
       newStructs.add(main);
+      townCenters.add(new PVector(c.p.x, c.p.y));
 
       int satellites = (int)random(1, 6);
       for (int i = 0; i < satellites; i++) {
@@ -4846,7 +4873,7 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
 
     // Buildings along paths
     if (paths != null && buildingDensity > 1e-4f) {
-      float spacing = buildingSize * map(1 - buildingDensity, 0, 1, 2.5f, 6.0f);
+      float spacing = buildingSize * map(1 - buildingDensity, 0, 1, 3.5f, 8.0f);
       for (int pi = 0; pi < paths.size(); pi++) {
         Path p = paths.get(pi);
         if (p == null || p.routes == null) continue;
@@ -4865,10 +4892,23 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
               float t = (s + 0.5f) / steps;
               float px = lerp(a.x, b.x, t);
               float py = lerp(a.y, b.y, t);
+              // Require proximity to a town to cluster buildings
+              boolean nearTown = townCenters.isEmpty(); // allow some placement if no towns exist
+              for (PVector tc : townCenters) {
+                float dxt = tc.x - px;
+                float dyt = tc.y - py;
+                float d2 = dxt * dxt + dyt * dyt;
+                if (d2 < sq(townSize * 4.0f)) { nearTown = true; break; }
+              }
+              if (!nearTown) continue;
+              Cell segCell = nearestCell(px, py);
+              if (segCell != null && segCell.elevation < sea) continue;
               float offset = buildingSize * random(0.6f, 1.2f);
               float sx = px + nx * offset;
               float sy = py + ny * offset;
               float asp = random(0.8f, 1.4f);
+              Cell offCell = nearestCell(sx, sy);
+              if (offCell != null && offCell.elevation < sea) continue;
               if (structuresOverlap(structures, sx, sy, buildingSize, asp, 0.9f)) continue;
               if (structuresOverlap(newStructs, sx, sy, buildingSize, asp, 0.9f)) continue;
 

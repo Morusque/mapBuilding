@@ -37,6 +37,10 @@ float pathsListScroll = 0;
 float structuresListScroll = 0;
 float labelsListScroll = 0;
 
+boolean structSectionGenOpen = true;
+boolean structSectionSnapOpen = true;
+boolean structSectionAttrOpen = true;
+
 // Rendering configuration
 RenderSettings renderSettings = new RenderSettings();
 RenderPreset[] renderPresets = buildDefaultRenderPresets();
@@ -877,9 +881,6 @@ void draw() {
   // ----- UI overlay -----
   drawTopBar();
   drawToolButtons();
-  if (currentTool == Tool.EDIT_STRUCTURES) {
-    drawSnapSettingsPanel();
-  }
   if (currentTool == Tool.EDIT_SITES) {
     drawSitesPanel();
   } else if (currentTool == Tool.EDIT_ELEVATION) {
