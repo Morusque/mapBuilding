@@ -7,7 +7,6 @@ Mandatory for full first use milestone :
 
 Unfinished features :
 (later) Biomes : review "value" sliders
-(later) replace "beaches" by same logic but arbitrary elevation and use it instead of some "above" logics in the full generation process
 (later) Structures : exact meaning of angle (absolute vs offset)
 (later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
 

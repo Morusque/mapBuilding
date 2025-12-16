@@ -132,7 +132,7 @@ String tooltipForBiomeValue() {
     case 7: return "Shrink: how much the biome retracts from edges (TODO?).";
     case 8: return "Spots: spot size and strength (TODO?).";
     case 9: return "Vary: variations strength (TODO).";
-    case 10: return "Beaches: beaches width.";
+    case 10: return "Slice spot: thickness around the chosen elevation (value slider).";
     case 11: return "Full: (no use)).";
   }
   return "Value slider meaning depends on chosen generation mode.";

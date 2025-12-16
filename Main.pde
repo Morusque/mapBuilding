@@ -168,7 +168,7 @@ String[] biomeGenerateModes = {
   "Shrink",
   "Spots",
   "Vary",
-  "Beaches",
+  "Slice spot",
   "Full"
 };
 int biomeGenerateModeIndex = 0;
@@ -514,8 +514,8 @@ void applyBiomeGeneration() {
     case 9: // vary
       mapModel.varyBiomesOnce();
       break;
-    case 10: // beaches
-      mapModel.placeBeaches(targetBiome, val01, seaLevel);
+    case 10: // slice spot
+      mapModel.placeSliceSpot(targetBiome, val01, threshold);
       break;
     case 11: // full pipeline
     default:
@@ -533,15 +533,15 @@ void applyBiomeGeneration() {
       mapModel.fillGapsWithNewBiomes(150);
       if (magmaIdx >= 0) for (int i = 0; i < 8; i++) mapModel.shrinkBiomeOnce(magmaIdx);
       if (wetIdx >= 0) for (int i = 0; i < 8; i++) mapModel.shrinkBiomeOnce(wetIdx);
-      if (forestIdx >= 0) for (int i = 0; i < 5; i++) mapModel.placeBiomeSpots(forestIdx, 0.5);
-      if (forestIdx >= 0) mapModel.fillAboveThreshold(forestIdx, 0.24f);
-      if (rockIdx >= 0) mapModel.fillAboveThreshold(rockIdx, 0.36f);
+      if (forestIdx >= 0) for (int i = 0; i < 5; i++) mapModel.placeBiomeSpots(forestIdx, 0.5f);
+      if (forestIdx >= 0) mapModel.placeSliceSpot(forestIdx, 0.8f, 0.24f);
+      if (rockIdx >= 0) mapModel.placeSliceSpot(rockIdx, 0.8f, 0.36f);
       if (snowIdx >= 0) mapModel.fillAboveThreshold(snowIdx, 0.48f);
       if (magmaIdx >= 0) mapModel.fillAboveThreshold(magmaIdx, 0.6f);
       if (grassIdx >= 0) mapModel.extendBiomeOnce(grassIdx);
       if (forestIdx >= 0) mapModel.shrinkBiomeOnce(forestIdx);
       if (wetIdx >= 0) mapModel.fillUnderThreshold(wetIdx, seaLevel);
-      if (sandIdx >= 0) for (int i = 0; i < 7; i++) mapModel.placeBeaches(sandIdx, 0.8f, seaLevel);
+      if (sandIdx >= 0) for (int i = 0; i < 7; i++) mapModel.placeSliceSpot(sandIdx, 0.8f, seaLevel);
       mapModel.varyBiomesOnce();
       break;
   }

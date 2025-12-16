@@ -4148,7 +4148,7 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     snapDirty = true;
   }
 
-  void placeBeaches(int biomeId, float sizeParam, float sea) {
+  void placeSliceSpot(int biomeId, float sizeParam, float level) {
     if (cells == null || cells.isEmpty()) return;
     ensureCellNeighborsComputed();
     int n = cells.size();
@@ -4159,7 +4159,7 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     for (int i = 0; i < n; i++) {
       Cell c = cells.get(i);
       if (c == null) continue;
-      float diff = abs(c.elevation - sea);
+      float diff = abs(c.elevation - level);
       if (c.biomeId != biomeId) {
         if (diff < bestDiff) {
           bestDiff = diff;
@@ -4179,8 +4179,8 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     HashSet<Integer> claimed = new HashSet<Integer>();
     PriorityQueue<Integer> frontier = new PriorityQueue<Integer>(new Comparator<Integer>() {
       public int compare(Integer a, Integer b) {
-        float da = abs(cells.get(a).elevation - sea);
-        float db = abs(cells.get(b).elevation - sea);
+        float da = abs(cells.get(a).elevation - level);
+        float db = abs(cells.get(b).elevation - level);
         return Float.compare(da, db);
       }
     });
