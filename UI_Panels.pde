@@ -1958,6 +1958,10 @@ class RenderLayout {
   IntRect waterRippleDistanceSlider;
   IntRect[] waterContourHSB = new IntRect[3];
   IntRect waterContourCoastAlphaSlider;
+  IntRect waterHatchAngleSlider;
+  IntRect waterHatchLengthSlider;
+  IntRect waterHatchSpacingSlider;
+  IntRect waterHatchAlphaSlider;
   IntRect waterRippleAlphaStartSlider;
   IntRect waterRippleAlphaEndSlider;
   IntRect elevationLinesCountSlider;
@@ -2090,6 +2094,18 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_LABEL_H*2 + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.waterContourCoastAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterHatchAngleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterHatchLengthSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterHatchSpacingSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterHatchAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.waterRippleAlphaStartSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
@@ -2236,6 +2252,11 @@ void drawRenderPanel() {
     drawHSBRow(layout.waterContourHSB, "Water contours", renderSettings.waterContourHue01, renderSettings.waterContourSat01, renderSettings.waterContourBri01);
     drawSlider(layout.waterContourCoastAlphaSlider, renderSettings.waterCoastAlpha01, "Coastline alpha (" + nf(renderSettings.waterCoastAlpha01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.waterContourCoastAlphaSlider, tooltipFor("render_contours"));
+    drawSlider(layout.waterHatchAngleSlider, constrain((renderSettings.waterHatchAngleDeg + 90.0f) / 180.0f, 0, 1), "Hatching angle (" + nf(renderSettings.waterHatchAngleDeg, 1, 1) + " deg)");
+    drawSlider(layout.waterHatchLengthSlider, constrain(renderSettings.waterHatchLengthPx / 400.0f, 0, 1), "Hatching length (" + nf(renderSettings.waterHatchLengthPx, 1, 1) + " px)");
+    float spacingNorm = constrain(renderSettings.waterHatchSpacingPx / 120.0f, 0, 1);
+    drawSlider(layout.waterHatchSpacingSlider, spacingNorm, "Hatching spacing (" + nf(renderSettings.waterHatchSpacingPx, 1, 1) + " px)");
+    drawSlider(layout.waterHatchAlphaSlider, renderSettings.waterHatchAlpha01, "Hatching alpha (" + nf(renderSettings.waterHatchAlpha01 * 100, 1, 0) + "%)");
     drawSlider(layout.waterRippleAlphaStartSlider, renderSettings.waterRippleAlphaStart01, "Ripple near shore alpha (" + nf(renderSettings.waterRippleAlphaStart01 * 100, 1, 0) + "%)");
     drawSlider(layout.waterRippleAlphaEndSlider, renderSettings.waterRippleAlphaEnd01, "Ripple far alpha (" + nf(renderSettings.waterRippleAlphaEnd01 * 100, 1, 0) + "%)");
     float elevCountNorm = constrain(renderSettings.elevationLinesCount / 24.0f, 0, 1);

@@ -58,6 +58,10 @@ class RenderSettings {
   float waterCoastAlpha01 = 1.0f;
   float waterRippleAlphaStart01 = 1.0f;
   float waterRippleAlphaEnd01 = 0.3f;
+  float waterHatchAngleDeg = 0.0f;     // 0 = horizontal lines
+  float waterHatchLengthPx = 0.0f;     // world length = px/zoom
+  float waterHatchSpacingPx = 12.0f;   // spacing in screen px
+  float waterHatchAlpha01 = 0.0f;
   int elevationLinesCount = 0;
   ElevationLinesStyle elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
   float elevationLinesAlpha01 = 0.3f;
@@ -126,6 +130,10 @@ class RenderSettings {
     c.waterCoastAlpha01 = waterCoastAlpha01;
     c.waterRippleAlphaStart01 = waterRippleAlphaStart01;
     c.waterRippleAlphaEnd01 = waterRippleAlphaEnd01;
+    c.waterHatchAngleDeg = waterHatchAngleDeg;
+    c.waterHatchLengthPx = waterHatchLengthPx;
+    c.waterHatchSpacingPx = waterHatchSpacingPx;
+    c.waterHatchAlpha01 = waterHatchAlpha01;
     c.elevationLinesCount = elevationLinesCount;
     c.elevationLinesStyle = elevationLinesStyle;
     c.elevationLinesAlpha01 = elevationLinesAlpha01;
@@ -192,6 +200,10 @@ class RenderSettings {
     waterCoastAlpha01 = o.waterCoastAlpha01;
     waterRippleAlphaStart01 = o.waterRippleAlphaStart01;
     waterRippleAlphaEnd01 = o.waterRippleAlphaEnd01;
+    waterHatchAngleDeg = o.waterHatchAngleDeg;
+    waterHatchLengthPx = o.waterHatchLengthPx;
+    waterHatchSpacingPx = o.waterHatchSpacingPx;
+    waterHatchAlpha01 = o.waterHatchAlpha01;
     elevationLinesCount = o.elevationLinesCount;
     elevationLinesStyle = o.elevationLinesStyle;
     elevationLinesAlpha01 = o.elevationLinesAlpha01;
@@ -255,6 +267,10 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterCoastAlpha01 = 1.0f;
     s.waterRippleAlphaStart01 = 1.0f;
     s.waterRippleAlphaEnd01 = 0.3f;
+    s.waterHatchAngleDeg = 0.0f;
+    s.waterHatchLengthPx = 0.0f;
+    s.waterHatchSpacingPx = 12.0f;
+    s.waterHatchAlpha01 = 0.0f;
     s.elevationLinesCount = 0;
     s.elevationLinesAlpha01 = 0.3f;
     s.pathSatScale01 = 1.0f;

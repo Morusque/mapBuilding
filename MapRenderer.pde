@@ -837,6 +837,9 @@ class MapRenderer {
       }
     }
 
+    // Water hatching (screen-like parallel lines near coast, over water)
+    drawWaterHatching(app, s, seaLevel);
+
     // Elevation contour lines (land only)
     if (s.elevationLinesCount > 0 && s.elevationLinesAlpha01 > 1e-4f) {
       int cols = 90;
@@ -1097,6 +1100,108 @@ class MapRenderer {
     } else {
       for (float iso = start; iso >= end - 1e-6f; iso += step) {
         drawIsoLine(app, g, iso);
+      }
+    }
+    app.popStyle();
+  }
+
+  private float sampleGrid(MapModel.ContourGrid g, float x, float y) {
+    if (g == null || g.v == null || g.cols < 2 || g.rows < 2) return 0;
+    float fx = constrain((x - g.ox) / max(1e-6f, g.dx), 0, g.cols - 1.0001f);
+    float fy = constrain((y - g.oy) / max(1e-6f, g.dy), 0, g.rows - 1.0001f);
+    int ix = floor(fx);
+    int iy = floor(fy);
+    float tx = fx - ix;
+    float ty = fy - iy;
+    float v00 = g.v[iy][ix];
+    float v10 = g.v[iy][ix + 1];
+    float v01 = g.v[iy + 1][ix];
+    float v11 = g.v[iy + 1][ix + 1];
+    float a = lerp(v00, v10, tx);
+    float b = lerp(v01, v11, tx);
+    return lerp(a, b, ty);
+  }
+
+  void drawWaterHatching(PApplet app, RenderSettings s, float seaLevel) {
+    if (s == null) return;
+    if (s.waterHatchAlpha01 <= 1e-4f) return;
+    if (s.waterHatchLengthPx <= 1e-4f) return;
+    if (s.waterHatchSpacingPx <= 1e-4f) return;
+    int cols = max(80, min(200, (int)(sqrt(max(1, model.cells.size())) * 1.0f)));
+    MapModel.ContourGrid g = model.getCoastDistanceGrid(cols, cols, seaLevel);
+    if (g == null) return;
+
+    float angleRad = radians(s.waterHatchAngleDeg);
+    PVector d = new PVector(cos(angleRad), sin(angleRad));
+    PVector n = new PVector(-d.y, d.x);
+    float spacing = s.waterHatchSpacingPx / max(1e-6f, viewport.zoom);
+    float maxLen = s.waterHatchLengthPx / max(1e-6f, viewport.zoom);
+    if (spacing <= 1e-6f || maxLen <= 1e-6f) return;
+
+    float minX = model.minX;
+    float minY = model.minY;
+    float maxX = model.maxX;
+    float maxY = model.maxY;
+
+    // Projections of map corners onto normal
+    float[] projs = new float[] {
+      (minX * n.x + minY * n.y),
+      (minX * n.x + maxY * n.y),
+      (maxX * n.x + minY * n.y),
+      (maxX * n.x + maxY * n.y)
+    };
+    float minProj = min(min(projs[0], projs[1]), min(projs[2], projs[3]));
+    float maxProj = max(max(projs[0], projs[1]), max(projs[2], projs[3]));
+
+    float originProj = minX * n.x + minY * n.y;
+    float mapDiag = dist(minX, minY, maxX, maxY) + maxLen * 2;
+    float stepT = min(spacing * 0.2f, maxLen * 0.2f);
+    stepT = max(stepT, maxLen * 0.05f);
+
+    app.pushStyle();
+    int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterHatchAlpha01);
+    app.stroke(strokeCol);
+    app.strokeWeight(max(0.6f, s.waterContourSizePx * 0.8f) / max(1e-6f, viewport.zoom));
+    app.strokeCap(PConstants.SQUARE);
+    app.noFill();
+
+    float startOff = floor((minProj - originProj) / spacing) * spacing + originProj;
+    for (float off = startOff; off <= maxProj + spacing * 0.5f; off += spacing) {
+      PVector base = new PVector(minX, minY);
+      base.add(PVector.mult(n, off - originProj));
+      PVector start = PVector.sub(base, PVector.mult(d, mapDiag));
+      int segState = 0; // 0=out,1=in
+      PVector segStart = null;
+      PVector lastIn = null;
+      for (float t = 0; t <= mapDiag * 2; t += stepT) {
+        PVector p = PVector.add(start, PVector.mult(d, t));
+        if (p.x < minX || p.x > maxX || p.y < minY || p.y > maxY) {
+          if (segState == 1 && segStart != null && lastIn != null) {
+            app.line(segStart.x, segStart.y, lastIn.x, lastIn.y);
+          }
+          segState = 0;
+          segStart = null;
+          lastIn = null;
+          continue;
+        }
+        float distVal = sampleGrid(g, p.x, p.y);
+        boolean inside = distVal > 0 && distVal <= maxLen;
+        if (inside && segState == 0) {
+          segState = 1;
+          segStart = p.copy();
+          lastIn = p.copy();
+        } else if (inside && segState == 1) {
+          lastIn = p.copy();
+        } else if (!inside && segState == 1) {
+          segState = 0;
+          if (segStart != null && lastIn != null) app.line(segStart.x, segStart.y, lastIn.x, lastIn.y);
+          segStart = null;
+          lastIn = null;
+        }
+      }
+      if (segState == 1 && segStart != null) {
+        PVector end = (lastIn != null) ? lastIn : PVector.add(start, PVector.mult(d, mapDiag * 2));
+        app.line(segStart.x, segStart.y, end.x, end.y);
       }
     }
     app.popStyle();

@@ -458,6 +458,10 @@ final int SLIDER_RENDER_STRUCT_SHADOW_ALPHA = 67;
 final int SLIDER_BIOME_SAT = 68;
 final int SLIDER_BIOME_BRI = 69;
 final int SLIDER_RENDER_BACKGROUND_NOISE = 70;
+final int SLIDER_RENDER_WATER_HATCH_ANGLE = 71;
+final int SLIDER_RENDER_WATER_HATCH_LENGTH = 72;
+final int SLIDER_RENDER_WATER_HATCH_SPACING = 73;
+final int SLIDER_RENDER_WATER_HATCH_ALPHA = 74;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -1624,6 +1628,10 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   contours.setFloat("waterCoastAlpha01", s.waterCoastAlpha01);
   contours.setFloat("waterRippleAlphaStart01", s.waterRippleAlphaStart01);
   contours.setFloat("waterRippleAlphaEnd01", s.waterRippleAlphaEnd01);
+  contours.setFloat("waterHatchAngleDeg", s.waterHatchAngleDeg);
+  contours.setFloat("waterHatchLengthPx", s.waterHatchLengthPx);
+  contours.setFloat("waterHatchSpacingPx", s.waterHatchSpacingPx);
+  contours.setFloat("waterHatchAlpha01", s.waterHatchAlpha01);
   contours.setInt("elevationLinesCount", s.elevationLinesCount);
   contours.setString("elevationLinesStyle", s.elevationLinesStyle.name());
   contours.setFloat("elevationLinesAlpha01", s.elevationLinesAlpha01);
@@ -1711,6 +1719,10 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.waterCoastAlpha01 = b.getFloat("waterCoastAlpha01", target.waterContourAlpha01);
     target.waterRippleAlphaStart01 = b.getFloat("waterRippleAlphaStart01", target.waterContourAlpha01);
     target.waterRippleAlphaEnd01 = b.getFloat("waterRippleAlphaEnd01", target.waterRippleAlphaStart01);
+    target.waterHatchAngleDeg = b.getFloat("waterHatchAngleDeg", target.waterHatchAngleDeg);
+    target.waterHatchLengthPx = b.getFloat("waterHatchLengthPx", target.waterHatchLengthPx);
+    target.waterHatchSpacingPx = b.getFloat("waterHatchSpacingPx", target.waterHatchSpacingPx);
+    target.waterHatchAlpha01 = b.getFloat("waterHatchAlpha01", target.waterHatchAlpha01);
     target.waterContourAlpha01 = target.waterCoastAlpha01; // keep legacy field in sync
     target.elevationLinesCount = b.getInt("elevationLinesCount", target.elevationLinesCount);
     String style = b.getString("elevationLinesStyle", target.elevationLinesStyle.name());

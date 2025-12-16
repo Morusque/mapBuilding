@@ -703,6 +703,30 @@ void updateActiveSlider(int mx, int my) {
       renderSettings.waterContourAlpha01 = renderSettings.waterCoastAlpha01; // keep legacy field aligned
       break;
     }
+    case SLIDER_RENDER_WATER_HATCH_ANGLE: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterHatchAngleSlider.x) / (float)l.waterHatchAngleSlider.w, 0, 1);
+      renderSettings.waterHatchAngleDeg = constrain(-90.0f + t * 180.0f, -90.0f, 90.0f);
+      break;
+    }
+    case SLIDER_RENDER_WATER_HATCH_LENGTH: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterHatchLengthSlider.x) / (float)l.waterHatchLengthSlider.w, 0, 1);
+      renderSettings.waterHatchLengthPx = constrain(t * 80.0f, 0, 80);
+      break;
+    }
+    case SLIDER_RENDER_WATER_HATCH_SPACING: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterHatchSpacingSlider.x) / (float)l.waterHatchSpacingSlider.w, 0, 1);
+      renderSettings.waterHatchSpacingPx = constrain(4.0f + t * (50.0f - 4.0f), 4.0f, 50.0f);
+      break;
+    }
+    case SLIDER_RENDER_WATER_HATCH_ALPHA: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.waterHatchAlphaSlider.x) / (float)l.waterHatchAlphaSlider.w, 0, 1);
+      renderSettings.waterHatchAlpha01 = t;
+      break;
+    }
     case SLIDER_RENDER_WATER_RIPPLE_ALPHA_START: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.waterRippleAlphaStartSlider.x) / (float)l.waterRippleAlphaStartSlider.w, 0, 1);

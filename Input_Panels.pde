@@ -1429,6 +1429,30 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_WATER_CONTOUR_ALPHA;
       return true;
     }
+    if (layout.waterHatchAngleSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterHatchAngleSlider.x) / (float)layout.waterHatchAngleSlider.w, 0, 1);
+      renderSettings.waterHatchAngleDeg = constrain(-90.0f + t * 180.0f, -90.0f, 90.0f);
+      activeSlider = SLIDER_RENDER_WATER_HATCH_ANGLE;
+      return true;
+    }
+    if (layout.waterHatchLengthSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterHatchLengthSlider.x) / (float)layout.waterHatchLengthSlider.w, 0, 1);
+      renderSettings.waterHatchLengthPx = constrain(t * 400.0f, 0, 400);
+      activeSlider = SLIDER_RENDER_WATER_HATCH_LENGTH;
+      return true;
+    }
+    if (layout.waterHatchSpacingSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterHatchSpacingSlider.x) / (float)layout.waterHatchSpacingSlider.w, 0, 1);
+      renderSettings.waterHatchSpacingPx = constrain(t * 120.0f, 0, 120.0f);
+      activeSlider = SLIDER_RENDER_WATER_HATCH_SPACING;
+      return true;
+    }
+    if (layout.waterHatchAlphaSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.waterHatchAlphaSlider.x) / (float)layout.waterHatchAlphaSlider.w, 0, 1);
+      renderSettings.waterHatchAlpha01 = t;
+      activeSlider = SLIDER_RENDER_WATER_HATCH_ALPHA;
+      return true;
+    }
     if (layout.waterRippleAlphaStartSlider.contains(mx, my)) {
       float t = constrain((mx - layout.waterRippleAlphaStartSlider.x) / (float)layout.waterRippleAlphaStartSlider.w, 0, 1);
       renderSettings.waterRippleAlphaStart01 = t;
