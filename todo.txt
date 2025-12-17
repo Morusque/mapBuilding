@@ -9,6 +9,7 @@ Mandatory for full first use milestone :
 Unfinished features :
 (later) Biomes : review "value" sliders
 (later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
+(later) are there existing formats for such tools to handle? (at least research)
 
 Bugs :
 (later) Paths : taping sometimes wrong (probably needs doubly connected edges and propagation done right)
@@ -16,10 +17,6 @@ Bugs :
 (later) write labels on top
 (later) trying to export with labels makes the thing crash with a NullPointerException or IllegalArgumentException: Width (0) and height (0) cannot be <= 0
 (later) some sliders don't work well
-
-Should be easy :
-(later) are there existing formats for such tools to handle? (at least research)
-(later) write a more consistent readme file
 
 Other :
 (maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
