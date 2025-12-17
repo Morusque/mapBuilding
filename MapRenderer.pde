@@ -622,6 +622,7 @@ class MapRenderer {
     int landBase = hsbColor(s.landHue01, s.landSat01, s.landBri01, 1.0f);
     int waterBase = hsbColor(s.waterHue01, s.waterSat01, s.waterBri01, 1.0f);
     int[] biomeScaledCols = buildBiomeScaledColors(s);
+    HashMap<String, PImage> framePatternCache = new HashMap<String, PImage>();
 
     // Base fills
     app.noStroke();
@@ -686,7 +687,12 @@ class MapRenderer {
         PImage pattern = null;
         boolean canPattern = false;
         if (usePattern && patName != null) {
-          pattern = getPattern(app, patName);
+          if (framePatternCache.containsKey(patName)) {
+            pattern = framePatternCache.get(patName);
+          } else {
+            pattern = getPattern(app, patName);
+            framePatternCache.put(patName, pattern);
+          }
           canPattern = (pattern != null);
         }
         if (usePattern && canPattern && s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN) {
@@ -928,6 +934,14 @@ class MapRenderer {
 
   // ------- Pattern cache -------
   private HashMap<String, PImage> patternCache = new HashMap<String, PImage>();
+  private int[] cachedBiomeScaledColors = null;
+  private int[] cachedBiomeSrcCols = null;
+  private float cachedBiomeSatScale = -1;
+  private float cachedBiomeBriScale = -1;
+  private int[] cachedZoneStrokeColors = null;
+  private int[] cachedZoneSrcCols = null;
+  private float cachedZoneSatScale = -1;
+  private float cachedZoneBriScale = -1;
   private PImage getNoiseTexture(PApplet app) {
     if (noiseTex != null && noiseTex.width == NOISE_TEX_SIZE && noiseTex.height == NOISE_TEX_SIZE) return noiseTex;
     noiseTex = app.createImage(NOISE_TEX_SIZE, NOISE_TEX_SIZE, PConstants.ARGB);
@@ -1285,38 +1299,8 @@ class MapRenderer {
     boolean drawZones = s.zoneStrokeAlpha01 > 1e-4f;
     boolean drawBiomes = s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f);
     boolean drawWater = s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f;
-    int[] zoneStrokeCols = null;
-    if (drawZones && model.zones != null && !model.zones.isEmpty()) {
-      zoneStrokeCols = new int[model.zones.size()];
-      for (int i = 0; i < model.zones.size(); i++) {
-        MapModel.MapZone z = model.zones.get(i);
-        if (z == null) {
-          zoneStrokeCols[i] = -1;
-          continue;
-        }
-        float[] hsb = new float[3];
-        rgbToHSB01(z.col, hsb);
-        float sat = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
-        float bri = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
-        zoneStrokeCols[i] = hsb01ToRGB(hsb[0], sat, bri);
-      }
-    }
-    int[] biomeScaledCols = null;
-    if (drawBiomes && model.biomeTypes != null && !model.biomeTypes.isEmpty()) {
-      biomeScaledCols = new int[model.biomeTypes.size()];
-      for (int i = 0; i < model.biomeTypes.size(); i++) {
-        ZoneType zt = model.biomeTypes.get(i);
-        if (zt == null) {
-          biomeScaledCols[i] = -1;
-          continue;
-        }
-        float[] hsb = new float[3];
-        rgbToHSB01(zt.col, hsb);
-        float sat = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
-        float bri = constrain(hsb[2] * s.biomeBriScale01, 0, 1);
-        biomeScaledCols[i] = hsb01ToRGB(hsb[0], sat, bri);
-      }
-    }
+    int[] zoneStrokeCols = drawZones ? buildZoneStrokeColors(s) : null;
+    int[] biomeScaledCols = drawBiomes ? buildBiomeScaledColors(s) : null;
 
     float eps2 = 1e-6f;
     float zoneW = 2.0f / viewport.zoom;
@@ -1526,22 +1510,79 @@ class MapRenderer {
   private int[] buildBiomeScaledColors(RenderSettings s) {
     if (model == null || model.biomeTypes == null || model.biomeTypes.isEmpty()) return null;
     int n = model.biomeTypes.size();
-    int[] out = new int[n];
     float satScale = (s != null) ? s.biomeSatScale01 : 1.0f;
     float briScale = (s != null) ? s.biomeBriScale01 : 1.0f;
+    boolean needRebuild = false;
+    if (cachedBiomeScaledColors == null || cachedBiomeScaledColors.length != n) needRebuild = true;
+    if (cachedBiomeSrcCols == null || cachedBiomeSrcCols.length != n) needRebuild = true;
+    if (!needRebuild && (abs(cachedBiomeSatScale - satScale) > 1e-6f || abs(cachedBiomeBriScale - briScale) > 1e-6f)) needRebuild = true;
+    if (!needRebuild) {
+      for (int i = 0; i < n; i++) {
+        ZoneType zt = model.biomeTypes.get(i);
+        int src = (zt != null) ? zt.col : -1;
+        if (cachedBiomeSrcCols[i] != src) { needRebuild = true; break; }
+      }
+    }
+    if (!needRebuild) return cachedBiomeScaledColors;
+
+    cachedBiomeScaledColors = new int[n];
+    cachedBiomeSrcCols = new int[n];
+    cachedBiomeSatScale = satScale;
+    cachedBiomeBriScale = briScale;
     for (int i = 0; i < n; i++) {
       ZoneType zt = model.biomeTypes.get(i);
       if (zt == null) {
-        out[i] = -1;
+        cachedBiomeScaledColors[i] = -1;
+        cachedBiomeSrcCols[i] = -1;
         continue;
       }
+      cachedBiomeSrcCols[i] = zt.col;
       float[] hsb = new float[3];
       rgbToHSB01(zt.col, hsb);
       float sat = constrain(hsb[1] * satScale, 0, 1);
       float bri = constrain(hsb[2] * briScale, 0, 1);
-      out[i] = hsb01ToRGB(hsb[0], sat, bri);
+      cachedBiomeScaledColors[i] = hsb01ToRGB(hsb[0], sat, bri);
     }
-    return out;
+    return cachedBiomeScaledColors;
+  }
+
+  private int[] buildZoneStrokeColors(RenderSettings s) {
+    if (model == null || model.zones == null || model.zones.isEmpty() || s == null) return null;
+    int n = model.zones.size();
+    float satScale = s.zoneStrokeSatScale01;
+    float briScale = s.zoneStrokeBriScale01;
+    boolean needRebuild = false;
+    if (cachedZoneStrokeColors == null || cachedZoneStrokeColors.length != n) needRebuild = true;
+    if (cachedZoneSrcCols == null || cachedZoneSrcCols.length != n) needRebuild = true;
+    if (!needRebuild && (abs(cachedZoneSatScale - satScale) > 1e-6f || abs(cachedZoneBriScale - briScale) > 1e-6f)) needRebuild = true;
+    if (!needRebuild) {
+      for (int i = 0; i < n; i++) {
+        MapModel.MapZone z = model.zones.get(i);
+        int src = (z != null) ? z.col : -1;
+        if (cachedZoneSrcCols[i] != src) { needRebuild = true; break; }
+      }
+    }
+    if (!needRebuild) return cachedZoneStrokeColors;
+
+    cachedZoneStrokeColors = new int[n];
+    cachedZoneSrcCols = new int[n];
+    cachedZoneSatScale = satScale;
+    cachedZoneBriScale = briScale;
+    for (int i = 0; i < n; i++) {
+      MapModel.MapZone z = model.zones.get(i);
+      if (z == null) {
+        cachedZoneStrokeColors[i] = -1;
+        cachedZoneSrcCols[i] = -1;
+        continue;
+      }
+      cachedZoneSrcCols[i] = z.col;
+      float[] hsb = new float[3];
+      rgbToHSB01(z.col, hsb);
+      float sat = constrain(hsb[1] * satScale, 0, 1);
+      float bri = constrain(hsb[2] * briScale, 0, 1);
+      cachedZoneStrokeColors[i] = hsb01ToRGB(hsb[0], sat, bri);
+    }
+    return cachedZoneStrokeColors;
   }
 
 }
