@@ -1134,8 +1134,7 @@ boolean handleStructuresPanelClick(int mx, int my) {
     float t = constrain((mx - layout.angleSlider.x) / (float)layout.angleSlider.w, 0, 1);
     float angDeg = -180.0f + t * 360.0f;
     float angRad = radians(angDeg);
-    float snapBase = (hasSelection && !info.angleMixed) ? (info.sharedAngleRad - info.sharedAngleOffsetRad) : 0.0f;
-    structureAngleOffsetRad = angRad - snapBase;
+    structureAngleOffsetRad = angRad;
     if (hasSelection) {
       for (int idx : selectedStructureIndices) {
         if (idx < 0 || idx >= mapModel.structures.size()) continue;

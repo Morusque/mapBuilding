@@ -489,12 +489,12 @@ class MapModel {
     float snapRange = max(0.01f, snapRangePx / max(1e-3f, viewport.zoom));
 
     StructureSnapMode align = at.alignment;
-    float angleOffset = at.angleOffsetRad;
+    float angleAbs = at.angleRad;
 
     if (align == StructureSnapMode.NONE) {
       s.snapBinding.type = StructureSnapTargetType.NONE;
       s.snapBinding.snapAngleRad = lastStructureSnapAngle;
-      s.angle = lastStructureSnapAngle + angleOffset;
+      s.angle = angleAbs;
       return s;
     }
 
@@ -529,7 +529,7 @@ class MapModel {
         s.y = p.y + ny * offset;
       }
       lastStructureSnapAngle = ang;
-      s.angle = ang + angleOffset;
+      s.angle = ang;
       s.snapBinding.type = StructureSnapTargetType.PATH;
       s.snapBinding.pathIndex = seg.pathIndex;
       s.snapBinding.routeIndex = seg.routeIndex;
@@ -567,7 +567,7 @@ class MapModel {
         s.y = p.y + ny * offset;
       }
       lastStructureSnapAngle = ang;
-      s.angle = ang + angleOffset;
+      s.angle = ang;
       s.snapBinding.type = StructureSnapTargetType.FRONTIER;
       s.snapBinding.cellA = guide.cellA;
       s.snapBinding.cellB = guide.cellB;
@@ -601,7 +601,7 @@ class MapModel {
         s.x = closest.x + cos(ang) * targetDist;
         s.y = closest.y + sin(ang) * targetDist;
         lastStructureSnapAngle = ang;
-        s.angle = ang + angleOffset;
+        s.angle = ang;
         s.snapBinding.type = StructureSnapTargetType.STRUCTURE;
         s.snapBinding.structureIndex = structures.indexOf(closest);
         s.snapBinding.snapAngleRad = ang;
@@ -612,14 +612,14 @@ class MapModel {
 
     s.snapBinding.type = StructureSnapTargetType.NONE;
     s.snapBinding.snapAngleRad = lastStructureSnapAngle;
-    s.angle = lastStructureSnapAngle + angleOffset;
+    s.angle = angleAbs;
     return s;
   }
 
   Structure computeSnappedStructure(float wx, float wy, float size) {
     StructureAttributes attrs = new StructureAttributes();
     attrs.size = size;
-    attrs.angleOffsetRad = structureAngleOffsetRad;
+    attrs.angleRad = structureAngleOffsetRad;
     attrs.shape = structureShape;
     attrs.alignment = structureSnapMode;
     attrs.aspectRatio = structureAspectRatio;

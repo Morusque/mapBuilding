@@ -485,9 +485,7 @@ void updateActiveSlider(int mx, int my) {
       t = constrain(t, 0, 1);
       float angDeg = -180.0f + t * 360.0f;
       float angRad = radians(angDeg);
-      StructureSelectionInfo info = gatherStructureSelectionInfo();
-      float snapBase = (info.hasSelection && !info.angleMixed) ? (info.sharedAngleRad - info.sharedAngleOffsetRad) : 0.0f;
-      structureAngleOffsetRad = angRad - snapBase;
+      structureAngleOffsetRad = angRad;
       if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
         for (int idx : selectedStructureIndices) {
           if (idx < 0 || idx >= mapModel.structures.size()) continue;

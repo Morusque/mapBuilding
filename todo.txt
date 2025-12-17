@@ -8,7 +8,6 @@ Mandatory for full first use milestone :
 
 Unfinished features :
 (later) Biomes : review "value" sliders
-(later) Structures : exact meaning of angle (absolute vs offset)
 (later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
 
 Bugs :

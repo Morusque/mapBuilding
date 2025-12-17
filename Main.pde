@@ -222,7 +222,6 @@ class StructureSelectionInfo {
   String sharedComment = "";
   float sharedSize = 0.02f;
   float sharedAngleRad = 0.0f;
-  float sharedAngleOffsetRad = 0.0f;
   float sharedRatio = 1.0f;
   StructureShape sharedShape = StructureShape.RECTANGLE;
   StructureSnapMode sharedAlignment = StructureSnapMode.NEXT_TO_PATH;
@@ -238,7 +237,6 @@ StructureSelectionInfo gatherStructureSelectionInfo() {
   info.sharedComment = structureCommentDraft;
   info.sharedSize = structureSize;
   info.sharedAngleRad = structureAngleOffsetRad;
-  info.sharedAngleOffsetRad = structureAngleOffsetRad;
   info.sharedRatio = structureAspectRatio;
   info.sharedShape = structureShape;
   info.sharedAlignment = structureSnapMode;
@@ -268,8 +266,6 @@ StructureSelectionInfo gatherStructureSelectionInfo() {
       info.sharedComment = (s.comment != null) ? s.comment : "";
       info.sharedSize = s.size;
       info.sharedAngleRad = s.angle;
-      float snapAngle = (s.snapBinding != null) ? s.snapBinding.snapAngleRad : 0.0f;
-      info.sharedAngleOffsetRad = s.angle - snapAngle;
       info.sharedRatio = s.aspect;
       info.sharedShape = s.shape;
       info.sharedAlignment = s.alignment;
@@ -289,7 +285,7 @@ StructureSelectionInfo gatherStructureSelectionInfo() {
       info.commentMixed = !cm.equals(info.sharedComment);
     }
     if (!info.sizeMixed && abs(info.sharedSize - s.size) > 1e-6f) info.sizeMixed = true;
-    if (!info.angleMixed && abs(info.sharedAngleRad - s.angle) > 1e-6f) info.angleMixed = true;
+      if (!info.angleMixed && abs(info.sharedAngleRad - s.angle) > 1e-6f) info.angleMixed = true;
     if (!info.ratioMixed && abs(info.sharedRatio - s.aspect) > 1e-6f) info.ratioMixed = true;
     if (!info.shapeMixed && info.sharedShape != s.shape) info.shapeMixed = true;
     if (!info.alignmentMixed && info.sharedAlignment != s.alignment) info.alignmentMixed = true;
@@ -310,7 +306,7 @@ StructureSelectionInfo gatherStructureSelectionInfo() {
   if (!info.nameMixed) structureNameDraft = info.sharedName;
   if (!info.commentMixed) structureCommentDraft = info.sharedComment;
   if (!info.sizeMixed) structureSize = info.sharedSize;
-  if (!info.angleMixed) structureAngleOffsetRad = info.sharedAngleOffsetRad;
+  if (!info.angleMixed) structureAngleOffsetRad = info.sharedAngleRad;
   if (!info.ratioMixed) structureAspectRatio = info.sharedRatio;
   if (!info.shapeMixed) structureShape = info.sharedShape;
   if (!info.alignmentMixed) structureSnapMode = info.sharedAlignment;

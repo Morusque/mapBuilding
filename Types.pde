@@ -172,7 +172,7 @@ class StructureAttributes {
   String name = "";
   String comment = "";
   float size = 0.02f;
-  float angleOffsetRad = 0.0f;
+  float angleRad = 0.0f;
   StructureShape shape = StructureShape.RECTANGLE;
   StructureSnapMode alignment = StructureSnapMode.NEXT_TO_PATH;
   float aspectRatio = 1.0f;
@@ -186,7 +186,7 @@ class StructureAttributes {
     c.name = name;
     c.comment = comment;
     c.size = size;
-    c.angleOffsetRad = angleOffsetRad;
+    c.angleRad = angleRad;
     c.shape = shape;
     c.alignment = alignment;
     c.aspectRatio = aspectRatio;
@@ -202,6 +202,7 @@ class StructureAttributes {
     s.name = (name != null) ? name : "";
     s.comment = (comment != null) ? comment : "";
     s.size = size;
+    s.angle = angleRad;
     s.shape = shape;
     s.aspect = aspectRatio;
     s.alignment = alignment;
@@ -357,6 +358,7 @@ StructureAttributes structureAttributesFromStructure(Structure s) {
   a.name = s.name;
   a.comment = s.comment;
   a.size = s.size;
+  a.angleRad = s.angle;
   a.shape = s.shape;
   a.alignment = s.alignment;
   a.aspectRatio = s.aspect;
@@ -364,8 +366,6 @@ StructureAttributes structureAttributesFromStructure(Structure s) {
   a.sat01 = s.sat01;
   a.alpha01 = s.alpha01;
   a.strokeWeightPx = s.strokeWeightPx;
-  float baseAngle = (s.snapBinding != null) ? s.snapBinding.snapAngleRad : 0.0f;
-  a.angleOffsetRad = s.angle - baseAngle;
   return a;
 }
 
