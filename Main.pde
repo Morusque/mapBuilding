@@ -651,7 +651,7 @@ color hsb01ToColor(float h, float s, float b) {
 }
 
 void settings() {
-  size(1200, 800, P2D);
+  size(1300, 800, P2D);
 }
 
 void setup() {
