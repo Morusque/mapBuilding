@@ -882,11 +882,9 @@ class MapRenderer {
   }
 
   private int hsbColor(PApplet app, float h, float s, float b, float a) {
-    app.pushStyle();
-    app.colorMode(PConstants.HSB, 1.0f, 1.0f, 1.0f, 1.0f);
-    int c = app.color(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1), constrain(a, 0, 1));
-    app.popStyle();
-    return c;
+    int rgb = hsb01ToRGB(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1));
+    int ai = constrain(round(constrain(a, 0, 1) * 255.0f), 0, 255);
+    return (ai << 24) | (rgb & 0x00FFFFFF);
   }
 
   private void drawPatternPoly(PApplet app, ArrayList<PVector> verts, PImage pattern, int tintCol, float alpha01) {
