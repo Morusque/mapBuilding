@@ -783,16 +783,15 @@ boolean handlePathsPanelClick(int mx, int my) {
   // Add path type
   if (queueButtonAction(layout.typeAddBtn, new Runnable() { public void run() {
     int n = mapModel.pathTypes.size();
-    if (n < PATH_TYPE_PRESETS.length) {
-      PathType pt = mapModel.makePathTypeFromPreset(n);
-      if (pt != null) {
-        mapModel.addPathType(pt);
-        activePathTypeIndex = mapModel.pathTypes.size() - 1;
-        syncActivePathTypeGlobals();
-        selectedPathIndex = -1;
-        pendingPathStart = null;
-        editingPathNameIndex = -1;
-      }
+    int presetIdx = min(n, PATH_TYPE_PRESETS.length - 1); // after last preset, keep using the last one
+    PathType pt = mapModel.makePathTypeFromPreset(presetIdx);
+    if (pt != null) {
+      mapModel.addPathType(pt);
+      activePathTypeIndex = mapModel.pathTypes.size() - 1;
+      syncActivePathTypeGlobals();
+      selectedPathIndex = -1;
+      pendingPathStart = null;
+      editingPathNameIndex = -1;
     }
   }})) return true;
 

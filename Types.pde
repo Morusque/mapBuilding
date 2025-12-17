@@ -133,24 +133,39 @@ PathTypePreset[] PATH_TYPE_PRESETS = new PathTypePreset[] {
   new PathTypePreset("Rail",    color(70, 70, 70),    2.8f, 1.2f, PathRouteMode.PATHFIND, 700.0f,  true,  false),
   new PathTypePreset("Pipeline",color(120, 120, 120), 2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,    true,  false),
   new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,    false, false),
-  new PathTypePreset("Path",    color(0, 0, 0),       2.0f, 0.8f, PathRouteMode.ENDS,     0.0f,    false, false)
 };
 
 // ---------- Color helpers for HSB<->RGB in [0..1] ----------
 // The "01" suffix means values are normalized [0..1] instead of Processing's default 0..255.
 
 void rgbToHSB01(int c, float[] outHSB) {
-  // Use Processing's HSB colorMode temporarily
-  pushStyle();
-  colorMode(HSB, 1, 1, 1);
-  float h = hue(c);
-  float s = saturation(c);
-  float b = brightness(c);
-  popStyle();
+  int r = (c >> 16) & 0xFF;
+  int g = (c >> 8) & 0xFF;
+  int b = c & 0xFF;
+  float rf = r / 255.0f;
+  float gf = g / 255.0f;
+  float bf = b / 255.0f;
+  float maxc = max(rf, max(gf, bf));
+  float minc = min(rf, min(gf, bf));
+  float delta = maxc - minc;
+  float h;
+  if (delta < 1e-6f) {
+    h = 0.0f;
+  } else if (maxc == rf) {
+    h = ((gf - bf) / delta) % 6.0f;
+  } else if (maxc == gf) {
+    h = ((bf - rf) / delta) + 2.0f;
+  } else {
+    h = ((rf - gf) / delta) + 4.0f;
+  }
+  h /= 6.0f;
+  if (h < 0) h += 1.0f;
+  float s = (maxc <= 0.0f) ? 0.0f : (delta / maxc);
+  float v = maxc;
 
-  outHSB[0] = h;
-  outHSB[1] = s;
-  outHSB[2] = b;
+  outHSB[0] = constrain(h, 0, 1);
+  outHSB[1] = constrain(s, 0, 1);
+  outHSB[2] = constrain(v, 0, 1);
 }
 
 int hsb01ToRGB(float h, float s, float b) {
@@ -158,12 +173,27 @@ int hsb01ToRGB(float h, float s, float b) {
   s = constrain(s, 0, 1);
   b = constrain(b, 0, 1);
 
-  pushStyle();
-  colorMode(HSB, 1, 1, 1);
-  int c = color(h, s, b);
-  popStyle();
+  float hh = (h * 6.0f) % 6.0f;
+  int sector = floor(hh);
+  float f = hh - sector;
+  float p = b * (1 - s);
+  float q = b * (1 - s * f);
+  float t = b * (1 - s * (1 - f));
+  float rf = 0, gf = 0, bf = 0;
+  switch (sector) {
+    case 0: rf = b; gf = t; bf = p; break;
+    case 1: rf = q; gf = b; bf = p; break;
+    case 2: rf = p; gf = b; bf = t; break;
+    case 3: rf = p; gf = q; bf = b; break;
+    case 4: rf = t; gf = p; bf = b; break;
+    case 5: default: rf = b; gf = p; bf = q; break;
+  }
 
-  return c;
+  int ri = constrain(round(rf * 255.0f), 0, 255);
+  int gi = constrain(round(gf * 255.0f), 0, 255);
+  int bi = constrain(round(bf * 255.0f), 0, 255);
+  return 0xFF000000 | (ri << 16) | (gi << 8) | bi;
+
 }
 
 // ---------- Structures ----------

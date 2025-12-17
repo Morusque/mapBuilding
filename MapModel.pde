@@ -1699,7 +1699,6 @@ class MapModel {
     int roadType = ensurePathTypeByName("Road");
     int riverType = ensurePathTypeByName("River");
     int bridgeType = ensurePathTypeByName("Bridge");
-    int trailType = ensurePathTypeByName("Trail");
     float worldW = maxX - minX;
     float worldH = maxY - minY;
     float stepLen = max(1e-4f, min(worldW, worldH) * 0.02f);
@@ -1767,7 +1766,6 @@ class MapModel {
     ArrayList<PVector[]> existingSegs = collectAllPathSegments();
 
     // Rivers
-    int riversPlaced = 0;
     for (int i = 0; i < 5; i++) {
       if (coastPts.isEmpty()) break;
       PVector start = coastPts.get((int)random(coastPts.size()));
@@ -1775,7 +1773,6 @@ class MapModel {
       if (route == null || route.size() < 2) continue;
       addPathFromPoints(riverType, "River " + (paths.size() + 1), route);
       existingSegs = collectAllPathSegments();
-      riversPlaced++;
     }
     // Interest points (snap to nearest cell vertex)
     ArrayList<PVector> interest = new ArrayList<PVector>();
@@ -2092,7 +2089,6 @@ class MapModel {
 
   ArrayList<PVector> growRiver(PVector start, float seaLevel, float stepLen, ArrayList<PVector[]> avoid) {
     if (start == null) return null;
-    long riverStart = millis();
     ArrayList<PVector> pts = new ArrayList<PVector>();
     pts.add(start.copy());
     PVector dir = new PVector(0, 1);
@@ -3605,8 +3601,9 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
   }
 
   PathType makePathTypeFromPreset(int presetIndex) {
-    if (presetIndex < 0 || presetIndex >= PATH_TYPE_PRESETS.length) return null;
-    PathTypePreset p = PATH_TYPE_PRESETS[presetIndex];
+    if (presetIndex < 0) return null;
+    int idx = min(presetIndex, PATH_TYPE_PRESETS.length - 1);
+    PathTypePreset p = PATH_TYPE_PRESETS[idx];
     return new PathType(p.name, p.col, p.weightPx, p.minWeightPx, p.routeMode, p.slopeBias, p.avoidWater, p.taperOn);
   }
 
@@ -4747,14 +4744,13 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     if (!structures.isEmpty()) {
       ArrayList<Float> sizes = new ArrayList<Float>();
       for (Structure s : structures) if (s != null && s.size > 1e-6f) sizes.add(s.size);
-      if (!sizes.isEmpty()) {
-        Collections.sort(sizes);
-        baseSize = sizes.get(sizes.size() / 2);
-      }
+    if (!sizes.isEmpty()) {
+      Collections.sort(sizes);
+      baseSize = sizes.get(sizes.size() / 2);
     }
-    float townSize = baseSize * 2.5f;
-    float buildingSize = baseSize * (0.4f + 0.5f * (1 - buildingDensity));
-    float townKeepout = townSize * 3.0f;
+  }
+  float townSize = baseSize * 2.5f;
+  float buildingSize = baseSize * (0.4f + 0.5f * (1 - buildingDensity));
 
     // Collect candidate points for towns
     class Cand {
@@ -5073,7 +5069,6 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
 
   boolean labelSpotFree(float x, float y, float radius, ArrayList<MapLabel> list) {
     if (list == null) return true;
-    float r2 = radius * radius;
     for (MapLabel l : list) {
       if (l == null || l.text == null) continue;
       float otherR = estimateLabelRadius(l.text, l.size);

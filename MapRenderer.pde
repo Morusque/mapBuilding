@@ -889,11 +889,6 @@ class MapRenderer {
     return c;
   }
 
-  private float wrap01(float t) {
-    float f = t - floor(t);
-    return (f < 0) ? f + 1.0f : f;
-  }
-
   private void drawPatternPoly(PApplet app, ArrayList<PVector> verts, PImage pattern, int tintCol, float alpha01) {
     if (verts == null || verts.size() < 3 || pattern == null) return;
     if (pattern.width <= 0 || pattern.height <= 0) return;

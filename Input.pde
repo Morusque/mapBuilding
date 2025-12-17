@@ -267,23 +267,35 @@ void mouseReleased() {
 
 void updateActiveSlider(int mx, int my) {
   if (my < -99999) return; // retain parameter to avoid unused warning
+  SitesLayout sitesLayout = null;
+  BiomesLayout biomesLayout = null;
+  ElevationLayout elevationLayout = null;
+  PathsLayout pathsLayout = null;
+  ZonesLayout zonesLayout = null;
+  ZonesListLayout zonesListLayout = null;
+  StructuresLayout structuresLayout = null;
+  RenderLayout renderLayout = null;
+  ExportLayout exportLayout = null;
   switch (activeSlider) {
     case SLIDER_SITES_DENSITY: {
-      SitesLayout l = buildSitesLayout();
+      if (sitesLayout == null) sitesLayout = buildSitesLayout();
+      SitesLayout l = sitesLayout;
       float t = (mx - l.densitySlider.x) / (float)l.densitySlider.w;
       int newCount = round(t * MAX_SITE_COUNT);
       siteTargetCount = constrain(newCount, 0, MAX_SITE_COUNT);
       break;
     }
     case SLIDER_SITES_FUZZ: {
-      SitesLayout l = buildSitesLayout();
+      if (sitesLayout == null) sitesLayout = buildSitesLayout();
+      SitesLayout l = sitesLayout;
       float t = (mx - l.fuzzSlider.x) / (float)l.fuzzSlider.w;
       t = constrain(t, 0, 1);
       siteFuzz = t * 0.3f;
       break;
     }
     case SLIDER_SITES_MODE: {
-      SitesLayout l = buildSitesLayout();
+      if (sitesLayout == null) sitesLayout = buildSitesLayout();
+      SitesLayout l = sitesLayout;
       int modeCount = placementModes.length;
       float t = (mx - l.modeSlider.x) / (float)l.modeSlider.w;
       t = constrain(t, 0, 1);
@@ -292,7 +304,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_BIOME_HUE: {
-      BiomesLayout l = buildBiomesLayout();
+      if (biomesLayout == null) biomesLayout = buildBiomesLayout();
+      BiomesLayout l = biomesLayout;
       float t = (mx - l.hueSlider.x) / (float)l.hueSlider.w;
       t = constrain(t, 0, 1);
       if (mapModel.biomeTypes != null && activeBiomeIndex >= 0 && activeBiomeIndex < mapModel.biomeTypes.size()) {
@@ -303,7 +316,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_BIOME_SAT: {
-      BiomesLayout l = buildBiomesLayout();
+      if (biomesLayout == null) biomesLayout = buildBiomesLayout();
+      BiomesLayout l = biomesLayout;
       float t = (mx - l.satSlider.x) / (float)l.satSlider.w;
       t = constrain(t, 0, 1);
       if (mapModel.biomeTypes != null && activeBiomeIndex >= 0 && activeBiomeIndex < mapModel.biomeTypes.size()) {
@@ -314,7 +328,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_BIOME_BRI: {
-      BiomesLayout l = buildBiomesLayout();
+      if (biomesLayout == null) biomesLayout = buildBiomesLayout();
+      BiomesLayout l = biomesLayout;
       float t = (mx - l.briSlider.x) / (float)l.briSlider.w;
       t = constrain(t, 0, 1);
       if (mapModel.biomeTypes != null && activeBiomeIndex >= 0 && activeBiomeIndex < mapModel.biomeTypes.size()) {
@@ -325,14 +340,16 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_BIOME_BRUSH: {
-      BiomesLayout l = buildBiomesLayout();
+      if (biomesLayout == null) biomesLayout = buildBiomesLayout();
+      BiomesLayout l = biomesLayout;
       float t = (mx - l.brushSlider.x) / (float)l.brushSlider.w;
       t = constrain(t, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
       break;
     }
     case SLIDER_BIOME_GEN_MODE: {
-      BiomesLayout l = buildBiomesLayout();
+      if (biomesLayout == null) biomesLayout = buildBiomesLayout();
+      BiomesLayout l = biomesLayout;
       int modeCount = biomeGenerateModes.length;
       float t = (mx - l.genModeSelector.x) / (float)l.genModeSelector.w;
       t = constrain(t, 0, 1);
@@ -341,14 +358,16 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_BIOME_GEN_VALUE: {
-      BiomesLayout l = buildBiomesLayout();
+      if (biomesLayout == null) biomesLayout = buildBiomesLayout();
+      BiomesLayout l = biomesLayout;
       float t = (mx - l.genValueSlider.x) / (float)l.genValueSlider.w;
       t = constrain(t, 0, 1);
       biomeGenerateValue01 = t;
       break;
     }
     case SLIDER_ELEV_SEA: {
-      ElevationLayout l = buildElevationLayout();
+      if (elevationLayout == null) elevationLayout = buildElevationLayout();
+      ElevationLayout l = elevationLayout;
       float t = (mx - l.seaSlider.x) / (float)l.seaSlider.w;
       t = constrain(t, 0, 1);
       float newSea = lerp(-1.2f, 1.2f, t);
@@ -359,28 +378,32 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_ELEV_RADIUS: {
-      ElevationLayout l = buildElevationLayout();
+      if (elevationLayout == null) elevationLayout = buildElevationLayout();
+      ElevationLayout l = elevationLayout;
       float t = (mx - l.radiusSlider.x) / (float)l.radiusSlider.w;
       t = constrain(t, 0, 1);
       elevationBrushRadius = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
       break;
     }
     case SLIDER_ELEV_STRENGTH: {
-      ElevationLayout l = buildElevationLayout();
+      if (elevationLayout == null) elevationLayout = buildElevationLayout();
+      ElevationLayout l = elevationLayout;
       float t = (mx - l.strengthSlider.x) / (float)l.strengthSlider.w;
       t = constrain(t, 0, 1);
       elevationBrushStrength = constrain(0.005f + t * (0.2f - 0.005f), 0.005f, 0.2f);
       break;
     }
     case SLIDER_ELEV_NOISE: {
-      ElevationLayout l = buildElevationLayout();
+      if (elevationLayout == null) elevationLayout = buildElevationLayout();
+      ElevationLayout l = elevationLayout;
       float t = (mx - l.noiseSlider.x) / (float)l.noiseSlider.w;
       t = constrain(t, 0, 1);
       elevationNoiseScale = constrain(1.0f + t * (12.0f - 1.0f), 1.0f, 12.0f);
       break;
     }
     case SLIDER_PATH_TYPE_HUE: {
-      PathsLayout l = buildPathsLayout();
+      if (pathsLayout == null) pathsLayout = buildPathsLayout();
+      PathsLayout l = pathsLayout;
       float t = (mx - l.typeHueSlider.x) / (float)l.typeHueSlider.w;
       t = constrain(t, 0, 1);
       if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
@@ -391,7 +414,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_PATH_TYPE_SAT: {
-      PathsLayout l = buildPathsLayout();
+      if (pathsLayout == null) pathsLayout = buildPathsLayout();
+      PathsLayout l = pathsLayout;
       float t = (mx - l.typeSatSlider.x) / (float)l.typeSatSlider.w;
       t = constrain(t, 0, 1);
       if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
@@ -402,7 +426,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_PATH_TYPE_BRI: {
-      PathsLayout l = buildPathsLayout();
+      if (pathsLayout == null) pathsLayout = buildPathsLayout();
+      PathsLayout l = pathsLayout;
       float t = (mx - l.typeBriSlider.x) / (float)l.typeBriSlider.w;
       t = constrain(t, 0, 1);
       if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
@@ -413,7 +438,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_PATH_TYPE_WEIGHT: {
-      PathsLayout l = buildPathsLayout();
+      if (pathsLayout == null) pathsLayout = buildPathsLayout();
+      PathsLayout l = pathsLayout;
       float t = (mx - l.typeWeightSlider.x) / (float)l.typeWeightSlider.w;
       t = constrain(t, 0, 1);
       if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
@@ -423,7 +449,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_PATH_TYPE_MIN_WEIGHT: {
-      PathsLayout l = buildPathsLayout();
+      if (pathsLayout == null) pathsLayout = buildPathsLayout();
+      PathsLayout l = pathsLayout;
       float t = (mx - l.typeMinWeightSlider.x) / (float)l.typeMinWeightSlider.w;
       t = constrain(t, 0, 1);
       if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
@@ -438,13 +465,15 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_ZONES_BRUSH: {
-      ZonesLayout l = buildZonesLayout();
+      if (zonesLayout == null) zonesLayout = buildZonesLayout();
+      ZonesLayout l = zonesLayout;
       float t = constrain((mx - l.brushSlider.x) / (float)l.brushSlider.w, 0, 1);
       zoneBrushRadius = constrain(0.01f + t * (0.15f - 0.01f), 0.01f, 0.15f);
       break;
     }
     case SLIDER_ZONES_ROW_HUE: {
-      ZonesListLayout l = buildZonesListLayout();
+      if (zonesListLayout == null) zonesListLayout = buildZonesListLayout();
+      ZonesListLayout l = zonesListLayout;
       populateZonesRows(l);
       if (activeZoneIndex >= 0 && activeZoneIndex < l.rows.size()) {
         ZoneRowLayout row = l.rows.get(activeZoneIndex);
@@ -456,7 +485,7 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_FLATTEST_BIAS: {
-      PathsLayout l = buildPathsLayout();
+      PathsLayout l = (pathsLayout != null) ? pathsLayout : (pathsLayout = buildPathsLayout());
       float t = (mx - l.flattestSlider.x) / (float)l.flattestSlider.w;
       t = constrain(t, 0, 1);
       flattestSlopeBias = constrain(FLATTEST_BIAS_MIN + t * (FLATTEST_BIAS_MAX - FLATTEST_BIAS_MIN),
@@ -465,7 +494,8 @@ void updateActiveSlider(int mx, int my) {
     }
     case SLIDER_STRUCT_SIZE:
     case SLIDER_STRUCT_SELECTED_SIZE: {
-      StructuresLayout l = buildStructuresLayout();
+      if (structuresLayout == null) structuresLayout = buildStructuresLayout();
+      StructuresLayout l = structuresLayout;
       float t = (mx - l.sizeSlider.x) / (float)l.sizeSlider.w;
       t = constrain(t, 0, 1);
       float newSize = constrain(0.01f + t * (0.2f - 0.01f), 0.01f, 0.2f);
@@ -480,7 +510,8 @@ void updateActiveSlider(int mx, int my) {
     }
     case SLIDER_STRUCT_ANGLE:
     case SLIDER_STRUCT_SELECTED_ANGLE: {
-      StructuresLayout l = buildStructuresLayout();
+      if (structuresLayout == null) structuresLayout = buildStructuresLayout();
+      StructuresLayout l = structuresLayout;
       float t = (mx - l.angleSlider.x) / (float)l.angleSlider.w;
       t = constrain(t, 0, 1);
       float angDeg = -180.0f + t * 360.0f;
@@ -495,7 +526,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_STRUCT_RATIO: {
-      StructuresLayout l = buildStructuresLayout();
+      if (structuresLayout == null) structuresLayout = buildStructuresLayout();
+      StructuresLayout l = structuresLayout;
       float t = constrain((mx - l.ratioSlider.x) / (float)l.ratioSlider.w, 0, 1);
       float newRatio = constrain(0.3f + t * (3.0f - 0.3f), 0.3f, 3.0f);
       structureAspectRatio = newRatio;
@@ -508,7 +540,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_STRUCT_SELECTED_HUE: {
-      StructuresLayout l = buildStructuresLayout();
+      if (structuresLayout == null) structuresLayout = buildStructuresLayout();
+      StructuresLayout l = structuresLayout;
       float t = constrain((mx - l.hueSlider.x) / (float)l.hueSlider.w, 0, 1);
       structureHue01 = t;
       if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
@@ -520,7 +553,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_STRUCT_SELECTED_ALPHA: {
-      StructuresLayout l = buildStructuresLayout();
+      if (structuresLayout == null) structuresLayout = buildStructuresLayout();
+      StructuresLayout l = structuresLayout;
       float t = constrain((mx - l.alphaSlider.x) / (float)l.alphaSlider.w, 0, 1);
       structureAlpha01 = t;
       if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
@@ -532,7 +566,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_STRUCT_SELECTED_SAT: {
-      StructuresLayout l = buildStructuresLayout();
+      if (structuresLayout == null) structuresLayout = buildStructuresLayout();
+      StructuresLayout l = structuresLayout;
       float t = constrain((mx - l.satSlider.x) / (float)l.satSlider.w, 0, 1);
       structureSat01 = t;
       if (selectedStructureIndices != null && !selectedStructureIndices.isEmpty()) {
@@ -544,7 +579,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_STRUCT_SELECTED_STROKE: {
-      StructuresLayout l = buildStructuresLayout();
+      if (structuresLayout == null) structuresLayout = buildStructuresLayout();
+      StructuresLayout l = structuresLayout;
       float t = constrain((mx - l.strokeSlider.x) / (float)l.strokeSlider.w, 0, 1);
       float w = constrain(0.5f + t * (4.0f - 0.5f), 0.5f, 4.0f);
       structureStrokePx = w;
@@ -557,237 +593,276 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_RENDER_LAND_H: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.landHSB[0].x) / (float)l.landHSB[0].w, 0, 1);
       renderSettings.landHue01 = t;
       break;
     }
     case SLIDER_RENDER_LAND_S: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.landHSB[1].x) / (float)l.landHSB[1].w, 0, 1);
       renderSettings.landSat01 = t;
       break;
     }
     case SLIDER_RENDER_LAND_B: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.landHSB[2].x) / (float)l.landHSB[2].w, 0, 1);
       renderSettings.landBri01 = t;
       break;
     }
     case SLIDER_RENDER_WATER_H: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterHSB[0].x) / (float)l.waterHSB[0].w, 0, 1);
       renderSettings.waterHue01 = t;
       break;
     }
     case SLIDER_RENDER_WATER_S: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterHSB[1].x) / (float)l.waterHSB[1].w, 0, 1);
       renderSettings.waterSat01 = t;
       break;
     }
     case SLIDER_RENDER_WATER_B: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterHSB[2].x) / (float)l.waterHSB[2].w, 0, 1);
       renderSettings.waterBri01 = t;
       break;
     }
     case SLIDER_RENDER_CELL_BORDER_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.cellBordersAlphaSlider.x) / (float)l.cellBordersAlphaSlider.w, 0, 1);
       renderSettings.cellBorderAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_BIOME_FILL_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.biomeFillAlphaSlider.x) / (float)l.biomeFillAlphaSlider.w, 0, 1);
       renderSettings.biomeFillAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_BIOME_SAT: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.biomeSatSlider.x) / (float)l.biomeSatSlider.w, 0, 1);
       renderSettings.biomeSatScale01 = t;
       break;
     }
     case SLIDER_RENDER_BIOME_BRI: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.biomeBriSlider.x) / (float)l.biomeBriSlider.w, 0, 1);
       renderSettings.biomeBriScale01 = t;
       break;
     }
     case SLIDER_RENDER_BIOME_OUTLINE_SIZE: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.biomeOutlineSizeSlider.x) / (float)l.biomeOutlineSizeSlider.w, 0, 1);
       renderSettings.biomeOutlineSizePx = constrain(t * 5.0f, 0, 5.0f);
       break;
     }
     case SLIDER_RENDER_BIOME_OUTLINE_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.biomeOutlineAlphaSlider.x) / (float)l.biomeOutlineAlphaSlider.w, 0, 1);
       renderSettings.biomeOutlineAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_BIOME_UNDERWATER_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.biomeUnderwaterAlphaSlider.x) / (float)l.biomeUnderwaterAlphaSlider.w, 0, 1);
       renderSettings.biomeUnderwaterAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_WATER_DEPTH_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterDepthAlphaSlider.x) / (float)l.waterDepthAlphaSlider.w, 0, 1);
       renderSettings.waterDepthAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_LIGHT_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.lightAlphaSlider.x) / (float)l.lightAlphaSlider.w, 0, 1);
       renderSettings.elevationLightAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_LIGHT_AZIMUTH: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.lightAzimuthSlider.x) / (float)l.lightAzimuthSlider.w, 0, 1);
       renderSettings.elevationLightAzimuthDeg = constrain(t * 360.0f, 0, 360);
       break;
     }
     case SLIDER_RENDER_LIGHT_ALTITUDE: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.lightAltitudeSlider.x) / (float)l.lightAltitudeSlider.w, 0, 1);
       renderSettings.elevationLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_SIZE: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterContourSizeSlider.x) / (float)l.waterContourSizeSlider.w, 0, 1);
       renderSettings.waterContourSizePx = constrain(t * 5.0f, 0, 5.0f);
       break;
     }
     case SLIDER_RENDER_WATER_RIPPLE_COUNT: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterRippleCountSlider.x) / (float)l.waterRippleCountSlider.w, 0, 1);
       renderSettings.waterRippleCount = constrain(round(t * 5.0f), 0, 5);
       break;
     }
     case SLIDER_RENDER_WATER_RIPPLE_DIST: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterRippleDistanceSlider.x) / (float)l.waterRippleDistanceSlider.w, 0, 1);
       renderSettings.waterRippleDistancePx = constrain(t * 40.0f, 0.0f, 40.0f);
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_H: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterContourHSB[0].x) / (float)l.waterContourHSB[0].w, 0, 1);
       renderSettings.waterContourHue01 = t;
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_S: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterContourHSB[1].x) / (float)l.waterContourHSB[1].w, 0, 1);
       renderSettings.waterContourSat01 = t;
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_B: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterContourHSB[2].x) / (float)l.waterContourHSB[2].w, 0, 1);
       renderSettings.waterContourBri01 = t;
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterContourCoastAlphaSlider.x) / (float)l.waterContourCoastAlphaSlider.w, 0, 1);
       renderSettings.waterCoastAlpha01 = t;
       renderSettings.waterContourAlpha01 = renderSettings.waterCoastAlpha01; // keep legacy field aligned
       break;
     }
     case SLIDER_RENDER_WATER_HATCH_ANGLE: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterHatchAngleSlider.x) / (float)l.waterHatchAngleSlider.w, 0, 1);
       renderSettings.waterHatchAngleDeg = constrain(-90.0f + t * 180.0f, -90.0f, 90.0f);
       break;
     }
     case SLIDER_RENDER_WATER_HATCH_LENGTH: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterHatchLengthSlider.x) / (float)l.waterHatchLengthSlider.w, 0, 1);
       renderSettings.waterHatchLengthPx = constrain(t * 80.0f, 0, 80);
       break;
     }
     case SLIDER_RENDER_WATER_HATCH_SPACING: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterHatchSpacingSlider.x) / (float)l.waterHatchSpacingSlider.w, 0, 1);
       renderSettings.waterHatchSpacingPx = constrain(4.0f + t * (50.0f - 4.0f), 4.0f, 50.0f);
       break;
     }
     case SLIDER_RENDER_WATER_HATCH_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterHatchAlphaSlider.x) / (float)l.waterHatchAlphaSlider.w, 0, 1);
       renderSettings.waterHatchAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_WATER_RIPPLE_ALPHA_START: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterRippleAlphaStartSlider.x) / (float)l.waterRippleAlphaStartSlider.w, 0, 1);
       renderSettings.waterRippleAlphaStart01 = t;
       break;
     }
     case SLIDER_RENDER_WATER_RIPPLE_ALPHA_END: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.waterRippleAlphaEndSlider.x) / (float)l.waterRippleAlphaEndSlider.w, 0, 1);
       renderSettings.waterRippleAlphaEnd01 = t;
       break;
     }
     case SLIDER_RENDER_ELEV_LINES_COUNT: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.elevationLinesCountSlider.x) / (float)l.elevationLinesCountSlider.w, 0, 1);
       renderSettings.elevationLinesCount = constrain(round(t * 24.0f), 0, 24);
       break;
     }
     case SLIDER_RENDER_ELEV_LINES_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.elevationLinesAlphaSlider.x) / (float)l.elevationLinesAlphaSlider.w, 0, 1);
       renderSettings.elevationLinesAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_PATH_SAT: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.pathSatSlider.x) / (float)l.pathSatSlider.w, 0, 1);
       renderSettings.pathSatScale01 = t;
       break;
     }
     case SLIDER_RENDER_ZONE_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.zoneAlphaSlider.x) / (float)l.zoneAlphaSlider.w, 0, 1);
       renderSettings.zoneStrokeAlpha01 = t;
       renderShowZoneOutlines = t > 0.001f;
       break;
     }
     case SLIDER_RENDER_ZONE_SAT: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.zoneSatSlider.x) / (float)l.zoneSatSlider.w, 0, 1);
       renderSettings.zoneStrokeSatScale01 = t;
       break;
     }
     case SLIDER_RENDER_ZONE_BRI: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.zoneBriSlider.x) / (float)l.zoneBriSlider.w, 0, 1);
       renderSettings.zoneStrokeBriScale01 = t;
       break;
     }
     case SLIDER_RENDER_LABEL_OUTLINE_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.labelsOutlineAlphaSlider.x) / (float)l.labelsOutlineAlphaSlider.w, 0, 1);
       renderSettings.labelOutlineAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_BACKGROUND_NOISE: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.backgroundNoiseSlider.x) / (float)l.backgroundNoiseSlider.w, 0, 1);
       renderSettings.backgroundNoiseAlpha01 = t;
       break;
     }
     case SLIDER_RENDER_STRUCT_SHADOW_ALPHA: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = constrain((mx - l.structuresShadowAlphaSlider.x) / (float)l.structuresShadowAlphaSlider.w, 0, 1);
       renderSettings.structureShadowAlpha01 = t;
       break;
@@ -798,7 +873,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_RENDER_PADDING: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       float t = (mx - l.exportPaddingSlider.x) / (float)l.exportPaddingSlider.w;
       t = constrain(t, 0, 1);
       renderSettings.exportPaddingPct = constrain(t * 0.10f, 0, 0.10f);
@@ -806,7 +882,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_RENDER_PRESET_SELECT: {
-      RenderLayout l = buildRenderLayout();
+      if (renderLayout == null) renderLayout = buildRenderLayout();
+      RenderLayout l = renderLayout;
       if (renderPresets != null && renderPresets.length > 0) {
         int n = max(1, renderPresets.length - 1);
         float t = constrain((mx - l.presetSelector.x) / (float)l.presetSelector.w, 0, 1);
@@ -816,7 +893,8 @@ void updateActiveSlider(int mx, int my) {
       break;
     }
     case SLIDER_EXPORT_SCALE: {
-      ExportLayout l = buildExportLayout();
+      if (exportLayout == null) exportLayout = buildExportLayout();
+      ExportLayout l = exportLayout;
       if (l.scaleSlider != null) {
         float t = constrain((mx - l.scaleSlider.x) / (float)l.scaleSlider.w, 0, 1);
         exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);
