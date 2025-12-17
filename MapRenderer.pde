@@ -621,21 +621,7 @@ class MapRenderer {
 
     int landBase = hsbColor(s.landHue01, s.landSat01, s.landBri01, 1.0f);
     int waterBase = hsbColor(s.waterHue01, s.waterSat01, s.waterBri01, 1.0f);
-    int biomeCount = (model.biomeTypes != null) ? model.biomeTypes.size() : 0;
-    float[][] biomeHSB = null;
-    int[] biomeScaledCols = null;
-    if (biomeCount > 0) {
-      biomeHSB = new float[biomeCount][3];
-      biomeScaledCols = new int[biomeCount];
-      for (int i = 0; i < biomeCount; i++) {
-        ZoneType zt = model.biomeTypes.get(i);
-        if (zt == null) continue;
-        rgbToHSB01(zt.col, biomeHSB[i]);
-        float sat = constrain(biomeHSB[i][1] * s.biomeSatScale01, 0, 1);
-        float bri = constrain(biomeHSB[i][2] * s.biomeBriScale01, 0, 1);
-        biomeScaledCols[i] = hsb01ToRGB(biomeHSB[i][0], sat, bri);
-      }
-    }
+    int[] biomeScaledCols = buildBiomeScaledColors(s);
 
     // Base fills
     app.noStroke();
@@ -1524,16 +1510,38 @@ class MapRenderer {
       return bx + "," + by + "-" + ax + "," + ay;
     }
   }
-}
 
-PImage generateNoiseTexture() {
-  PImage im = new PImage(1000,1000);
-  im.loadPixels();
-  for (int x=0;x<im.width;x++) {
-    for (int y=0;y<im.height;y++) {
-      im.pixels[y*im.width+x] = color(random(0x100));
+  PImage generateNoiseTexture() {
+    PImage im = new PImage(1000, 1000);
+    im.loadPixels();
+    for (int x = 0; x < im.width; x++) {
+      for (int y = 0; y < im.height; y++) {
+        im.pixels[y * im.width + x] = color(random(0x100));
+      }
     }
+    im.updatePixels();
+    return im;
   }
-  im.updatePixels();
-  return im;
+
+  private int[] buildBiomeScaledColors(RenderSettings s) {
+    if (model == null || model.biomeTypes == null || model.biomeTypes.isEmpty()) return null;
+    int n = model.biomeTypes.size();
+    int[] out = new int[n];
+    float satScale = (s != null) ? s.biomeSatScale01 : 1.0f;
+    float briScale = (s != null) ? s.biomeBriScale01 : 1.0f;
+    for (int i = 0; i < n; i++) {
+      ZoneType zt = model.biomeTypes.get(i);
+      if (zt == null) {
+        out[i] = -1;
+        continue;
+      }
+      float[] hsb = new float[3];
+      rgbToHSB01(zt.col, hsb);
+      float sat = constrain(hsb[1] * satScale, 0, 1);
+      float bri = constrain(hsb[2] * briScale, 0, 1);
+      out[i] = hsb01ToRGB(hsb[0], sat, bri);
+    }
+    return out;
+  }
+
 }
