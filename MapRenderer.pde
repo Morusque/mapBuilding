@@ -57,6 +57,16 @@ class MapRenderer {
     app.strokeCap(PConstants.ROUND);
     app.strokeJoin(PConstants.ROUND);
     float biomeAlphaScale = (currentTool == Tool.EDIT_ELEVATION) ? 0.8f : 1.0f;
+    float[][] biomeHSB = null;
+    if (desaturate && model.biomeTypes != null && !model.biomeTypes.isEmpty()) {
+      int nb = model.biomeTypes.size();
+      biomeHSB = new float[nb][3];
+      for (int i = 0; i < nb; i++) {
+        ZoneType zt = model.biomeTypes.get(i);
+        if (zt == null) continue;
+        rgbToHSB01(zt.col, biomeHSB[i]);
+      }
+    }
     for (Cell c : model.cells) {
       if (c.vertices == null || c.vertices.size() < 3) continue;
       int col = color(230);
@@ -69,10 +79,16 @@ class MapRenderer {
         col = lerpColor(col, color(30, 70, 120), 0.15f);
       }
       if (desaturate) {
-        float[] hsb = model.rgbToHSB(col);
-        hsb[1] = constrain(hsb[1] * 0.82f, 0, 1);
-        hsb[2] = constrain(hsb[2] * 1.05f, 0, 1);
-        col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+        float[] hsb;
+        if (biomeHSB != null && c.biomeId >= 0 && c.biomeId < biomeHSB.length && biomeHSB[c.biomeId] != null) {
+          hsb = biomeHSB[c.biomeId];
+        } else {
+          hsb = new float[3];
+          rgbToHSB01(col, hsb);
+        }
+        float sat = constrain(hsb[1] * 0.82f, 0, 1);
+        float bri = constrain(hsb[2] * 1.05f, 0, 1);
+        col = hsb01ToRGB(hsb[0], sat, bri);
       }
 
       app.fill(col, 255 * biomeAlphaScale);
@@ -603,8 +619,23 @@ class MapRenderer {
     app.pushStyle();
     if (s.antialiasing) app.smooth();
 
-    int landBase = hsbColor(app, s.landHue01, s.landSat01, s.landBri01, 1.0f);
-    int waterBase = hsbColor(app, s.waterHue01, s.waterSat01, s.waterBri01, 1.0f);
+    int landBase = hsbColor(s.landHue01, s.landSat01, s.landBri01, 1.0f);
+    int waterBase = hsbColor(s.waterHue01, s.waterSat01, s.waterBri01, 1.0f);
+    int biomeCount = (model.biomeTypes != null) ? model.biomeTypes.size() : 0;
+    float[][] biomeHSB = null;
+    int[] biomeScaledCols = null;
+    if (biomeCount > 0) {
+      biomeHSB = new float[biomeCount][3];
+      biomeScaledCols = new int[biomeCount];
+      for (int i = 0; i < biomeCount; i++) {
+        ZoneType zt = model.biomeTypes.get(i);
+        if (zt == null) continue;
+        rgbToHSB01(zt.col, biomeHSB[i]);
+        float sat = constrain(biomeHSB[i][1] * s.biomeSatScale01, 0, 1);
+        float bri = constrain(biomeHSB[i][2] * s.biomeBriScale01, 0, 1);
+        biomeScaledCols[i] = hsb01ToRGB(biomeHSB[i][0], sat, bri);
+      }
+    }
 
     // Base fills
     app.noStroke();
@@ -658,11 +689,12 @@ class MapRenderer {
         }
         if (model.biomeTypes != null && c.biomeId >= 0 && c.biomeId < model.biomeTypes.size()) {
           ZoneType zt = model.biomeTypes.get(c.biomeId);
-          float[] hsb = model.rgbToHSB(zt.col);
-          hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
-          hsb[2] = constrain(hsb[2] * s.biomeBriScale01, 0, 1);
-          col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
-          patName = model.biomePatternNameForIndex(zt.patternIndex, patName);
+          if (zt != null) {
+            if (biomeScaledCols != null) {
+              col = biomeScaledCols[c.biomeId];
+            }
+            patName = model.biomePatternNameForIndex(zt.patternIndex, patName);
+          }
         }
         float a = isWater ? s.biomeUnderwaterAlpha01 : s.biomeFillAlpha01;
         PImage pattern = null;
@@ -710,11 +742,9 @@ class MapRenderer {
         if (!underwaterEdge && s.biomeOutlineAlpha01 <= 1e-4f) continue;
         int col = landBase;
         if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size()) {
-          ZoneType zt = model.biomeTypes.get(biomeId);
-          float[] hsb = model.rgbToHSB(zt.col);
-          hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
-          hsb[2] = constrain(hsb[2] * s.biomeBriScale01, 0, 1);
-          col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+          if (biomeScaledCols != null) {
+            col = biomeScaledCols[biomeId];
+          }
         }
         float outlineAlpha = underwaterEdge ? min(s.biomeOutlineAlpha01, s.biomeUnderwaterAlpha01) : s.biomeOutlineAlpha01;
         app.stroke(col, outlineAlpha * 255);
@@ -759,7 +789,7 @@ class MapRenderer {
     // Coast outline
     if (s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f) {
       HashSet<String> drawn = new HashSet<String>();
-      int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
+      int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
       app.stroke(strokeCol);
       app.strokeWeight(max(0.1f, s.waterContourSizePx) / viewport.zoom);
       app.noFill();
@@ -828,7 +858,7 @@ class MapRenderer {
             float t = (maxIso <= spacingWorld + 1e-6f) ? 0.0f : constrain((iso - spacingWorld) / max(1e-6f, maxIso - spacingWorld), 0, 1);
             float a = constrain(lerp(s.waterRippleAlphaStart01, s.waterRippleAlphaEnd01, t), 0, 1);
             if (a <= 1e-4f) continue;
-            int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, a);
+            int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, a);
             app.stroke(strokeCol);
             drawIsoLine(app, g, iso);
           }
@@ -881,7 +911,7 @@ class MapRenderer {
     app.endShape(CLOSE);
   }
 
-  private int hsbColor(PApplet app, float h, float s, float b, float a) {
+  private int hsbColor(float h, float s, float b, float a) {
     int rgb = hsb01ToRGB(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1));
     int ai = constrain(round(constrain(a, 0, 1) * 255.0f), 0, 255);
     return (ai << 24) | (rgb & 0x00FFFFFF);
@@ -1152,7 +1182,7 @@ class MapRenderer {
     stepT = max(stepT, maxLen * 0.05f);
 
     app.pushStyle();
-    int strokeCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterHatchAlpha01);
+    int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterHatchAlpha01);
     app.stroke(strokeCol);
     app.strokeWeight(max(0.6f, s.waterContourSizePx * 0.8f) / max(1e-6f, viewport.zoom));
     app.strokeCap(PConstants.SQUARE);
@@ -1269,6 +1299,38 @@ class MapRenderer {
     boolean drawZones = s.zoneStrokeAlpha01 > 1e-4f;
     boolean drawBiomes = s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f);
     boolean drawWater = s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f;
+    int[] zoneStrokeCols = null;
+    if (drawZones && model.zones != null && !model.zones.isEmpty()) {
+      zoneStrokeCols = new int[model.zones.size()];
+      for (int i = 0; i < model.zones.size(); i++) {
+        MapModel.MapZone z = model.zones.get(i);
+        if (z == null) {
+          zoneStrokeCols[i] = -1;
+          continue;
+        }
+        float[] hsb = new float[3];
+        rgbToHSB01(z.col, hsb);
+        float sat = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
+        float bri = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
+        zoneStrokeCols[i] = hsb01ToRGB(hsb[0], sat, bri);
+      }
+    }
+    int[] biomeScaledCols = null;
+    if (drawBiomes && model.biomeTypes != null && !model.biomeTypes.isEmpty()) {
+      biomeScaledCols = new int[model.biomeTypes.size()];
+      for (int i = 0; i < model.biomeTypes.size(); i++) {
+        ZoneType zt = model.biomeTypes.get(i);
+        if (zt == null) {
+          biomeScaledCols[i] = -1;
+          continue;
+        }
+        float[] hsb = new float[3];
+        rgbToHSB01(zt.col, hsb);
+        float sat = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
+        float bri = constrain(hsb[2] * s.biomeBriScale01, 0, 1);
+        biomeScaledCols[i] = hsb01ToRGB(hsb[0], sat, bri);
+      }
+    }
 
     float eps2 = 1e-6f;
     float zoneW = 2.0f / viewport.zoom;
@@ -1373,51 +1435,31 @@ class MapRenderer {
           listB.clear(); listB.addAll(uniqueB); Collections.sort(listB);
           for (int zId : listA) {
             if (zId < 0 || zId >= model.zones.size()) continue;
-            MapModel.MapZone z = model.zones.get(zId);
-            if (z == null) continue;
-            float[] hsb = model.rgbToHSB(z.col);
-            hsb[1] = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
-            hsb[2] = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
-            int colZ = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
-            lanesPos.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01));
+            int colZ = (zoneStrokeCols != null && zId < zoneStrokeCols.length) ? zoneStrokeCols[zId] : -1;
+            if (colZ != -1) lanesPos.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01));
           }
           for (int zId : listB) {
             if (zId < 0 || zId >= model.zones.size()) continue;
-            MapModel.MapZone z = model.zones.get(zId);
-            if (z == null) continue;
-            float[] hsb = model.rgbToHSB(z.col);
-            hsb[1] = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
-            hsb[2] = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
-            int colZ = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
-            lanesNeg.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01));
+            int colZ = (zoneStrokeCols != null && zId < zoneStrokeCols.length) ? zoneStrokeCols[zId] : -1;
+            if (colZ != -1) lanesNeg.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01));
           }
         }
 
         if (drawBiomes && biomeDiff) {
           if (biomeA >= 0 && biomeA < model.biomeTypes.size()) {
-            ZoneType zt = model.biomeTypes.get(biomeA);
-            if (zt != null) {
-              float[] hsb = model.rgbToHSB(zt.col);
-              hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
-              int col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
-              float alpha = (aWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
-              if (alpha > 1e-4f) lanesPos.add(new Lane(biomeW, col, alpha));
-            }
+            int col = (biomeScaledCols != null && biomeA < biomeScaledCols.length) ? biomeScaledCols[biomeA] : -1;
+            float alpha = (aWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
+            if (col != -1 && alpha > 1e-4f) lanesPos.add(new Lane(biomeW, col, alpha));
           }
           if (biomeB >= 0 && biomeB < model.biomeTypes.size()) {
-            ZoneType zt = model.biomeTypes.get(biomeB);
-            if (zt != null) {
-              float[] hsb = model.rgbToHSB(zt.col);
-              hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
-              int col = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
-              float alpha = (bWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
-              if (alpha > 1e-4f) lanesNeg.add(new Lane(biomeW, col, alpha));
-            }
+            int col = (biomeScaledCols != null && biomeB < biomeScaledCols.length) ? biomeScaledCols[biomeB] : -1;
+            float alpha = (bWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
+            if (col != -1 && alpha > 1e-4f) lanesNeg.add(new Lane(biomeW, col, alpha));
           }
         }
 
         if (drawWater && waterDiff) {
-          int coastCol = hsbColor(app, s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
+          int coastCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
           if (aWater) lanesPos.add(new Lane(waterW, coastCol, s.waterCoastAlpha01));
           else lanesNeg.add(new Lane(waterW, coastCol, s.waterCoastAlpha01));
         }
