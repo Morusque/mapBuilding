@@ -11,6 +11,7 @@ class MapRenderer {
   private int cachedBiomeOutlineCellCount = -1;
   private int cachedBiomeOutlineChecksum = 0;
   private float cachedBiomeOutlineSeaLevel = Float.MAX_VALUE;
+  private boolean drawRoundCaps = true;
   private PImage noiseTex;
   private final int NOISE_TEX_SIZE = 1024;
 
@@ -726,6 +727,8 @@ class MapRenderer {
       ensureBiomeOutlineCache(seaLevel);
       app.noFill();
       app.strokeWeight(max(0.1f, s.biomeOutlineSizePx) / viewport.zoom);
+      app.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
+      HashSet<String> capsDrawn = new HashSet<String>();
       for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
         PVector[] seg = cachedBiomeOutlineEdges.get(i);
         int biomeId = (i < cachedBiomeOutlineBiomes.size()) ? cachedBiomeOutlineBiomes.get(i) : -1;
@@ -741,6 +744,16 @@ class MapRenderer {
         float outlineAlpha = underwaterEdge ? min(s.biomeOutlineAlpha01, s.biomeUnderwaterAlpha01) : s.biomeOutlineAlpha01;
         app.stroke(col, outlineAlpha * 255);
         app.line(seg[0].x, seg[0].y, seg[1].x, seg[1].y);
+        if (drawRoundCaps) {
+          float hw = max(0.1f, s.biomeOutlineSizePx) / viewport.zoom / 2.0f;
+          app.noStroke();
+          app.fill(col, outlineAlpha * 255);
+          String k0 = undirectedEdgeKey(seg[0], seg[0]);
+          String k1 = undirectedEdgeKey(seg[1], seg[1]);
+          if (!capsDrawn.contains(k0)) { capsDrawn.add(k0); app.ellipse(seg[0].x, seg[0].y, hw * 2, hw * 2); }
+          if (!capsDrawn.contains(k1)) { capsDrawn.add(k1); app.ellipse(seg[1].x, seg[1].y, hw * 2, hw * 2); }
+          app.stroke(col, outlineAlpha * 255);
+        }
       }
     }
 
@@ -778,18 +791,21 @@ class MapRenderer {
       }
     }
 
-    // Coast outline
-    if (s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f) {
-      HashSet<String> drawn = new HashSet<String>();
-      int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
-      app.stroke(strokeCol);
-      app.strokeWeight(max(0.1f, s.waterContourSizePx) / viewport.zoom);
-      app.noFill();
-      model.ensureCellNeighborsComputed();
-      for (int ci = 0; ci < model.cells.size(); ci++) {
-        Cell c = model.cells.get(ci);
-        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
-        boolean isWater = c.elevation < seaLevel;
+  // Coast outline
+  if (s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f) {
+    HashSet<String> drawn = new HashSet<String>();
+    int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
+    float thisHalfWeight = max(0.1f, s.waterContourSizePx) / viewport.zoom / 2.0f;
+    app.strokeWeight(thisHalfWeight * 2.0f);
+    app.stroke(strokeCol);
+    if (!drawRoundCaps) app.strokeCap(PConstants.SQUARE);
+    app.noFill();
+    HashSet<String> capsDrawn = new HashSet<String>();
+    model.ensureCellNeighborsComputed();
+    for (int ci = 0; ci < model.cells.size(); ci++) {
+      Cell c = model.cells.get(ci);
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      boolean isWater = c.elevation < seaLevel;
         int vc = c.vertices.size();
         for (int e = 0; e < vc; e++) {
           PVector a = c.vertices.get(e);
@@ -820,14 +836,29 @@ class MapRenderer {
               if (match) break;
             }
           }
-          if (!boundary) continue;
-          drawn.add(key);
-          if (isWater || nbIsWater) {
-            app.line(a.x, a.y, b.x, b.y);
+        if (!boundary) continue;
+        drawn.add(key);
+        if (isWater || nbIsWater) {
+          app.line(a.x, a.y, b.x, b.y);
+          if (drawRoundCaps) {
+            String ka = undirectedEdgeKey(a, a);
+            String kb = undirectedEdgeKey(b, b);
+            app.noStroke();
+            app.fill(strokeCol);
+            if (!capsDrawn.contains(ka)) {
+              capsDrawn.add(ka);
+              app.ellipse(a.x, a.y, thisHalfWeight * 2, thisHalfWeight * 2);
+            }
+            if (!capsDrawn.contains(kb)) {
+              capsDrawn.add(kb);
+              app.ellipse(b.x, b.y, thisHalfWeight * 2, thisHalfWeight * 2);
+            }
+            app.stroke(strokeCol);
           }
         }
       }
     }
+  }
 
     // Water ripples (distance-field contours)
     if (s.waterRippleCount > 0 &&
@@ -1084,6 +1115,7 @@ class MapRenderer {
     cachedBiomeOutlineSeaLevel = Float.MAX_VALUE;
   }
 
+
   MapModel.ContourGrid sampleElevationGrid(int cols, int rows, float fallback) {
     MapModel.ContourGrid g = model.new ContourGrid();
     g.cols = max(2, cols);
@@ -1278,7 +1310,7 @@ class MapRenderer {
   void drawZoneOutlinesRender(PApplet app, RenderSettings s) {
     if (s == null || (s.zoneStrokeAlpha01 <= 1e-4f && s.biomeOutlineSizePx <= 1e-4f && s.waterContourSizePx <= 1e-4f)) return;
     app.pushStyle();
-    if (model.cells == null || model.zones == null) { app.popStyle(); return; }
+    if (model.cells == null) { app.popStyle(); return; }
     model.ensureCellNeighborsComputed();
     int n = model.cells.size();
     if (n == 0) { app.popStyle(); return; }
@@ -1286,17 +1318,19 @@ class MapRenderer {
     // Precompute zone memberships per cell
     ArrayList<ArrayList<Integer>> zoneForCell = new ArrayList<ArrayList<Integer>>(n);
     for (int i = 0; i < n; i++) zoneForCell.add(new ArrayList<Integer>());
-    for (int zi = 0; zi < model.zones.size(); zi++) {
-      MapModel.MapZone z = model.zones.get(zi);
-      if (z == null || z.cells == null) continue;
-      for (int ci : z.cells) {
-        if (ci < 0 || ci >= n) continue;
-        ArrayList<Integer> list = zoneForCell.get(ci);
-        if (!list.contains(zi)) list.add(zi);
+    if (model.zones != null) {
+      for (int zi = 0; zi < model.zones.size(); zi++) {
+        MapModel.MapZone z = model.zones.get(zi);
+        if (z == null || z.cells == null) continue;
+        for (int ci : z.cells) {
+          if (ci < 0 || ci >= n) continue;
+          ArrayList<Integer> list = zoneForCell.get(ci);
+          if (!list.contains(zi)) list.add(zi);
+        }
       }
     }
 
-    boolean drawZones = s.zoneStrokeAlpha01 > 1e-4f;
+    boolean drawZones = s.zoneStrokeAlpha01 > 1e-4f && model.zones != null;
     boolean drawBiomes = s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f);
     boolean drawWater = s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f;
     int[] zoneStrokeCols = drawZones ? buildZoneStrokeColors(s) : null;
@@ -1372,16 +1406,8 @@ class MapRenderer {
           biomeB = (nb != null) ? nb.biomeId : biomeA;
         }
         biomeDiff = biomeA != biomeB;
-        boolean waterDiff = false;
-        boolean aWater = c.elevation < seaLevel;
-        boolean bWater = aWater;
-        if (matchedNbIdx >= 0) {
-          Cell nb = model.cells.get(matchedNbIdx);
-          bWater = (nb != null && nb.elevation < seaLevel);
-        }
-        waterDiff = aWater != bWater;
 
-        if (!hasDiff && !biomeDiff && !waterDiff) {
+        if (!hasDiff && !biomeDiff) {
           drawn.add(key);
           continue;
         }
@@ -1417,22 +1443,16 @@ class MapRenderer {
 
         if (drawBiomes && biomeDiff) {
           if (biomeA >= 0 && biomeA < model.biomeTypes.size()) {
-            int col = (biomeScaledCols != null && biomeA < biomeScaledCols.length) ? biomeScaledCols[biomeA] : -1;
-            float alpha = (aWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
-            if (col != -1 && alpha > 1e-4f) lanesPos.add(new Lane(biomeW, col, alpha));
-          }
-          if (biomeB >= 0 && biomeB < model.biomeTypes.size()) {
-            int col = (biomeScaledCols != null && biomeB < biomeScaledCols.length) ? biomeScaledCols[biomeB] : -1;
-            float alpha = (bWater) ? s.biomeUnderwaterAlpha01 : s.biomeOutlineAlpha01;
-            if (col != -1 && alpha > 1e-4f) lanesNeg.add(new Lane(biomeW, col, alpha));
-          }
+          int col = (biomeScaledCols != null && biomeA < biomeScaledCols.length) ? biomeScaledCols[biomeA] : -1;
+          float alpha = s.biomeOutlineAlpha01;
+          if (col != -1 && alpha > 1e-4f) lanesPos.add(new Lane(biomeW, col, alpha));
         }
-
-        if (drawWater && waterDiff) {
-          int coastCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
-          if (aWater) lanesPos.add(new Lane(waterW, coastCol, s.waterCoastAlpha01));
-          else lanesNeg.add(new Lane(waterW, coastCol, s.waterCoastAlpha01));
+        if (biomeB >= 0 && biomeB < model.biomeTypes.size()) {
+          int col = (biomeScaledCols != null && biomeB < biomeScaledCols.length) ? biomeScaledCols[biomeB] : -1;
+          float alpha = s.biomeOutlineAlpha01;
+          if (col != -1 && alpha > 1e-4f) lanesNeg.add(new Lane(biomeW, col, alpha));
         }
+      }
 
         Comparator<Lane> cmp = new Comparator<Lane>() {
           public int compare(Lane aL, Lane bL) { return Float.compare(bL.width, aL.width); }
@@ -1449,6 +1469,14 @@ class MapRenderer {
           app.strokeJoin(PConstants.ROUND);
           app.strokeWeight(l.width);
           app.line(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, b.x + nrm.x * laneOff, b.y + nrm.y * laneOff);
+          if (drawRoundCaps) {
+            float hw = l.width * 0.5f;
+            app.noStroke();
+            app.fill(l.col, l.alpha * 255);
+            app.ellipse(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, hw * 2, hw * 2);
+            app.ellipse(b.x + nrm.x * laneOff, b.y + nrm.y * laneOff, hw * 2, hw * 2);
+            app.stroke(l.col, l.alpha * 255);
+          }
           offsetPos += l.width + laneGap;
         }
         float offsetNeg = 0;
@@ -1460,6 +1488,14 @@ class MapRenderer {
           app.strokeJoin(PConstants.ROUND);
           app.strokeWeight(l.width);
           app.line(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, b.x - nrm.x * laneOff, b.y - nrm.y * laneOff);
+          if (drawRoundCaps) {
+            float hw = l.width * 0.5f;
+            app.noStroke();
+            app.fill(l.col, l.alpha * 255);
+            app.ellipse(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, hw * 2, hw * 2);
+            app.ellipse(b.x - nrm.x * laneOff, b.y - nrm.y * laneOff, hw * 2, hw * 2);
+            app.stroke(l.col, l.alpha * 255);
+          }
           offsetNeg += l.width + laneGap;
         }
 
