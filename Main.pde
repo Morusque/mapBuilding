@@ -459,6 +459,7 @@ final int SLIDER_RENDER_WATER_HATCH_ANGLE = 72;
 final int SLIDER_RENDER_WATER_HATCH_LENGTH = 73;
 final int SLIDER_RENDER_WATER_HATCH_SPACING = 74;
 final int SLIDER_RENDER_WATER_HATCH_ALPHA = 75;
+final int SLIDER_RENDER_LIGHT_BLUR = 76;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -1612,6 +1613,7 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   shading.setFloat("elevationLightAlpha01", s.elevationLightAlpha01);
   shading.setFloat("elevationLightAzimuthDeg", s.elevationLightAzimuthDeg);
   shading.setFloat("elevationLightAltitudeDeg", s.elevationLightAltitudeDeg);
+   shading.setFloat("elevationLightBlurPx", s.elevationLightBlurPx);
   r.setJSONObject("shading", shading);
 
   JSONObject contours = new JSONObject();
@@ -1703,6 +1705,7 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.elevationLightAlpha01 = b.getFloat("elevationLightAlpha01", target.elevationLightAlpha01);
     target.elevationLightAzimuthDeg = b.getFloat("elevationLightAzimuthDeg", target.elevationLightAzimuthDeg);
     target.elevationLightAltitudeDeg = b.getFloat("elevationLightAltitudeDeg", target.elevationLightAltitudeDeg);
+    target.elevationLightBlurPx = b.getFloat("elevationLightBlurPx", target.elevationLightBlurPx);
   }
 
   if (r.hasKey("contours")) {

@@ -1395,6 +1395,12 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_LIGHT_ALTITUDE;
       return true;
     }
+    if (layout.lightBlurSlider != null && layout.lightBlurSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.lightBlurSlider.x) / (float)layout.lightBlurSlider.w, 0, 1);
+      renderSettings.elevationLightBlurPx = constrain(t * 10.0f, 0, 10.0f);
+      activeSlider = SLIDER_RENDER_LIGHT_BLUR;
+      return true;
+    }
   }
 
   // Contours

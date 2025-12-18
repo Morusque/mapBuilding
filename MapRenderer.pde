@@ -39,6 +39,15 @@ class MapRenderer {
   private int biomeLayerH = -1;
   private int biomeLayerCellCount = -1;
   private int biomeLayerBiomeCount = -1;
+  private PGraphics elevationLightLayer;
+  private int elevationLightHashVal = 0;
+  private float elevationLightZoom = -1;
+  private float elevationLightCenterX = Float.MAX_VALUE;
+  private float elevationLightCenterY = Float.MAX_VALUE;
+  private int elevationLightW = -1;
+  private int elevationLightH = -1;
+  private float elevationLightSeaLevel = Float.MAX_VALUE;
+  private int elevationLightCellCount = -1;
   private PImage noiseTex;
   private final int NOISE_TEX_SIZE = 1024;
 
@@ -799,23 +808,21 @@ class MapRenderer {
       }
     }
 
-    // Elevation shading (land only)
-    if (s.elevationLightAlpha01 > 1e-4f) {
-      float az = radians(s.elevationLightAzimuthDeg);
-      float alt = radians(s.elevationLightAltitudeDeg);
-      PVector lightDir = new PVector(cos(alt) * cos(az), cos(alt) * sin(az), sin(alt));
-      lightDir.normalize();
-      app.noStroke();
-      for (int ci = 0; ci < model.cells.size(); ci++) {
-        Cell c = model.cells.get(ci);
-        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
-        if (c.elevation < seaLevel) continue;
-        float light = ElevationRenderer.computeLightForCell(model, ci, lightDir);
-        float a = s.elevationLightAlpha01 * (1.0f - light);
-        if (a <= 1e-4f) continue;
-        app.fill(0, 0, 0, a * 200);
-        drawPoly(app, c.vertices);
-      }
+  // Elevation shading (land only) cached to a layer
+  if (s.elevationLightAlpha01 > 1e-4f) {
+    ensureElevationLightLayer(app, s, seaLevel);
+    if (elevationLightLayer != null) {
+      app.pushStyle();
+      app.pushMatrix();
+      app.resetMatrix();
+      app.blendMode(PConstants.MULTIPLY);
+      app.image(elevationLightLayer, 0, 0);
+      app.blendMode(PConstants.BLEND);
+      app.popMatrix();
+      app.popStyle();
+    }
+  } else {
+    elevationLightLayer = null;
     }
 
   // Coast outline (draw into cached layer to avoid alpha stacking at caps)
@@ -906,6 +913,27 @@ class MapRenderer {
     app.beginShape();
     for (PVector v : verts) app.vertex(v.x, v.y);
     app.endShape(CLOSE);
+  }
+
+  // Overloads for PGraphics targets (used by cached layers)
+  private void drawPoly(PGraphics g, ArrayList<PVector> verts) {
+    drawPoly(g, verts, false);
+  }
+
+  private void drawPoly(PGraphics g, ArrayList<PVector> verts, boolean outlineOnly) {
+    if (verts == null || verts.size() < 3 || g == null) return;
+    if (outlineOnly) {
+      int n = verts.size();
+      for (int i = 0; i < n; i++) {
+        PVector a = verts.get(i);
+        PVector b = verts.get((i + 1) % n);
+        g.line(a.x, a.y, b.x, b.y);
+      }
+      return;
+    }
+    g.beginShape();
+    for (PVector v : verts) g.vertex(v.x, v.y);
+    g.endShape(PConstants.CLOSE);
   }
 
   private int hsbColor(float h, float s, float b, float a) {
@@ -1366,6 +1394,7 @@ class MapRenderer {
       coastLayer = null;
       return;
     }
+    if (app == null) return;
     int targetW = (app.g != null) ? app.g.width : app.width;
     int targetH = (app.g != null) ? app.g.height : app.height;
     int hash = coastSettingsHash(s);
@@ -1497,6 +1526,7 @@ class MapRenderer {
       zoneLayer = null;
       return;
     }
+    if (app == null) return;
     int[] zoneStrokeCols = buildZoneStrokeColors(s);
     int targetW = (app.g != null) ? app.g.width : app.width;
     int targetH = (app.g != null) ? app.g.height : app.height;
@@ -1713,11 +1743,22 @@ class MapRenderer {
     return h;
   }
 
+  private int elevationLightSettingsHash(RenderSettings s) {
+    int h = 29;
+    h = 31 * h + round(s.elevationLightAzimuthDeg * 100.0f);
+    h = 31 * h + round(s.elevationLightAltitudeDeg * 100.0f);
+    h = 31 * h + round(s.elevationLightAlpha01 * 1000.0f);
+    h = 31 * h + round(s.elevationLightBlurPx * 1000.0f);
+    h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
+    return h;
+  }
+
   private void ensureBiomeLayer(PApplet app, RenderSettings s) {
     if (model == null || model.cells == null || model.cells.isEmpty() || model.biomeTypes == null) {
       biomeLayer = null;
       return;
     }
+    if (app == null) return;
     int[] biomeScaledCols = buildBiomeScaledColors(s);
     int targetW = (app.g != null) ? app.g.width : app.width;
     int targetH = (app.g != null) ? app.g.height : app.height;
@@ -1891,6 +1932,83 @@ class MapRenderer {
 
         drawn.add(key);
       }
+    }
+  }
+
+  private void ensureElevationLightLayer(PApplet app, RenderSettings s, float seaLevel) {
+    if (model == null || model.cells == null || model.cells.isEmpty()) {
+      elevationLightLayer = null;
+      return;
+    }
+    if (app == null) return;
+    int targetW = (app.g != null) ? app.g.width : app.width;
+    int targetH = (app.g != null) ? app.g.height : app.height;
+    int hash = elevationLightSettingsHash(s);
+    boolean sizeChanged = elevationLightLayer == null || elevationLightW != targetW || elevationLightH != targetH;
+    boolean viewChanged = elevationLightLayer == null ||
+                          abs(elevationLightZoom - viewport.zoom) > 1e-4f ||
+                          abs(elevationLightCenterX - viewport.centerX) > 1e-4f ||
+                          abs(elevationLightCenterY - viewport.centerY) > 1e-4f;
+    boolean settingsChanged = elevationLightLayer == null ||
+                              elevationLightHashVal != hash ||
+                              abs(elevationLightSeaLevel - seaLevel) > 1e-6f ||
+                              elevationLightCellCount != model.cells.size() ||
+                              currentTool == Tool.EDIT_ELEVATION;
+
+    if (sizeChanged) {
+      elevationLightLayer = app.createGraphics(targetW, targetH, P2D);
+      elevationLightW = targetW;
+      elevationLightH = targetH;
+      if (elevationLightLayer != null) {
+        if (s.antialiasing) elevationLightLayer.smooth(8); else elevationLightLayer.noSmooth();
+      }
+    } else {
+      if (elevationLightLayer != null) {
+        if (s.antialiasing) elevationLightLayer.smooth(8); else elevationLightLayer.noSmooth();
+      }
+    }
+    if (elevationLightLayer == null) return;
+    if (!(sizeChanged || viewChanged || settingsChanged)) return;
+
+    elevationLightLayer.beginDraw();
+    elevationLightLayer.clear();
+    elevationLightLayer.background(255);
+    elevationLightLayer.pushMatrix();
+    elevationLightLayer.pushStyle();
+    viewport.applyTransform(elevationLightLayer, elevationLightLayer.width, elevationLightLayer.height);
+    drawElevationLightLayer(elevationLightLayer, s, seaLevel);
+    float blurPx = max(0, s.elevationLightBlurPx);
+    if (blurPx > 1e-3f) {
+      elevationLightLayer.filter(PConstants.BLUR, blurPx);
+    }
+    elevationLightLayer.popStyle();
+    elevationLightLayer.popMatrix();
+    elevationLightLayer.endDraw();
+
+    elevationLightHashVal = hash;
+    elevationLightZoom = viewport.zoom;
+    elevationLightCenterX = viewport.centerX;
+    elevationLightCenterY = viewport.centerY;
+    elevationLightSeaLevel = seaLevel;
+    elevationLightCellCount = model.cells.size();
+  }
+
+  private void drawElevationLightLayer(PGraphics g, RenderSettings s, float seaLevel) {
+    float az = radians(s.elevationLightAzimuthDeg);
+    float alt = radians(s.elevationLightAltitudeDeg);
+    PVector lightDir = new PVector(cos(alt) * cos(az), cos(alt) * sin(az), sin(alt));
+    lightDir.normalize();
+    g.noStroke();
+    for (int ci = 0; ci < model.cells.size(); ci++) {
+      Cell c = model.cells.get(ci);
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      if (c.elevation < seaLevel) continue;
+      float light = ElevationRenderer.computeLightForCell(model, ci, lightDir);
+      float a = s.elevationLightAlpha01 * (1.0f - light);
+      if (a <= 1e-4f) continue;
+      float shade = constrain(255.0f - a * 255.0f, 0, 255); // 255=no change in multiply, darker when lower
+      g.fill(shade);
+      drawPoly(g, c.vertices);
     }
   }
 
