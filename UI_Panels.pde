@@ -1972,6 +1972,7 @@ class RenderLayout {
   IntRect pathSatSlider;
 
   IntRect zoneAlphaSlider;
+  IntRect zoneSizeSlider;
   IntRect zoneSatSlider;
   IntRect zoneBriSlider;
 
@@ -2140,6 +2141,8 @@ RenderLayout buildRenderLayout() {
   if (renderSectionZonesOpen) {
     l.zoneAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.zoneSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.zoneSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.zoneBriSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
@@ -2277,6 +2280,7 @@ void drawRenderPanel() {
   drawSectionHeader(layout.headerZones, "Zones", renderSectionZonesOpen);
   if (renderSectionZonesOpen) {
     drawSlider(layout.zoneAlphaSlider, renderSettings.zoneStrokeAlpha01, "Zone lines alpha (" + nf(renderSettings.zoneStrokeAlpha01 * 100, 1, 0) + "%)"); 
+    drawSlider(layout.zoneSizeSlider, constrain(renderSettings.zoneStrokeSizePx / 5.0f, 0, 1), "Zone line width (" + nf(renderSettings.zoneStrokeSizePx, 1, 1) + " px)");
     drawSlider(layout.zoneSatSlider, renderSettings.zoneStrokeSatScale01, "Zone lines saturation (" + nf(renderSettings.zoneStrokeSatScale01 * 100, 1, 0) + "%)");
     drawSlider(layout.zoneBriSlider, renderSettings.zoneStrokeBriScale01, "Zone lines brightness (" + nf(renderSettings.zoneStrokeBriScale01 * 100, 1, 0) + "%)");
   }

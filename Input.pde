@@ -762,6 +762,12 @@ void updateActiveSlider(int mx, int my) {
       renderShowZoneOutlines = t > 0.001f;
       break;
     }
+    case SLIDER_RENDER_ZONE_SIZE: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.zoneSizeSlider.x) / (float)l.zoneSizeSlider.w, 0, 1);
+      renderSettings.zoneStrokeSizePx = constrain(t * 5.0f, 0, 5.0f);
+      break;
+    }
     case SLIDER_RENDER_ZONE_SAT: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.zoneSatSlider.x) / (float)l.zoneSatSlider.w, 0, 1);

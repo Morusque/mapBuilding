@@ -4,7 +4,6 @@ Mandatory for full first use milestone :
 (later) some ugly dots sometimes appear between polygones
 (later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 (later) make sure everything can be bitmap
-(later) join segments (eg water outlines) in a nicer way
 
 Unfinished features :
 (later) Biomes : review "value" sliders
@@ -22,6 +21,7 @@ Other :
 (maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 (maybe) Sites : anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
 (maybe) Elevation : use techtonic logic in addition to perlin or double multiplied perlin
+(later) join segments (eg zones outlines) in a nicer way
 (later) Zones : options to allow overlapping or not (two groups? allowed / not-allowed)
 (later) Zones : use polygon tracing as an alternative to brush
 (later) Paths : refine the way path generation works

@@ -72,6 +72,7 @@ class RenderSettings {
 
   // Zones (strokes only)
   float zoneStrokeAlpha01 = 0.5f;
+  float zoneStrokeSizePx = 2.0f;
   float zoneStrokeSatScale01 = 0.5f;
   float zoneStrokeBriScale01 = 1.0f;
 
@@ -142,6 +143,7 @@ class RenderSettings {
     c.showPaths = showPaths;
     // Zones
     c.zoneStrokeAlpha01 = zoneStrokeAlpha01;
+    c.zoneStrokeSizePx = zoneStrokeSizePx;
     c.zoneStrokeSatScale01 = zoneStrokeSatScale01;
     c.zoneStrokeBriScale01 = zoneStrokeBriScale01;
     // Structures
@@ -212,6 +214,7 @@ class RenderSettings {
     showPaths = o.showPaths;
     // Zones
     zoneStrokeAlpha01 = o.zoneStrokeAlpha01;
+    zoneStrokeSizePx = o.zoneStrokeSizePx;
     zoneStrokeSatScale01 = o.zoneStrokeSatScale01;
     zoneStrokeBriScale01 = o.zoneStrokeBriScale01;
     // Structures
@@ -276,6 +279,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 1.0f;
     s.showPaths = true;
     s.zoneStrokeAlpha01 = 0.5f;
+    s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.5f;
     s.zoneStrokeBriScale01 = 1.0f;
     s.showStructures = true;
@@ -327,6 +331,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 0.7f;
     s.showPaths = true;
     s.zoneStrokeAlpha01 = 0.0f;
+    s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.0f;
     s.zoneStrokeBriScale01 = 0.0f;
     s.showStructures = true;
@@ -378,6 +383,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 1.0f;
     s.showPaths = true;
     s.zoneStrokeAlpha01 = 0.0f;
+    s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.0f;
     s.zoneStrokeBriScale01 = 0.0f;
     s.showStructures = false;
@@ -429,6 +435,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 0.8f;
     s.showPaths = true;
     s.zoneStrokeAlpha01 = 0.7f;
+    s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.0f;
     s.zoneStrokeBriScale01 = 0.0f;
     s.showStructures = true;
@@ -480,6 +487,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 0.0f;
     s.showPaths = true;
     s.zoneStrokeAlpha01 = 1.0f;
+    s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.0f;
     s.zoneStrokeBriScale01 = 0.0f;
     s.showStructures = true;
@@ -532,6 +540,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 1.0f;
     s.showPaths = true;
     s.zoneStrokeAlpha01 = 0.5f;
+    s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.8f;
     s.zoneStrokeBriScale01 = 0.2f;
     s.showStructures = true;
@@ -585,6 +594,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 0.8f;
     s.showPaths = true;
     s.zoneStrokeAlpha01 = 1.0f;
+    s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 1.0f;
     s.zoneStrokeBriScale01 = 1.0f;
     s.showStructures = true;
@@ -635,6 +645,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 0.8f;
     s.showPaths = false;
     s.zoneStrokeAlpha01 = 1.0f;
+    s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 1.0f;
     s.zoneStrokeBriScale01 = 1.0f;
     s.showStructures = false;
@@ -685,6 +696,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 0.3f;
     s.showPaths = false;
     s.zoneStrokeAlpha01 = 1.0f;
+    s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.3f;
     s.zoneStrokeBriScale01 = 0.5f;
     s.showStructures = false;

@@ -1506,6 +1506,12 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_ZONE_ALPHA;
       return true;
     }
+    if (layout.zoneSizeSlider != null && layout.zoneSizeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.zoneSizeSlider.x) / (float)layout.zoneSizeSlider.w, 0, 1);
+      renderSettings.zoneStrokeSizePx = constrain(t * 5.0f, 0, 5.0f);
+      activeSlider = SLIDER_RENDER_ZONE_SIZE;
+      return true;
+    }
     if (layout.zoneSatSlider.contains(mx, my)) {
       float t = constrain((mx - layout.zoneSatSlider.x) / (float)layout.zoneSatSlider.w, 0, 1);
       renderSettings.zoneStrokeSatScale01 = t;

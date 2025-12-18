@@ -441,23 +441,24 @@ final int SLIDER_RENDER_ELEV_LINES_COUNT = 54;
 final int SLIDER_RENDER_ELEV_LINES_ALPHA = 55;
 final int SLIDER_RENDER_PATH_SAT = 56;
 final int SLIDER_RENDER_ZONE_ALPHA = 57;
-final int SLIDER_RENDER_ZONE_SAT = 58;
-final int SLIDER_RENDER_LABEL_OUTLINE_ALPHA = 59;
-final int SLIDER_RENDER_ELEV_LINES_STYLE = 60;
-final int SLIDER_RENDER_BIOME_BRI = 61;
-final int SLIDER_RENDER_ZONE_BRI = 62;
-final int SLIDER_RENDER_PRESET_SELECT = 63;
-final int SLIDER_BIOME_GEN_MODE = 64;
-final int SLIDER_BIOME_GEN_VALUE = 65;
-final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 66;
-final int SLIDER_RENDER_STRUCT_SHADOW_ALPHA = 67;
-final int SLIDER_BIOME_SAT = 68;
-final int SLIDER_BIOME_BRI = 69;
-final int SLIDER_RENDER_BACKGROUND_NOISE = 70;
-final int SLIDER_RENDER_WATER_HATCH_ANGLE = 71;
-final int SLIDER_RENDER_WATER_HATCH_LENGTH = 72;
-final int SLIDER_RENDER_WATER_HATCH_SPACING = 73;
-final int SLIDER_RENDER_WATER_HATCH_ALPHA = 74;
+final int SLIDER_RENDER_ZONE_SIZE = 58;
+final int SLIDER_RENDER_ZONE_SAT = 59;
+final int SLIDER_RENDER_LABEL_OUTLINE_ALPHA = 60;
+final int SLIDER_RENDER_ELEV_LINES_STYLE = 61;
+final int SLIDER_RENDER_BIOME_BRI = 62;
+final int SLIDER_RENDER_ZONE_BRI = 63;
+final int SLIDER_RENDER_PRESET_SELECT = 64;
+final int SLIDER_BIOME_GEN_MODE = 65;
+final int SLIDER_BIOME_GEN_VALUE = 66;
+final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 67;
+final int SLIDER_RENDER_STRUCT_SHADOW_ALPHA = 68;
+final int SLIDER_BIOME_SAT = 69;
+final int SLIDER_BIOME_BRI = 70;
+final int SLIDER_RENDER_BACKGROUND_NOISE = 71;
+final int SLIDER_RENDER_WATER_HATCH_ANGLE = 72;
+final int SLIDER_RENDER_WATER_HATCH_LENGTH = 73;
+final int SLIDER_RENDER_WATER_HATCH_SPACING = 74;
+final int SLIDER_RENDER_WATER_HATCH_ALPHA = 75;
 int activeSlider = SLIDER_NONE;
 
 void applyRenderPreset(int idx) {
@@ -1640,6 +1641,7 @@ JSONObject serializeRenderSettings(RenderSettings s) {
 
   JSONObject zones = new JSONObject();
   zones.setFloat("zoneStrokeAlpha01", s.zoneStrokeAlpha01);
+  zones.setFloat("zoneStrokeSizePx", s.zoneStrokeSizePx);
   zones.setFloat("zoneStrokeSatScale01", s.zoneStrokeSatScale01);
   zones.setFloat("zoneStrokeBriScale01", s.zoneStrokeBriScale01);
   r.setJSONObject("zones", zones);
@@ -1735,6 +1737,7 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
   if (r.hasKey("zones")) {
     JSONObject b = r.getJSONObject("zones");
     target.zoneStrokeAlpha01 = b.getFloat("zoneStrokeAlpha01", target.zoneStrokeAlpha01);
+    target.zoneStrokeSizePx = b.getFloat("zoneStrokeSizePx", target.zoneStrokeSizePx);
     target.zoneStrokeSatScale01 = b.getFloat("zoneStrokeSatScale01", target.zoneStrokeSatScale01);
     target.zoneStrokeBriScale01 = b.getFloat("zoneStrokeBriScale01", target.zoneStrokeBriScale01);
   }

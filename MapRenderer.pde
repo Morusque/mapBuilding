@@ -12,6 +12,33 @@ class MapRenderer {
   private int cachedBiomeOutlineChecksum = 0;
   private float cachedBiomeOutlineSeaLevel = Float.MAX_VALUE;
   private boolean drawRoundCaps = true;
+  private PGraphics coastLayer;
+  private int coastLayerHash = 0;
+  private float coastLayerZoom = -1;
+  private float coastLayerCenterX = Float.MAX_VALUE;
+  private float coastLayerCenterY = Float.MAX_VALUE;
+  private int coastLayerW = -1;
+  private int coastLayerH = -1;
+  private float coastLayerSeaLevel = Float.MAX_VALUE;
+  private int coastLayerCellCount = -1;
+  private PGraphics zoneLayer;
+  private int zoneLayerHash = 0;
+  private float zoneLayerZoom = -1;
+  private float zoneLayerCenterX = Float.MAX_VALUE;
+  private float zoneLayerCenterY = Float.MAX_VALUE;
+  private int zoneLayerW = -1;
+  private int zoneLayerH = -1;
+  private int zoneLayerCellCount = -1;
+  private int zoneLayerZoneCount = -1;
+  private PGraphics biomeLayer;
+  private int biomeLayerHash = 0;
+  private float biomeLayerZoom = -1;
+  private float biomeLayerCenterX = Float.MAX_VALUE;
+  private float biomeLayerCenterY = Float.MAX_VALUE;
+  private int biomeLayerW = -1;
+  private int biomeLayerH = -1;
+  private int biomeLayerCellCount = -1;
+  private int biomeLayerBiomeCount = -1;
   private PImage noiseTex;
   private final int NOISE_TEX_SIZE = 1024;
 
@@ -791,73 +818,20 @@ class MapRenderer {
       }
     }
 
-  // Coast outline
+  // Coast outline (draw into cached layer to avoid alpha stacking at caps)
   if (s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f) {
-    HashSet<String> drawn = new HashSet<String>();
-    int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterCoastAlpha01);
-    float thisHalfWeight = max(0.1f, s.waterContourSizePx) / viewport.zoom / 2.0f;
-    app.strokeWeight(thisHalfWeight * 2.0f);
-    app.stroke(strokeCol);
-    if (!drawRoundCaps) app.strokeCap(PConstants.SQUARE);
-    app.noFill();
-    HashSet<String> capsDrawn = new HashSet<String>();
-    model.ensureCellNeighborsComputed();
-    for (int ci = 0; ci < model.cells.size(); ci++) {
-      Cell c = model.cells.get(ci);
-      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
-      boolean isWater = c.elevation < seaLevel;
-        int vc = c.vertices.size();
-        for (int e = 0; e < vc; e++) {
-          PVector a = c.vertices.get(e);
-          PVector b = c.vertices.get((e + 1) % vc);
-          String key = undirectedEdgeKey(a, b);
-          if (drawn.contains(key)) continue;
-          boolean boundary = false;
-          boolean nbIsWater = false;
-          ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
-          if (nbs != null) {
-            for (int nbIdx : nbs) {
-              if (nbIdx < 0 || nbIdx >= model.cells.size()) continue;
-              Cell nb = model.cells.get(nbIdx);
-              if (nb == null || nb.vertices == null) continue;
-              int nv = nb.vertices.size();
-              boolean match = false;
-              for (int j = 0; j < nv; j++) {
-                PVector na = nb.vertices.get(j);
-                PVector nbp = nb.vertices.get((j + 1) % nv);
-                if ((model.distSq(a, na) < 1e-6f && model.distSq(b, nbp) < 1e-6f) ||
-                    (model.distSq(a, nbp) < 1e-6f && model.distSq(b, na) < 1e-6f)) {
-                  nbIsWater = nb.elevation < seaLevel;
-                  boundary = isWater != nbIsWater;
-                  match = true;
-                  break;
-                }
-              }
-              if (match) break;
-            }
-          }
-        if (!boundary) continue;
-        drawn.add(key);
-        if (isWater || nbIsWater) {
-          app.line(a.x, a.y, b.x, b.y);
-          if (drawRoundCaps) {
-            String ka = undirectedEdgeKey(a, a);
-            String kb = undirectedEdgeKey(b, b);
-            app.noStroke();
-            app.fill(strokeCol);
-            if (!capsDrawn.contains(ka)) {
-              capsDrawn.add(ka);
-              app.ellipse(a.x, a.y, thisHalfWeight * 2, thisHalfWeight * 2);
-            }
-            if (!capsDrawn.contains(kb)) {
-              capsDrawn.add(kb);
-              app.ellipse(b.x, b.y, thisHalfWeight * 2, thisHalfWeight * 2);
-            }
-            app.stroke(strokeCol);
-          }
-        }
-      }
+    ensureCoastLayer(app, s, seaLevel);
+    if (coastLayer != null) {
+      app.pushStyle();
+      app.pushMatrix();
+      app.resetMatrix(); // draw in screen space to avoid double-transform
+      app.tint(255, constrain(s.waterCoastAlpha01, 0, 1) * 255);
+      app.image(coastLayer, 0, 0);
+      app.popMatrix();
+      app.popStyle();
     }
+  } else {
+    coastLayer = null;
   }
 
     // Water ripples (distance-field contours)
@@ -1308,202 +1282,40 @@ class MapRenderer {
   }
 
   void drawZoneOutlinesRender(PApplet app, RenderSettings s) {
-    if (s == null || (s.zoneStrokeAlpha01 <= 1e-4f && s.biomeOutlineSizePx <= 1e-4f && s.waterContourSizePx <= 1e-4f)) return;
-    app.pushStyle();
-    if (model.cells == null) { app.popStyle(); return; }
-    model.ensureCellNeighborsComputed();
-    int n = model.cells.size();
-    if (n == 0) { app.popStyle(); return; }
-
-    // Precompute zone memberships per cell
-    ArrayList<ArrayList<Integer>> zoneForCell = new ArrayList<ArrayList<Integer>>(n);
-    for (int i = 0; i < n; i++) zoneForCell.add(new ArrayList<Integer>());
-    if (model.zones != null) {
-      for (int zi = 0; zi < model.zones.size(); zi++) {
-        MapModel.MapZone z = model.zones.get(zi);
-        if (z == null || z.cells == null) continue;
-        for (int ci : z.cells) {
-          if (ci < 0 || ci >= n) continue;
-          ArrayList<Integer> list = zoneForCell.get(ci);
-          if (!list.contains(zi)) list.add(zi);
-        }
-      }
-    }
-
+    if (s == null) return;
     boolean drawZones = s.zoneStrokeAlpha01 > 1e-4f && model.zones != null;
     boolean drawBiomes = s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f);
-    boolean drawWater = s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f;
-    int[] zoneStrokeCols = drawZones ? buildZoneStrokeColors(s) : null;
-    int[] biomeScaledCols = drawBiomes ? buildBiomeScaledColors(s) : null;
+    if (!drawZones && !drawBiomes) return;
 
-    float eps2 = 1e-6f;
-    float zoneW = 2.0f / viewport.zoom;
-    float biomeW = drawBiomes ? max(0.1f, s.biomeOutlineSizePx) / viewport.zoom : 0;
-    float waterW = drawWater ? max(0.1f, s.waterContourSizePx) / viewport.zoom : 0;
-    float laneGap = max(0.2f / viewport.zoom, zoneW * 0.4f);
-
-    HashSet<String> drawn = new HashSet<String>();
-    ArrayList<Integer> listA = new ArrayList<Integer>();
-    ArrayList<Integer> listB = new ArrayList<Integer>();
-
-    class Lane {
-      float width;
-      int col;
-      float alpha;
-      Lane(float w, int ccol, float a) { width = w; col = ccol; alpha = a;}
+    if (drawZones) {
+      ensureZoneLayer(app, s);
+      if (zoneLayer != null) {
+        app.pushStyle();
+        app.pushMatrix();
+        app.resetMatrix();
+        app.tint(255, constrain(s.zoneStrokeAlpha01, 0, 1) * 255);
+        app.image(zoneLayer, 0, 0);
+        app.popMatrix();
+        app.popStyle();
+      }
+    } else {
+      zoneLayer = null;
     }
 
-    for (int ci = 0; ci < n; ci++) {
-      Cell c = model.cells.get(ci);
-      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
-      ArrayList<Integer> zonesA = zoneForCell.get(ci);
-      int vc = c.vertices.size();
-      for (int e = 0; e < vc; e++) {
-        PVector a = c.vertices.get(e);
-        PVector b = c.vertices.get((e + 1) % vc);
-        String key = undirectedEdgeKey(a, b);
-        if (drawn.contains(key)) continue;
-
-        int matchedNbIdx = -1;
-        ArrayList<Integer> zonesB = null;
-        ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
-        if (nbs != null) {
-          for (int nbIdx : nbs) {
-            if (nbIdx < 0 || nbIdx >= n) continue;
-            Cell nb = model.cells.get(nbIdx);
-            if (nb == null || nb.vertices == null) continue;
-            int nv = nb.vertices.size();
-            boolean matched = false;
-            for (int j = 0; j < nv; j++) {
-              PVector na = nb.vertices.get(j);
-              PVector nbp = nb.vertices.get((j + 1) % nv);
-              boolean match = model.distSq(a, na) < eps2 && model.distSq(b, nbp) < eps2;
-              boolean matchRev = model.distSq(a, nbp) < eps2 && model.distSq(b, na) < eps2;
-              if (match || matchRev) {
-                zonesB = zoneForCell.get(nbIdx);
-                matched = true;
-                matchedNbIdx = nbIdx;
-                break;
-              }
-            }
-            if (matched) break;
-          }
-        }
-
-        HashSet<Integer> setA = (zonesA != null) ? new HashSet<Integer>(zonesA) : new HashSet<Integer>();
-        HashSet<Integer> setB = (zonesB != null) ? new HashSet<Integer>(zonesB) : new HashSet<Integer>();
-        HashSet<Integer> uniqueA = new HashSet<Integer>(setA);
-        uniqueA.removeAll(setB);
-        HashSet<Integer> uniqueB = new HashSet<Integer>(setB);
-        uniqueB.removeAll(setA);
-
-        boolean hasDiff = !uniqueA.isEmpty() || !uniqueB.isEmpty();
-        boolean biomeDiff = false;
-        int biomeA = c.biomeId;
-        int biomeB = biomeA;
-        if (matchedNbIdx >= 0) {
-          Cell nb = model.cells.get(matchedNbIdx);
-          biomeB = (nb != null) ? nb.biomeId : biomeA;
-        }
-        biomeDiff = biomeA != biomeB;
-
-        if (!hasDiff && !biomeDiff) {
-          drawn.add(key);
-          continue;
-        }
-
-        PVector cenA = model.cellCentroid(c);
-        PVector mid = new PVector((a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f);
-        PVector edgeDir = new PVector(b.x - a.x, b.y - a.y);
-        PVector nrm = new PVector(-edgeDir.y, edgeDir.x);
-        float nLen = max(1e-6f, sqrt(nrm.x * nrm.x + nrm.y * nrm.y));
-        nrm.mult(1.0f / nLen);
-        if (cenA != null) {
-          PVector toCenter = PVector.sub(cenA, mid);
-          if (toCenter.dot(nrm) < 0) nrm.mult(-1);
-        }
-
-        ArrayList<Lane> lanesPos = new ArrayList<Lane>();
-        ArrayList<Lane> lanesNeg = new ArrayList<Lane>();
-
-        if (drawZones && hasDiff) {
-          listA.clear(); listA.addAll(uniqueA); Collections.sort(listA);
-          listB.clear(); listB.addAll(uniqueB); Collections.sort(listB);
-          for (int zId : listA) {
-            if (zId < 0 || zId >= model.zones.size()) continue;
-            int colZ = (zoneStrokeCols != null && zId < zoneStrokeCols.length) ? zoneStrokeCols[zId] : -1;
-            if (colZ != -1) lanesPos.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01));
-          }
-          for (int zId : listB) {
-            if (zId < 0 || zId >= model.zones.size()) continue;
-            int colZ = (zoneStrokeCols != null && zId < zoneStrokeCols.length) ? zoneStrokeCols[zId] : -1;
-            if (colZ != -1) lanesNeg.add(new Lane(zoneW, colZ, s.zoneStrokeAlpha01));
-          }
-        }
-
-        if (drawBiomes && biomeDiff) {
-          if (biomeA >= 0 && biomeA < model.biomeTypes.size()) {
-          int col = (biomeScaledCols != null && biomeA < biomeScaledCols.length) ? biomeScaledCols[biomeA] : -1;
-          float alpha = s.biomeOutlineAlpha01;
-          if (col != -1 && alpha > 1e-4f) lanesPos.add(new Lane(biomeW, col, alpha));
-        }
-        if (biomeB >= 0 && biomeB < model.biomeTypes.size()) {
-          int col = (biomeScaledCols != null && biomeB < biomeScaledCols.length) ? biomeScaledCols[biomeB] : -1;
-          float alpha = s.biomeOutlineAlpha01;
-          if (col != -1 && alpha > 1e-4f) lanesNeg.add(new Lane(biomeW, col, alpha));
-        }
+    if (drawBiomes) {
+      ensureBiomeLayer(app, s);
+      if (biomeLayer != null) {
+        app.pushStyle();
+        app.pushMatrix();
+        app.resetMatrix();
+        app.tint(255, constrain(s.biomeOutlineAlpha01, 0, 1) * 255);
+        app.image(biomeLayer, 0, 0);
+        app.popMatrix();
+        app.popStyle();
       }
-
-        Comparator<Lane> cmp = new Comparator<Lane>() {
-          public int compare(Lane aL, Lane bL) { return Float.compare(bL.width, aL.width); }
-        };
-        Collections.sort(lanesPos, cmp);
-        Collections.sort(lanesNeg, cmp);
-
-        float offsetPos = 0;
-        for (Lane l : lanesPos) {
-          if (l.alpha <= 1e-4f || l.width <= 1e-4f) continue;
-          float laneOff = offsetPos + l.width * 0.5f;
-          app.stroke(l.col, l.alpha * 255);
-          app.strokeCap(PConstants.ROUND);
-          app.strokeJoin(PConstants.ROUND);
-          app.strokeWeight(l.width);
-          app.line(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, b.x + nrm.x * laneOff, b.y + nrm.y * laneOff);
-          if (drawRoundCaps) {
-            float hw = l.width * 0.5f;
-            app.noStroke();
-            app.fill(l.col, l.alpha * 255);
-            app.ellipse(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, hw * 2, hw * 2);
-            app.ellipse(b.x + nrm.x * laneOff, b.y + nrm.y * laneOff, hw * 2, hw * 2);
-            app.stroke(l.col, l.alpha * 255);
-          }
-          offsetPos += l.width + laneGap;
-        }
-        float offsetNeg = 0;
-        for (Lane l : lanesNeg) {
-          if (l.alpha <= 1e-4f || l.width <= 1e-4f) continue;
-          float laneOff = offsetNeg + l.width * 0.5f;
-          app.stroke(l.col, l.alpha * 255);
-          app.strokeCap(PConstants.ROUND);
-          app.strokeJoin(PConstants.ROUND);
-          app.strokeWeight(l.width);
-          app.line(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, b.x - nrm.x * laneOff, b.y - nrm.y * laneOff);
-          if (drawRoundCaps) {
-            float hw = l.width * 0.5f;
-            app.noStroke();
-            app.fill(l.col, l.alpha * 255);
-            app.ellipse(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, hw * 2, hw * 2);
-            app.ellipse(b.x - nrm.x * laneOff, b.y - nrm.y * laneOff, hw * 2, hw * 2);
-            app.stroke(l.col, l.alpha * 255);
-          }
-          offsetNeg += l.width + laneGap;
-        }
-
-        drawn.add(key);
-      }
+    } else {
+      biomeLayer = null;
     }
-
-    app.popStyle();
   }
 
   void drawSeg(PApplet app, PVector a, PVector b) {
@@ -1528,6 +1340,557 @@ class MapRenderer {
       return ax + "," + ay + "-" + bx + "," + by;
     } else {
       return bx + "," + by + "-" + ax + "," + ay;
+    }
+  }
+
+  private int hashArray(int[] arr) {
+    if (arr == null) return 0;
+    int h = 1;
+    for (int v : arr) h = 31 * h + v;
+    return h;
+  }
+
+  private int coastSettingsHash(RenderSettings s) {
+    int h = 17;
+    h = 31 * h + round(s.waterContourSizePx * 1000.0f);
+    h = 31 * h + round(s.waterContourHue01 * 1000.0f);
+    h = 31 * h + round(s.waterContourSat01 * 1000.0f);
+    h = 31 * h + round(s.waterContourBri01 * 1000.0f);
+    h = 31 * h + (drawRoundCaps ? 1 : 0);
+    h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
+    return h;
+  }
+
+  private void ensureCoastLayer(PApplet app, RenderSettings s, float seaLevel) {
+    if (model == null || model.cells == null || model.cells.isEmpty()) {
+      coastLayer = null;
+      return;
+    }
+    int targetW = (app.g != null) ? app.g.width : app.width;
+    int targetH = (app.g != null) ? app.g.height : app.height;
+    int hash = coastSettingsHash(s);
+    boolean sizeChanged = coastLayer == null || coastLayerW != targetW || coastLayerH != targetH;
+    boolean viewChanged = coastLayer == null ||
+                          abs(coastLayerZoom - viewport.zoom) > 1e-4f ||
+                          abs(coastLayerCenterX - viewport.centerX) > 1e-4f ||
+                          abs(coastLayerCenterY - viewport.centerY) > 1e-4f;
+    boolean settingsChanged = coastLayer == null ||
+                              coastLayerHash != hash ||
+                              abs(coastLayerSeaLevel - seaLevel) > 1e-6f ||
+                              coastLayerCellCount != model.cells.size();
+
+    if (sizeChanged) {
+      coastLayer = app.createGraphics(targetW, targetH, P2D);
+      coastLayerW = targetW;
+      coastLayerH = targetH;
+      if (coastLayer != null) {
+        if (s.antialiasing) coastLayer.smooth(8); else coastLayer.noSmooth();
+      }
+    } else {
+      if (coastLayer != null) {
+        if (s.antialiasing) coastLayer.smooth(8); else coastLayer.noSmooth();
+      }
+    }
+    if (coastLayer == null) return;
+    if (!(sizeChanged || viewChanged || settingsChanged)) return;
+
+    coastLayer.beginDraw();
+    coastLayer.clear();
+    coastLayer.pushMatrix();
+    coastLayer.pushStyle();
+    viewport.applyTransform(coastLayer, coastLayer.width, coastLayer.height);
+    drawCoastLayer(coastLayer, s, seaLevel);
+    coastLayer.popStyle();
+    coastLayer.popMatrix();
+    coastLayer.endDraw();
+
+    coastLayerHash = hash;
+    coastLayerZoom = viewport.zoom;
+    coastLayerCenterX = viewport.centerX;
+    coastLayerCenterY = viewport.centerY;
+    coastLayerSeaLevel = seaLevel;
+    coastLayerCellCount = model.cells.size();
+  }
+
+  private void drawCoastLayer(PGraphics g, RenderSettings s, float seaLevel) {
+    HashSet<String> drawn = new HashSet<String>();
+    int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, 1.0f);
+    float thisHalfWeight = max(0.1f, s.waterContourSizePx) / viewport.zoom / 2.0f;
+    g.strokeWeight(thisHalfWeight * 2.0f);
+    g.stroke(strokeCol);
+    g.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
+    g.noFill();
+    HashSet<String> capsDrawn = new HashSet<String>();
+    model.ensureCellNeighborsComputed();
+    for (int ci = 0; ci < model.cells.size(); ci++) {
+      Cell c = model.cells.get(ci);
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      boolean isWater = c.elevation < seaLevel;
+      int vc = c.vertices.size();
+      for (int e = 0; e < vc; e++) {
+        PVector a = c.vertices.get(e);
+        PVector b = c.vertices.get((e + 1) % vc);
+        String key = undirectedEdgeKey(a, b);
+        if (drawn.contains(key)) continue;
+        boolean boundary = false;
+        boolean nbIsWater = false;
+        ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
+        if (nbs != null) {
+          for (int nbIdx : nbs) {
+            if (nbIdx < 0 || nbIdx >= model.cells.size()) continue;
+            Cell nb = model.cells.get(nbIdx);
+            if (nb == null || nb.vertices == null) continue;
+            int nv = nb.vertices.size();
+            boolean match = false;
+            for (int j = 0; j < nv; j++) {
+              PVector na = nb.vertices.get(j);
+              PVector nbp = nb.vertices.get((j + 1) % nv);
+              if ((model.distSq(a, na) < 1e-6f && model.distSq(b, nbp) < 1e-6f) ||
+                  (model.distSq(a, nbp) < 1e-6f && model.distSq(b, na) < 1e-6f)) {
+                nbIsWater = nb.elevation < seaLevel;
+                boundary = isWater != nbIsWater;
+                match = true;
+                break;
+              }
+            }
+            if (match) break;
+          }
+        }
+        if (!boundary) continue;
+        drawn.add(key);
+        if (isWater || nbIsWater) {
+          g.line(a.x, a.y, b.x, b.y);
+          if (drawRoundCaps) {
+            String ka = undirectedEdgeKey(a, a);
+            String kb = undirectedEdgeKey(b, b);
+            g.noStroke();
+            g.fill(strokeCol);
+            if (!capsDrawn.contains(ka)) {
+              capsDrawn.add(ka);
+              g.ellipse(a.x, a.y, thisHalfWeight * 2, thisHalfWeight * 2);
+            }
+            if (!capsDrawn.contains(kb)) {
+              capsDrawn.add(kb);
+              g.ellipse(b.x, b.y, thisHalfWeight * 2, thisHalfWeight * 2);
+            }
+            g.stroke(strokeCol);
+          }
+        }
+      }
+    }
+  }
+
+  private int zoneSettingsHash(RenderSettings s, int[] zoneCols) {
+    int h = 19;
+    h = 31 * h + round(s.zoneStrokeSatScale01 * 1000.0f);
+    h = 31 * h + round(s.zoneStrokeBriScale01 * 1000.0f);
+    h = 31 * h + round(s.zoneStrokeSizePx * 1000.0f);
+    h = 31 * h + hashArray(zoneCols);
+    h = 31 * h + (drawRoundCaps ? 1 : 0);
+    h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
+    h = 31 * h + ((model != null && model.zones != null) ? model.zones.size() : 0);
+    return h;
+  }
+
+  private void ensureZoneLayer(PApplet app, RenderSettings s) {
+    if (model == null || model.cells == null || model.cells.isEmpty() || model.zones == null) {
+      zoneLayer = null;
+      return;
+    }
+    int[] zoneStrokeCols = buildZoneStrokeColors(s);
+    int targetW = (app.g != null) ? app.g.width : app.width;
+    int targetH = (app.g != null) ? app.g.height : app.height;
+    int hash = zoneSettingsHash(s, zoneStrokeCols);
+    boolean sizeChanged = zoneLayer == null || zoneLayerW != targetW || zoneLayerH != targetH;
+    boolean viewChanged = zoneLayer == null ||
+                          abs(zoneLayerZoom - viewport.zoom) > 1e-4f ||
+                          abs(zoneLayerCenterX - viewport.centerX) > 1e-4f ||
+                          abs(zoneLayerCenterY - viewport.centerY) > 1e-4f;
+    boolean settingsChanged = zoneLayer == null ||
+                              zoneLayerHash != hash ||
+                              zoneLayerCellCount != model.cells.size() ||
+                              zoneLayerZoneCount != model.zones.size();
+
+    if (sizeChanged) {
+      zoneLayer = app.createGraphics(targetW, targetH, P2D);
+      zoneLayerW = targetW;
+      zoneLayerH = targetH;
+      if (zoneLayer != null) {
+        if (s.antialiasing) zoneLayer.smooth(8); else zoneLayer.noSmooth();
+      }
+    } else {
+      if (zoneLayer != null) {
+        if (s.antialiasing) zoneLayer.smooth(8); else zoneLayer.noSmooth();
+      }
+    }
+    if (zoneLayer == null) return;
+    if (!(sizeChanged || viewChanged || settingsChanged)) return;
+
+    zoneLayer.beginDraw();
+    zoneLayer.clear();
+    zoneLayer.pushMatrix();
+    zoneLayer.pushStyle();
+    viewport.applyTransform(zoneLayer, zoneLayer.width, zoneLayer.height);
+    float zoneW = max(0.1f, s.zoneStrokeSizePx) / viewport.zoom;
+    drawZoneLayer(zoneLayer, zoneStrokeCols, zoneW);
+    zoneLayer.popStyle();
+    zoneLayer.popMatrix();
+    zoneLayer.endDraw();
+
+    zoneLayerHash = hash;
+    zoneLayerZoom = viewport.zoom;
+    zoneLayerCenterX = viewport.centerX;
+    zoneLayerCenterY = viewport.centerY;
+    zoneLayerCellCount = model.cells.size();
+    zoneLayerZoneCount = model.zones.size();
+  }
+
+  private void drawZoneLayer(PGraphics g, int[] zoneStrokeCols, float zoneW) {
+    if (model.cells == null || model.cells.isEmpty()) return;
+    model.ensureCellNeighborsComputed();
+    int n = model.cells.size();
+
+    // zone membership per cell
+    ArrayList<ArrayList<Integer>> zoneForCell = new ArrayList<ArrayList<Integer>>(n);
+    for (int i = 0; i < n; i++) zoneForCell.add(new ArrayList<Integer>());
+    if (model.zones != null) {
+      for (int zi = 0; zi < model.zones.size(); zi++) {
+        MapModel.MapZone z = model.zones.get(zi);
+        if (z == null || z.cells == null) continue;
+        for (int ci : z.cells) {
+          if (ci < 0 || ci >= n) continue;
+          ArrayList<Integer> list = zoneForCell.get(ci);
+          if (!list.contains(zi)) list.add(zi);
+        }
+      }
+    }
+
+    float eps2 = 1e-6f;
+    float laneGap = max(0.2f / viewport.zoom, zoneW * 0.4f);
+    HashSet<String> drawn = new HashSet<String>();
+    ArrayList<Integer> listA = new ArrayList<Integer>();
+    ArrayList<Integer> listB = new ArrayList<Integer>();
+    HashSet<String> capsDrawn = new HashSet<String>();
+
+    class Lane {
+      float width;
+      int col;
+      Lane(float w, int ccol) { width = w; col = ccol; }
+    }
+
+    for (int ci = 0; ci < n; ci++) {
+      Cell c = model.cells.get(ci);
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      ArrayList<Integer> zonesA = zoneForCell.get(ci);
+      int vc = c.vertices.size();
+      for (int e = 0; e < vc; e++) {
+        PVector a = c.vertices.get(e);
+        PVector b = c.vertices.get((e + 1) % vc);
+        String key = undirectedEdgeKey(a, b);
+        if (drawn.contains(key)) continue;
+
+        ArrayList<Integer> zonesB = null;
+        ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
+        if (nbs != null) {
+          for (int nbIdx : nbs) {
+            if (nbIdx < 0 || nbIdx >= n) continue;
+            Cell nb = model.cells.get(nbIdx);
+            if (nb == null || nb.vertices == null) continue;
+            int nv = nb.vertices.size();
+            boolean matched = false;
+            for (int j = 0; j < nv; j++) {
+              PVector na = nb.vertices.get(j);
+              PVector nbp = nb.vertices.get((j + 1) % nv);
+              boolean match = model.distSq(a, na) < eps2 && model.distSq(b, nbp) < eps2;
+              boolean matchRev = model.distSq(a, nbp) < eps2 && model.distSq(b, na) < eps2;
+              if (match || matchRev) {
+                zonesB = zoneForCell.get(nbIdx);
+                matched = true;
+                break;
+              }
+            }
+            if (matched) break;
+          }
+        }
+
+        HashSet<Integer> setA = (zonesA != null) ? new HashSet<Integer>(zonesA) : new HashSet<Integer>();
+        HashSet<Integer> setB = (zonesB != null) ? new HashSet<Integer>(zonesB) : new HashSet<Integer>();
+        HashSet<Integer> uniqueA = new HashSet<Integer>(setA);
+        uniqueA.removeAll(setB);
+        HashSet<Integer> uniqueB = new HashSet<Integer>(setB);
+        uniqueB.removeAll(setA);
+
+        boolean hasDiff = !uniqueA.isEmpty() || !uniqueB.isEmpty();
+        if (!hasDiff) { drawn.add(key); continue; }
+
+        PVector cenA = model.cellCentroid(c);
+        PVector mid = new PVector((a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f);
+        PVector edgeDir = new PVector(b.x - a.x, b.y - a.y);
+        PVector nrm = new PVector(-edgeDir.y, edgeDir.x);
+        float nLen = max(1e-6f, sqrt(nrm.x * nrm.x + nrm.y * nrm.y));
+        nrm.mult(1.0f / nLen);
+        if (cenA != null) {
+          PVector toCenter = PVector.sub(cenA, mid);
+          if (toCenter.dot(nrm) < 0) nrm.mult(-1);
+        }
+
+        ArrayList<Lane> lanesPos = new ArrayList<Lane>();
+        ArrayList<Lane> lanesNeg = new ArrayList<Lane>();
+
+        listA.clear(); listA.addAll(uniqueA); Collections.sort(listA);
+        listB.clear(); listB.addAll(uniqueB); Collections.sort(listB);
+        for (int zId : listA) {
+          if (zId < 0 || zId >= model.zones.size()) continue;
+          int colZ = (zoneStrokeCols != null && zId < zoneStrokeCols.length) ? zoneStrokeCols[zId] : -1;
+          if (colZ != -1) lanesPos.add(new Lane(zoneW, colZ));
+        }
+        for (int zId : listB) {
+          if (zId < 0 || zId >= model.zones.size()) continue;
+          int colZ = (zoneStrokeCols != null && zId < zoneStrokeCols.length) ? zoneStrokeCols[zId] : -1;
+          if (colZ != -1) lanesNeg.add(new Lane(zoneW, colZ));
+        }
+
+        Comparator<Lane> cmp = new Comparator<Lane>() {
+          public int compare(Lane aL, Lane bL) { return Float.compare(bL.width, aL.width); }
+        };
+        Collections.sort(lanesPos, cmp);
+        Collections.sort(lanesNeg, cmp);
+
+        g.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
+        g.strokeJoin(PConstants.ROUND);
+
+        float offsetPos = 0;
+        for (Lane l : lanesPos) {
+          if (l.width <= 1e-4f) continue;
+          float laneOff = offsetPos + l.width * 0.5f;
+          g.stroke(l.col, 255);
+          g.strokeWeight(l.width);
+          g.line(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, b.x + nrm.x * laneOff, b.y + nrm.y * laneOff);
+          if (drawRoundCaps) {
+            float hw = l.width * 0.5f;
+            g.noStroke();
+            g.fill(l.col, 255);
+            String ka = undirectedEdgeKey(a, a);
+            String kb = undirectedEdgeKey(b, b);
+            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(a.x, a.y, hw * 2, hw * 2); }
+            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(b.x, b.y, hw * 2, hw * 2); }
+            g.stroke(l.col, 255);
+          }
+          offsetPos += l.width + laneGap;
+        }
+        float offsetNeg = 0;
+        for (Lane l : lanesNeg) {
+          if (l.width <= 1e-4f) continue;
+          float laneOff = offsetNeg + l.width * 0.5f;
+          g.stroke(l.col, 255);
+          g.strokeWeight(l.width);
+          g.line(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, b.x - nrm.x * laneOff, b.y - nrm.y * laneOff);
+          if (drawRoundCaps) {
+            float hw = l.width * 0.5f;
+            g.noStroke();
+            g.fill(l.col, 255);
+            String ka = undirectedEdgeKey(a, a);
+            String kb = undirectedEdgeKey(b, b);
+            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(a.x, a.y, hw * 2, hw * 2); }
+            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(b.x, b.y, hw * 2, hw * 2); }
+            g.stroke(l.col, 255);
+          }
+          offsetNeg += l.width + laneGap;
+        }
+
+        drawn.add(key);
+      }
+    }
+  }
+
+  private int biomeSettingsHash(RenderSettings s, int[] biomeCols) {
+    int h = 23;
+    h = 31 * h + round(s.biomeOutlineSizePx * 1000.0f);
+    h = 31 * h + hashArray(biomeCols);
+    h = 31 * h + (drawRoundCaps ? 1 : 0);
+    h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
+    h = 31 * h + ((model != null && model.biomeTypes != null) ? model.biomeTypes.size() : 0);
+    return h;
+  }
+
+  private void ensureBiomeLayer(PApplet app, RenderSettings s) {
+    if (model == null || model.cells == null || model.cells.isEmpty() || model.biomeTypes == null) {
+      biomeLayer = null;
+      return;
+    }
+    int[] biomeScaledCols = buildBiomeScaledColors(s);
+    int targetW = (app.g != null) ? app.g.width : app.width;
+    int targetH = (app.g != null) ? app.g.height : app.height;
+    int hash = biomeSettingsHash(s, biomeScaledCols);
+    boolean sizeChanged = biomeLayer == null || biomeLayerW != targetW || biomeLayerH != targetH;
+    boolean viewChanged = biomeLayer == null ||
+                          abs(biomeLayerZoom - viewport.zoom) > 1e-4f ||
+                          abs(biomeLayerCenterX - viewport.centerX) > 1e-4f ||
+                          abs(biomeLayerCenterY - viewport.centerY) > 1e-4f;
+    boolean settingsChanged = biomeLayer == null ||
+                              biomeLayerHash != hash ||
+                              biomeLayerCellCount != model.cells.size() ||
+                              biomeLayerBiomeCount != model.biomeTypes.size();
+
+    if (sizeChanged) {
+      biomeLayer = app.createGraphics(targetW, targetH, P2D);
+      biomeLayerW = targetW;
+      biomeLayerH = targetH;
+      if (biomeLayer != null) {
+        if (s.antialiasing) biomeLayer.smooth(8); else biomeLayer.noSmooth();
+      }
+    } else {
+      if (biomeLayer != null) {
+        if (s.antialiasing) biomeLayer.smooth(8); else biomeLayer.noSmooth();
+      }
+    }
+    if (biomeLayer == null) return;
+    if (!(sizeChanged || viewChanged || settingsChanged)) return;
+
+    biomeLayer.beginDraw();
+    biomeLayer.clear();
+    biomeLayer.pushMatrix();
+    biomeLayer.pushStyle();
+    viewport.applyTransform(biomeLayer, biomeLayer.width, biomeLayer.height);
+    drawBiomeLayer(biomeLayer, s, biomeScaledCols);
+    biomeLayer.popStyle();
+    biomeLayer.popMatrix();
+    biomeLayer.endDraw();
+
+    biomeLayerHash = hash;
+    biomeLayerZoom = viewport.zoom;
+    biomeLayerCenterX = viewport.centerX;
+    biomeLayerCenterY = viewport.centerY;
+    biomeLayerCellCount = model.cells.size();
+    biomeLayerBiomeCount = model.biomeTypes.size();
+  }
+
+  private void drawBiomeLayer(PGraphics g, RenderSettings s, int[] biomeScaledCols) {
+    if (model.cells == null || model.cells.isEmpty()) return;
+    model.ensureCellNeighborsComputed();
+    int n = model.cells.size();
+    float eps2 = 1e-6f;
+    float biomeW = max(0.1f, s.biomeOutlineSizePx) / viewport.zoom;
+    float laneGap = max(0.2f / viewport.zoom, (2.0f / viewport.zoom) * 0.4f);
+    HashSet<String> drawn = new HashSet<String>();
+    HashSet<String> capsDrawn = new HashSet<String>();
+
+    class Lane {
+      float width;
+      int col;
+      Lane(float w, int ccol) { width = w; col = ccol; }
+    }
+
+    for (int ci = 0; ci < n; ci++) {
+      Cell c = model.cells.get(ci);
+      if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+      int vc = c.vertices.size();
+      for (int e = 0; e < vc; e++) {
+        PVector a = c.vertices.get(e);
+        PVector b = c.vertices.get((e + 1) % vc);
+        String key = undirectedEdgeKey(a, b);
+        if (drawn.contains(key)) continue;
+
+        int biomeA = c.biomeId;
+        int biomeB = biomeA;
+        ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
+        if (nbs != null) {
+          for (int nbIdx : nbs) {
+            if (nbIdx < 0 || nbIdx >= n) continue;
+            Cell nb = model.cells.get(nbIdx);
+            if (nb == null || nb.vertices == null) continue;
+            int nv = nb.vertices.size();
+            boolean matched = false;
+            for (int j = 0; j < nv; j++) {
+              PVector na = nb.vertices.get(j);
+              PVector nbp = nb.vertices.get((j + 1) % nv);
+              boolean match = model.distSq(a, na) < eps2 && model.distSq(b, nbp) < eps2;
+              boolean matchRev = model.distSq(a, nbp) < eps2 && model.distSq(b, na) < eps2;
+              if (match || matchRev) {
+                biomeB = nb.biomeId;
+                matched = true;
+                break;
+              }
+            }
+            if (matched) break;
+          }
+        }
+
+        boolean biomeDiff = biomeA != biomeB;
+        if (!biomeDiff) { drawn.add(key); continue; }
+
+        PVector cenA = model.cellCentroid(c);
+        PVector mid = new PVector((a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f);
+        PVector edgeDir = new PVector(b.x - a.x, b.y - a.y);
+        PVector nrm = new PVector(-edgeDir.y, edgeDir.x);
+        float nLen = max(1e-6f, sqrt(nrm.x * nrm.x + nrm.y * nrm.y));
+        nrm.mult(1.0f / nLen);
+        if (cenA != null) {
+          PVector toCenter = PVector.sub(cenA, mid);
+          if (toCenter.dot(nrm) < 0) nrm.mult(-1);
+        }
+
+        ArrayList<Lane> lanesPos = new ArrayList<Lane>();
+        ArrayList<Lane> lanesNeg = new ArrayList<Lane>();
+        if (biomeA >= 0 && biomeScaledCols != null && biomeA < biomeScaledCols.length) {
+          int col = biomeScaledCols[biomeA];
+          if (col != -1) lanesPos.add(new Lane(biomeW, col));
+        }
+        if (biomeB >= 0 && biomeScaledCols != null && biomeB < biomeScaledCols.length) {
+          int col = biomeScaledCols[biomeB];
+          if (col != -1) lanesNeg.add(new Lane(biomeW, col));
+        }
+
+        Comparator<Lane> cmp = new Comparator<Lane>() {
+          public int compare(Lane aL, Lane bL) { return Float.compare(bL.width, aL.width); }
+        };
+        Collections.sort(lanesPos, cmp);
+        Collections.sort(lanesNeg, cmp);
+
+        g.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
+        g.strokeJoin(PConstants.ROUND);
+
+        float offsetPos = 0;
+        for (Lane l : lanesPos) {
+          if (l.width <= 1e-4f) continue;
+          float laneOff = offsetPos + l.width * 0.5f;
+          g.stroke(l.col, 255);
+          g.strokeWeight(l.width);
+          g.line(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, b.x + nrm.x * laneOff, b.y + nrm.y * laneOff);
+          if (drawRoundCaps) {
+            float hw = l.width * 0.5f;
+            g.noStroke();
+            g.fill(l.col, 255);
+            String ka = undirectedEdgeKey(a, a);
+            String kb = undirectedEdgeKey(b, b);
+            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(a.x, a.y, hw * 2, hw * 2); }
+            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(b.x, b.y, hw * 2, hw * 2); }
+            g.stroke(l.col, 255);
+          }
+          offsetPos += l.width + laneGap;
+        }
+        float offsetNeg = 0;
+        for (Lane l : lanesNeg) {
+          if (l.width <= 1e-4f) continue;
+          float laneOff = offsetNeg + l.width * 0.5f;
+          g.stroke(l.col, 255);
+          g.strokeWeight(l.width);
+          g.line(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, b.x - nrm.x * laneOff, b.y - nrm.y * laneOff);
+          if (drawRoundCaps) {
+            float hw = l.width * 0.5f;
+            g.noStroke();
+            g.fill(l.col, 255);
+            String ka = undirectedEdgeKey(a, a);
+            String kb = undirectedEdgeKey(b, b);
+            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(a.x, a.y, hw * 2, hw * 2); }
+            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(b.x, b.y, hw * 2, hw * 2); }
+            g.stroke(l.col, 255);
+          }
+          offsetNeg += l.width + laneGap;
+        }
+
+        drawn.add(key);
+      }
     }
   }
 
