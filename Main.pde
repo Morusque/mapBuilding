@@ -487,7 +487,13 @@ void applyBiomeGeneration() {
   switch (mode) {
     case 0: // propagation
       mapModel.resetAllBiomesToNone();
-      mapModel.generateZonesFromSeeds();
+      if (mapModel.cells != null && !mapModel.cells.isEmpty()) {
+        int cellCount = mapModel.cells.size();
+        int minSeeds = max(1, round(cellCount / 200.0f));
+        int maxSeeds = max(1, round(cellCount / 10.0f));
+        int seedCount = (int)constrain(round(lerp(minSeeds, maxSeeds, val01)), 1, cellCount);
+        mapModel.generateZonesFromSeeds(seedCount);
+      }
       break;
     case 1: // reset
       mapModel.setAllBiomesTo(targetBiome);
@@ -496,7 +502,18 @@ void applyBiomeGeneration() {
       mapModel.fillGapsFromExistingBiomes();
       break;
     case 3: // replace gaps
-      mapModel.fillGapsWithNewBiomes(map(biomeGenerateValue01,0,1,160,20));
+      if (mapModel.cells != null && !mapModel.cells.isEmpty()) {
+        int gapCount = 0;
+        for (Cell c : mapModel.cells) {
+          if (c != null && c.biomeId == 0) gapCount++;
+        }
+        if (gapCount > 0) {
+          int minSeeds = max(1, round(gapCount / 200.0f));
+          int maxSeeds = max(1, round(gapCount / 10.0f));
+          int seedCount = (int)constrain(round(lerp(minSeeds, maxSeeds, val01)), 1, gapCount);
+          mapModel.fillGapsWithNewBiomesByCount(seedCount);
+        }
+      }
       break;
     case 4: // fill under
       mapModel.fillUnderThreshold(targetBiome, threshold);
@@ -505,16 +522,30 @@ void applyBiomeGeneration() {
       mapModel.fillAboveThreshold(targetBiome, threshold);
       break;
     case 6: // extend
-      mapModel.extendBiomeOnce(targetBiome);
+      {
+        int steps = max(1, round(lerp(1, 30, val01)));
+        for (int i = 0; i < steps; i++) mapModel.extendBiomeOnce(targetBiome);
+      }
       break;
     case 7: // shrink
-      mapModel.shrinkBiomeOnce(targetBiome);
+      {
+        int steps = max(1, round(lerp(1, 30, val01)));
+        for (int i = 0; i < steps; i++) mapModel.shrinkBiomeOnce(targetBiome);
+      }
       break;
     case 8: // spots
-      mapModel.placeBiomeSpots(targetBiome, val01);
+      if (mapModel.cells != null && !mapModel.cells.isEmpty()) {
+        int n = mapModel.cells.size();
+        int maxSpots = max(1, min(30, round(n / 200.0f)));
+        int spotCount = (int)constrain(round(lerp(1, maxSpots, val01)), 1, maxSpots);
+        mapModel.placeBiomeSpots(targetBiome, spotCount, 0.6f);
+      }
       break;
     case 9: // vary
-      mapModel.varyBiomesOnce();
+      {
+        int steps = max(1, round(lerp(1, 20, val01)));
+        for (int i = 0; i < steps; i++) mapModel.varyBiomesOnce();
+      }
       break;
     case 10: // slice spot
       mapModel.placeSliceSpot(targetBiome, val01, threshold);

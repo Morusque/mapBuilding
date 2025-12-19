@@ -4,17 +4,14 @@ Mandatory for full first use milestone :
 (later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 (later) make sure everything can be bitmap
 
-Unfinished features :
-(later) Biomes : review "value" sliders
-(later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
-(later) are there existing formats for such tools to handle? (at least research)
-
-Bugs :
+Bugs or things to investigate :
 (later) Paths : taping sometimes wrong (probably needs doubly connected edges and propagation done right)
 (later) path saturation button doesn't work
 (later) write labels on top
 (later) trying to export with labels makes the thing crash with a NullPointerException or IllegalArgumentException: Width (0) and height (0) cannot be <= 0
 (later) some sliders don't work well
+(later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
+(later) are there existing formats for such tools to handle? (at least research)
 
 Other :
 (maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).

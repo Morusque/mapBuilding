@@ -122,18 +122,18 @@ String tooltipFor(String key) {
 String tooltipForBiomeValue() {
   int idx = constrain(biomeGenerateModeIndex, 0, biomeGenerateModes.length - 1);
   switch (idx) {
-    case 0: return "Propagation: number of seeds (TODO).";
+    case 0: return "Propagation: number of starting seeds (from few to many).";
     case 1: return "Reset: (no use).";
     case 2: return "Fill gaps: (no use).";
-    case 3: return "Replace gaps: number of seeds (TODO).";
+    case 3: return "Replace gaps: number of seeds scaled to empty area.";
     case 4: return "Fill under: sets elevation threshold.";
     case 5: return "Fill above: sets elevation threshold.";
-    case 6: return "Extend: how much the biome grows outward (TODO?).";
-    case 7: return "Shrink: how much the biome retracts from edges (TODO?).";
-    case 8: return "Spots: spot size and strength (TODO?).";
-    case 9: return "Vary: variations strength (TODO).";
+    case 6: return "Extend: how many outward growth passes.";
+    case 7: return "Shrink: how many erosion passes.";
+    case 8: return "Spots: number of spots to paint.";
+    case 9: return "Vary: strength/iterations of variation.";
     case 10: return "Slice spot: thickness around the chosen elevation (value slider).";
-    case 11: return "Full: (no use)).";
+    case 11: return "Full: (no use).";
   }
   return "Value slider meaning depends on chosen generation mode.";
 }

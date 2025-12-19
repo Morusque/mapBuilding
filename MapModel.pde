@@ -3698,6 +3698,10 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
   // Fill all "None" zones by seeding random types and expanding through neighbors.
   // Existing non-None assignments remain and act as seeds for their own type.
   void generateZonesFromSeeds() {
+    generateZonesFromSeeds(-1);
+  }
+
+  void generateZonesFromSeeds(int seedCountOverride) {
     if (cells == null || cells.isEmpty()) return;
     int typeCount = biomeTypes.size() - 1; // exclude "None"
     if (typeCount <= 0) return;
@@ -3751,8 +3755,14 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
 
     // Add random seeds inside "None" cells to diversify coverage
     Collections.shuffle(noneIndices);
-    float avgBiomeSubzoneSize = random(10.0,200.0);
-    int seedCount = floor(noneIndices.size()/avgBiomeSubzoneSize);
+    int seedCount;
+    if (seedCountOverride > 0) {
+      seedCount = min(seedCountOverride, noneIndices.size());
+    } else {
+      float avgBiomeSubzoneSize = random(10.0,200.0);
+      seedCount = floor(noneIndices.size()/avgBiomeSubzoneSize);
+    }
+    seedCount = max(1, min(seedCount, noneIndices.size()));
     for (int i = 0; i < seedCount; i++) {
       int idx = noneIndices.get(i);
       Cell c = cells.get(idx);
@@ -3908,6 +3918,14 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
   }
 
   void fillGapsWithNewBiomes(float avgSize) {
+    fillGapsWithNewBiomesInternal(-1, avgSize);
+  }
+
+  void fillGapsWithNewBiomesByCount(int seedCount) {
+    fillGapsWithNewBiomesInternal(max(1, seedCount), -1);
+  }
+
+  void fillGapsWithNewBiomesInternal(int desiredSeedCount, float avgSize) {
     if (cells == null || cells.isEmpty()) return;
     ensureCellNeighborsComputed();
     int n = cells.size();
@@ -3928,7 +3946,12 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     Arrays.fill(assign, -1);
     ArrayDeque<Integer> q = new ArrayDeque<Integer>();
 
-    int seedCount = max(1, min(gaps.size(), round(gaps.size() / avgSize)));
+    int seedCount;
+    if (desiredSeedCount > 0) {
+      seedCount = min(desiredSeedCount, gaps.size());
+    } else {
+      seedCount = max(1, min(gaps.size(), round(gaps.size() / avgSize)));
+    }
     for (int i = 0; i < seedCount; i++) {
       int idx = gaps.get(i);
       int bid = 1 + (int)random(typeCount);
@@ -4026,8 +4049,8 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     snapDirty = true;
   }
 
-  void placeBiomeSpots(int biomeId, float value01) {
-    if (cells == null || cells.isEmpty()) return;
+  boolean placeBiomeSpotOnce(int biomeId, float value01) {
+    if (cells == null || cells.isEmpty()) return false;
     ensureCellNeighborsComputed();
     int n = cells.size();
     boolean[] visited = new boolean[n];
@@ -4047,11 +4070,11 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     int targetSize = max(1, round(avg * value01 * 2.0f));
     int startIdx = (int)random(n);
     int tries = 0;
-    while (tries < 100 && (startIdx < 0 || startIdx >= n || cells.get(startIdx) == null || cells.get(startIdx).biomeId == biomeId)) {
+    while (tries < 200 && (startIdx < 0 || startIdx >= n || cells.get(startIdx) == null || cells.get(startIdx).biomeId == biomeId)) {
       startIdx = (int)random(n);
       tries++;
     }
-    if (startIdx < 0 || startIdx >= n) return;
+    if (startIdx < 0 || startIdx >= n) return false;
     ArrayDeque<Integer> q = new ArrayDeque<Integer>();
     HashSet<Integer> claimed = new HashSet<Integer>();
     q.add(startIdx);
@@ -4069,12 +4092,35 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
         if (claimed.size() >= targetSize) break;
       }
     }
+    boolean changed = false;
     for (int idx : claimed) {
       Cell c = cells.get(idx);
-      if (c != null) c.biomeId = biomeId;
+      if (c != null && c.biomeId != biomeId) {
+        c.biomeId = biomeId;
+        changed = true;
+      }
     }
-    renderer.invalidateBiomeOutlineCache();
-    snapDirty = true;
+    return changed;
+  }
+
+  void placeBiomeSpots(int biomeId, float value01) {
+    boolean changed = placeBiomeSpotOnce(biomeId, value01);
+    if (changed) {
+      renderer.invalidateBiomeOutlineCache();
+      snapDirty = true;
+    }
+  }
+
+  void placeBiomeSpots(int biomeId, int spotCount, float size01) {
+    int count = max(1, spotCount);
+    boolean changedAny = false;
+    for (int i = 0; i < count; i++) {
+      if (placeBiomeSpotOnce(biomeId, size01)) changedAny = true;
+    }
+    if (changedAny) {
+      renderer.invalidateBiomeOutlineCache();
+      snapDirty = true;
+    }
   }
 
   int floodCountBiome(int startIdx, boolean[] visited) {
