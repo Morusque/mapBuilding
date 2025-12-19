@@ -1952,7 +1952,7 @@ class RenderLayout {
   IntRect lightAlphaSlider;
   IntRect lightAzimuthSlider;
   IntRect lightAltitudeSlider;
-  IntRect lightBlurSlider;
+  IntRect lightDitherSlider;
 
   IntRect waterContourSizeSlider;
   IntRect waterRippleCountSlider;
@@ -2075,7 +2075,7 @@ RenderLayout buildRenderLayout() {
     l.lightAltitudeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-    l.lightBlurSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    l.lightDitherSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
@@ -2249,7 +2249,7 @@ void drawRenderPanel() {
     drawSlider(layout.lightAzimuthSlider, tAz, "Light azimuth (" + nf(renderSettings.elevationLightAzimuthDeg, 1, 0) + " deg)");
     float tAlt = constrain(map(renderSettings.elevationLightAltitudeDeg, 5.0f, 80.0f, 0, 1), 0, 1);
     drawSlider(layout.lightAltitudeSlider, tAlt, "Light altitude (" + nf(renderSettings.elevationLightAltitudeDeg, 1, 0) + " deg)");
-    drawSlider(layout.lightBlurSlider, constrain(renderSettings.elevationLightBlurPx / 10.0f, 0, 1), "Light blur (" + nf(renderSettings.elevationLightBlurPx, 1, 1) + " px)");
+    drawSlider(layout.lightDitherSlider, constrain(renderSettings.elevationLightDitherPx / 10.0f, 0, 1), "Light dither (" + nf(renderSettings.elevationLightDitherPx, 1, 1) + ")");
   }
 
   drawSectionHeader(layout.headerContours, "Contours", renderSectionContoursOpen);

@@ -780,10 +780,10 @@ void updateActiveSlider(int mx, int my) {
       renderSettings.zoneStrokeBriScale01 = t;
       break;
     }
-    case SLIDER_RENDER_LIGHT_BLUR: {
+    case SLIDER_RENDER_LIGHT_DITHER: {
       RenderLayout l = buildRenderLayout();
-      float t = constrain((mx - l.lightBlurSlider.x) / (float)l.lightBlurSlider.w, 0, 1);
-      renderSettings.elevationLightBlurPx = constrain(t * 10.0f, 0, 10.0f);
+      float t = constrain((mx - l.lightDitherSlider.x) / (float)l.lightDitherSlider.w, 0, 1);
+      renderSettings.elevationLightDitherPx = constrain(t * 10.0f, 0, 10.0f);
       break;
     }
     case SLIDER_RENDER_LABEL_OUTLINE_ALPHA: {

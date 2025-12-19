@@ -46,7 +46,7 @@ class RenderSettings {
   float elevationLightAlpha01 = 0.5f;
   float elevationLightAzimuthDeg = 220.0f;
   float elevationLightAltitudeDeg = 45.0f;
-  float elevationLightBlurPx = 0.0f;
+  float elevationLightDitherPx = 0.0f;
 
   // Contours
   float waterContourSizePx = 2.0f;
@@ -121,7 +121,7 @@ class RenderSettings {
     c.elevationLightAlpha01 = elevationLightAlpha01;
     c.elevationLightAzimuthDeg = elevationLightAzimuthDeg;
     c.elevationLightAltitudeDeg = elevationLightAltitudeDeg;
-    c.elevationLightBlurPx = elevationLightBlurPx;
+    c.elevationLightDitherPx = elevationLightDitherPx;
     // Contours
     c.waterContourSizePx = waterContourSizePx;
     c.waterRippleCount = waterRippleCount;
@@ -193,7 +193,7 @@ class RenderSettings {
     elevationLightAlpha01 = o.elevationLightAlpha01;
     elevationLightAzimuthDeg = o.elevationLightAzimuthDeg;
     elevationLightAltitudeDeg = o.elevationLightAltitudeDeg;
-    elevationLightBlurPx = o.elevationLightBlurPx;
+    elevationLightDitherPx = o.elevationLightDitherPx;
     // Contours
     waterContourSizePx = o.waterContourSizePx;
     waterRippleCount = o.waterRippleCount;
@@ -371,8 +371,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLightAlpha01 = 0.3f;
     s.elevationLightAzimuthDeg = 280.0f;
     s.elevationLightAltitudeDeg = 15.0f;
-    s.elevationLightBlurPx = 0.0f;
-    s.elevationLightBlurPx = 0.0f;
+    s.elevationLightDitherPx = 0.0f;
     s.waterContourSizePx = 2.5f;
     s.waterRippleCount = 0;
     s.waterRippleDistancePx = 0.0f;
@@ -425,7 +424,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLightAlpha01 = 0.25f;
     s.elevationLightAzimuthDeg = 220.0f;
     s.elevationLightAltitudeDeg = 25.0f;
-    s.elevationLightBlurPx = 0.0f;
+    s.elevationLightDitherPx = 0.0f;
     s.waterContourSizePx = 3.0f;
     s.waterRippleCount = 0;
     s.waterRippleDistancePx = 0.0f;
@@ -478,7 +477,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLightAlpha01 = 0.0f;
     s.elevationLightAzimuthDeg = 220.0f;
     s.elevationLightAltitudeDeg = 45.0f;
-    s.elevationLightBlurPx = 0.0f;
+    s.elevationLightDitherPx = 0.0f;
     s.waterContourSizePx = 2.0f;
     s.waterRippleCount = 3;
     s.waterRippleDistancePx = 4.0f;
@@ -532,7 +531,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLightAlpha01 = 0.4f;
     s.elevationLightAzimuthDeg = 250.0f;
     s.elevationLightAltitudeDeg = 10.0f;
-    s.elevationLightBlurPx = 0.0f;
+    s.elevationLightDitherPx = 0.0f;
     s.waterContourSizePx = 2.0f;
     s.waterRippleCount = 4;
     s.waterRippleDistancePx = 6.0f;
@@ -689,8 +688,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLightAlpha01 = 1.0f;
     s.elevationLightAzimuthDeg = 300.0f;
     s.elevationLightAltitudeDeg = 70.0f;
-    s.elevationLightBlurPx = 0.0f;
-    s.elevationLightBlurPx = 0.0f;
+    s.elevationLightDitherPx = 0.0f;
     s.waterContourSizePx = 4.0f;
     s.waterRippleCount = 5;
     s.waterRippleDistancePx = 20.0f;

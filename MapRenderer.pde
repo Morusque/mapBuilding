@@ -1748,7 +1748,7 @@ class MapRenderer {
     h = 31 * h + round(s.elevationLightAzimuthDeg * 100.0f);
     h = 31 * h + round(s.elevationLightAltitudeDeg * 100.0f);
     h = 31 * h + round(s.elevationLightAlpha01 * 1000.0f);
-    h = 31 * h + round(s.elevationLightBlurPx * 1000.0f);
+    h = 31 * h + round(s.elevationLightDitherPx * 1000.0f);
     h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
     return h;
   }
@@ -1977,13 +1977,14 @@ class MapRenderer {
     elevationLightLayer.pushStyle();
     viewport.applyTransform(elevationLightLayer, elevationLightLayer.width, elevationLightLayer.height);
     drawElevationLightLayer(elevationLightLayer, s, seaLevel);
-    float blurPx = max(0, s.elevationLightBlurPx);
-    if (blurPx > 1e-3f) {
-      elevationLightLayer.filter(PConstants.BLUR, blurPx);
-    }
     elevationLightLayer.popStyle();
     elevationLightLayer.popMatrix();
     elevationLightLayer.endDraw();
+
+    float dither = max(0, s.elevationLightDitherPx);
+    if (dither > 1e-3f) {
+      applyLightDither(elevationLightLayer, dither);
+    }
 
     elevationLightHashVal = hash;
     elevationLightZoom = viewport.zoom;
@@ -2010,6 +2011,30 @@ class MapRenderer {
       g.fill(shade);
       drawPoly(g, c.vertices);
     }
+  }
+
+  private void applyLightDither(PGraphics g, float radius) {
+    if (g == null || radius <= 1e-4f) return;
+    g.loadPixels();
+    int w = g.width;
+    int h = g.height;
+    int total = w * h;
+    if (total <= 0) return;
+    int swaps = total / 2;
+    for (int i = 0; i < swaps; i++) {
+      int idx = (int)random(total);
+      int x = idx % w;
+      int y = idx / w;
+      int dx = round(random(-radius, radius));
+      int dy = round(random(-radius, radius));
+      int x2 = constrain(x + dx, 0, w - 1);
+      int y2 = constrain(y + dy, 0, h - 1);
+      int idx2 = y2 * w + x2;
+      int tmp = g.pixels[idx];
+      g.pixels[idx] = g.pixels[idx2];
+      g.pixels[idx2] = tmp;
+    }
+    g.updatePixels();
   }
 
   PImage generateNoiseTexture() {
