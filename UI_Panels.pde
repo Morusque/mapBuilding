@@ -2230,17 +2230,29 @@ void drawRenderPanel() {
   drawSectionHeader(layout.headerBase, "Base", renderSectionBaseOpen);
   if (renderSectionBaseOpen) {
     drawHSBRow(layout.landHSB, "Land base", renderSettings.landHue01, renderSettings.landSat01, renderSettings.landBri01);
+    registerUiTooltip(layout.landHSB[0], tooltipFor("render_land_h"));
+    registerUiTooltip(layout.landHSB[1], tooltipFor("render_land_s"));
+    registerUiTooltip(layout.landHSB[2], tooltipFor("render_land_b"));
     drawHSBRow(layout.waterHSB, "Water base", renderSettings.waterHue01, renderSettings.waterSat01, renderSettings.waterBri01);
+    registerUiTooltip(layout.waterHSB[0], tooltipFor("render_water_h"));
+    registerUiTooltip(layout.waterHSB[1], tooltipFor("render_water_s"));
+    registerUiTooltip(layout.waterHSB[2], tooltipFor("render_water_b"));
     drawSlider(layout.cellBordersAlphaSlider, renderSettings.cellBorderAlpha01, "Cell borders alpha (" + nf(renderSettings.cellBorderAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.cellBordersAlphaSlider, tooltipFor("render_cell_borders"));
     drawSlider(layout.backgroundNoiseSlider, renderSettings.backgroundNoiseAlpha01, "Background noise (" + nf(renderSettings.backgroundNoiseAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.backgroundNoiseSlider, tooltipFor("render_noise_alpha"));
   }
 
   drawSectionHeader(layout.headerBiomes, "Biomes", renderSectionBiomesOpen);
   if (renderSectionBiomesOpen) {
     drawSlider(layout.biomeFillAlphaSlider, renderSettings.biomeFillAlpha01, "Emerged biomes alpha (" + nf(renderSettings.biomeFillAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.biomeFillAlphaSlider, tooltipFor("render_biome_fill_alpha"));
     drawSlider(layout.biomeUnderwaterAlphaSlider, renderSettings.biomeUnderwaterAlpha01, "Underwater biomes alpha (" + nf(renderSettings.biomeUnderwaterAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.biomeUnderwaterAlphaSlider, tooltipFor("render_biome_underwater_alpha"));
     drawSlider(layout.biomeSatSlider, renderSettings.biomeSatScale01, "Biomes saturation (" + nf(renderSettings.biomeSatScale01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.biomeSatSlider, tooltipFor("render_biome_sat"));
     drawSlider(layout.biomeBriSlider, renderSettings.biomeBriScale01, "Biomes brightness (" + nf(renderSettings.biomeBriScale01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.biomeBriSlider, tooltipFor("render_biome_bri"));
     String[] fillLabels = { "Color", "Pattern", "Pattern background" };
     for (int i = 0; i < layout.biomeFillTypeButtons.size(); i++) {
       IntRect b = layout.biomeFillTypeButtons.get(i);
@@ -2252,59 +2264,88 @@ void drawRenderPanel() {
       fill(10);
       textAlign(CENTER, CENTER);
       text(fillLabels[i], b.x + b.w / 2, b.y + b.h / 2);
+      registerUiTooltip(b, tooltipFor("render_biome_fill_type"));
     }
     drawSlider(layout.biomeOutlineSizeSlider, constrain(renderSettings.biomeOutlineSizePx / 5.0f, 0, 1), "Biomes outlines size (" + nf(renderSettings.biomeOutlineSizePx, 1, 1) + " px)");
+    registerUiTooltip(layout.biomeOutlineSizeSlider, tooltipFor("render_biome_outline_size"));
     drawSlider(layout.biomeOutlineAlphaSlider, renderSettings.biomeOutlineAlpha01, "Biomes outlines alpha (" + nf(renderSettings.biomeOutlineAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.biomeOutlineAlphaSlider, tooltipFor("render_biome_outline_alpha"));
   }
 
   drawSectionHeader(layout.headerShading, "Shading", renderSectionShadingOpen);
   if (renderSectionShadingOpen) {
     drawSlider(layout.waterDepthAlphaSlider, renderSettings.waterDepthAlpha01, "Water depth alpha (" + nf(renderSettings.waterDepthAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.waterDepthAlphaSlider, tooltipFor("render_water_depth_alpha"));
     drawSlider(layout.lightAlphaSlider, renderSettings.elevationLightAlpha01, "Elevation light alpha (" + nf(renderSettings.elevationLightAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.lightAlphaSlider, tooltipFor("render_light_alpha"));
     float tAz = constrain(renderSettings.elevationLightAzimuthDeg / 360.0f, 0, 1);
     drawSlider(layout.lightAzimuthSlider, tAz, "Light azimuth (" + nf(renderSettings.elevationLightAzimuthDeg, 1, 0) + " deg)");
+    registerUiTooltip(layout.lightAzimuthSlider, tooltipFor("render_light_azimuth"));
     float tAlt = constrain(map(renderSettings.elevationLightAltitudeDeg, 5.0f, 80.0f, 0, 1), 0, 1);
     drawSlider(layout.lightAltitudeSlider, tAlt, "Light altitude (" + nf(renderSettings.elevationLightAltitudeDeg, 1, 0) + " deg)");
+    registerUiTooltip(layout.lightAltitudeSlider, tooltipFor("render_light_altitude"));
     drawSlider(layout.lightDitherSlider, constrain(renderSettings.elevationLightDitherPx / 10.0f, 0, 1), "Light dither (" + nf(renderSettings.elevationLightDitherPx, 1, 1) + ")");
+    registerUiTooltip(layout.lightDitherSlider, tooltipFor("render_light_dither"));
   }
 
   drawSectionHeader(layout.headerContours, "Contours", renderSectionContoursOpen);
   if (renderSectionContoursOpen) {
     drawSlider(layout.waterContourSizeSlider, constrain(renderSettings.waterContourSizePx / 5.0f, 0, 1), "Water contour size (" + nf(renderSettings.waterContourSizePx, 1, 1) + " px)");
+    registerUiTooltip(layout.waterContourSizeSlider, tooltipFor("render_water_contour_size"));
     drawSlider(layout.waterRippleCountSlider, constrain(renderSettings.waterRippleCount / 5.0f, 0, 1), "Number of ripples (" + renderSettings.waterRippleCount + ")");
+    registerUiTooltip(layout.waterRippleCountSlider, tooltipFor("render_water_ripple_count"));
     drawSlider(layout.waterRippleDistanceSlider, constrain(renderSettings.waterRippleDistancePx / 40.0f, 0, 1), "Ripple distance (" + nf(renderSettings.waterRippleDistancePx, 1, 1) + " px)");
+    registerUiTooltip(layout.waterRippleDistanceSlider, tooltipFor("render_water_ripple_dist"));
     drawHSBRow(layout.waterContourHSB, "Water contours", renderSettings.waterContourHue01, renderSettings.waterContourSat01, renderSettings.waterContourBri01);
+    registerUiTooltip(layout.waterContourHSB[0], tooltipFor("render_water_contour_h"));
+    registerUiTooltip(layout.waterContourHSB[1], tooltipFor("render_water_contour_s"));
+    registerUiTooltip(layout.waterContourHSB[2], tooltipFor("render_water_contour_b"));
     drawSlider(layout.waterContourCoastAlphaSlider, renderSettings.waterCoastAlpha01, "Coastline alpha (" + nf(renderSettings.waterCoastAlpha01 * 100, 1, 0) + "%)");
-    registerUiTooltip(layout.waterContourCoastAlphaSlider, tooltipFor("render_contours"));
+    registerUiTooltip(layout.waterContourCoastAlphaSlider, tooltipFor("render_water_coast_alpha"));
     drawSlider(layout.waterHatchAngleSlider, constrain((renderSettings.waterHatchAngleDeg + 90.0f) / 180.0f, 0, 1), "Hatching angle (" + nf(renderSettings.waterHatchAngleDeg, 1, 1) + " deg)");
+    registerUiTooltip(layout.waterHatchAngleSlider, tooltipFor("render_water_hatch_angle"));
     drawSlider(layout.waterHatchLengthSlider, constrain(renderSettings.waterHatchLengthPx / 400.0f, 0, 1), "Hatching length (" + nf(renderSettings.waterHatchLengthPx, 1, 1) + " px)");
+    registerUiTooltip(layout.waterHatchLengthSlider, tooltipFor("render_water_hatch_length"));
     float spacingNorm = constrain(renderSettings.waterHatchSpacingPx / 120.0f, 0, 1);
     drawSlider(layout.waterHatchSpacingSlider, spacingNorm, "Hatching spacing (" + nf(renderSettings.waterHatchSpacingPx, 1, 1) + " px)");
+    registerUiTooltip(layout.waterHatchSpacingSlider, tooltipFor("render_water_hatch_spacing"));
     drawSlider(layout.waterHatchAlphaSlider, renderSettings.waterHatchAlpha01, "Hatching alpha (" + nf(renderSettings.waterHatchAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.waterHatchAlphaSlider, tooltipFor("render_water_hatch_alpha"));
     drawSlider(layout.waterRippleAlphaStartSlider, renderSettings.waterRippleAlphaStart01, "Ripple near shore alpha (" + nf(renderSettings.waterRippleAlphaStart01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.waterRippleAlphaStartSlider, tooltipFor("render_water_ripple_alpha_start"));
     drawSlider(layout.waterRippleAlphaEndSlider, renderSettings.waterRippleAlphaEnd01, "Ripple far alpha (" + nf(renderSettings.waterRippleAlphaEnd01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.waterRippleAlphaEndSlider, tooltipFor("render_water_ripple_alpha_end"));
     float elevCountNorm = constrain(renderSettings.elevationLinesCount / 24.0f, 0, 1);
     drawSlider(layout.elevationLinesCountSlider, elevCountNorm, "Elevation lines (" + renderSettings.elevationLinesCount + ")");
+    registerUiTooltip(layout.elevationLinesCountSlider, tooltipFor("render_elev_lines_count"));
     if (layout.elevationLineStyleSelector != null) {
       IntRect b = layout.elevationLineStyleSelector;
       drawSelectorSlider(b, 0, "Style: Basic", 1);
     }
     drawSlider(layout.elevationLinesAlphaSlider, renderSettings.elevationLinesAlpha01, "Elevation lines alpha (" + nf(renderSettings.elevationLinesAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.elevationLinesAlphaSlider, tooltipFor("render_elev_lines_alpha"));
   }
 
   drawSectionHeader(layout.headerPaths, "Paths", renderSectionPathsOpen);
   if (renderSectionPathsOpen) {
     drawCheckbox(layout.pathsShowCheckbox.x, layout.pathsShowCheckbox.y, layout.pathsShowCheckbox.w, renderSettings.showPaths, "Show paths");
+    registerUiTooltip(layout.pathsShowCheckbox, tooltipFor("render_paths_show"));
     drawSlider(layout.pathSatSlider, renderSettings.pathSatScale01, "Paths saturation (" + nf(renderSettings.pathSatScale01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.pathSatSlider, tooltipFor("render_paths_sat"));
     drawSlider(layout.pathBriSlider, renderSettings.pathBriScale01, "Paths brightness (" + nf(renderSettings.pathBriScale01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.pathBriSlider, tooltipFor("render_paths_bri"));
   }
 
   drawSectionHeader(layout.headerZones, "Zones", renderSectionZonesOpen);
   if (renderSectionZonesOpen) {
     drawSlider(layout.zoneAlphaSlider, renderSettings.zoneStrokeAlpha01, "Zone lines alpha (" + nf(renderSettings.zoneStrokeAlpha01 * 100, 1, 0) + "%)"); 
+    registerUiTooltip(layout.zoneAlphaSlider, tooltipFor("render_zone_alpha"));
     drawSlider(layout.zoneSizeSlider, constrain(renderSettings.zoneStrokeSizePx / 5.0f, 0, 1), "Zone line width (" + nf(renderSettings.zoneStrokeSizePx, 1, 1) + " px)");
+    registerUiTooltip(layout.zoneSizeSlider, tooltipFor("render_zone_size"));
     drawSlider(layout.zoneSatSlider, renderSettings.zoneStrokeSatScale01, "Zone lines saturation (" + nf(renderSettings.zoneStrokeSatScale01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.zoneSatSlider, tooltipFor("render_zone_sat"));
     drawSlider(layout.zoneBriSlider, renderSettings.zoneStrokeBriScale01, "Zone lines brightness (" + nf(renderSettings.zoneStrokeBriScale01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.zoneBriSlider, tooltipFor("render_zone_bri"));
   }
 
   drawSectionHeader(layout.headerStructures, "Structures", renderSectionStructuresOpen);
@@ -2312,22 +2353,31 @@ void drawRenderPanel() {
     drawCheckbox(layout.structuresShowCheckbox.x, layout.structuresShowCheckbox.y, layout.structuresShowCheckbox.w, renderSettings.showStructures, "Show structures");
     drawCheckbox(layout.structuresMergeCheckbox.x, layout.structuresMergeCheckbox.y, layout.structuresMergeCheckbox.w, renderSettings.mergeStructures, "Merge structures");
     drawSlider(layout.structuresShadowAlphaSlider, renderSettings.structureShadowAlpha01, "Shadow alpha (" + nf(renderSettings.structureShadowAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.structuresShowCheckbox, tooltipFor("render_struct_show"));
+    registerUiTooltip(layout.structuresMergeCheckbox, tooltipFor("render_struct_merge"));
+    registerUiTooltip(layout.structuresShadowAlphaSlider, tooltipFor("render_struct_shadow"));
   }
 
   drawSectionHeader(layout.headerLabels, "Labels", renderSectionLabelsOpen);
   if (renderSectionLabelsOpen) {
     drawCheckbox(layout.labelsArbitraryCheckbox.x, layout.labelsArbitraryCheckbox.y, layout.labelsArbitraryCheckbox.w, renderSettings.showLabelsArbitrary, "Show arbitrary");
-    registerUiTooltip(layout.labelsArbitraryCheckbox, tooltipFor("render_labels_arbitrary"));
     drawCheckbox(layout.labelsZonesCheckbox.x, layout.labelsZonesCheckbox.y, layout.labelsZonesCheckbox.w, renderSettings.showLabelsZones, "Show zones");
     drawCheckbox(layout.labelsPathsCheckbox.x, layout.labelsPathsCheckbox.y, layout.labelsPathsCheckbox.w, renderSettings.showLabelsPaths, "Show paths");
     drawCheckbox(layout.labelsStructuresCheckbox.x, layout.labelsStructuresCheckbox.y, layout.labelsStructuresCheckbox.w, renderSettings.showLabelsStructures, "Show structures");
     drawSlider(layout.labelsOutlineAlphaSlider, renderSettings.labelOutlineAlpha01, "Label outline alpha (" + nf(renderSettings.labelOutlineAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.labelsArbitraryCheckbox, tooltipFor("render_labels_arbitrary"));
+    registerUiTooltip(layout.labelsZonesCheckbox, tooltipFor("render_labels_zones"));
+    registerUiTooltip(layout.labelsPathsCheckbox, tooltipFor("render_labels_paths"));
+    registerUiTooltip(layout.labelsStructuresCheckbox, tooltipFor("render_labels_structures"));
+    registerUiTooltip(layout.labelsOutlineAlphaSlider, tooltipFor("render_labels_outline"));
   }
 
   drawSectionHeader(layout.headerGeneral, "General", renderSectionGeneralOpen);
   if (renderSectionGeneralOpen) {
     drawSlider(layout.exportPaddingSlider, constrain(renderSettings.exportPaddingPct / 0.10f, 0, 1), "Export padding (" + nf(renderSettings.exportPaddingPct * 100.0f, 1, 1) + "%)");
     drawCheckbox(layout.antialiasCheckbox.x, layout.antialiasCheckbox.y, layout.antialiasCheckbox.w, renderSettings.antialiasing, "Antialiasing");
+    registerUiTooltip(layout.exportPaddingSlider, tooltipFor("render_export_padding"));
+    registerUiTooltip(layout.antialiasCheckbox, tooltipFor("render_antialias"));
 
     // Preset selector
     if (renderPresets != null && renderPresets.length > 0) {
@@ -2345,6 +2395,7 @@ void drawRenderPanel() {
       fill(10);
       textAlign(CENTER, CENTER);
       text("Apply preset", layout.presetApplyBtn.x + layout.presetApplyBtn.w / 2, layout.presetApplyBtn.y + layout.presetApplyBtn.h / 2);
+      registerUiTooltip(layout.presetApplyBtn, tooltipFor("render_preset_apply"));
     }
   }
 }
