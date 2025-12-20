@@ -832,151 +832,151 @@ void draw() {
     loadingPct = 1.0f;
   }
 
+  boolean renderView = (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT);
+
   // ----- World rendering -----
   pushMatrix();
   viewport.applyTransform(this.g);
 
-  boolean showBorders = !(currentTool == Tool.EDIT_PATHS || currentTool == Tool.EDIT_ELEVATION || currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_STRUCTURES || currentTool == Tool.EDIT_LABELS || currentTool == Tool.EDIT_ZONES || currentTool == Tool.EDIT_EXPORT);
-  boolean drawCellsFlag = !(currentTool == Tool.EDIT_RENDER);
-  boolean renderView = (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT);
   if (renderView) {
     triggerRenderPrerequisitesIfDirty();
     drawRenderView(this);
-  } else if (currentTool == Tool.EDIT_PATHS) {
-    mapModel.drawCellsRender(this, showBorders, true);
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
-  } else if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawCellsRender(this, showBorders, true);
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
-  } else if (currentTool == Tool.EDIT_STRUCTURES) {
-    mapModel.drawCellsRender(this, showBorders, true);
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
-  } else if (currentTool == Tool.EDIT_LABELS) {
-    mapModel.drawCellsRender(this, showBorders, true);
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
-  } else if (currentTool == Tool.EDIT_ZONES) {
-    mapModel.drawCellsRender(this, showBorders, true);
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
-  } else if (drawCellsFlag) {
-    mapModel.drawCells(this, showBorders);
-  }
-
-  if (currentTool == Tool.EDIT_ZONES && !renderView) {
-    mapModel.drawZoneOutlines(this);
-  }
-
-  // Paths are visible in all modes
-  boolean highlightPaths = (currentTool == Tool.EDIT_PATHS);
-  int pathCol = color(60, 60, 200);
-  int pathElevCol = color(120);
-  if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawPaths(this, pathElevCol, highlightPaths, true);
-  } else if (currentTool == Tool.EDIT_RENDER) {
-    if (renderShowPaths) mapModel.drawPaths(this, pathCol, highlightPaths, false);
   } else {
-    mapModel.drawPaths(this, pathCol, highlightPaths, true);
-  }
-
-  // Sites only in Sites mode; paths use snapping dots instead
-  if (currentTool == Tool.EDIT_SITES) {
-    mapModel.drawSites(this);
-  }
-
-  // Path segment preview when a start point is pending
-  if (currentTool == Tool.EDIT_PATHS && pendingPathStart != null) {
-    PVector worldPos = viewport.screenToWorld(mouseX, mouseY);
-    worldPos.x = constrain(worldPos.x, mapModel.minX, mapModel.maxX);
-    worldPos.y = constrain(worldPos.y, mapModel.minY, mapModel.maxY);
-    PVector snapped = findNearestSnappingPoint(worldPos.x, worldPos.y, Float.MAX_VALUE);
-    PVector target = (snapped != null) ? snapped : pendingPathStart;
-
-    ArrayList<PVector> route = null;
-    PathRouteMode mode = currentPathRouteMode();
-    if (mode == PathRouteMode.ENDS) {
-      route = new ArrayList<PVector>();
-      route.add(pendingPathStart);
-      route.add(target);
-      if (route.size() == 2) {
+    boolean allowLabels = renderShowLabels;
+    switch (currentTool) {
+      case EDIT_SITES: {
+        mapModel.drawCells(this, true);
+        mapModel.drawPaths(this, color(60, 60, 200), false, true);
+        mapModel.drawStructures(this);
+        if (allowLabels) mapModel.drawLabels(this);
+        mapModel.drawSites(this);
+        break;
       }
-    } else if (mode == PathRouteMode.PATHFIND) {
-      if (snapped != null) {
-        route = mapModel.findSnapPathFlattest(pendingPathStart, target);
+      case EDIT_ELEVATION: {
+        mapModel.drawCellsRender(this, false, true);
+        mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
+        mapModel.drawPaths(this, color(120), false, true);
+        mapModel.drawStructures(this);
+        if (allowLabels) mapModel.drawLabels(this);
+        drawElevationBrushPreview();
+        break;
+      }
+      case EDIT_BIOMES: {
+        mapModel.drawCells(this, true);
+        mapModel.drawPaths(this, color(60, 60, 200), false, true);
+        mapModel.drawStructures(this);
+        if (allowLabels) mapModel.drawLabels(this);
+        if (currentBiomePaintMode == ZonePaintMode.ZONE_PAINT) drawZoneBrushPreview();
+        break;
+      }
+      case EDIT_ZONES: {
+        mapModel.drawCellsRender(this, false, true);
+        mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
+        mapModel.drawZoneOutlines(this);
+        mapModel.drawPaths(this, color(60, 60, 200), false, true);
+        mapModel.drawStructures(this);
+        if (allowLabels) mapModel.drawLabels(this);
+        if (currentZonePaintMode == ZonePaintMode.ZONE_PAINT) drawZoneBrushPreview();
+        break;
+      }
+      case EDIT_PATHS: {
+        mapModel.drawCellsRender(this, false, true);
+        mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
+        mapModel.drawPaths(this, color(60, 60, 200), true, true);
+        mapModel.drawStructures(this);
+        if (allowLabels) mapModel.drawLabels(this);
+        drawPathSnappingPoints();
+        if (pathEraserMode) drawPathEraserPreview();
+
+        // Path preview
+        if (pendingPathStart != null) {
+          PVector worldPos = viewport.screenToWorld(mouseX, mouseY);
+          worldPos.x = constrain(worldPos.x, mapModel.minX, mapModel.maxX);
+          worldPos.y = constrain(worldPos.y, mapModel.minY, mapModel.maxY);
+          PVector snapped = findNearestSnappingPoint(worldPos.x, worldPos.y, Float.MAX_VALUE);
+          PVector target = (snapped != null) ? snapped : pendingPathStart;
+
+          ArrayList<PVector> route = null;
+          PathRouteMode mode = currentPathRouteMode();
+          if (mode == PathRouteMode.ENDS) {
+            route = new ArrayList<PVector>();
+            route.add(pendingPathStart);
+            route.add(target);
+          } else if (mode == PathRouteMode.PATHFIND) {
+            if (snapped != null) {
+              route = mapModel.findSnapPathFlattest(pendingPathStart, target);
+            }
+          }
+          if (route == null || route.size() < 2) {
+            route = new ArrayList<PVector>();
+            route.add(pendingPathStart);
+            route.add(target);
+          }
+
+          PathType pt = null;
+          if (selectedPathIndex >= 0 && selectedPathIndex < mapModel.paths.size()) {
+            Path p = mapModel.paths.get(selectedPathIndex);
+            pt = mapModel.getPathType(p.typeId);
+          } else {
+            pt = mapModel.getPathType(activePathTypeIndex);
+          }
+          int col = (pt != null) ? pt.col : color(30, 30, 160);
+          float w = (pt != null) ? pt.weightPx : 2.0f;
+
+          Path tmp = new Path();
+          tmp.routes.add(route);
+          tmp.drawPreview(this, route, col, w);
+
+          // Start/end markers
+          pushStyle();
+          noStroke();
+          fill(255, 180, 0, 200);
+          float sr = 5.0f / viewport.zoom;
+          ellipse(pendingPathStart.x, pendingPathStart.y, sr, sr);
+          if (!route.isEmpty()) {
+            PVector end = route.get(route.size() - 1);
+            float tr = 4.0f / viewport.zoom;
+            fill(80, 120, 240, 160);
+            ellipse(end.x, end.y, tr, tr);
+          }
+          popStyle();
+        }
+        break;
+      }
+      case EDIT_STRUCTURES: {
+        mapModel.drawCellsRender(this, false, true);
+        mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
+        mapModel.drawPaths(this, color(60, 60, 200), false, true);
+        mapModel.drawStructureSnapGuides(this);
+        mapModel.drawStructures(this);
+        if (allowLabels) mapModel.drawLabels(this);
+        drawStructurePreview();
+        break;
+      }
+      case EDIT_LABELS: {
+        mapModel.drawCellsRender(this, false, true);
+        mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
+        mapModel.drawPaths(this, color(60, 60, 200), false, true);
+        mapModel.drawStructures(this);
+        if (allowLabels) {
+          mapModel.drawLabels(this);
+          if (renderSettings.showLabelsZones) mapModel.drawZoneLabelsRender(this, renderSettings);
+          if (renderSettings.showLabelsPaths) mapModel.drawPathLabelsRender(this, renderSettings);
+          if (renderSettings.showLabelsStructures) mapModel.drawStructureLabelsRender(this, renderSettings);
+        }
+        break;
+      }
+      default: {
+        mapModel.drawCells(this, true);
+        mapModel.drawPaths(this, color(60, 60, 200), false, true);
+        mapModel.drawStructures(this);
+        if (allowLabels) mapModel.drawLabels(this);
+        mapModel.drawDebugWorldBounds(this);
+        break;
       }
     }
-    if (route == null || route.size() < 2) {
-      route = new ArrayList<PVector>();
-      route.add(pendingPathStart);
-      route.add(target);
-    }
-
-    PathType pt = null;
-    if (selectedPathIndex >= 0 && selectedPathIndex < mapModel.paths.size()) {
-      Path p = mapModel.paths.get(selectedPathIndex);
-      pt = mapModel.getPathType(p.typeId);
-    } else {
-      pt = mapModel.getPathType(activePathTypeIndex);
-    }
-    int col = (pt != null) ? pt.col : color(30, 30, 160);
-    float w = (pt != null) ? pt.weightPx : 2.0f;
-
-    // Use Path preview renderer for consistency
-    Path tmp = new Path();
-    tmp.routes.add(route);
-    tmp.drawPreview(this, route, col, w);
-
-    // Start marker
-    pushStyle();
-    noStroke();
-    fill(255, 180, 0, 200);
-    float sr = 5.0f / viewport.zoom;
-    ellipse(pendingPathStart.x, pendingPathStart.y, sr, sr);
-    // Target marker for very short previews
-    if (!route.isEmpty()) {
-      PVector end = route.get(route.size() - 1);
-      float tr = 4.0f / viewport.zoom;
-      fill(80, 120, 240, 160);
-      ellipse(end.x, end.y, tr, tr);
-    }
-    popStyle();
   }
 
-  if (currentTool == Tool.EDIT_PATHS) {
-    drawPathSnappingPoints();
-  }
-
-  // Structures and labels render in all modes
-  if (currentTool == Tool.EDIT_STRUCTURES) {
-    // Snap guides should float above everything except the structures themselves
-    mapModel.drawStructureSnapGuides(this);
-  }
-  if (currentTool != Tool.EDIT_RENDER || renderShowStructures) {
-    mapModel.drawStructures(this);
-  }
-  if (currentTool != Tool.EDIT_RENDER && renderShowLabels) {
-    mapModel.drawLabels(this);
-    if (currentTool == Tool.EDIT_LABELS) {
-      if (renderSettings.showLabelsZones) mapModel.drawZoneLabelsRender(this, renderSettings);
-      if (renderSettings.showLabelsPaths) mapModel.drawPathLabelsRender(this, renderSettings);
-      if (renderSettings.showLabelsStructures) mapModel.drawStructureLabelsRender(this, renderSettings);
-    }
-  }
-
-  if (currentTool == Tool.EDIT_STRUCTURES) {
-    drawStructurePreview();
-  }
-
-  if (currentTool == Tool.EDIT_ELEVATION) {
-    mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, 0);
-    drawElevationBrushPreview();
-  } else if (currentTool == Tool.EDIT_BIOMES && currentBiomePaintMode == ZonePaintMode.ZONE_PAINT) {
-    drawZoneBrushPreview();
-  } else if (currentTool == Tool.EDIT_ZONES && currentZonePaintMode == ZonePaintMode.ZONE_PAINT) {
-    drawZoneBrushPreview();
-  } else if (currentTool == Tool.EDIT_PATHS && pathEraserMode) {
-    drawPathEraserPreview();
-  } else if (!renderView) {
-    mapModel.drawDebugWorldBounds(this);
-  }
   popMatrix();
 
   // Screen-space border for render/export view
@@ -995,7 +995,7 @@ void draw() {
 
   resetUiTooltips();
 
-  if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT) {
+  if (renderView) {
     drawExportPaddingOverlay();
   }
 
