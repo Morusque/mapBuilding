@@ -854,7 +854,7 @@ void draw() {
       }
       case EDIT_ELEVATION: {
         mapModel.drawCellsRender(this, false, true);
-        mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, ELEV_STEPS_PATHS);
+        mapModel.drawElevationOverlay(this, seaLevel, false, true, true, false, 128);
         mapModel.drawPaths(this, color(120), false, true);
         mapModel.drawStructures(this);
         if (allowLabels) mapModel.drawLabels(this);

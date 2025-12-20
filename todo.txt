@@ -1,6 +1,5 @@
 
 Mandatory for full first use milestone :
-(later) write labels on top
 (later) paths : taping sometimes wrong (probably needs doubly connected edges and propagation done right)
 (later) path saturation button doesn't work
 (later) some ugly dots sometimes appear between polygones
