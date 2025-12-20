@@ -291,9 +291,11 @@ class MapRenderer {
     if (model.labels == null || s == null) return;
     if (!s.showLabelsArbitrary) return;
     app.pushStyle();
+    app.textAlign(CENTER, CENTER);
     for (MapLabel l : model.labels) {
       if (l == null) continue;
-      l.draw(app); // use the same rendering as labels mode (zoom-invariant)
+      float ts = l.size / max(1e-6f, viewport.zoom);
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01);
     }
     app.popStyle();
   }
@@ -323,8 +325,7 @@ class MapRenderer {
       cx /= count;
       cy /= count;
       float ts = baseSize / max(1e-6f, viewport.zoom);
-      app.textSize(ts);
-      app.text((z.name != null) ? z.name : "Zone", cx, cy);
+      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01);
     }
     app.popStyle();
   }
@@ -365,8 +366,7 @@ class MapRenderer {
       app.pushMatrix();
       app.translate(mx, my);
       app.rotate(angle);
-      app.textSize(ts);
-      app.text(txt, 0, 0);
+      drawTextWithOutline(app, txt, 0, 0, ts, s.labelOutlineAlpha01);
       app.popMatrix();
     }
     app.popStyle();
@@ -385,9 +385,7 @@ class MapRenderer {
       float ts = baseSize / max(1e-6f, viewport.zoom);
       app.pushMatrix();
       app.translate(st.x, st.y);
-      app.rotate(0);
-      app.textSize(ts);
-      app.text(txt, 0, 0);
+      drawTextWithOutline(app, txt, 0, 0, ts, s.labelOutlineAlpha01);
       app.popMatrix();
     }
     app.popStyle();
@@ -401,6 +399,24 @@ class MapRenderer {
       case FREE:
       default: return 1;
     }
+  }
+
+  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01) {
+    if (app == null || txt == null) return;
+    app.textSize(ts);
+    float oa = constrain(outlineAlpha01, 0, 1);
+    float offsetPx = 1.0f / max(1e-6f, viewport.zoom);
+    if (oa > 1e-4f) {
+      app.fill(255, oa * 255);
+      for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+          if (dx == 0 && dy == 0) continue;
+          app.text(txt, x + dx * offsetPx, y + dy * offsetPx);
+        }
+      }
+    }
+    app.fill(0);
+    app.text(txt, x, y);
   }
 
   void drawZoneOutlines(PApplet app) {
