@@ -755,6 +755,12 @@ void updateActiveSlider(int mx, int my) {
       renderSettings.pathSatScale01 = t;
       break;
     }
+    case SLIDER_RENDER_PATH_BRI: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.pathBriSlider.x) / (float)l.pathBriSlider.w, 0, 1);
+      renderSettings.pathBriScale01 = t;
+      break;
+    }
     case SLIDER_RENDER_ZONE_ALPHA: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.zoneAlphaSlider.x) / (float)l.zoneAlphaSlider.w, 0, 1);

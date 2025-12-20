@@ -448,6 +448,7 @@ final int SLIDER_RENDER_ELEV_LINES_STYLE = 61;
 final int SLIDER_RENDER_BIOME_BRI = 62;
 final int SLIDER_RENDER_ZONE_BRI = 63;
 final int SLIDER_RENDER_PRESET_SELECT = 64;
+final int SLIDER_RENDER_PATH_BRI = 90;
 final int SLIDER_BIOME_GEN_MODE = 65;
 final int SLIDER_BIOME_GEN_VALUE = 66;
 final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 67;
@@ -2139,6 +2140,7 @@ JSONObject serializeRenderSettings(RenderSettings s) {
 
   JSONObject paths = new JSONObject();
   paths.setFloat("pathSatScale01", s.pathSatScale01);
+  paths.setFloat("pathBriScale01", s.pathBriScale01);
   paths.setBoolean("showPaths", s.showPaths);
   r.setJSONObject("paths", paths);
 
@@ -2235,6 +2237,7 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
   if (r.hasKey("paths")) {
     JSONObject b = r.getJSONObject("paths");
     target.pathSatScale01 = b.getFloat("pathSatScale01", target.pathSatScale01);
+    target.pathBriScale01 = b.getFloat("pathBriScale01", target.pathBriScale01);
     target.showPaths = b.getBoolean("showPaths", target.showPaths);
   }
 

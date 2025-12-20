@@ -65,6 +65,7 @@ void initTooltipTexts() {
   TOOLTIP_TEXTS.put("paths_eraser", "Remove segments by dragging the brush.");
   TOOLTIP_TEXTS.put("paths_list_new", "Create a new path using selected path type.");
   TOOLTIP_TEXTS.put("paths_list_deselect", "Deselect any path.");
+  TOOLTIP_TEXTS.put("render_paths_bri", "Scale path brightness for rendering/export.");
   TOOLTIP_TEXTS.put("paths_type_add", "Add another path type palette entry.");
   TOOLTIP_TEXTS.put("paths_type_remove", "Remove the selected path type. \nExisting paths keep their parameters.");
   TOOLTIP_TEXTS.put("paths_palette", "Select a path type preset.");

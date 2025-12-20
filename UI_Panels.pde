@@ -1984,6 +1984,7 @@ class RenderLayout {
 
   IntRect pathsShowCheckbox;
   IntRect pathSatSlider;
+  IntRect pathBriSlider;
 
   IntRect zoneAlphaSlider;
   IntRect zoneSizeSlider;
@@ -2149,6 +2150,8 @@ RenderLayout buildRenderLayout() {
     l.pathsShowCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
     l.pathSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.pathBriSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
@@ -2293,6 +2296,7 @@ void drawRenderPanel() {
   if (renderSectionPathsOpen) {
     drawCheckbox(layout.pathsShowCheckbox.x, layout.pathsShowCheckbox.y, layout.pathsShowCheckbox.w, renderSettings.showPaths, "Show paths");
     drawSlider(layout.pathSatSlider, renderSettings.pathSatScale01, "Paths saturation (" + nf(renderSettings.pathSatScale01 * 100, 1, 0) + "%)");
+    drawSlider(layout.pathBriSlider, renderSettings.pathBriScale01, "Paths brightness (" + nf(renderSettings.pathBriScale01 * 100, 1, 0) + "%)");
   }
 
   drawSectionHeader(layout.headerZones, "Zones", renderSectionZonesOpen);

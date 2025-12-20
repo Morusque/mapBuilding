@@ -69,6 +69,7 @@ class RenderSettings {
 
   // Paths
   float pathSatScale01 = 1.0f;
+  float pathBriScale01 = 1.0f;
   boolean showPaths = true;
 
   // Zones (strokes only)
@@ -142,6 +143,7 @@ class RenderSettings {
     c.elevationLinesAlpha01 = elevationLinesAlpha01;
     // Paths
     c.pathSatScale01 = pathSatScale01;
+    c.pathBriScale01 = pathBriScale01;
     c.showPaths = showPaths;
     // Zones
     c.zoneStrokeAlpha01 = zoneStrokeAlpha01;
@@ -214,6 +216,7 @@ class RenderSettings {
     elevationLinesAlpha01 = o.elevationLinesAlpha01;
     // Paths
     pathSatScale01 = o.pathSatScale01;
+    pathBriScale01 = o.pathBriScale01;
     showPaths = o.showPaths;
     // Zones
     zoneStrokeAlpha01 = o.zoneStrokeAlpha01;

@@ -1506,6 +1506,12 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_PATH_SAT;
       return true;
     }
+    if (layout.pathBriSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.pathBriSlider.x) / (float)layout.pathBriSlider.w, 0, 1);
+      renderSettings.pathBriScale01 = t;
+      activeSlider = SLIDER_RENDER_PATH_BRI;
+      return true;
+    }
   }
 
   // Zones

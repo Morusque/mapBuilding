@@ -1663,11 +1663,14 @@ class MapModel {
       PathType pt = getPathType(p.typeId);
       int baseCol = (pt != null) ? pt.col : app.color(80);
       rgbToHSB01(baseCol, hsbScratch);
-      float alphaScale = constrain(s.pathSatScale01, 0, 1);
-      if (alphaScale <= 1e-4f) continue;
-      hsbScratch[1] = constrain(hsbScratch[1] * alphaScale, 0, 1);
+      float satScale = constrain(s.pathSatScale01, 0, 1);
+      hsbScratch[1] = constrain(hsbScratch[1] * satScale, 0, 1);
+      float briScale = constrain(s.pathBriScale01, 0, 1);
+      hsbScratch[2] = constrain(hsbScratch[2] * briScale, 0, 1);
       int rgb = hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]);
-      int col = app.color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, alphaScale * 255);
+      int baseA = (baseCol >> 24) & 0xFF;
+      if (baseA == 0) baseA = 255;
+      int col = app.color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, baseA);
       float w = (pt != null) ? pt.weightPx : 2.0f;
       if (w <= 0.01f) continue;
       app.stroke(col);
