@@ -2000,6 +2000,7 @@ class RenderLayout {
   IntRect labelsPathsCheckbox;
   IntRect labelsStructuresCheckbox;
   IntRect labelsOutlineAlphaSlider;
+  IntRect labelsOutlineSizeSlider;
 
   IntRect exportPaddingSlider;
   IntRect antialiasCheckbox;
@@ -2194,6 +2195,8 @@ RenderLayout buildRenderLayout() {
     l.labelsStructuresCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
     l.labelsOutlineAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.labelsOutlineSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
@@ -2365,11 +2368,13 @@ void drawRenderPanel() {
     drawCheckbox(layout.labelsPathsCheckbox.x, layout.labelsPathsCheckbox.y, layout.labelsPathsCheckbox.w, renderSettings.showLabelsPaths, "Show paths");
     drawCheckbox(layout.labelsStructuresCheckbox.x, layout.labelsStructuresCheckbox.y, layout.labelsStructuresCheckbox.w, renderSettings.showLabelsStructures, "Show structures");
     drawSlider(layout.labelsOutlineAlphaSlider, renderSettings.labelOutlineAlpha01, "Label outline alpha (" + nf(renderSettings.labelOutlineAlpha01 * 100, 1, 0) + "%)");
+    drawSlider(layout.labelsOutlineSizeSlider, constrain(renderSettings.labelOutlineSizePx / 6.0f, 0, 1), "Label outline size (" + nf(renderSettings.labelOutlineSizePx, 1, 1) + " px)");
     registerUiTooltip(layout.labelsArbitraryCheckbox, tooltipFor("render_labels_arbitrary"));
     registerUiTooltip(layout.labelsZonesCheckbox, tooltipFor("render_labels_zones"));
     registerUiTooltip(layout.labelsPathsCheckbox, tooltipFor("render_labels_paths"));
     registerUiTooltip(layout.labelsStructuresCheckbox, tooltipFor("render_labels_structures"));
     registerUiTooltip(layout.labelsOutlineAlphaSlider, tooltipFor("render_labels_outline"));
+    registerUiTooltip(layout.labelsOutlineSizeSlider, tooltipFor("render_labels_outline_size"));
   }
 
   drawSectionHeader(layout.headerGeneral, "General", renderSectionGeneralOpen);

@@ -281,8 +281,12 @@ class MapRenderer {
   void drawLabels(PApplet app) {
     if (model.labels == null) return;
     app.pushStyle();
+    app.textAlign(CENTER, CENTER);
     for (MapLabel l : model.labels) {
-      l.draw(app);
+      if (l == null || l.text == null) continue;
+      float ts = l.size / max(1e-6f, viewport.zoom);
+      // Use a tiny default outline in edit mode (alpha 0.2) to keep consistent look
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, 0.2f, 1.0f);
     }
     app.popStyle();
   }
@@ -295,7 +299,7 @@ class MapRenderer {
     for (MapLabel l : model.labels) {
       if (l == null) continue;
       float ts = l.size / max(1e-6f, viewport.zoom);
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01);
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx);
     }
     app.popStyle();
   }
@@ -325,7 +329,7 @@ class MapRenderer {
       cx /= count;
       cy /= count;
       float ts = baseSize / max(1e-6f, viewport.zoom);
-      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01);
+      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx);
     }
     app.popStyle();
   }
@@ -366,7 +370,7 @@ class MapRenderer {
       app.pushMatrix();
       app.translate(mx, my);
       app.rotate(angle);
-      drawTextWithOutline(app, txt, 0, 0, ts, s.labelOutlineAlpha01);
+      drawTextWithOutline(app, txt, 0, 0, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx);
       app.popMatrix();
     }
     app.popStyle();
@@ -385,7 +389,7 @@ class MapRenderer {
       float ts = baseSize / max(1e-6f, viewport.zoom);
       app.pushMatrix();
       app.translate(st.x, st.y);
-      drawTextWithOutline(app, txt, 0, 0, ts, s.labelOutlineAlpha01);
+      drawTextWithOutline(app, txt, 0, 0, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx);
       app.popMatrix();
     }
     app.popStyle();
@@ -401,15 +405,16 @@ class MapRenderer {
     }
   }
 
-  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01) {
+  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx) {
     if (app == null || txt == null) return;
     app.textSize(ts);
     float oa = constrain(outlineAlpha01, 0, 1);
-    float offsetPx = 1.0f / max(1e-6f, viewport.zoom);
+    float offsetPx = max(0.25f, outlineSizePx) / max(1e-6f, viewport.zoom);
     if (oa > 1e-4f) {
+      int radius = max(1, round(outlineSizePx));
       app.fill(255, oa * 255);
-      for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
+      for (int dx = -radius; dx <= radius; dx++) {
+        for (int dy = -radius; dy <= radius; dy++) {
           if (dx == 0 && dy == 0) continue;
           app.text(txt, x + dx * offsetPx, y + dy * offsetPx);
         }

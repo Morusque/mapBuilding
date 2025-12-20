@@ -798,6 +798,24 @@ void updateActiveSlider(int mx, int my) {
       renderSettings.labelOutlineAlpha01 = t;
       break;
     }
+    case SLIDER_RENDER_LABEL_OUTLINE_SIZE: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.labelsOutlineSizeSlider.x) / (float)l.labelsOutlineSizeSlider.w, 0, 1);
+      renderSettings.labelOutlineSizePx = constrain(t * 6.0f, 0, 6.0f);
+      break;
+    }
+    case SLIDER_LABEL_SIZE: {
+      LabelsListLayout l = buildLabelsListLayout();
+      float t = constrain((mx - l.sizeSlider.x) / (float)l.sizeSlider.w, 0, 1);
+      float newSize = 8 + t * (40 - 8);
+      setLabelSizeDefault(newSize);
+      if (mapModel != null && mapModel.labels != null) {
+        for (MapLabel lbl : mapModel.labels) {
+          if (lbl != null) lbl.size = newSize;
+        }
+      }
+      break;
+    }
     case SLIDER_RENDER_BACKGROUND_NOISE: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.backgroundNoiseSlider.x) / (float)l.backgroundNoiseSlider.w, 0, 1);

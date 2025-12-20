@@ -449,6 +449,8 @@ final int SLIDER_RENDER_BIOME_BRI = 62;
 final int SLIDER_RENDER_ZONE_BRI = 63;
 final int SLIDER_RENDER_PRESET_SELECT = 64;
 final int SLIDER_RENDER_PATH_BRI = 90;
+final int SLIDER_RENDER_LABEL_OUTLINE_SIZE = 91;
+final int SLIDER_LABEL_SIZE = 92;
 final int SLIDER_BIOME_GEN_MODE = 65;
 final int SLIDER_BIOME_GEN_VALUE = 66;
 final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 67;
@@ -2165,6 +2167,7 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   labels.setBoolean("showLabelsPaths", s.showLabelsPaths);
   labels.setBoolean("showLabelsStructures", s.showLabelsStructures);
   labels.setFloat("labelOutlineAlpha01", s.labelOutlineAlpha01);
+  labels.setFloat("labelOutlineSizePx", s.labelOutlineSizePx);
   r.setJSONObject("labels", labels);
 
   JSONObject general = new JSONObject();
@@ -2265,6 +2268,7 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.showLabelsPaths = b.getBoolean("showLabelsPaths", target.showLabelsPaths);
     target.showLabelsStructures = b.getBoolean("showLabelsStructures", target.showLabelsStructures);
     target.labelOutlineAlpha01 = b.getFloat("labelOutlineAlpha01", target.labelOutlineAlpha01);
+    target.labelOutlineSizePx = b.getFloat("labelOutlineSizePx", target.labelOutlineSizePx);
   }
 
   if (r.hasKey("general")) {

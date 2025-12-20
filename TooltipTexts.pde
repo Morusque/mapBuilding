@@ -115,6 +115,7 @@ void initTooltipTexts() {
   TOOLTIP_TEXTS.put("render_labels_paths", "Toggle path labels in rendering/export.");
   TOOLTIP_TEXTS.put("render_labels_structures", "Toggle structure labels in rendering/export.");
   TOOLTIP_TEXTS.put("render_labels_outline", "Alpha of label outlines.");
+  TOOLTIP_TEXTS.put("render_labels_outline_size", "Pixel size of label outlines.");
   TOOLTIP_TEXTS.put("render_export_padding", "Padding ratio used for render/export crops.");
   TOOLTIP_TEXTS.put("render_antialias", "Toggle antialiasing for rendering/export.");
   TOOLTIP_TEXTS.put("render_preset_apply", "Apply the selected render preset.");

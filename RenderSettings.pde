@@ -91,6 +91,7 @@ class RenderSettings {
   boolean showLabelsPaths = true;
   boolean showLabelsStructures = true;
   float labelOutlineAlpha01 = 0.0f;
+  float labelOutlineSizePx = 1.0f;
 
   // General
   float exportPaddingPct = 0.015f;
@@ -162,6 +163,7 @@ class RenderSettings {
     c.showLabelsPaths = showLabelsPaths;
     c.showLabelsStructures = showLabelsStructures;
     c.labelOutlineAlpha01 = labelOutlineAlpha01;
+    c.labelOutlineSizePx = labelOutlineSizePx;
     // General
     c.exportPaddingPct = exportPaddingPct;
     c.antialiasing = antialiasing;
@@ -235,6 +237,7 @@ class RenderSettings {
     showLabelsPaths = o.showLabelsPaths;
     showLabelsStructures = o.showLabelsStructures;
     labelOutlineAlpha01 = o.labelOutlineAlpha01;
+    labelOutlineSizePx = o.labelOutlineSizePx;
     // General
     exportPaddingPct = o.exportPaddingPct;
     antialiasing = o.antialiasing;
@@ -298,6 +301,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsPaths = true;
     s.showLabelsStructures = true;
     s.labelOutlineAlpha01 = 0.0f;
+    s.labelOutlineSizePx = 1.0f;
     s.exportPaddingPct = 0.015f;
     s.antialiasing = true;
     list.add(new RenderPreset("Default", s));
@@ -350,6 +354,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsPaths = false;
     s.showLabelsStructures = false;
     s.labelOutlineAlpha01 = 0.0f;
+    s.labelOutlineSizePx = 1.0f;
     s.exportPaddingPct = 0.01f;
     s.antialiasing = true;
     list.add(new RenderPreset("Satellite", s));

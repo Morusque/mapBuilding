@@ -926,10 +926,12 @@ boolean handleLabelsListPanelClick(int mx, int my) {
     float t = constrain((mx - layout.sizeSlider.x) / (float)layout.sizeSlider.w, 0, 1);
     float newSize = 8 + t * (40 - 8);
     setLabelSizeDefault(newSize);
-    if (selectedLabelIndex >= 0 && selectedLabelIndex < mapModel.labels.size()) {
-      MapLabel sel = mapModel.labels.get(selectedLabelIndex);
-      if (sel != null) sel.size = newSize;
+    if (mapModel != null && mapModel.labels != null) {
+      for (MapLabel lbl : mapModel.labels) {
+        if (lbl != null) lbl.size = newSize;
+      }
     }
+    activeSlider = SLIDER_LABEL_SIZE;
     return true;
   }
 
@@ -1588,6 +1590,12 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = constrain((mx - layout.labelsOutlineAlphaSlider.x) / (float)layout.labelsOutlineAlphaSlider.w, 0, 1);
       renderSettings.labelOutlineAlpha01 = t;
       activeSlider = SLIDER_RENDER_LABEL_OUTLINE_ALPHA;
+      return true;
+    }
+    if (layout.labelsOutlineSizeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.labelsOutlineSizeSlider.x) / (float)layout.labelsOutlineSizeSlider.w, 0, 1);
+      renderSettings.labelOutlineSizePx = constrain(t * 6.0f, 0, 6.0f);
+      activeSlider = SLIDER_RENDER_LABEL_OUTLINE_SIZE;
       return true;
     }
   }
