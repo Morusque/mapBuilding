@@ -1,15 +1,17 @@
 
 Mandatory for full first use milestone :
-(later) some ugly dots sometimes appear between polygones
-(later) make sure everything can be bitmap
-(later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
-(later) Paths : taping sometimes wrong (probably needs doubly connected edges and propagation done right)
-(later) path saturation button doesn't work
+(later) reset everything button in cells panel
 (later) write labels on top
+(later) paths : taping sometimes wrong (probably needs doubly connected edges and propagation done right)
+(later) path saturation button doesn't work
+(later) some ugly dots sometimes appear between polygones
+(later) labels outline
+(later) labels hierarchy
 (later) trying to export with labels makes the thing crash with a NullPointerException or IllegalArgumentException: Width (0) and height (0) cannot be <= 0
+(later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 (later) some sliders don't work well
 (later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
-(later) reset everything button in cells panel
+(later) make sure everything can be bitmap
 
 Other :
 (maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
