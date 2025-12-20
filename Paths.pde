@@ -46,8 +46,15 @@ class Path {
         app.stroke(col);
         app.strokeCap(PConstants.ROUND);
         app.strokeJoin(PConstants.ROUND);
-        app.strokeWeight(max(1.5f, w) / viewport.zoom);
+        float sw = max(1.5f, w) / viewport.zoom;
+        app.strokeWeight(sw);
         app.line(a.x, a.y, b.x, b.y);
+        // Manual caps to ensure consistent appearance across renderers
+        float rad = sw * 0.5f;
+        app.noStroke();
+        app.fill(col);
+        app.ellipse(a.x, a.y, rad * 2, rad * 2);
+        app.ellipse(b.x, b.y, rad * 2, rad * 2);
         app.popStyle();
       }
 

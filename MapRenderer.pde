@@ -1695,15 +1695,19 @@ class MapRenderer {
           float laneOff = offsetPos + l.width * 0.5f;
           g.stroke(l.col, 255);
           g.strokeWeight(l.width);
-          g.line(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, b.x + nrm.x * laneOff, b.y + nrm.y * laneOff);
+          float ax = a.x + nrm.x * laneOff;
+          float ay = a.y + nrm.y * laneOff;
+          float bx = b.x + nrm.x * laneOff;
+          float by = b.y + nrm.y * laneOff;
+          g.line(ax, ay, bx, by);
           if (drawRoundCaps) {
             float hw = l.width * 0.5f;
             g.noStroke();
             g.fill(l.col, 255);
-            String ka = undirectedEdgeKey(a, a);
-            String kb = undirectedEdgeKey(b, b);
-            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(a.x, a.y, hw * 2, hw * 2); }
-            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(b.x, b.y, hw * 2, hw * 2); }
+            String ka = model.keyFor(ax, ay);
+            String kb = model.keyFor(bx, by);
+            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
+            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
             g.stroke(l.col, 255);
           }
           offsetPos += l.width + laneGap;
@@ -1714,15 +1718,19 @@ class MapRenderer {
           float laneOff = offsetNeg + l.width * 0.5f;
           g.stroke(l.col, 255);
           g.strokeWeight(l.width);
-          g.line(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, b.x - nrm.x * laneOff, b.y - nrm.y * laneOff);
+          float ax = a.x - nrm.x * laneOff;
+          float ay = a.y - nrm.y * laneOff;
+          float bx = b.x - nrm.x * laneOff;
+          float by = b.y - nrm.y * laneOff;
+          g.line(ax, ay, bx, by);
           if (drawRoundCaps) {
             float hw = l.width * 0.5f;
             g.noStroke();
             g.fill(l.col, 255);
-            String ka = undirectedEdgeKey(a, a);
-            String kb = undirectedEdgeKey(b, b);
-            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(a.x, a.y, hw * 2, hw * 2); }
-            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(b.x, b.y, hw * 2, hw * 2); }
+            String ka = model.keyFor(ax, ay);
+            String kb = model.keyFor(bx, by);
+            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
+            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
             g.stroke(l.col, 255);
           }
           offsetNeg += l.width + laneGap;
@@ -1897,15 +1905,19 @@ class MapRenderer {
           float laneOff = offsetPos + l.width * 0.5f;
           g.stroke(l.col, 255);
           g.strokeWeight(l.width);
-          g.line(a.x + nrm.x * laneOff, a.y + nrm.y * laneOff, b.x + nrm.x * laneOff, b.y + nrm.y * laneOff);
+          float ax = a.x + nrm.x * laneOff;
+          float ay = a.y + nrm.y * laneOff;
+          float bx = b.x + nrm.x * laneOff;
+          float by = b.y + nrm.y * laneOff;
+          g.line(ax, ay, bx, by);
           if (drawRoundCaps) {
             float hw = l.width * 0.5f;
             g.noStroke();
             g.fill(l.col, 255);
-            String ka = undirectedEdgeKey(a, a);
-            String kb = undirectedEdgeKey(b, b);
-            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(a.x, a.y, hw * 2, hw * 2); }
-            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(b.x, b.y, hw * 2, hw * 2); }
+            String ka = model.keyFor(ax, ay);
+            String kb = model.keyFor(bx, by);
+            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
+            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
             g.stroke(l.col, 255);
           }
           offsetPos += l.width + laneGap;
@@ -1916,15 +1928,19 @@ class MapRenderer {
           float laneOff = offsetNeg + l.width * 0.5f;
           g.stroke(l.col, 255);
           g.strokeWeight(l.width);
-          g.line(a.x - nrm.x * laneOff, a.y - nrm.y * laneOff, b.x - nrm.x * laneOff, b.y - nrm.y * laneOff);
+          float ax = a.x - nrm.x * laneOff;
+          float ay = a.y - nrm.y * laneOff;
+          float bx = b.x - nrm.x * laneOff;
+          float by = b.y - nrm.y * laneOff;
+          g.line(ax, ay, bx, by);
           if (drawRoundCaps) {
             float hw = l.width * 0.5f;
             g.noStroke();
             g.fill(l.col, 255);
-            String ka = undirectedEdgeKey(a, a);
-            String kb = undirectedEdgeKey(b, b);
-            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(a.x, a.y, hw * 2, hw * 2); }
-            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(b.x, b.y, hw * 2, hw * 2); }
+            String ka = model.keyFor(ax, ay);
+            String kb = model.keyFor(bx, by);
+            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
+            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
             g.stroke(l.col, 255);
           }
           offsetNeg += l.width + laneGap;
