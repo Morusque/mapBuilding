@@ -6,6 +6,7 @@ class ExportLayout {
   int bodyY;
   IntRect pngBtn;
   IntRect svgBtn;
+  IntRect geoJsonBtn;
   IntRect scaleSlider;
   IntRect mapExportBtn;
   IntRect mapImportBtn;
@@ -22,6 +23,10 @@ ExportLayout buildExportLayout() {
   l.pngBtn = new IntRect(l.panel.x + PANEL_PADDING, curY, 140, PANEL_BUTTON_H);
   l.svgBtn = new IntRect(l.pngBtn.x + l.pngBtn.w + PANEL_ROW_GAP, curY, 140, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+  l.geoJsonBtn = new IntRect(l.panel.x + PANEL_PADDING, curY, 140, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
   l.scaleSlider = new IntRect(l.panel.x + PANEL_PADDING, curY + PANEL_LABEL_H, 180, PANEL_SLIDER_H);
   curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   l.bodyY = curY;
@@ -60,6 +65,12 @@ void drawExportPanel() {
   textAlign(CENTER, CENTER);
   text("Export SVG", layout.svgBtn.x + layout.svgBtn.w / 2, layout.svgBtn.y + layout.svgBtn.h / 2);
   registerUiTooltip(layout.svgBtn, tooltipFor("export_svg"));
+
+  drawBevelButton(layout.geoJsonBtn.x, layout.geoJsonBtn.y, layout.geoJsonBtn.w, layout.geoJsonBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Export GeoJSON", layout.geoJsonBtn.x + layout.geoJsonBtn.w / 2, layout.geoJsonBtn.y + layout.geoJsonBtn.h / 2);
+  registerUiTooltip(layout.geoJsonBtn, tooltipFor("export_geojson"));
 
   // Resolution scale slider
   if (layout.scaleSlider != null) {

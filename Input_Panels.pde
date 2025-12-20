@@ -1632,6 +1632,16 @@ boolean handleExportPanelClick(int mx, int my) {
       showNotice("Export failed");
     }
   }})) return true;
+  if (queueButtonAction(layout.geoJsonBtn, new Runnable() { public void run() {
+    String path = exportGeoJson();
+    if (path != null && path.length() > 0 && !path.startsWith("Failed")) {
+      lastExportStatus = path;
+      showNotice("Saved GeoJSON: " + path);
+    } else {
+      lastExportStatus = (path != null) ? path : "Export failed";
+      showNotice("Export failed");
+    }
+  }})) return true;
   if (layout.scaleSlider != null && layout.scaleSlider.contains(mx, my)) {
     float t = constrain((mx - layout.scaleSlider.x) / (float)layout.scaleSlider.w, 0, 1);
     exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);

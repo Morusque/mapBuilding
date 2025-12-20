@@ -110,6 +110,7 @@ void initTooltipTexts() {
   TOOLTIP_TEXTS.put("export_map_json", "Export full map data to JSON (exports/map_latest.json).");
   TOOLTIP_TEXTS.put("import_map_json", "Import map data from exports/map_latest.json.");
   TOOLTIP_TEXTS.put("export_svg", "Export a simplified layered SVG (background, borders, paths, structures, labels, legend).");
+  TOOLTIP_TEXTS.put("export_geojson", "Export map features (zones, paths, structures, labels) as GeoJSON FeatureCollection.");
   
 }
 

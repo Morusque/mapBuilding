@@ -1,8 +1,8 @@
 
 Mandatory for full first use milestone :
 (later) some ugly dots sometimes appear between polygones
-(later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 (later) make sure everything can be bitmap
+(later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 
 Bugs or things to investigate :
 (later) Paths : taping sometimes wrong (probably needs doubly connected edges and propagation done right)
@@ -12,6 +12,7 @@ Bugs or things to investigate :
 (later) some sliders don't work well
 (later) some UI elements (dynamic ones, rendering collapsable ones) miss tooltip infos
 (later) are there existing formats for such tools to handle? (at least research)
+(later) reset everything button in cells panel
 
 Other :
 (maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).

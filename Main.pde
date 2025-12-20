@@ -1567,6 +1567,378 @@ String exportMapJson() {
   }
 }
 
+ArrayList<PVector> structureOutline(Structure s) {
+  ArrayList<PVector> pts = new ArrayList<PVector>();
+  if (s == null) return pts;
+  float r = s.size;
+  float asp = max(0.1f, s.aspect);
+  float cosA = cos(s.angle);
+  float sinA = sin(s.angle);
+
+  Runnable addRectangle = new Runnable() {
+    public void run() {
+      float w = r;
+      float h = r / asp;
+      float[][] corners = {
+        {-w * 0.5f, -h * 0.5f},
+        { w * 0.5f, -h * 0.5f},
+        { w * 0.5f,  h * 0.5f},
+        {-w * 0.5f,  h * 0.5f}
+      };
+      for (float[] c : corners) {
+        float rx = c[0] * cosA - c[1] * sinA;
+        float ry = c[0] * sinA + c[1] * cosA;
+        pts.add(new PVector(s.x + rx, s.y + ry));
+      }
+    }
+  };
+
+  switch (s.shape) {
+    case RECTANGLE: {
+      addRectangle.run();
+      break;
+    }
+    case CIRCLE: {
+      int segments = 24;
+      float rx = r * 0.5f;
+      float ry = (r / asp) * 0.5f;
+      for (int i = 0; i < segments; i++) {
+        float a = TWO_PI * i / (float)segments;
+        float cx = cos(a) * rx;
+        float cy = sin(a) * ry;
+        float rxp = cx * cosA - cy * sinA;
+        float ryp = cx * sinA + cy * cosA;
+        pts.add(new PVector(s.x + rxp, s.y + ryp));
+      }
+      break;
+    }
+    case TRIANGLE: {
+      float h = (r / asp) * 0.866f;
+      float[][] corners = {
+        {-r * 0.5f, h * 0.333f},
+        { r * 0.5f, h * 0.333f},
+        { 0.0f,     -h * 0.666f}
+      };
+      for (float[] c : corners) {
+        float rx = c[0] * cosA - c[1] * sinA;
+        float ry = c[0] * sinA + c[1] * cosA;
+        pts.add(new PVector(s.x + rx, s.y + ry));
+      }
+      break;
+    }
+    case HEXAGON: {
+      float rad = r * 0.5f;
+      for (int i = 0; i < 6; i++) {
+        float a = radians(60 * i);
+        float cx = cos(a) * rad;
+        float cy = sin(a) * rad / asp;
+        float rx = cx * cosA - cy * sinA;
+        float ry = cx * sinA + cy * cosA;
+        pts.add(new PVector(s.x + rx, s.y + ry));
+      }
+      break;
+    }
+    default: {
+      addRectangle.run();
+      break;
+    }
+  }
+  return pts;
+}
+
+JSONArray ringFromVertices(ArrayList<PVector> verts) {
+  JSONArray ring = new JSONArray();
+  if (verts == null || verts.size() < 3) return ring;
+  for (PVector v : verts) {
+    JSONArray p = new JSONArray();
+    p.append(v.x);
+    p.append(v.y);
+    ring.append(p);
+  }
+  PVector first = verts.get(0);
+  PVector last = verts.get(verts.size() - 1);
+  if (abs(first.x - last.x) > 1e-6f || abs(first.y - last.y) > 1e-6f) {
+    JSONArray p = new JSONArray();
+    p.append(first.x);
+    p.append(first.y);
+    ring.append(p);
+  }
+  return ring;
+}
+
+boolean samePoint(PVector a, PVector b) {
+  if (mapModel == null) return false;
+  return mapModel.keyFor(a.x, a.y).equals(mapModel.keyFor(b.x, b.y));
+}
+
+ArrayList<ArrayList<PVector>> mergedPolygonsFromCells(ArrayList<Integer> cellIdxs) {
+  ArrayList<ArrayList<PVector>> rings = new ArrayList<ArrayList<PVector>>();
+  if (mapModel == null || mapModel.cells == null || cellIdxs == null) return rings;
+  class Edge { PVector a; PVector b; Edge(PVector a, PVector b){ this.a = a; this.b = b; } }
+  HashMap<String, Edge> boundary = new HashMap<String, Edge>();
+  for (int ci : cellIdxs) {
+    if (ci < 0 || ci >= mapModel.cells.size()) continue;
+    Cell c = mapModel.cells.get(ci);
+    if (c == null || c.vertices == null || c.vertices.size() < 2) continue;
+    int vn = c.vertices.size();
+    for (int i = 0; i < vn; i++) {
+      PVector a = c.vertices.get(i);
+      PVector b = c.vertices.get((i + 1) % vn);
+      String ka = mapModel.keyFor(a.x, a.y);
+      String kb = mapModel.keyFor(b.x, b.y);
+      String key = (ka.compareTo(kb) <= 0) ? (ka + "|" + kb) : (kb + "|" + ka);
+      if (boundary.containsKey(key)) {
+        boundary.remove(key); // shared edge, not part of boundary
+      } else {
+        boundary.put(key, new Edge(a, b));
+      }
+    }
+  }
+  ArrayList<Edge> edges = new ArrayList<Edge>(boundary.values());
+  boolean[] used = new boolean[edges.size()];
+  for (int ei = 0; ei < edges.size(); ei++) {
+    if (used[ei]) continue;
+    Edge e = edges.get(ei);
+    ArrayList<PVector> ring = new ArrayList<PVector>();
+    ring.add(e.a);
+    ring.add(e.b);
+    used[ei] = true;
+    PVector start = e.a;
+    PVector cur = e.b;
+    boolean closed = false;
+    while (!closed) {
+      int nextIdx = -1;
+      boolean reverse = false;
+      for (int j = 0; j < edges.size(); j++) {
+        if (used[j]) continue;
+        Edge cand = edges.get(j);
+        if (samePoint(cand.a, cur)) { nextIdx = j; reverse = false; break; }
+        if (samePoint(cand.b, cur)) { nextIdx = j; reverse = true; break; }
+      }
+      if (nextIdx == -1) break;
+      Edge ne = edges.get(nextIdx);
+      used[nextIdx] = true;
+      PVector nxt = reverse ? ne.a : ne.b;
+      if (reverse) {
+        // ensure orientation follows current -> next
+        PVector tmp = ne.a; ne.a = ne.b; ne.b = tmp;
+      }
+      if (samePoint(nxt, start)) {
+        closed = true;
+      }
+      ring.add(nxt);
+      cur = nxt;
+      if (ring.size() > 100000) break; // safety
+    }
+    if (ring.size() >= 4) {
+      rings.add(ring);
+    }
+  }
+  return rings;
+}
+
+String exportGeoJson() {
+  try {
+    JSONObject root = new JSONObject();
+    root.setString("type", "FeatureCollection");
+    JSONArray features = new JSONArray();
+
+    // Zones as merged MultiPolygons
+    if (mapModel != null && mapModel.zones != null && mapModel.cells != null) {
+      for (int zi = 0; zi < mapModel.zones.size(); zi++) {
+        MapModel.MapZone z = mapModel.zones.get(zi);
+        if (z == null || z.cells == null || z.cells.isEmpty()) continue;
+        ArrayList<ArrayList<PVector>> rings = mergedPolygonsFromCells(z.cells);
+        if (rings == null || rings.isEmpty()) continue;
+        JSONArray polys = new JSONArray();
+        for (ArrayList<PVector> r : rings) {
+          JSONArray ring = ringFromVertices(r);
+          if (ring.size() == 0) continue;
+          JSONArray poly = new JSONArray();
+          poly.append(ring);
+          polys.append(poly);
+        }
+        if (polys.size() == 0) continue;
+        JSONObject geom = new JSONObject();
+        geom.setString("type", "MultiPolygon");
+        geom.setJSONArray("coordinates", polys);
+
+        JSONObject props = new JSONObject();
+        props.setString("category", "zone");
+        props.setInt("zoneIndex", zi);
+        props.setString("name", z.name != null ? z.name : "");
+        props.setString("comment", z.comment != null ? z.comment : "");
+
+        JSONObject feat = new JSONObject();
+        feat.setString("type", "Feature");
+        feat.setJSONObject("geometry", geom);
+        feat.setJSONObject("properties", props);
+        features.append(feat);
+      }
+    }
+
+    // Biomes as merged MultiPolygons
+    if (mapModel != null && mapModel.cells != null && mapModel.biomeTypes != null && !mapModel.biomeTypes.isEmpty()) {
+      int biomeCount = mapModel.biomeTypes.size();
+      for (int bid = 1; bid < biomeCount; bid++) { // skip None=0
+        ArrayList<Integer> cellIdxs = new ArrayList<Integer>();
+        for (int ci = 0; ci < mapModel.cells.size(); ci++) {
+          Cell c = mapModel.cells.get(ci);
+          if (c != null && c.biomeId == bid) cellIdxs.add(ci);
+        }
+        if (cellIdxs.isEmpty()) continue;
+        ArrayList<ArrayList<PVector>> rings = mergedPolygonsFromCells(cellIdxs);
+        if (rings == null || rings.isEmpty()) continue;
+        JSONArray polys = new JSONArray();
+        for (ArrayList<PVector> r : rings) {
+          JSONArray ring = ringFromVertices(r);
+          if (ring.size() == 0) continue;
+          JSONArray poly = new JSONArray();
+          poly.append(ring);
+          polys.append(poly);
+        }
+        if (polys.size() == 0) continue;
+        JSONObject geom = new JSONObject();
+        geom.setString("type", "MultiPolygon");
+        geom.setJSONArray("coordinates", polys);
+
+        JSONObject props = new JSONObject();
+        props.setString("category", "biome");
+        props.setInt("biomeIndex", bid);
+        ZoneType zt = mapModel.biomeTypes.get(bid);
+        props.setString("name", (zt != null && zt.name != null) ? zt.name : "");
+        props.setString("comment", "");
+
+        JSONObject feat = new JSONObject();
+        feat.setString("type", "Feature");
+        feat.setJSONObject("geometry", geom);
+        feat.setJSONObject("properties", props);
+        features.append(feat);
+      }
+    }
+
+    // Paths
+    if (mapModel != null && mapModel.paths != null) {
+      for (int pi = 0; pi < mapModel.paths.size(); pi++) {
+        Path p = mapModel.paths.get(pi);
+        if (p == null || p.routes == null) continue;
+        for (int ri = 0; ri < p.routes.size(); ri++) {
+          ArrayList<PVector> seg = p.routes.get(ri);
+          if (seg == null || seg.size() < 2) continue;
+          JSONArray coords = new JSONArray();
+          for (PVector v : seg) {
+            if (v == null) continue;
+            JSONArray pt = new JSONArray();
+            pt.append(v.x);
+            pt.append(v.y);
+            coords.append(pt);
+          }
+          JSONObject geom = new JSONObject();
+          geom.setString("type", "LineString");
+          geom.setJSONArray("coordinates", coords);
+
+          JSONObject props = new JSONObject();
+          props.setString("category", "path");
+          props.setInt("pathIndex", pi);
+          props.setInt("routeIndex", ri);
+          props.setInt("pathTypeId", p.typeId);
+          props.setString("name", p.name != null ? p.name : "");
+          props.setString("comment", p.comment != null ? p.comment : "");
+
+          JSONObject feat = new JSONObject();
+          feat.setString("type", "Feature");
+          feat.setJSONObject("geometry", geom);
+          feat.setJSONObject("properties", props);
+          features.append(feat);
+        }
+      }
+    }
+
+    // Structures
+    if (mapModel != null && mapModel.structures != null) {
+      for (int si = 0; si < mapModel.structures.size(); si++) {
+        Structure s = mapModel.structures.get(si);
+        if (s == null) continue;
+        ArrayList<PVector> outline = structureOutline(s);
+        JSONArray ring = ringFromVertices(outline);
+        JSONObject geom = new JSONObject();
+        if (ring.size() >= 4) { // closed polygon with >=3 distinct points
+          JSONArray poly = new JSONArray();
+          poly.append(ring);
+          geom.setString("type", "Polygon");
+          geom.setJSONArray("coordinates", poly);
+        } else {
+          JSONArray pt = new JSONArray();
+          pt.append(s.x);
+          pt.append(s.y);
+          geom.setString("type", "Point");
+          geom.setJSONArray("coordinates", pt);
+        }
+
+        JSONObject props = new JSONObject();
+        props.setString("category", "structure");
+        props.setInt("structureIndex", si);
+        props.setInt("typeId", s.typeId);
+        props.setString("name", s.name != null ? s.name : "");
+        props.setString("comment", s.comment != null ? s.comment : "");
+        props.setString("shape", s.shape != null ? s.shape.name() : "RECTANGLE");
+        props.setFloat("size", s.size);
+        props.setFloat("aspect", s.aspect);
+        props.setFloat("angleRad", s.angle);
+
+        JSONObject feat = new JSONObject();
+        feat.setString("type", "Feature");
+        feat.setJSONObject("geometry", geom);
+        feat.setJSONObject("properties", props);
+        features.append(feat);
+      }
+    }
+
+    // Labels
+    if (mapModel != null && mapModel.labels != null) {
+      for (int li = 0; li < mapModel.labels.size(); li++) {
+        MapLabel lbl = mapModel.labels.get(li);
+        if (lbl == null || lbl.text == null) continue;
+        JSONArray pt = new JSONArray();
+        pt.append(lbl.x);
+        pt.append(lbl.y);
+        JSONObject geom = new JSONObject();
+        geom.setString("type", "Point");
+        geom.setJSONArray("coordinates", pt);
+
+        JSONObject props = new JSONObject();
+        props.setString("category", "label");
+        props.setInt("labelIndex", li);
+        props.setString("text", lbl.text);
+        props.setString("comment", lbl.comment != null ? lbl.comment : "");
+        props.setString("target", lbl.target != null ? lbl.target.name() : "FREE");
+        props.setFloat("size", lbl.size);
+
+        JSONObject feat = new JSONObject();
+        feat.setString("type", "Feature");
+        feat.setJSONObject("geometry", geom);
+        feat.setJSONObject("properties", props);
+        features.append(feat);
+      }
+    }
+
+    root.setJSONArray("features", features);
+
+    File dir = new File(sketchPath("exports"));
+    if (!dir.exists()) dir.mkdirs();
+    String ts = nf(year(), 4, 0) + nf(month(), 2, 0) + nf(day(), 2, 0) + "_" +
+                nf(hour(), 2, 0) + nf(minute(), 2, 0) + nf(second(), 2, 0);
+    File target = new File(dir, "map_" + ts + ".geojson");
+    File latest = new File(dir, "map_latest.geojson");
+    saveJSONObject(root, target.getAbsolutePath());
+    saveJSONObject(root, latest.getAbsolutePath());
+    return target.getAbsolutePath();
+  } catch (Exception e) {
+    e.printStackTrace();
+    return "Failed: " + e.getMessage();
+  }
+}
+
 String importMapJson() {
   try {
     File latest = new File(sketchPath("exports"), "map_latest.json");
