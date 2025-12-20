@@ -629,6 +629,37 @@ void generateEverythingFromCells() {
   }
 }
 
+void resetAllMapData() {
+  startLoading();
+  try {
+    mapModel = new MapModel();
+    loadBiomePatternList();
+    initBiomeTypes();
+    initZones();
+    initPathTypes();
+
+    // Reset selections / drafts
+    selectedPathIndex = -1;
+    pendingPathStart = null;
+    clearStructureSelection();
+    selectedLabelIndex = -1;
+    editingLabelIndex = -1;
+    editingLabelCommentIndex = -1;
+    labelDraft = "label";
+    labelCommentDraft = "";
+    editingPathNameIndex = -1;
+    editingPathCommentIndex = -1;
+    editingPathTypeNameIndex = -1;
+    activeBiomeIndex = 1;
+    activeZoneIndex = 1;
+    zonesListScroll = pathsListScroll = structuresListScroll = labelsListScroll = 0;
+    mapModel.snapDirty = true;
+    renderContoursDirty = true;
+  } finally {
+    stopLoading();
+  }
+}
+
 void triggerRenderPrerequisites() {
   if (mapModel == null || renderSettings == null) return;
   if (renderSettings.waterRippleCount > 0 &&

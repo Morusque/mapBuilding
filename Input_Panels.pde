@@ -162,6 +162,11 @@ boolean handleSitesPanelClick(int mx, int my) {
     return true;
   }
 
+  // Reset all button
+  if (queueButtonAction(layout.resetBtn, new Runnable() { public void run() {
+    resetAllMapData();
+  }})) return true;
+
   // Generate button
   if (queueButtonAction(layout.generateBtn, new Runnable() { public void run() {
     mapModel.generateSites(currentPlacementMode(), siteTargetCount, keepPropertiesOnGenerate);

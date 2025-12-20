@@ -103,6 +103,7 @@ class SitesLayout {
   IntRect densitySlider;
   IntRect fuzzSlider;
   IntRect modeSlider;
+  IntRect resetBtn;
   IntRect generateBtn;
   IntRect fullGenerateBtn;
   IntRect keepCheckbox;
@@ -115,6 +116,10 @@ SitesLayout buildSitesLayout() {
   int curY = l.panel.y + PANEL_PADDING;
   l.titleY = curY;
   curY += PANEL_TITLE_H + PANEL_SECTION_GAP;
+
+  // Reset all
+  l.resetBtn = new IntRect(innerX, curY, 110, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
 
   // Generate controls up top
   l.generateBtn = new IntRect(innerX, curY, 110, PANEL_BUTTON_H);
@@ -149,6 +154,14 @@ void drawSitesPanel() {
   fill(0);
   textAlign(LEFT, TOP);
   text("Cells generation", labelX, layout.titleY);
+
+  // ---------- Reset button ----------
+  IntRect r = layout.resetBtn;
+  drawBevelButton(r.x, r.y, r.w, r.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Reset all", r.x + r.w / 2, r.y + r.h / 2);
+  registerUiTooltip(r, tooltipFor("sites_reset_all"));
 
   // ---------- Density slider ----------
   IntRect d = layout.densitySlider;

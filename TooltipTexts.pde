@@ -22,6 +22,7 @@ void initTooltipTexts() {
   TOOLTIP_TEXTS.put("site_mode", "Choose the placement algorithm:\n- grid: simple squares\n- poisson-disc: evenly spaced but organic\n- hexagonal: honeycomb layout.");
   TOOLTIP_TEXTS.put("sites_generate", "Rebuild all site seeds using the chosen parameters.");
   TOOLTIP_TEXTS.put("sites_keep", "Keep properties preserves properties such as biome assignement while regenerating cells.");
+  TOOLTIP_TEXTS.put("sites_reset_all", "Clear all data: cells, zones, biomes, paths, structures, labels.");
 
   // elevation mode
   TOOLTIP_TEXTS.put("elevation_water_level", "Sets sea level.");
