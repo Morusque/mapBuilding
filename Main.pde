@@ -1646,13 +1646,23 @@ ArrayList<PVector> structureOutline(Structure s) {
   return pts;
 }
 
+float elevationAtPoint(float x, float y) {
+  if (mapModel == null) return 0;
+  return mapModel.sampleElevationAt(x, y, seaLevel);
+}
+
 JSONArray ringFromVertices(ArrayList<PVector> verts) {
+  return ringFromVertices(verts, false);
+}
+
+JSONArray ringFromVertices(ArrayList<PVector> verts, boolean includeZ) {
   JSONArray ring = new JSONArray();
   if (verts == null || verts.size() < 3) return ring;
   for (PVector v : verts) {
     JSONArray p = new JSONArray();
     p.append(v.x);
     p.append(v.y);
+    if (includeZ) p.append(elevationAtPoint(v.x, v.y));
     ring.append(p);
   }
   PVector first = verts.get(0);
@@ -1661,6 +1671,7 @@ JSONArray ringFromVertices(ArrayList<PVector> verts) {
     JSONArray p = new JSONArray();
     p.append(first.x);
     p.append(first.y);
+    if (includeZ) p.append(elevationAtPoint(first.x, first.y));
     ring.append(p);
   }
   return ring;
@@ -1737,6 +1748,40 @@ ArrayList<ArrayList<PVector>> mergedPolygonsFromCells(ArrayList<Integer> cellIdx
   return rings;
 }
 
+float[] elevationStatsForCells(ArrayList<Integer> cellIdxs) {
+  if (cellIdxs == null || mapModel == null || mapModel.cells == null) return null;
+  float minV = Float.MAX_VALUE, maxV = -Float.MAX_VALUE, sum = 0;
+  int count = 0;
+  for (int ci : cellIdxs) {
+    if (ci < 0 || ci >= mapModel.cells.size()) continue;
+    Cell c = mapModel.cells.get(ci);
+    if (c == null) continue;
+    float ev = c.elevation;
+    minV = min(minV, ev);
+    maxV = max(maxV, ev);
+    sum += ev;
+    count++;
+  }
+  if (count == 0) return null;
+  return new float[]{minV, maxV, sum / count};
+}
+
+float[] elevationStatsForPoints(ArrayList<PVector> pts) {
+  if (pts == null || mapModel == null) return null;
+  float minV = Float.MAX_VALUE, maxV = -Float.MAX_VALUE, sum = 0;
+  int count = 0;
+  for (PVector p : pts) {
+    if (p == null) continue;
+    float ev = elevationAtPoint(p.x, p.y);
+    minV = min(minV, ev);
+    maxV = max(maxV, ev);
+    sum += ev;
+    count++;
+  }
+  if (count == 0) return null;
+  return new float[]{minV, maxV, sum / count};
+}
+
 String exportGeoJson() {
   try {
     JSONObject root = new JSONObject();
@@ -1752,13 +1797,14 @@ String exportGeoJson() {
         if (rings == null || rings.isEmpty()) continue;
         JSONArray polys = new JSONArray();
         for (ArrayList<PVector> r : rings) {
-          JSONArray ring = ringFromVertices(r);
+          JSONArray ring = ringFromVertices(r, true);
           if (ring.size() == 0) continue;
           JSONArray poly = new JSONArray();
           poly.append(ring);
           polys.append(poly);
         }
         if (polys.size() == 0) continue;
+        float[] stats = elevationStatsForCells(z.cells);
         JSONObject geom = new JSONObject();
         geom.setString("type", "MultiPolygon");
         geom.setJSONArray("coordinates", polys);
@@ -1768,6 +1814,11 @@ String exportGeoJson() {
         props.setInt("zoneIndex", zi);
         props.setString("name", z.name != null ? z.name : "");
         props.setString("comment", z.comment != null ? z.comment : "");
+        if (stats != null) {
+          props.setFloat("elevMin", stats[0]);
+          props.setFloat("elevMax", stats[1]);
+          props.setFloat("elevMean", stats[2]);
+        }
 
         JSONObject feat = new JSONObject();
         feat.setString("type", "Feature");
@@ -1791,13 +1842,14 @@ String exportGeoJson() {
         if (rings == null || rings.isEmpty()) continue;
         JSONArray polys = new JSONArray();
         for (ArrayList<PVector> r : rings) {
-          JSONArray ring = ringFromVertices(r);
+          JSONArray ring = ringFromVertices(r, true);
           if (ring.size() == 0) continue;
           JSONArray poly = new JSONArray();
           poly.append(ring);
           polys.append(poly);
         }
         if (polys.size() == 0) continue;
+        float[] stats = elevationStatsForCells(cellIdxs);
         JSONObject geom = new JSONObject();
         geom.setString("type", "MultiPolygon");
         geom.setJSONArray("coordinates", polys);
@@ -1808,6 +1860,11 @@ String exportGeoJson() {
         ZoneType zt = mapModel.biomeTypes.get(bid);
         props.setString("name", (zt != null && zt.name != null) ? zt.name : "");
         props.setString("comment", "");
+        if (stats != null) {
+          props.setFloat("elevMin", stats[0]);
+          props.setFloat("elevMax", stats[1]);
+          props.setFloat("elevMean", stats[2]);
+        }
 
         JSONObject feat = new JSONObject();
         feat.setString("type", "Feature");
@@ -1831,6 +1888,7 @@ String exportGeoJson() {
             JSONArray pt = new JSONArray();
             pt.append(v.x);
             pt.append(v.y);
+            pt.append(elevationAtPoint(v.x, v.y));
             coords.append(pt);
           }
           JSONObject geom = new JSONObject();
@@ -1844,6 +1902,12 @@ String exportGeoJson() {
           props.setInt("pathTypeId", p.typeId);
           props.setString("name", p.name != null ? p.name : "");
           props.setString("comment", p.comment != null ? p.comment : "");
+          float[] stats = elevationStatsForPoints(seg);
+          if (stats != null) {
+            props.setFloat("elevMin", stats[0]);
+            props.setFloat("elevMax", stats[1]);
+            props.setFloat("elevMean", stats[2]);
+          }
 
           JSONObject feat = new JSONObject();
           feat.setString("type", "Feature");
@@ -1860,7 +1924,7 @@ String exportGeoJson() {
         Structure s = mapModel.structures.get(si);
         if (s == null) continue;
         ArrayList<PVector> outline = structureOutline(s);
-        JSONArray ring = ringFromVertices(outline);
+        JSONArray ring = ringFromVertices(outline, true);
         JSONObject geom = new JSONObject();
         if (ring.size() >= 4) { // closed polygon with >=3 distinct points
           JSONArray poly = new JSONArray();
@@ -1885,6 +1949,7 @@ String exportGeoJson() {
         props.setFloat("size", s.size);
         props.setFloat("aspect", s.aspect);
         props.setFloat("angleRad", s.angle);
+        props.setFloat("elev", elevationAtPoint(s.x, s.y));
 
         JSONObject feat = new JSONObject();
         feat.setString("type", "Feature");
@@ -1902,6 +1967,7 @@ String exportGeoJson() {
         JSONArray pt = new JSONArray();
         pt.append(lbl.x);
         pt.append(lbl.y);
+        pt.append(elevationAtPoint(lbl.x, lbl.y));
         JSONObject geom = new JSONObject();
         geom.setString("type", "Point");
         geom.setJSONArray("coordinates", pt);
@@ -1913,6 +1979,7 @@ String exportGeoJson() {
         props.setString("comment", lbl.comment != null ? lbl.comment : "");
         props.setString("target", lbl.target != null ? lbl.target.name() : "FREE");
         props.setFloat("size", lbl.size);
+        props.setFloat("elev", elevationAtPoint(lbl.x, lbl.y));
 
         JSONObject feat = new JSONObject();
         feat.setString("type", "Feature");
