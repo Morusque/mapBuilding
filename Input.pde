@@ -801,7 +801,7 @@ void updateActiveSlider(int mx, int my) {
     case SLIDER_RENDER_LABEL_OUTLINE_SIZE: {
       RenderLayout l = buildRenderLayout();
       float t = constrain((mx - l.labelsOutlineSizeSlider.x) / (float)l.labelsOutlineSizeSlider.w, 0, 1);
-      renderSettings.labelOutlineSizePx = constrain(t * 6.0f, 0, 6.0f);
+      renderSettings.labelOutlineSizePx = round(constrain(t * 16.0f, 0, 16.0f));
       break;
     }
     case SLIDER_LABEL_SIZE: {

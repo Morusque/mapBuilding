@@ -1594,7 +1594,7 @@ boolean handleRenderPanelClick(int mx, int my) {
     }
     if (layout.labelsOutlineSizeSlider.contains(mx, my)) {
       float t = constrain((mx - layout.labelsOutlineSizeSlider.x) / (float)layout.labelsOutlineSizeSlider.w, 0, 1);
-      renderSettings.labelOutlineSizePx = constrain(t * 6.0f, 0, 6.0f);
+      renderSettings.labelOutlineSizePx = t;
       activeSlider = SLIDER_RENDER_LABEL_OUTLINE_SIZE;
       return true;
     }

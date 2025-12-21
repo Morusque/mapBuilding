@@ -284,9 +284,9 @@ class MapRenderer {
     app.textAlign(CENTER, CENTER);
     for (MapLabel l : model.labels) {
       if (l == null || l.text == null) continue;
-      float ts = l.size / max(1e-6f, viewport.zoom);
+      float ts = l.size;
       // Use a tiny default outline in edit mode (alpha 0.2) to keep consistent look
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, 0.2f, 1.0f);
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, 0.2f, 1.0f, 0.0f);
     }
     app.popStyle();
   }
@@ -298,8 +298,8 @@ class MapRenderer {
     app.textAlign(CENTER, CENTER);
     for (MapLabel l : model.labels) {
       if (l == null) continue;
-      float ts = l.size / max(1e-6f, viewport.zoom);
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx);
+      float ts = l.size;
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f);
     }
     app.popStyle();
   }
@@ -328,8 +328,8 @@ class MapRenderer {
       if (count <= 0) continue;
       cx /= count;
       cy /= count;
-      float ts = baseSize / max(1e-6f, viewport.zoom);
-      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx);
+      float ts = baseSize;
+      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f);
     }
     app.popStyle();
   }
@@ -367,11 +367,7 @@ class MapRenderer {
       if (angle > HALF_PI || angle < -HALF_PI) angle += PI; // keep text upright
       float mx = (bestA.x + bestB.x) * 0.5f;
       float my = (bestA.y + bestB.y) * 0.5f;
-      app.pushMatrix();
-      app.translate(mx, my);
-      app.rotate(angle);
-      drawTextWithOutline(app, txt, 0, 0, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx);
-      app.popMatrix();
+      drawTextWithOutline(app, txt, mx, my, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, angle);
     }
     app.popStyle();
   }
@@ -386,11 +382,8 @@ class MapRenderer {
     for (Structure st : model.structures) {
       if (st == null) continue;
       String txt = (st.name != null && st.name.length() > 0) ? st.name : "Structure";
-      float ts = baseSize / max(1e-6f, viewport.zoom);
-      app.pushMatrix();
-      app.translate(st.x, st.y);
-      drawTextWithOutline(app, txt, 0, 0, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx);
-      app.popMatrix();
+      float ts = baseSize;
+      drawTextWithOutline(app, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f);
     }
     app.popStyle();
   }
@@ -405,23 +398,28 @@ class MapRenderer {
     }
   }
 
-  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx) {
+  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad) {
     if (app == null || txt == null) return;
+    PVector screen = viewport.worldToScreen(x, y);
+    app.pushMatrix();
+    app.resetMatrix();
+    app.translate(screen.x, screen.y);
+    app.rotate(angleRad);
     app.textSize(ts);
     float oa = constrain(outlineAlpha01, 0, 1);
-    float offsetPx = max(0.25f, outlineSizePx) / max(1e-6f, viewport.zoom);
+    int radius = max(0, round(outlineSizePx));
     if (oa > 1e-4f) {
-      int radius = max(1, round(outlineSizePx));
       app.fill(255, oa * 255);
       for (int dx = -radius; dx <= radius; dx++) {
         for (int dy = -radius; dy <= radius; dy++) {
           if (dx == 0 && dy == 0) continue;
-          app.text(txt, x + dx * offsetPx, y + dy * offsetPx);
+          app.text(txt, dx, dy);
         }
       }
     }
     app.fill(0);
-    app.text(txt, x, y);
+    app.text(txt, 0, 0);
+    app.popMatrix();
   }
 
   void drawZoneOutlines(PApplet app) {

@@ -2368,7 +2368,7 @@ void drawRenderPanel() {
     drawCheckbox(layout.labelsPathsCheckbox.x, layout.labelsPathsCheckbox.y, layout.labelsPathsCheckbox.w, renderSettings.showLabelsPaths, "Show paths");
     drawCheckbox(layout.labelsStructuresCheckbox.x, layout.labelsStructuresCheckbox.y, layout.labelsStructuresCheckbox.w, renderSettings.showLabelsStructures, "Show structures");
     drawSlider(layout.labelsOutlineAlphaSlider, renderSettings.labelOutlineAlpha01, "Label outline alpha (" + nf(renderSettings.labelOutlineAlpha01 * 100, 1, 0) + "%)");
-    drawSlider(layout.labelsOutlineSizeSlider, constrain(renderSettings.labelOutlineSizePx / 6.0f, 0, 1), "Label outline size (" + nf(renderSettings.labelOutlineSizePx, 1, 1) + " px)");
+    drawSlider(layout.labelsOutlineSizeSlider, constrain(renderSettings.labelOutlineSizePx / 16.0f, 0, 1), "Label outline size (" + nf(renderSettings.labelOutlineSizePx, 1, 0) + " px)");
     registerUiTooltip(layout.labelsArbitraryCheckbox, tooltipFor("render_labels_arbitrary"));
     registerUiTooltip(layout.labelsZonesCheckbox, tooltipFor("render_labels_zones"));
     registerUiTooltip(layout.labelsPathsCheckbox, tooltipFor("render_labels_paths"));
