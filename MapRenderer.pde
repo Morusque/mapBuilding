@@ -1,8 +1,11 @@
 import java.util.*;
 import processing.core.PConstants;
+import processing.core.PFont;
 
 class MapRenderer {
   private final MapModel model;
+  private final HashMap<Integer, PFont> labelFontCache = new HashMap<Integer, PFont>();
+  private String labelFontName = "SansSerif";
 
   // Cached biome outline edges
   private ArrayList<PVector[]> cachedBiomeOutlineEdges = new ArrayList<PVector[]>();
@@ -286,7 +289,7 @@ class MapRenderer {
       if (l == null || l.text == null) continue;
       float ts = l.size;
       // Use a tiny default outline in edit mode (alpha 0.2) to keep consistent look
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, 0.2f, 1.0f, 0.0f);
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, 0.2f, 1.0f, 0.0f, false);
     }
     app.popStyle();
   }
@@ -299,7 +302,7 @@ class MapRenderer {
     for (MapLabel l : model.labels) {
       if (l == null) continue;
       float ts = l.size;
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f);
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true);
     }
     app.popStyle();
   }
@@ -329,7 +332,7 @@ class MapRenderer {
       cx /= count;
       cy /= count;
       float ts = baseSize;
-      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f);
+      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true);
     }
     app.popStyle();
   }
@@ -362,12 +365,12 @@ class MapRenderer {
         }
       }
       if (bestA == null || bestB == null || bestLenSq <= 1e-8f) continue;
-      float ts = baseSize / max(1e-6f, viewport.zoom);
+      float ts = baseSize;
       float angle = atan2(bestB.y - bestA.y, bestB.x - bestA.x);
       if (angle > HALF_PI || angle < -HALF_PI) angle += PI; // keep text upright
       float mx = (bestA.x + bestB.x) * 0.5f;
       float my = (bestA.y + bestB.y) * 0.5f;
-      drawTextWithOutline(app, txt, mx, my, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, angle);
+      drawTextWithOutline(app, txt, mx, my, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, angle, true);
     }
     app.popStyle();
   }
@@ -383,7 +386,7 @@ class MapRenderer {
       if (st == null) continue;
       String txt = (st.name != null && st.name.length() > 0) ? st.name : "Structure";
       float ts = baseSize;
-      drawTextWithOutline(app, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f);
+      drawTextWithOutline(app, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true);
     }
     app.popStyle();
   }
@@ -398,14 +401,53 @@ class MapRenderer {
     }
   }
 
-  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad) {
+  private PFont labelFont(PApplet app, int sizePx) {
+    int key = max(1, sizePx);
+    PFont f = labelFontCache.get(key);
+    if (f == null) {
+      String chosen = labelFontName;
+      try {
+        f = app.createFont(chosen, key, true);
+      } catch (Exception ignored) {
+      }
+      if (f == null) {
+        String[] fonts = PFont.list();
+        if (fonts != null && fonts.length > 0) {
+          chosen = fonts[0];
+          try {
+            f = app.createFont(chosen, key, true);
+          } catch (Exception ignored) {
+          }
+        }
+      }
+      if (f == null) {
+        f = app.createFont("SansSerif", key, true);
+      }
+      labelFontCache.put(key, f);
+      labelFontName = chosen;
+    }
+    return f;
+  }
+
+  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad, boolean snapToPixel) {
     if (app == null || txt == null) return;
     PVector screen = viewport.worldToScreen(x, y);
+    if (snapToPixel) {
+      screen.x = round(screen.x);
+      screen.y = round(screen.y);
+    }
     app.pushMatrix();
     app.resetMatrix();
     app.translate(screen.x, screen.y);
     app.rotate(angleRad);
-    app.textSize(ts);
+    int fontSize = max(1, round(ts));
+    PFont font = labelFont(app, fontSize);
+    if (font != null) {
+      app.textFont(font);
+      app.textSize(fontSize);
+    } else {
+      app.textSize(fontSize);
+    }
     float oa = constrain(outlineAlpha01, 0, 1);
     int radius = max(0, round(outlineSizePx));
     if (oa > 1e-4f) {
