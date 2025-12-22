@@ -1759,15 +1759,7 @@ class MapModel {
     }
 
     // Precompute mesh vertices for snapping
-    ArrayList<PVector> meshVerts = new ArrayList<PVector>();
-    HashSet<String> vertSeen = new HashSet<String>();
-    for (Cell c : cells) {
-      if (c == null || c.vertices == null) continue;
-      for (PVector v : c.vertices) {
-        String k = keyFor(v.x, v.y);
-        if (vertSeen.add(k)) meshVerts.add(v);
-      }
-    }
+    ensureSnapGraph();
     ArrayList<PVector[]> existingSegs = collectAllPathSegments();
 
     // Rivers
@@ -1776,6 +1768,8 @@ class MapModel {
       PVector start = coastPts.get((int)random(coastPts.size()));
       ArrayList<PVector> route = growRiver(start, seaLevel, stepLen, existingSegs);
       if (route == null || route.size() < 2) continue;
+      route = snapRouteToGraph(route);
+      if (route.size() < 2) continue;
       addPathFromPoints(riverType, useDefaultPathNames ? "River " + (paths.size() + 1) : "", route);
       existingSegs = collectAllPathSegments();
     }
@@ -1792,10 +1786,10 @@ class MapModel {
         Structure s = sorted.get(i);
         Cell c = findCellContaining(s.x, s.y);
         if (c != null && c.elevation > seaLevel) {
-        interest.add(snapToVertices(cellCentroid(c), meshVerts));
+        interest.add(snapToNearestSnapNode(cellCentroid(c)));
       } else {
         PVector p = new PVector(s.x, s.y);
-        interest.add(snapToVertices(p, meshVerts));
+        interest.add(snapToNearestSnapNode(p));
       }
     }
     }
@@ -1808,10 +1802,10 @@ class MapModel {
       if (c.elevation <= seaLevel) continue;
       PVector cen = cellCentroid(c);
       if (cen == null) continue;
-      if (abs(cen.x - minX) < margin && !borderLeft) { interest.add(snapToVertices(cen, meshVerts)); borderLeft = true; }
-      else if (abs(cen.x - maxX) < margin && !borderRight) { interest.add(snapToVertices(cen, meshVerts)); borderRight = true; }
-      else if (abs(cen.y - minY) < margin && !borderBottom) { interest.add(snapToVertices(cen, meshVerts)); borderBottom = true; }
-      else if (abs(cen.y - maxY) < margin && !borderTop) { interest.add(snapToVertices(cen, meshVerts)); borderTop = true; }
+      if (abs(cen.x - minX) < margin && !borderLeft) { interest.add(snapToNearestSnapNode(cen)); borderLeft = true; }
+      else if (abs(cen.x - maxX) < margin && !borderRight) { interest.add(snapToNearestSnapNode(cen)); borderRight = true; }
+      else if (abs(cen.y - minY) < margin && !borderBottom) { interest.add(snapToNearestSnapNode(cen)); borderBottom = true; }
+      else if (abs(cen.y - maxY) < margin && !borderTop) { interest.add(snapToNearestSnapNode(cen)); borderTop = true; }
     }
     // zones centers
     for (MapZone z : zones) {
@@ -1826,7 +1820,7 @@ class MapModel {
         if (c.elevation <= seaLevel) continue;
         sx += cen.x; sy += cen.y; cnt++;
       }
-      if (cnt > 0) interest.add(snapToVertices(new PVector(sx / cnt, sy / cnt), meshVerts));
+      if (cnt > 0) interest.add(snapToNearestSnapNode(new PVector(sx / cnt, sy / cnt)));
     }
     // farthest from sea: pick highest elevation land cell
     float bestElev = -Float.MAX_VALUE;
@@ -1839,7 +1833,7 @@ class MapModel {
         bestP = cellCentroid(c);
       }
     }
-    if (bestP != null) interest.add(snapToVertices(bestP, meshVerts));
+    if (bestP != null) interest.add(snapToNearestSnapNode(bestP));
 
     // Dedup interest
     ArrayList<PVector> interestUnique = new ArrayList<PVector>();
@@ -2133,12 +2127,16 @@ class MapModel {
       int mid = pts.size() / 2;
       ArrayList<PVector> branch = growBranch(pts.get(mid), pts, seaLevel, stepLen * 0.8f, avoid);
       if (branch != null && branch.size() > 1) {
-        addPathFromPoints(ensurePathTypeByName("River"), "River Branch " + (paths.size() + 1), branch);
-        avoid.addAll(segmentsFromPoints(branch));
+        ArrayList<PVector> snappedBranch = snapRouteToGraph(branch);
+        if (snappedBranch.size() > 1) {
+          addPathFromPoints(ensurePathTypeByName("River"), "River Branch " + (paths.size() + 1), snappedBranch);
+          avoid.addAll(segmentsFromPoints(snappedBranch));
+        }
       }
     }
-    avoid.addAll(segmentsFromPoints(pts));
-    return pts;
+    ArrayList<PVector> snapped = snapRouteToGraph(pts);
+    avoid.addAll(segmentsFromPoints(snapped));
+    return snapped;
   }
 
   ArrayList<PVector> growBranch(PVector start, ArrayList<PVector> main, float seaLevel, float stepLen, ArrayList<PVector[]> avoid) {
@@ -2263,6 +2261,40 @@ class MapModel {
       }
     }
     return best.copy();
+  }
+
+  PVector snapToNearestSnapNode(PVector p) {
+    if (p == null) return null;
+    ensureSnapGraph();
+    if (snapNodes == null || snapNodes.isEmpty()) return p.copy();
+    PVector best = null;
+    float bestD = Float.MAX_VALUE;
+    for (PVector v : snapNodes.values()) {
+      if (v == null) continue;
+      float d2 = distSq(p, v);
+      if (d2 < bestD) {
+        bestD = d2;
+        best = v;
+      }
+    }
+    return (best != null) ? best.copy() : p.copy();
+  }
+
+  ArrayList<PVector> snapRouteToGraph(ArrayList<PVector> pts) {
+    ArrayList<PVector> out = new ArrayList<PVector>();
+    if (pts == null || pts.isEmpty()) return out;
+    ensureSnapGraph();
+    for (PVector p : pts) {
+      PVector snapped = snapToNearestSnapNode(p);
+      if (snapped == null) continue;
+      if (!out.isEmpty()) {
+        PVector last = out.get(out.size() - 1);
+        if (distSq(last, snapped) < 1e-12f) continue;
+      }
+      out.add(snapped);
+    }
+    if (out.size() == 1) out.add(out.get(0).copy());
+    return out;
   }
 
   float pointToSegmentSq(PVector p, PVector a, PVector b) {
