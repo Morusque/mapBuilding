@@ -92,6 +92,11 @@ class RenderSettings {
   boolean showLabelsStructures = true;
   float labelOutlineAlpha01 = 0.0f;
   float labelOutlineSizePx = 1.0f;
+  float labelSizeArbPx = 12.0f;
+  float labelSizeZonePx = 14.0f;
+  float labelSizePathPx = 12.0f;
+  float labelSizeStructPx = 12.0f;
+  int labelFontIndex = 0;
 
   // General
   float exportPaddingPct = 0.015f;
@@ -164,6 +169,11 @@ class RenderSettings {
     c.showLabelsStructures = showLabelsStructures;
     c.labelOutlineAlpha01 = labelOutlineAlpha01;
     c.labelOutlineSizePx = labelOutlineSizePx;
+    c.labelSizeArbPx = labelSizeArbPx;
+    c.labelSizeZonePx = labelSizeZonePx;
+    c.labelSizePathPx = labelSizePathPx;
+    c.labelSizeStructPx = labelSizeStructPx;
+    c.labelFontIndex = labelFontIndex;
     // General
     c.exportPaddingPct = exportPaddingPct;
     c.antialiasing = antialiasing;
@@ -238,6 +248,16 @@ class RenderSettings {
     showLabelsStructures = o.showLabelsStructures;
     labelOutlineAlpha01 = o.labelOutlineAlpha01;
     labelOutlineSizePx = o.labelOutlineSizePx;
+    labelSizeArbPx = o.labelSizeArbPx;
+    labelSizeZonePx = o.labelSizeZonePx;
+    labelSizePathPx = o.labelSizePathPx;
+    labelSizeStructPx = o.labelSizeStructPx;
+    labelFontIndex = o.labelFontIndex;
+    if (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) {
+      labelFontIndex = constrain(labelFontIndex, 0, LABEL_FONT_OPTIONS.length - 1);
+    } else {
+      labelFontIndex = 0;
+    }
     // General
     exportPaddingPct = o.exportPaddingPct;
     antialiasing = o.antialiasing;
@@ -302,6 +322,11 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsStructures = true;
     s.labelOutlineAlpha01 = 0.0f;
     s.labelOutlineSizePx = 1.0f;
+    s.labelSizeArbPx = 12.0f;
+    s.labelSizeZonePx = 14.0f;
+    s.labelSizePathPx = 12.0f;
+    s.labelSizeStructPx = 12.0f;
+    s.labelFontIndex = 0;
     s.exportPaddingPct = 0.015f;
     s.antialiasing = true;
     list.add(new RenderPreset("Default", s));
@@ -355,6 +380,11 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsStructures = false;
     s.labelOutlineAlpha01 = 0.0f;
     s.labelOutlineSizePx = 1.0f;
+    s.labelSizeArbPx = 12.0f;
+    s.labelSizeZonePx = 14.0f;
+    s.labelSizePathPx = 12.0f;
+    s.labelSizeStructPx = 12.0f;
+    s.labelFontIndex = 0;
     s.exportPaddingPct = 0.01f;
     s.antialiasing = true;
     list.add(new RenderPreset("Satellite", s));
@@ -408,6 +438,12 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsPaths = true;
     s.showLabelsStructures = false;
     s.labelOutlineAlpha01 = 0.0f;
+    s.labelOutlineSizePx = 1.0f;
+    s.labelSizeArbPx = 12.0f;
+    s.labelSizeZonePx = 14.0f;
+    s.labelSizePathPx = 12.0f;
+    s.labelSizeStructPx = 12.0f;
+    s.labelFontIndex = 0;
     s.exportPaddingPct = 0.02f;
     s.antialiasing = true;
     list.add(new RenderPreset("Geographic", s));
@@ -461,6 +497,12 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsPaths = true;
     s.showLabelsStructures = true;
     s.labelOutlineAlpha01 = 0.8f;
+    s.labelOutlineSizePx = 1.0f;
+    s.labelSizeArbPx = 12.0f;
+    s.labelSizeZonePx = 14.0f;
+    s.labelSizePathPx = 12.0f;
+    s.labelSizeStructPx = 12.0f;
+    s.labelFontIndex = 0;
     s.exportPaddingPct = 0.015f;
     s.antialiasing = true;
     list.add(new RenderPreset("Grey", s));
@@ -514,6 +556,12 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsPaths = true;
     s.showLabelsStructures = true;
     s.labelOutlineAlpha01 = 1.0f;
+    s.labelOutlineSizePx = 1.0f;
+    s.labelSizeArbPx = 12.0f;
+    s.labelSizeZonePx = 14.0f;
+    s.labelSizePathPx = 12.0f;
+    s.labelSizeStructPx = 12.0f;
+    s.labelFontIndex = 0;
     s.exportPaddingPct = 0.015f;
     s.antialiasing = false;
     s.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
@@ -568,6 +616,12 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsPaths = true;
     s.showLabelsStructures = true;
     s.labelOutlineAlpha01 = 0.9f;
+    s.labelOutlineSizePx = 1.0f;
+    s.labelSizeArbPx = 12.0f;
+    s.labelSizeZonePx = 14.0f;
+    s.labelSizePathPx = 12.0f;
+    s.labelSizeStructPx = 12.0f;
+    s.labelFontIndex = 0;
     s.exportPaddingPct = 0.02f;
     s.antialiasing = true;
     s.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
@@ -622,6 +676,12 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsPaths = true;
     s.showLabelsStructures = true;
     s.labelOutlineAlpha01 = 1.0f;
+    s.labelOutlineSizePx = 1.0f;
+    s.labelSizeArbPx = 12.0f;
+    s.labelSizeZonePx = 14.0f;
+    s.labelSizePathPx = 12.0f;
+    s.labelSizeStructPx = 12.0f;
+    s.labelFontIndex = 0;
     s.exportPaddingPct = 0.015f;
     s.antialiasing = true;
     list.add(new RenderPreset("Administrative", s));
@@ -673,6 +733,12 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsPaths = false;
     s.showLabelsStructures = false;
     s.labelOutlineAlpha01 = 1.0f;
+    s.labelOutlineSizePx = 1.0f;
+    s.labelSizeArbPx = 12.0f;
+    s.labelSizeZonePx = 14.0f;
+    s.labelSizePathPx = 12.0f;
+    s.labelSizeStructPx = 12.0f;
+    s.labelFontIndex = 0;
     s.exportPaddingPct = 0.015f;
     s.antialiasing = true;
     list.add(new RenderPreset("Simple", s));
@@ -725,6 +791,12 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsPaths = false;
     s.showLabelsStructures = false;
     s.labelOutlineAlpha01 = 0.3f;
+    s.labelOutlineSizePx = 1.0f;
+    s.labelSizeArbPx = 12.0f;
+    s.labelSizeZonePx = 14.0f;
+    s.labelSizePathPx = 12.0f;
+    s.labelSizeStructPx = 12.0f;
+    s.labelFontIndex = 0;
     s.exportPaddingPct = 0.0f;
     s.antialiasing = true;
     s.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;

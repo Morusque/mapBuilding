@@ -4,8 +4,8 @@ import processing.core.PFont;
 
 class MapRenderer {
   private final MapModel model;
-  private final HashMap<Integer, PFont> labelFontCache = new HashMap<Integer, PFont>();
-  private String labelFontName = "SansSerif";
+  private final HashMap<String, PFont> labelFontCache = new HashMap<String, PFont>();
+  private String labelFontName = (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) ? LABEL_FONT_OPTIONS[0] : "SansSerif";
 
   // Cached biome outline edges
   private ArrayList<PVector[]> cachedBiomeOutlineEdges = new ArrayList<PVector[]>();
@@ -289,7 +289,7 @@ class MapRenderer {
       if (l == null || l.text == null) continue;
       float ts = l.size;
       // Use a tiny default outline in edit mode (alpha 0.2) to keep consistent look
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, 0.2f, 1.0f, 0.0f, false);
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, 0.2f, 1.0f, 0.0f, false, resolveLabelFontName(renderSettings));
     }
     app.popStyle();
   }
@@ -299,10 +299,11 @@ class MapRenderer {
     if (!s.showLabelsArbitrary) return;
     app.pushStyle();
     app.textAlign(CENTER, CENTER);
+    String fontName = resolveLabelFontName(s);
     for (MapLabel l : model.labels) {
       if (l == null) continue;
-      float ts = l.size;
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true);
+      float ts = (s.labelSizeArbPx > 0) ? s.labelSizeArbPx : l.size;
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true, fontName);
     }
     app.popStyle();
   }
@@ -313,7 +314,8 @@ class MapRenderer {
     app.pushStyle();
     app.fill(0);
     app.textAlign(CENTER, CENTER);
-    float baseSize = labelSizeDefault();
+    float baseSize = (s.labelSizeZonePx > 0) ? s.labelSizeZonePx : labelSizeDefault();
+    String fontName = resolveLabelFontName(s);
     for (MapModel.MapZone z : model.zones) {
       if (z == null || z.cells == null || z.cells.isEmpty()) continue;
       float cx = 0;
@@ -332,7 +334,7 @@ class MapRenderer {
       cx /= count;
       cy /= count;
       float ts = baseSize;
-      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true);
+      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true, fontName);
     }
     app.popStyle();
   }
@@ -343,7 +345,8 @@ class MapRenderer {
     app.pushStyle();
     app.fill(0);
     app.textAlign(CENTER, CENTER);
-    float baseSize = labelSizeDefault();
+    float baseSize = (s.labelSizePathPx > 0) ? s.labelSizePathPx : labelSizeDefault();
+    String fontName = resolveLabelFontName(s);
     for (Path p : model.paths) {
       if (p == null || p.routes == null || p.routes.isEmpty()) continue;
       String txt = (p.name != null && p.name.length() > 0) ? p.name : "Path";
@@ -370,7 +373,7 @@ class MapRenderer {
       if (angle > HALF_PI || angle < -HALF_PI) angle += PI; // keep text upright
       float mx = (bestA.x + bestB.x) * 0.5f;
       float my = (bestA.y + bestB.y) * 0.5f;
-      drawTextWithOutline(app, txt, mx, my, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, angle, true);
+      drawTextWithOutline(app, txt, mx, my, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, angle, true, fontName);
     }
     app.popStyle();
   }
@@ -381,12 +384,13 @@ class MapRenderer {
     app.pushStyle();
     app.fill(0);
     app.textAlign(CENTER, CENTER);
-    float baseSize = labelSizeDefault();
+    float baseSize = (s.labelSizeStructPx > 0) ? s.labelSizeStructPx : labelSizeDefault();
+    String fontName = resolveLabelFontName(s);
     for (Structure st : model.structures) {
       if (st == null) continue;
       String txt = (st.name != null && st.name.length() > 0) ? st.name : "";
       float ts = baseSize;
-      drawTextWithOutline(app, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true);
+      drawTextWithOutline(app, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true, fontName);
     }
     app.popStyle();
   }
@@ -401,11 +405,22 @@ class MapRenderer {
     }
   }
 
-  private PFont labelFont(PApplet app, int sizePx) {
+  private String resolveLabelFontName(RenderSettings s) {
+    if (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) {
+      int idx = 0;
+      if (s != null) idx = constrain(s.labelFontIndex, 0, LABEL_FONT_OPTIONS.length - 1);
+      return LABEL_FONT_OPTIONS[idx];
+    }
+    return "SansSerif";
+  }
+
+  private PFont labelFont(PApplet app, int sizePx, String desiredFont) {
     int key = max(1, sizePx);
-    PFont f = labelFontCache.get(key);
+    String fontKey = (desiredFont != null && desiredFont.length() > 0) ? desiredFont : labelFontName;
+    String cacheKey = fontKey + "|" + key;
+    PFont f = labelFontCache.get(cacheKey);
     if (f == null) {
-      String chosen = labelFontName;
+      String chosen = fontKey;
       try {
         f = app.createFont(chosen, key, true);
       } catch (Exception ignored) {
@@ -423,13 +438,13 @@ class MapRenderer {
       if (f == null) {
         f = app.createFont("SansSerif", key, true);
       }
-      labelFontCache.put(key, f);
+      labelFontCache.put(cacheKey, f);
       labelFontName = chosen;
     }
     return f;
   }
 
-  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad, boolean snapToPixel) {
+  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad, boolean snapToPixel, String fontName) {
     if (app == null || txt == null) return;
     PVector screen = viewport.worldToScreen(x, y);
     if (snapToPixel) {
@@ -441,7 +456,7 @@ class MapRenderer {
     app.translate(screen.x, screen.y);
     app.rotate(angleRad);
     int fontSize = max(1, round(ts));
-    PFont font = labelFont(app, fontSize);
+    PFont font = labelFont(app, fontSize, fontName);
     if (font != null) {
       app.textFont(font);
       app.textSize(fontSize);

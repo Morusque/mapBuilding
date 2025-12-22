@@ -1305,7 +1305,6 @@ class LabelsListLayout {
   IntRect panel;
   int titleY;
   IntRect deselectBtn;
-  IntRect sizeSlider;
   ArrayList<LabelRowLayout> rows = new ArrayList<LabelRowLayout>();
   int rowsStartY;
   int rowsViewH;
@@ -1393,14 +1392,13 @@ LabelsListLayout buildLabelsListLayout() {
   l.titleY = y + PANEL_PADDING;
   int btnY = l.titleY + PANEL_TITLE_H + PANEL_SECTION_GAP;
   l.deselectBtn = new IntRect(x + PANEL_PADDING, btnY, 90, PANEL_BUTTON_H);
-  l.sizeSlider = new IntRect(l.deselectBtn.x + l.deselectBtn.w + 10, btnY + 4, 140, PANEL_SLIDER_H);
   return l;
 }
 
 void populateLabelsListRows(LabelsListLayout layout) {
   layout.rows.clear();
   int labelX = layout.panel.x + PANEL_PADDING;
-  int startY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP + 6;
+  int startY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP;
   int maxY = layout.panel.y + layout.panel.h - PANEL_SECTION_GAP;
   int viewH = max(0, maxY - startY);
   int rowH = 24;
@@ -1448,14 +1446,7 @@ void drawLabelsListPanel() {
   textAlign(CENTER, CENTER);
   text("Deselect", layout.deselectBtn.x + layout.deselectBtn.w / 2, layout.deselectBtn.y + layout.deselectBtn.h / 2);
   registerUiTooltip(layout.deselectBtn, tooltipFor("labels_deselect"));
-
-  // Size slider
-  IntRect ss = layout.sizeSlider;
-  float sizeNorm = map(labelSizeDefault(), 8, 40, 0, 1);
-  sizeNorm = constrain(sizeNorm, 0, 1);
-  drawSlider(ss, sizeNorm, "Size " + nf(labelSizeDefault(), 1, 0));
-  registerUiTooltip(ss, tooltipFor("labels_size"));
-  curY = ss.y + ss.h + PANEL_SECTION_GAP;
+  curY = layout.deselectBtn.y + layout.deselectBtn.h + PANEL_SECTION_GAP;
 
   for (int i = 0; i < layout.rows.size(); i++) {
     LabelRowLayout row = layout.rows.get(i);
@@ -2001,6 +1992,11 @@ class RenderLayout {
   IntRect labelsStructuresCheckbox;
   IntRect labelsOutlineAlphaSlider;
   IntRect labelsOutlineSizeSlider;
+  IntRect labelsArbSizeSlider;
+  IntRect labelsZoneSizeSlider;
+  IntRect labelsPathSizeSlider;
+  IntRect labelsStructSizeSlider;
+  IntRect labelsFontSelector;
 
   IntRect exportPaddingSlider;
   IntRect antialiasCheckbox;
@@ -2188,15 +2184,25 @@ RenderLayout buildRenderLayout() {
   if (renderSectionLabelsOpen) {
     l.labelsArbitraryCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.labelsArbSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.labelsZonesCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.labelsZoneSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.labelsPathsCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.labelsPathSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.labelsStructuresCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.labelsStructSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.labelsOutlineAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.labelsOutlineSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.labelsFontSelector = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
 
@@ -2364,17 +2370,35 @@ void drawRenderPanel() {
   drawSectionHeader(layout.headerLabels, "Labels", renderSectionLabelsOpen);
   if (renderSectionLabelsOpen) {
     drawCheckbox(layout.labelsArbitraryCheckbox.x, layout.labelsArbitraryCheckbox.y, layout.labelsArbitraryCheckbox.w, renderSettings.showLabelsArbitrary, "Show arbitrary");
+    float arbSizeNorm = constrain((renderSettings.labelSizeArbPx - 8.0f) / (40.0f - 8.0f), 0, 1);
+    drawSlider(layout.labelsArbSizeSlider, arbSizeNorm, "Arbitrary size (" + nf(renderSettings.labelSizeArbPx, 1, 0) + " px)");
     drawCheckbox(layout.labelsZonesCheckbox.x, layout.labelsZonesCheckbox.y, layout.labelsZonesCheckbox.w, renderSettings.showLabelsZones, "Show zones");
+    float zoneSizeNorm = constrain((renderSettings.labelSizeZonePx - 8.0f) / (40.0f - 8.0f), 0, 1);
+    drawSlider(layout.labelsZoneSizeSlider, zoneSizeNorm, "Zones size (" + nf(renderSettings.labelSizeZonePx, 1, 0) + " px)");
     drawCheckbox(layout.labelsPathsCheckbox.x, layout.labelsPathsCheckbox.y, layout.labelsPathsCheckbox.w, renderSettings.showLabelsPaths, "Show paths");
+    float pathSizeNorm = constrain((renderSettings.labelSizePathPx - 8.0f) / (40.0f - 8.0f), 0, 1);
+    drawSlider(layout.labelsPathSizeSlider, pathSizeNorm, "Paths size (" + nf(renderSettings.labelSizePathPx, 1, 0) + " px)");
     drawCheckbox(layout.labelsStructuresCheckbox.x, layout.labelsStructuresCheckbox.y, layout.labelsStructuresCheckbox.w, renderSettings.showLabelsStructures, "Show structures");
+    float structSizeNorm = constrain((renderSettings.labelSizeStructPx - 8.0f) / (40.0f - 8.0f), 0, 1);
+    drawSlider(layout.labelsStructSizeSlider, structSizeNorm, "Structures size (" + nf(renderSettings.labelSizeStructPx, 1, 0) + " px)");
     drawSlider(layout.labelsOutlineAlphaSlider, renderSettings.labelOutlineAlpha01, "Label outline alpha (" + nf(renderSettings.labelOutlineAlpha01 * 100, 1, 0) + "%)");
     drawSlider(layout.labelsOutlineSizeSlider, constrain(renderSettings.labelOutlineSizePx / 16.0f, 0, 1), "Label outline size (" + nf(renderSettings.labelOutlineSizePx, 1, 0) + " px)");
+    if (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0 && layout.labelsFontSelector != null) {
+      int idx = constrain(renderSettings.labelFontIndex, 0, LABEL_FONT_OPTIONS.length - 1);
+      float tFont = (LABEL_FONT_OPTIONS.length > 1) ? constrain(idx / (float)(LABEL_FONT_OPTIONS.length - 1), 0, 1) : 0;
+      drawSelectorSlider(layout.labelsFontSelector, tFont, "Font: " + LABEL_FONT_OPTIONS[idx], LABEL_FONT_OPTIONS.length);
+    }
     registerUiTooltip(layout.labelsArbitraryCheckbox, tooltipFor("render_labels_arbitrary"));
     registerUiTooltip(layout.labelsZonesCheckbox, tooltipFor("render_labels_zones"));
     registerUiTooltip(layout.labelsPathsCheckbox, tooltipFor("render_labels_paths"));
     registerUiTooltip(layout.labelsStructuresCheckbox, tooltipFor("render_labels_structures"));
+    registerUiTooltip(layout.labelsArbSizeSlider, tooltipFor("render_labels_size_arbitrary"));
+    registerUiTooltip(layout.labelsZoneSizeSlider, tooltipFor("render_labels_size_zone"));
+    registerUiTooltip(layout.labelsPathSizeSlider, tooltipFor("render_labels_size_path"));
+    registerUiTooltip(layout.labelsStructSizeSlider, tooltipFor("render_labels_size_struct"));
     registerUiTooltip(layout.labelsOutlineAlphaSlider, tooltipFor("render_labels_outline"));
     registerUiTooltip(layout.labelsOutlineSizeSlider, tooltipFor("render_labels_outline_size"));
+    if (layout.labelsFontSelector != null) registerUiTooltip(layout.labelsFontSelector, tooltipFor("render_labels_font"));
   }
 
   drawSectionHeader(layout.headerGeneral, "General", renderSectionGeneralOpen);

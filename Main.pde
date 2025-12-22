@@ -88,6 +88,7 @@ final int SCROLLBAR_THUMB_MIN = 24;
 final int SCROLL_STEP_PX = 24;
 final float FLATTEST_BIAS_MIN = 0.0f;
 final float FLATTEST_BIAS_MAX = 1000.0f;
+final String[] LABEL_FONT_OPTIONS = { "SansSerif", "Serif", "Monospaced", "Arial", "Georgia" };
 
 // Cells (site seeds) generation config
 PlacementMode[] placementModes = {
@@ -453,7 +454,11 @@ final int SLIDER_RENDER_ZONE_BRI = 63;
 final int SLIDER_RENDER_PRESET_SELECT = 64;
 final int SLIDER_RENDER_PATH_BRI = 90;
 final int SLIDER_RENDER_LABEL_OUTLINE_SIZE = 91;
-final int SLIDER_LABEL_SIZE = 92;
+final int SLIDER_RENDER_LABEL_SIZE_ARBITRARY = 92;
+final int SLIDER_RENDER_LABEL_SIZE_ZONES = 93;
+final int SLIDER_RENDER_LABEL_SIZE_PATHS = 94;
+final int SLIDER_RENDER_LABEL_SIZE_STRUCTS = 95;
+final int SLIDER_RENDER_LABEL_FONT = 96;
 final int SLIDER_BIOME_GEN_MODE = 65;
 final int SLIDER_BIOME_GEN_VALUE = 66;
 final int SLIDER_RENDER_BIOME_UNDERWATER_ALPHA = 67;
@@ -1428,7 +1433,10 @@ String exportSvg() {
 
   // Labels layer
   sb.append("  <g id=\"labels\">\n");
-  float baseLabelSize = labelSizeDefault();
+  float baseLabelSize = (renderSettings != null && renderSettings.labelSizeZonePx > 0) ? renderSettings.labelSizeZonePx : labelSizeDefault();
+  float pathLabelSize = (renderSettings != null && renderSettings.labelSizePathPx > 0) ? renderSettings.labelSizePathPx : baseLabelSize;
+  float structLabelSize = (renderSettings != null && renderSettings.labelSizeStructPx > 0) ? renderSettings.labelSizeStructPx : baseLabelSize;
+  float arbLabelSize = (renderSettings != null && renderSettings.labelSizeArbPx > 0) ? renderSettings.labelSizeArbPx : labelSizeDefault();
   if (s.showLabelsZones && mapModel.zones != null) {
     for (MapModel.MapZone z : mapModel.zones) {
       if (z == null || z.cells == null || z.cells.isEmpty()) continue;
@@ -1481,7 +1489,7 @@ String exportSvg() {
       PVector sp = worldToSvg.apply(new PVector(mx, my));
       sb.append("    <text x=\"").append(fmt.apply(sp.x)).append("\" y=\"").append(fmt.apply(sp.y))
         .append("\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"")
-        .append(fmt.apply(baseLabelSize)).append("\" transform=\"rotate(").append(fmt.apply(angle))
+        .append(fmt.apply(pathLabelSize)).append("\" transform=\"rotate(").append(fmt.apply(angle))
         .append(" ").append(fmt.apply(sp.x)).append(" ").append(fmt.apply(sp.y))
         .append(")\" class=\"label path\" data-path-id=\"").append(pi).append("\" data-name=\"")
         .append(esc.apply(txt)).append("\" data-comment=\"").append(esc.apply(p.comment != null ? p.comment : ""))
@@ -1496,7 +1504,7 @@ String exportSvg() {
       PVector sp = worldToSvg.apply(new PVector(st.x, st.y));
       sb.append("    <text x=\"").append(fmt.apply(sp.x)).append("\" y=\"").append(fmt.apply(sp.y))
         .append("\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"")
-        .append(fmt.apply(baseLabelSize)).append("\" class=\"label structure\" data-structure-id=\"")
+        .append(fmt.apply(structLabelSize)).append("\" class=\"label structure\" data-structure-id=\"")
         .append(si).append("\" data-name=\"").append(esc.apply(txt)).append("\" data-comment=\"")
         .append(esc.apply(st.comment != null ? st.comment : "")).append("\">")
         .append(esc.apply(txt)).append("</text>\n");
@@ -1509,7 +1517,7 @@ String exportSvg() {
       PVector sp = worldToSvg.apply(new PVector(l.x, l.y));
       sb.append("    <text x=\"").append(fmt.apply(sp.x)).append("\" y=\"").append(fmt.apply(sp.y))
         .append("\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-size=\"")
-        .append(fmt.apply(l.size)).append("\" class=\"label arbitrary\" data-label-id=\"")
+        .append(fmt.apply(arbLabelSize)).append("\" class=\"label arbitrary\" data-label-id=\"")
         .append(li).append("\" data-comment=\"").append(esc.apply(l.comment != null ? l.comment : ""))
         .append("\">").append(esc.apply(l.text)).append("</text>\n");
     }
@@ -2178,6 +2186,11 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   labels.setBoolean("showLabelsStructures", s.showLabelsStructures);
   labels.setFloat("labelOutlineAlpha01", s.labelOutlineAlpha01);
   labels.setFloat("labelOutlineSizePx", s.labelOutlineSizePx);
+  labels.setFloat("labelSizeArbPx", s.labelSizeArbPx);
+  labels.setFloat("labelSizeZonePx", s.labelSizeZonePx);
+  labels.setFloat("labelSizePathPx", s.labelSizePathPx);
+  labels.setFloat("labelSizeStructPx", s.labelSizeStructPx);
+  labels.setInt("labelFontIndex", s.labelFontIndex);
   r.setJSONObject("labels", labels);
 
   JSONObject general = new JSONObject();
@@ -2279,6 +2292,16 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.showLabelsStructures = b.getBoolean("showLabelsStructures", target.showLabelsStructures);
     target.labelOutlineAlpha01 = b.getFloat("labelOutlineAlpha01", target.labelOutlineAlpha01);
     target.labelOutlineSizePx = b.getFloat("labelOutlineSizePx", target.labelOutlineSizePx);
+    target.labelSizeArbPx = b.getFloat("labelSizeArbPx", target.labelSizeArbPx);
+    target.labelSizeZonePx = b.getFloat("labelSizeZonePx", target.labelSizeZonePx);
+    target.labelSizePathPx = b.getFloat("labelSizePathPx", target.labelSizePathPx);
+    target.labelSizeStructPx = b.getFloat("labelSizeStructPx", target.labelSizeStructPx);
+    target.labelFontIndex = b.getInt("labelFontIndex", target.labelFontIndex);
+    if (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) {
+      target.labelFontIndex = constrain(target.labelFontIndex, 0, LABEL_FONT_OPTIONS.length - 1);
+    } else {
+      target.labelFontIndex = 0;
+    }
   }
 
   if (r.hasKey("general")) {

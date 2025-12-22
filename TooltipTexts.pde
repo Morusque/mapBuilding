@@ -114,6 +114,11 @@ void initTooltipTexts() {
   TOOLTIP_TEXTS.put("render_labels_zones", "Toggle zone labels in rendering/export.");
   TOOLTIP_TEXTS.put("render_labels_paths", "Toggle path labels in rendering/export.");
   TOOLTIP_TEXTS.put("render_labels_structures", "Toggle structure labels in rendering/export.");
+  TOOLTIP_TEXTS.put("render_labels_size_arbitrary", "Pixel size for arbitrary labels in rendering/export.");
+  TOOLTIP_TEXTS.put("render_labels_size_zone", "Pixel size for zone labels in rendering/export.");
+  TOOLTIP_TEXTS.put("render_labels_size_path", "Pixel size for path labels in rendering/export.");
+  TOOLTIP_TEXTS.put("render_labels_size_struct", "Pixel size for structure labels in rendering/export.");
+  TOOLTIP_TEXTS.put("render_labels_font", "Font used for all labels in rendering/export.");
   TOOLTIP_TEXTS.put("render_labels_outline", "Alpha of label outlines.");
   TOOLTIP_TEXTS.put("render_labels_outline_size", "Pixel size of label outlines.");
   TOOLTIP_TEXTS.put("render_export_padding", "Padding ratio used for render/export crops.");

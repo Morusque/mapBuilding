@@ -921,20 +921,6 @@ boolean handleLabelsListPanelClick(int mx, int my) {
     labelDraft = "label";
   }})) return true;
 
-  // Size slider
-  if (layout.sizeSlider.contains(mx, my)) {
-    float t = constrain((mx - layout.sizeSlider.x) / (float)layout.sizeSlider.w, 0, 1);
-    float newSize = 8 + t * (40 - 8);
-    setLabelSizeDefault(newSize);
-    if (mapModel != null && mapModel.labels != null) {
-      for (MapLabel lbl : mapModel.labels) {
-        if (lbl != null) lbl.size = newSize;
-      }
-    }
-    activeSlider = SLIDER_LABEL_SIZE;
-    return true;
-  }
-
   for (int i = 0; i < layout.rows.size(); i++) {
     LabelRowLayout row = layout.rows.get(i);
     if (row.index < 0 || row.index >= mapModel.labels.size()) continue;
@@ -1571,9 +1557,21 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
+    if (layout.labelsArbSizeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.labelsArbSizeSlider.x) / (float)layout.labelsArbSizeSlider.w, 0, 1);
+      renderSettings.labelSizeArbPx = round(constrain(8 + t * (40 - 8), 4, 80));
+      activeSlider = SLIDER_RENDER_LABEL_SIZE_ARBITRARY;
+      return true;
+    }
     if (layout.labelsZonesCheckbox.contains(mx, my)) {
       renderSettings.showLabelsZones = !renderSettings.showLabelsZones;
       renderShowLabels = renderSettings.showLabelsArbitrary;
+      return true;
+    }
+    if (layout.labelsZoneSizeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.labelsZoneSizeSlider.x) / (float)layout.labelsZoneSizeSlider.w, 0, 1);
+      renderSettings.labelSizeZonePx = round(constrain(8 + t * (40 - 8), 4, 80));
+      activeSlider = SLIDER_RENDER_LABEL_SIZE_ZONES;
       return true;
     }
     if (layout.labelsPathsCheckbox.contains(mx, my)) {
@@ -1581,9 +1579,21 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
+    if (layout.labelsPathSizeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.labelsPathSizeSlider.x) / (float)layout.labelsPathSizeSlider.w, 0, 1);
+      renderSettings.labelSizePathPx = round(constrain(8 + t * (40 - 8), 4, 80));
+      activeSlider = SLIDER_RENDER_LABEL_SIZE_PATHS;
+      return true;
+    }
     if (layout.labelsStructuresCheckbox.contains(mx, my)) {
       renderSettings.showLabelsStructures = !renderSettings.showLabelsStructures;
       renderShowLabels = renderSettings.showLabelsArbitrary;
+      return true;
+    }
+    if (layout.labelsStructSizeSlider.contains(mx, my)) {
+      float t = constrain((mx - layout.labelsStructSizeSlider.x) / (float)layout.labelsStructSizeSlider.w, 0, 1);
+      renderSettings.labelSizeStructPx = round(constrain(8 + t * (40 - 8), 4, 80));
+      activeSlider = SLIDER_RENDER_LABEL_SIZE_STRUCTS;
       return true;
     }
     if (layout.labelsOutlineAlphaSlider.contains(mx, my)) {
@@ -1594,8 +1604,16 @@ boolean handleRenderPanelClick(int mx, int my) {
     }
     if (layout.labelsOutlineSizeSlider.contains(mx, my)) {
       float t = constrain((mx - layout.labelsOutlineSizeSlider.x) / (float)layout.labelsOutlineSizeSlider.w, 0, 1);
-      renderSettings.labelOutlineSizePx = t;
+      renderSettings.labelOutlineSizePx = round(constrain(t * 16.0f, 0, 16.0f));
       activeSlider = SLIDER_RENDER_LABEL_OUTLINE_SIZE;
+      return true;
+    }
+    if (layout.labelsFontSelector != null && layout.labelsFontSelector.contains(mx, my) && LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) {
+      int n = max(1, LABEL_FONT_OPTIONS.length - 1);
+      float t = constrain((mx - layout.labelsFontSelector.x) / (float)layout.labelsFontSelector.w, 0, 1);
+      int idx = constrain(round(t * n), 0, LABEL_FONT_OPTIONS.length - 1);
+      renderSettings.labelFontIndex = idx;
+      activeSlider = SLIDER_RENDER_LABEL_FONT;
       return true;
     }
   }

@@ -804,16 +804,37 @@ void updateActiveSlider(int mx, int my) {
       renderSettings.labelOutlineSizePx = round(constrain(t * 16.0f, 0, 16.0f));
       break;
     }
-    case SLIDER_LABEL_SIZE: {
-      LabelsListLayout l = buildLabelsListLayout();
-      float t = constrain((mx - l.sizeSlider.x) / (float)l.sizeSlider.w, 0, 1);
-      float newSize = 8 + t * (40 - 8);
-      setLabelSizeDefault(newSize);
-      if (mapModel != null && mapModel.labels != null) {
-        for (MapLabel lbl : mapModel.labels) {
-          if (lbl != null) lbl.size = newSize;
-        }
-      }
+    case SLIDER_RENDER_LABEL_SIZE_ARBITRARY: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.labelsArbSizeSlider.x) / (float)l.labelsArbSizeSlider.w, 0, 1);
+      renderSettings.labelSizeArbPx = round(constrain(8 + t * (40 - 8), 4, 80));
+      break;
+    }
+    case SLIDER_RENDER_LABEL_SIZE_ZONES: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.labelsZoneSizeSlider.x) / (float)l.labelsZoneSizeSlider.w, 0, 1);
+      renderSettings.labelSizeZonePx = round(constrain(8 + t * (40 - 8), 4, 80));
+      break;
+    }
+    case SLIDER_RENDER_LABEL_SIZE_PATHS: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.labelsPathSizeSlider.x) / (float)l.labelsPathSizeSlider.w, 0, 1);
+      renderSettings.labelSizePathPx = round(constrain(8 + t * (40 - 8), 4, 80));
+      break;
+    }
+    case SLIDER_RENDER_LABEL_SIZE_STRUCTS: {
+      RenderLayout l = buildRenderLayout();
+      float t = constrain((mx - l.labelsStructSizeSlider.x) / (float)l.labelsStructSizeSlider.w, 0, 1);
+      renderSettings.labelSizeStructPx = round(constrain(8 + t * (40 - 8), 4, 80));
+      break;
+    }
+    case SLIDER_RENDER_LABEL_FONT: {
+      RenderLayout l = buildRenderLayout();
+      int options = (LABEL_FONT_OPTIONS != null) ? LABEL_FONT_OPTIONS.length : 0;
+      if (options < 1) break;
+      float t = constrain((mx - l.labelsFontSelector.x) / (float)l.labelsFontSelector.w, 0, 1);
+      int idx = constrain(round(t * max(1, options - 1)), 0, options - 1);
+      renderSettings.labelFontIndex = idx;
       break;
     }
     case SLIDER_RENDER_BACKGROUND_NOISE: {
