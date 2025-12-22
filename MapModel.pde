@@ -480,7 +480,7 @@ class MapModel {
     Structure s = new Structure(wx, wy);
     at.applyTo(s);
     if (s.name == null || s.name.length() == 0) {
-      s.name = "Struct " + (structures.size() + 1);
+      s.name = useDefaultStructureNames ? "Struct " + (structures.size() + 1) : "";
     }
     if (s.snapBinding == null) s.snapBinding = new StructureSnapBinding();
     s.snapBinding.clear();
@@ -1774,7 +1774,7 @@ class MapModel {
       PVector start = coastPts.get((int)random(coastPts.size()));
       ArrayList<PVector> route = growRiver(start, seaLevel, stepLen, existingSegs);
       if (route == null || route.size() < 2) continue;
-      addPathFromPoints(riverType, "River " + (paths.size() + 1), route);
+      addPathFromPoints(riverType, useDefaultPathNames ? "River " + (paths.size() + 1) : "", route);
       existingSegs = collectAllPathSegments();
     }
     // Interest points (snap to nearest cell vertex)
@@ -1914,7 +1914,7 @@ class MapModel {
     for (int idx : roadOrder) {
       if (roadLinks >= 5) break;
       ArrayList<PVector> pathPts = roadCandidates.get(idx);
-      addPathFromPoints(roadType, "Road " + (paths.size() + 1), pathPts);
+      addPathFromPoints(roadType, useDefaultPathNames ? "Road " + (paths.size() + 1) : "", pathPts);
       roadLinks++;
     }
     // Bridges: try three times
@@ -2063,7 +2063,7 @@ class MapModel {
       bridgePts.add(bc.b.copy());
       ArrayList<PVector[]> segs = segmentsFromPoints(bridgePts);
       if (segmentsCross(segs, existingSegs)) continue;
-      addPathFromPoints(bridgeType, "Bridge " + (paths.size() + 1), bridgePts);
+      addPathFromPoints(bridgeType, useDefaultPathNames ? "Bridge " + (paths.size() + 1) : "", bridgePts);
       existingSegs.addAll(segs);
       bridges++;
     }
@@ -2279,7 +2279,7 @@ class MapModel {
   // ---------- Paths management ----------
 
   String defaultPathNameForType(int typeId) {
-    String base = "Path";
+    String base = useDefaultPathNames ? "Path" : "";
     if (pathTypes != null && typeId >= 0 && typeId < pathTypes.size()) {
       PathType pt = pathTypes.get(typeId);
       if (pt != null && pt.name != null && pt.name.trim().length() > 0) {
@@ -4297,7 +4297,7 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
     for (int i = 0; i < zoneCount; i++) {
       float h = pickMaxGapHue();
       int col = zoneColorForHue(h);
-      MapZone z = new MapZone("Zone" + (i + 1), col);
+      MapZone z = new MapZone(randomLabelName(), col);
       z.hue01 = h;
       z.updateColorFromHSB();
       zones.add(z);
@@ -4620,10 +4620,9 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
   }
 
   void addZone() {
-    int idx = zones.size();
     float baseHue = (zones.isEmpty()) ? distributedHueForIndex(0) : pickMaxGapHue();
     int col = zoneColorForHue(baseHue);
-    MapZone z = new MapZone("Zone" + (idx + 1), col);
+    MapZone z = new MapZone(randomLabelName(), col);
     z.hue01 = baseHue;
     z.updateColorFromHSB();
     zones.add(z);
@@ -4928,7 +4927,8 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
       main.setColor(color(255), 1.0f);
       main.strokeWeightPx = 1.5f;
       main.alpha01 = 1.0f;
-      main.name = "Town " + (placedTowns + 1);
+      main.name = "";
+      if (useDefaultStructureNames) main.name = "Town " + (placedTowns + 1);
       newStructs.add(main);
       townCenters.add(new PVector(c.p.x, c.p.y));
 

@@ -384,7 +384,7 @@ class MapRenderer {
     float baseSize = labelSizeDefault();
     for (Structure st : model.structures) {
       if (st == null) continue;
-      String txt = (st.name != null && st.name.length() > 0) ? st.name : "Structure";
+      String txt = (st.name != null && st.name.length() > 0) ? st.name : "";
       float ts = baseSize;
       drawTextWithOutline(app, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true);
     }

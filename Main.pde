@@ -38,6 +38,9 @@ float pathsListScroll = 0;
 float structuresListScroll = 0;
 float labelsListScroll = 0;
 
+boolean useDefaultStructureNames = false;
+boolean useDefaultPathNames = false;
+
 boolean structSectionGenOpen = true;
 boolean structSectionSnapOpen = true;
 boolean structSectionAttrOpen = true;
@@ -962,10 +965,17 @@ void draw() {
         mapModel.drawPaths(this, color(60, 60, 200), false, true);
         mapModel.drawStructures(this);
         if (allowLabels) {
-          mapModel.drawLabels(this);
-          if (renderSettings.showLabelsZones) mapModel.drawZoneLabelsRender(this, renderSettings);
-          if (renderSettings.showLabelsPaths) mapModel.drawPathLabelsRender(this, renderSettings);
-          if (renderSettings.showLabelsStructures) mapModel.drawStructureLabelsRender(this, renderSettings);
+          RenderSettings rs = new RenderSettings();
+          rs.showLabelsZones = true;
+          rs.showLabelsPaths = true;
+          rs.showLabelsStructures = true;
+          rs.showLabelsArbitrary = true;
+          rs.labelOutlineAlpha01 = 1.0f;
+          rs.labelOutlineSizePx = 2.0f;
+          mapModel.drawZoneLabelsRender(this, rs);
+          mapModel.drawPathLabelsRender(this, rs);
+          mapModel.drawStructureLabelsRender(this, rs);
+          mapModel.drawLabelsRender(this, rs);
         }
         break;
       }
