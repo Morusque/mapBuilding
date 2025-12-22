@@ -6,7 +6,6 @@ Mandatory for full first use milestone :
 (later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 (later) some sliders don't work well
 (later) make sure everything can be bitmap
-(later) labels hierarchy
 
 Other :
 (maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).

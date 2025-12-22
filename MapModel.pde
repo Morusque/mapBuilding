@@ -119,86 +119,88 @@ class MapModel {
     if (t == null || !t.taperOn) return weights;
     ensureCellNeighborsComputed();
 
-    // Collect all water-touching vertices across routes of this type (including junctions)
-    HashSet<String> waterKeys = new HashSet<String>();
+    // Build segment list and adjacency keyed by shared vertices
+    class SegNode {
+      int pIdx;
+      int rIdx;
+      int sIdx;
+      PVector a;
+      PVector b;
+    }
+    ArrayList<SegNode> segs = new ArrayList<SegNode>();
+    HashMap<String, ArrayList<SegNode>> adj = new HashMap<String, ArrayList<SegNode>>();
+    HashSet<String> waterVerts = new HashSet<String>();
+
     for (int pi = 0; pi < paths.size(); pi++) {
       Path p = paths.get(pi);
       if (p == null || p.typeId != typeId || p.routes == null) continue;
-      for (ArrayList<PVector> seg : p.routes) {
-        if (seg == null) continue;
-        for (PVector v : seg) {
-          if (pointTouchesWater(v.x, v.y, seaLevel)) {
-            waterKeys.add(keyFor(v.x, v.y));
-          }
-        }
-      }
-    }
-
-    // Per-route taper: start weight depends on start touching water, end weight on end touching water.
-    // Anything not touching water uses the minimum weight.
-    for (int pi = 0; pi < paths.size(); pi++) {
-      Path p = paths.get(pi);
-      if (p == null || p.typeId != typeId || !t.taperOn) continue;
-      if (p.routes == null) continue;
       for (int ri = 0; ri < p.routes.size(); ri++) {
-        ArrayList<PVector> seg = p.routes.get(ri);
-        if (seg == null || seg.size() < 2) continue;
-        int n = seg.size();
-        float[] prefix = new float[n];
-        float[] segLen = new float[n - 1];
-        for (int si = 0; si < n - 1; si++) {
-          PVector a = seg.get(si);
-          PVector b = seg.get(si + 1);
-          float len = dist(a.x, a.y, b.x, b.y);
-          segLen[si] = len;
-          prefix[si + 1] = prefix[si] + len;
-        }
+        ArrayList<PVector> route = p.routes.get(ri);
+        if (route == null || route.size() < 2) continue;
+        for (int si = 0; si < route.size() - 1; si++) {
+          PVector a = route.get(si);
+          PVector b = route.get(si + 1);
+          SegNode sn = new SegNode();
+          sn.pIdx = pi;
+          sn.rIdx = ri;
+          sn.sIdx = si;
+          sn.a = a;
+          sn.b = b;
+          segs.add(sn);
 
-        boolean[] water = new boolean[n];
-        ArrayList<Integer> waterIdx = new ArrayList<Integer>();
-        for (int vi = 0; vi < n; vi++) {
-          PVector v = seg.get(vi);
-          water[vi] = pointTouchesWater(v.x, v.y, seaLevel) || waterKeys.contains(keyFor(v.x, v.y));
-          if (water[vi]) waterIdx.add(vi);
-        }
-
-        if (waterIdx.isEmpty()) {
-          float midW = lerp(minWeight, baseWeight, 0.5f);
-          for (int si = 0; si < n - 1; si++) {
-            String ek = pi + ":" + ri + ":" + si;
-            weights.put(ek, midW);
-          }
-          continue;
-        }
-
-        float maxDist = 0;
-        float[] distToWater = new float[n];
-        for (int vi = 0; vi < n; vi++) {
-          float d = Float.MAX_VALUE;
-          float pos = prefix[vi];
-          for (int wi : waterIdx) {
-            d = min(d, abs(pos - prefix[wi]));
-          }
-          distToWater[vi] = d;
-          maxDist = max(maxDist, d);
-        }
-        if (maxDist < 1e-6f) maxDist = 1e-6f;
-
-        for (int si = 0; si < n - 1; si++) {
-          float midPos = prefix[si] + segLen[si] * 0.5f;
-          float d = Float.MAX_VALUE;
-          for (int wi : waterIdx) {
-            d = min(d, abs(midPos - prefix[wi]));
-          }
-          float tNorm = constrain(d / maxDist, 0, 1);
-          float w = lerp(baseWeight, minWeight, tNorm);
-          w = constrain(w, minWeight, baseWeight);
-          String ek = pi + ":" + ri + ":" + si;
-          weights.put(ek, w);
+          String ka = keyFor(a.x, a.y);
+          String kb = keyFor(b.x, b.y);
+          if (pointTouchesWater(a.x, a.y, seaLevel)) waterVerts.add(ka);
+          if (pointTouchesWater(b.x, b.y, seaLevel)) waterVerts.add(kb);
+          adj.computeIfAbsent(ka, k -> new ArrayList<SegNode>()).add(sn);
+          adj.computeIfAbsent(kb, k -> new ArrayList<SegNode>()).add(sn);
         }
       }
     }
 
+    // BFS outward from any segment touching water
+    HashMap<SegNode, Integer> closeness = new HashMap<SegNode, Integer>();
+    ArrayDeque<SegNode> dq = new ArrayDeque<SegNode>();
+    for (SegNode sn : segs) {
+      String ka = keyFor(sn.a.x, sn.a.y);
+      String kb = keyFor(sn.b.x, sn.b.y);
+      if (waterVerts.contains(ka) || waterVerts.contains(kb)) {
+        closeness.put(sn, 0);
+        dq.add(sn);
+      }
+    }
+    while (!dq.isEmpty()) {
+      SegNode cur = dq.removeFirst();
+      int baseC = closeness.get(cur);
+      String[] keys = { keyFor(cur.a.x, cur.a.y), keyFor(cur.b.x, cur.b.y) };
+      for (String k : keys) {
+        ArrayList<SegNode> list = adj.get(k);
+        if (list == null) continue;
+        for (SegNode nb : list) {
+          if (nb == cur) continue;
+          int nc = baseC + 1;
+          Integer prev = closeness.get(nb);
+          if (prev == null || nc < prev) {
+            closeness.put(nb, nc);
+            dq.addLast(nb);
+          }
+        }
+      }
+    }
+
+    float longestWaterChain = 0.0f;
+    for (Integer c : closeness.values()) {
+      longestWaterChain = max(longestWaterChain, c);
+    }
+
+    // Assign weights based on closeness (0 = touches water)
+    for (SegNode sn : segs) {
+      int c = closeness.containsKey(sn) ? closeness.get(sn) : 100;
+      float tNorm = constrain(c / longestWaterChain, 0, 1);
+      float w = lerp(baseWeight, minWeight, tNorm);
+      String ek = sn.pIdx + ":" + sn.rIdx + ":" + sn.sIdx;
+      weights.put(ek, w);
+    }
     return weights;
   }
 
