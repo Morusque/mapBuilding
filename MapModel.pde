@@ -1693,7 +1693,62 @@ class MapModel {
 
   // ---------- Path generation ----------
 
+  // Collect segments for a specific path type
+  ArrayList<PVector[]> collectPathSegmentsByType(int typeId) {
+    ArrayList<PVector[]> segs = new ArrayList<PVector[]>();
+    if (paths == null || paths.isEmpty()) return segs;
+    for (Path p : paths) {
+      if (p == null || p.routes == null || p.typeId != typeId) continue;
+      for (ArrayList<PVector> r : p.routes) {
+        if (r == null || r.size() < 2) continue;
+        segs.addAll(segmentsFromPoints(r));
+      }
+    }
+    return segs;
+  }
+
+  // Intersection helper returning the intersection point if segments overlap properly
+  PVector segmentIntersectionPoint(PVector a1, PVector a2, PVector b1, PVector b2) {
+    float den = (a1.x - a2.x) * (b1.y - b2.y) - (a1.y - a2.y) * (b1.x - b2.x);
+    if (abs(den) < 1e-9f) return null; // parallel or nearly
+    float t = ((a1.x - b1.x) * (b1.y - b2.y) - (a1.y - b1.y) * (b1.x - b2.x)) / den;
+    float u = -((a1.x - a2.x) * (a1.y - b1.y) - (a1.y - a2.y) * (a1.x - b1.x)) / den;
+    if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+    return new PVector(a1.x + t * (a2.x - a1.x), a1.y + t * (a2.y - a1.y));
+  }
+
+  // Trim a route at the first intersection with an existing segment set (same type)
+  ArrayList<PVector> truncateRouteAtFirstIntersection(ArrayList<PVector> route, ArrayList<PVector[]> existing) {
+    if (route == null || route.size() < 2 || existing == null || existing.isEmpty()) return route;
+    int hitIdx = -1;
+    float hitT = Float.MAX_VALUE;
+    PVector hitPt = null;
+    for (int i = 0; i < route.size() - 1; i++) {
+      PVector a = route.get(i);
+      PVector b = route.get(i + 1);
+      for (PVector[] ex : existing) {
+        if (ex == null || ex.length < 2) continue;
+        PVector p = segmentIntersectionPoint(a, b, ex[0], ex[1]);
+        if (p != null) {
+          hitIdx = i;
+          // store the earliest along the route; approximate by i order
+          hitT = 0; // unused but keep pattern
+          hitPt = p;
+          break;
+        }
+      }
+      if (hitIdx >= 0) break;
+    }
+    if (hitIdx < 0 || hitPt == null) return route;
+    ArrayList<PVector> trimmed = new ArrayList<PVector>();
+    for (int i = 0; i <= hitIdx; i++) trimmed.add(route.get(i));
+    trimmed.add(hitPt);
+    return trimmed;
+  }
+
   void generatePathsAuto(float seaLevel) {
+    long tGenStart = millis();
+    long tStep;
     ensureCellNeighborsComputed();
     if (structures != null) {
       for (int i = structures.size() - 1; i >= 0; i--) {
@@ -1709,6 +1764,7 @@ class MapModel {
     float stepLen = max(1e-4f, min(worldW, worldH) * 0.02f);
 
     // Collect coastline midpoints (land/water boundary)
+    tStep = millis();
     ArrayList<PVector> coastPts = new ArrayList<PVector>();
     ArrayList<PVector> coastNrm = new ArrayList<PVector>(); // normal pointing from land to water
     int n = cells.size();
@@ -1759,10 +1815,15 @@ class MapModel {
     }
 
     // Precompute mesh vertices for snapping
+    println("Paths gen: coast pts " + coastPts.size() + " in " + (millis() - tStep) + " ms");
+    tStep = millis();
     ensureSnapGraph();
     ArrayList<PVector[]> existingSegs = collectAllPathSegments();
+    ArrayList<PVector[]> existingRoadSegs = collectPathSegmentsByType(roadType);
+    println("Paths gen: snapGraph nodes=" + snapNodes.size() + " edges=" + snapAdj.size() + " in " + (millis() - tStep) + " ms; existing segs " + existingSegs.size());
 
     // Rivers
+    tStep = millis();
     for (int i = 0; i < 5; i++) {
       if (coastPts.isEmpty()) break;
       PVector start = coastPts.get((int)random(coastPts.size()));
@@ -1773,7 +1834,9 @@ class MapModel {
       addPathFromPoints(riverType, useDefaultPathNames ? "River " + (paths.size() + 1) : "", route);
       existingSegs = collectAllPathSegments();
     }
+    println("Paths gen: rivers in " + (millis() - tStep) + " ms");
     // Interest points (snap to nearest cell vertex)
+    tStep = millis();
     ArrayList<PVector> interest = new ArrayList<PVector>();
     // biggest structures
     if (structures != null && !structures.isEmpty()) {
@@ -1868,10 +1931,23 @@ class MapModel {
     }
     interest = dedup;
 
+    // Limit interest points to keep road pairing work bounded
+    if (interest.size() > 20) {
+      Collections.sort(interest, new Comparator<PVector>() {
+        public int compare(PVector a, PVector b) {
+          float da = dist2D(a, center);
+          float db = dist2D(b, center);
+          return Float.compare(da, db);
+        }
+      });
+      interest = new ArrayList<PVector>(interest.subList(0, 20));
+    }
+
     // Connect five closest pairs with roads (debug)
     ArrayList<ArrayList<PVector>> roadCandidates = new ArrayList<ArrayList<PVector>>();
     ArrayList<Float> roadCandidateDistSq = new ArrayList<Float>();
     boolean usePathfindingForRoads = true; // set false to skip pathfinding for debugging
+    int pathfindsTried = 0;
     for (int i = 0; i < interest.size(); i++) {
       for (int j = i + 1; j < interest.size(); j++) {
         PVector pa = interest.get(i);
@@ -1879,6 +1955,7 @@ class MapModel {
         ArrayList<PVector> pathPts;
         if (usePathfindingForRoads) {
           pathPts = findSnapPath(pa, pb);
+          pathfindsTried++;
         } else {
           pathPts = new ArrayList<PVector>();
           pathPts.add(pa);
@@ -1910,7 +1987,11 @@ class MapModel {
     for (int idx : roadOrder) {
       if (roadLinks >= 5) break;
       ArrayList<PVector> pathPts = roadCandidates.get(idx);
+      pathPts = truncateRouteAtFirstIntersection(pathPts, existingRoadSegs);
+      if (pathPts == null || pathPts.size() < 2) continue;
       addPathFromPoints(roadType, useDefaultPathNames ? "Road " + (paths.size() + 1) : "", pathPts);
+      // update existing road segments so later roads can fork off earlier ones
+      existingRoadSegs.addAll(segmentsFromPoints(pathPts));
       roadLinks++;
     }
     // Bridges: try three times

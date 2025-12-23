@@ -144,12 +144,14 @@ boolean pathAvoidWater = false;
 boolean pathTaperRivers = false;
 boolean pathEraserMode = false;
 float pathEraserRadius = 0.04f;
-int PATH_MAX_EXPANSIONS = 10000; // tweakable pathfinding budget per query (per-direction if bidirectional)
+int PATH_MAX_EXPANSIONS = 4000; // tweakable pathfinding budget per query (per-direction if bidirectional)
 boolean PATH_BIDIRECTIONAL = true; // grow paths from both ends
 int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
 float renderPaddingPct = 0.01f; // fraction of min(screenW, screenH) cropped from all sides
 float exportScale = 2.0f; // multiplier for PNG export resolution
+boolean fullGenRunning = false;
+int fullGenStep = 0;
 String lastExportStatus = "";
 boolean renderContoursDirty = true;
 
@@ -611,50 +613,13 @@ void applyBiomeGeneration() {
 }
 
 // Full auto-pipeline starting from existing cells
-void generateEverythingFromCells() {
+void startFullGenerateFromCells() {
   if (mapModel == null) return;
+  if (fullGenRunning) return;
+  fullGenRunning = true;
+  fullGenStep = 0;
+  loadingPct = 0.0f;
   startLoading();
-  loadingPct = 0;
-  try {
-    // Elevation
-    noiseSeed((int)random(Integer.MAX_VALUE));
-    mapModel.generateElevationNoise(elevationNoiseScale, 1.0f, seaLevel);
-    for (int i = 0; i < 5; i++) {
-      mapModel.makePlateaus(seaLevel);
-    }
-
-    // Biomes (full pipeline)
-    biomeGenerateModeIndex = max(0, biomeGenerateModes.length - 1);
-    applyBiomeGeneration();
-
-    // Zones
-    int targetZones = (mapModel.zones == null || mapModel.zones.isEmpty()) ? 5 : mapModel.zones.size();
-    mapModel.regenerateRandomZones(targetZones);
-    activeZoneIndex = -1;
-    editingZoneNameIndex = -1;
-    editingZoneComment = false;
-    mapModel.removeUnderwaterCellsFromZone(-1, seaLevel);
-
-    // Paths
-    selectedPathIndex = -1;
-    pendingPathStart = null;
-    mapModel.generatePathsAuto(seaLevel);
-
-    // Structures
-    mapModel.generateStructuresAuto(structGenTownCount, structGenBuildingDensity, seaLevel);
-    clearStructureSelection();
-
-    // Labels
-    mapModel.generateArbitraryLabels(seaLevel);
-    selectedLabelIndex = -1;
-    editingLabelIndex = -1;
-    editingLabelCommentIndex = -1;
-
-    renderContoursDirty = true;
-    loadingPct = 1.0f;
-  } finally {
-    stopLoading();
-  }
 }
 
 void resetAllMapData() {
@@ -844,6 +809,10 @@ void draw() {
   background(245);
 
   // Drive incremental Voronoi rebuilds; loading state follows the job
+  if (fullGenRunning) {
+    if (!isLoading) startLoading();
+    stepFullGenerateFromCells();
+  }
   mapModel.ensureVoronoiComputed();
   mapModel.stepContourJobs(6);
   boolean buildingVoronoi = mapModel.isVoronoiBuilding();
@@ -852,12 +821,14 @@ void draw() {
   float pctVoronoi = mapModel.getVoronoiProgress();
   float pctContours = mapModel.getContourJobProgress();
   float combinedPct = buildingContours ? min(pctVoronoi, pctContours) : pctVoronoi;
-  if (building) {
-    if (!isLoading) startLoading();
-    loadingPct = combinedPct;
-  } else {
-    if (isLoading) stopLoading();
-    loadingPct = 1.0f;
+  if (!fullGenRunning) {
+    if (building) {
+      if (!isLoading) startLoading();
+      loadingPct = combinedPct;
+    } else {
+      if (isLoading) stopLoading();
+      loadingPct = 1.0f;
+    }
   }
 
   boolean renderView = (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT);
@@ -2979,4 +2950,69 @@ void drawStructurePreview() {
   fill(200, 200, 180, 120);
   tmp.draw(this);
   popStyle();
+}
+void stepFullGenerateFromCells() {
+  if (!fullGenRunning || mapModel == null) return;
+  switch (fullGenStep) {
+    case 0: {
+      loadingPct = 0.05f;
+      noiseSeed((int)random(Integer.MAX_VALUE));
+      mapModel.generateElevationNoise(elevationNoiseScale, 1.0f, seaLevel);
+      for (int i = 0; i < 5; i++) {
+        mapModel.makePlateaus(seaLevel);
+      }
+      loadingPct = 0.20f;
+      fullGenStep++;
+      break;
+    }
+    case 1: {
+      biomeGenerateModeIndex = max(0, biomeGenerateModes.length - 1);
+      applyBiomeGeneration();
+      loadingPct = 0.35f;
+      fullGenStep++;
+      break;
+    }
+    case 2: {
+      int targetZones = (mapModel.zones == null || mapModel.zones.isEmpty()) ? 5 : mapModel.zones.size();
+      mapModel.regenerateRandomZones(targetZones);
+      activeZoneIndex = -1;
+      editingZoneNameIndex = -1;
+      editingZoneComment = false;
+      mapModel.removeUnderwaterCellsFromZone(-1, seaLevel);
+      loadingPct = 0.45f;
+      fullGenStep++;
+      break;
+    }
+    case 3: {
+      selectedPathIndex = -1;
+      pendingPathStart = null;
+      mapModel.generatePathsAuto(seaLevel);
+      loadingPct = 0.70f;
+      fullGenStep++;
+      break;
+    }
+    case 4: {
+      mapModel.generateStructuresAuto(structGenTownCount, structGenBuildingDensity, seaLevel);
+      clearStructureSelection();
+      loadingPct = 0.85f;
+      fullGenStep++;
+      break;
+    }
+    case 5: {
+      mapModel.generateArbitraryLabels(seaLevel);
+      selectedLabelIndex = -1;
+      editingLabelIndex = -1;
+      editingLabelCommentIndex = -1;
+      loadingPct = 1.0f;
+      renderContoursDirty = true;
+      fullGenStep++;
+      break;
+    }
+    default: {
+      fullGenRunning = false;
+      stopLoading();
+      loadingPct = 1.0f;
+      break;
+    }
+  }
 }

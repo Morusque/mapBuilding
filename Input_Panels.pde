@@ -174,7 +174,7 @@ boolean handleSitesPanelClick(int mx, int my) {
 
   // Full auto pipeline
   if (queueButtonAction(layout.fullGenerateBtn, new Runnable() { public void run() {
-    generateEverythingFromCells();
+    startFullGenerateFromCells();
   }})) return true;
 
   // Keep properties toggle
@@ -534,8 +534,8 @@ void mousePressed() {
     pressedButtonRect = null;
   }
   // Block interactions while generation is running; show notice
-  if (mapModel.isVoronoiBuilding() && mouseButton == LEFT) {
-    showNotice("Please wait for generation to finish...");
+  if ((mapModel.isVoronoiBuilding() || fullGenRunning) && mouseButton == LEFT) {
+    showNotice("Generation in progress...");
     return;
   }
 
