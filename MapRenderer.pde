@@ -136,7 +136,11 @@ class MapRenderer {
         app.stroke(180);
         app.strokeWeight(1.0f / viewport.zoom);
       } else {
-        app.noStroke();
+        // Use a thin stroke matching the fill to hide tiny AA gaps between adjacent polygons.
+        app.stroke(col);
+        app.strokeWeight(0.35f / viewport.zoom);
+        app.strokeJoin(PConstants.MITER);
+        app.strokeCap(PConstants.PROJECT);
       }
 
       app.beginShape();
@@ -737,16 +741,15 @@ class MapRenderer {
     int[] biomeScaledCols = buildBiomeScaledColors(s);
     HashMap<String, PImage> framePatternCache = new HashMap<String, PImage>();
 
-    // Base fills
+    // Base fills: lay a solid water backdrop first, then paint emerged land only.
     app.noStroke();
-    app.fill(landBase);
+    app.fill(waterBase);
     app.rect(model.minX, model.minY, model.maxX - model.minX, model.maxY - model.minY);
     for (Cell c : model.cells) {
       if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
-      if (c.elevation < seaLevel) {
-        app.fill(waterBase);
-        drawPoly(app, c.vertices);
-      }
+      if (c.elevation < seaLevel) continue;
+      app.fill(landBase);
+      drawPoly(app, c.vertices);
     }
 
     // Background noise overlay (monochrome, tiled texture cached once)
