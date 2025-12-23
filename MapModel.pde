@@ -2320,7 +2320,7 @@ class MapModel {
         base = pt.name.trim();
       }
     }
-    if (base.length() == 0) base = "Path";
+    if (base.length() == 0) base = useDefaultPathNames ? "Path" : "";
     String baseLower = base.toLowerCase();
     int maxIdx = 0;
     if (paths != null) {

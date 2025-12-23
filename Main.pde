@@ -1091,6 +1091,7 @@ void drawRenderView(PApplet app) {
 }
 
 String exportPng() {
+  long tExportStart = millis();
   // Compute inner world rect from render padding
   float worldW = mapModel.maxX - mapModel.minX;
   float worldH = mapModel.maxY - mapModel.minY;
@@ -1111,7 +1112,15 @@ String exportPng() {
   int pxH = max(1, round(max(1, height) * safeScale));
   int pxW = max(1, round(pxH * innerAspect));
   if (pxW <= 0 || pxH <= 0) return "Failed: export size collapsed";
-  PGraphics g = createGraphics(pxW, pxH, P2D);
+  PGraphics g = null;
+  try {
+    g = createGraphics(pxW, pxH, JAVA2D);
+  } catch (Exception ignored) {}
+  if (g == null) {
+    try {
+      g = createGraphics(pxW, pxH, P2D);
+    } catch (Exception ignored) {}
+  }
   if (g == null) return "Failed to allocate buffer";
 
   float prevCenterX = viewport.centerX;
@@ -1127,7 +1136,9 @@ String exportPng() {
   viewport.zoom = newZoom;
 
   // Ensure distance/elevation grids are ready before rendering/exporting
+  long tPrepStart = millis();
   triggerRenderPrerequisites();
+  long tPrepEnd = millis();
 
   g.beginDraw();
   g.background(245);
@@ -1140,6 +1151,7 @@ String exportPng() {
   popMatrix();
   this.g = prev;
   g.endDraw();
+  long tFirstPassEnd = millis();
 
   // If contour jobs were triggered during the first pass, finish them and redraw
   if (mapModel.isContourJobRunning()) {
@@ -1159,6 +1171,7 @@ String exportPng() {
     this.g = prev2;
     g.endDraw();
   }
+  long tSecondPassEnd = millis();
 
   // Restore viewport
   viewport.centerX = prevCenterX;
@@ -1172,6 +1185,12 @@ String exportPng() {
               nf(hour(), 2, 0) + nf(minute(), 2, 0) + nf(second(), 2, 0);
   String path = dir + java.io.File.separator + "map_" + ts + ".png";
   g.save(path);
+
+  long tExportEnd = millis();
+  println("Export timing ms: prep=" + (tPrepEnd - tPrepStart) +
+          " firstPass=" + (tFirstPassEnd - tPrepEnd) +
+          " secondPass=" + (tSecondPassEnd - tFirstPassEnd) +
+          " total=" + (tExportEnd - tExportStart));
   return path;
 }
 

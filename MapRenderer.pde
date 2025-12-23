@@ -353,7 +353,7 @@ class MapRenderer {
     String fontName = resolveLabelFontName(s);
     for (Path p : model.paths) {
       if (p == null || p.routes == null || p.routes.isEmpty()) continue;
-      String txt = (p.name != null && p.name.length() > 0) ? p.name : "Path";
+      String txt = (p.name != null && p.name.length() > 0) ? p.name : "";
       PVector bestA = null, bestB = null;
       float bestLenSq = -1;
       for (ArrayList<PVector> route : p.routes) {
@@ -450,37 +450,41 @@ class MapRenderer {
 
   void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad, boolean snapToPixel, String fontName) {
     if (app == null || txt == null) return;
-    PVector screen = viewport.worldToScreen(x, y);
-    if (snapToPixel) {
-      screen.x = round(screen.x);
-      screen.y = round(screen.y);
-    }
-    app.pushMatrix();
-    app.resetMatrix();
-    app.translate(screen.x, screen.y);
-    app.rotate(angleRad);
-    int fontSize = max(1, round(ts));
-    PFont font = labelFont(app, fontSize, fontName);
-    if (font != null) {
-      app.textFont(font);
-      app.textSize(fontSize);
-    } else {
-      app.textSize(fontSize);
-    }
-    float oa = constrain(outlineAlpha01, 0, 1);
-    int radius = max(0, round(outlineSizePx));
-    if (oa > 1e-4f) {
-      app.fill(255, oa * 255);
-      for (int dx = -radius; dx <= radius; dx++) {
-        for (int dy = -radius; dy <= radius; dy++) {
-          if (dx == 0 && dy == 0) continue;
-          app.text(txt, dx, dy);
+    try {
+      PVector screen = viewport.worldToScreen(x, y);
+      if (snapToPixel) {
+        screen.x = round(screen.x);
+        screen.y = round(screen.y);
+      }
+      app.pushMatrix();
+      app.resetMatrix();
+      app.translate(screen.x, screen.y);
+      app.rotate(angleRad);
+      int fontSize = max(1, round(ts));
+      PFont font = labelFont(app, fontSize, fontName);
+      if (font != null) {
+        app.textFont(font);
+        app.textSize(fontSize);
+      } else {
+        app.textSize(fontSize);
+      }
+      float oa = constrain(outlineAlpha01, 0, 1);
+      int radius = max(0, round(outlineSizePx));
+      if (oa > 1e-4f) {
+        app.fill(255, oa * 255);
+        for (int dx = -radius; dx <= radius; dx++) {
+          for (int dy = -radius; dy <= radius; dy++) {
+            if (dx == 0 && dy == 0) continue;
+            app.text(txt, dx, dy);
+          }
         }
       }
+      app.fill(0);
+      app.text(txt, 0, 0);
+      app.popMatrix();
+    } catch (Exception ex) {
+      println("Label draw skipped due to error: " + ex);
     }
-    app.fill(0);
-    app.text(txt, 0, 0);
-    app.popMatrix();
   }
 
   void drawZoneOutlines(PApplet app) {
@@ -1476,6 +1480,10 @@ class MapRenderer {
     if (app == null) return;
     int targetW = (app.g != null) ? app.g.width : app.width;
     int targetH = (app.g != null) ? app.g.height : app.height;
+    if (targetW <= 0 || targetH <= 0) {
+      coastLayer = null;
+      return;
+    }
     int hash = coastSettingsHash(s);
     boolean sizeChanged = coastLayer == null || coastLayerW != targetW || coastLayerH != targetH;
     boolean viewChanged = coastLayer == null ||
@@ -1488,7 +1496,12 @@ class MapRenderer {
                               coastLayerCellCount != model.cells.size();
 
     if (sizeChanged) {
-      coastLayer = app.createGraphics(targetW, targetH, P2D);
+      try {
+        coastLayer = app.createGraphics(targetW, targetH, JAVA2D);
+      } catch (Exception ex) {
+        println("Coast layer alloc failed: " + ex);
+        coastLayer = null;
+      }
       coastLayerW = targetW;
       coastLayerH = targetH;
       if (coastLayer != null) {
@@ -1502,15 +1515,21 @@ class MapRenderer {
     if (coastLayer == null) return;
     if (!(sizeChanged || viewChanged || settingsChanged)) return;
 
-    coastLayer.beginDraw();
-    coastLayer.clear();
-    coastLayer.pushMatrix();
-    coastLayer.pushStyle();
-    viewport.applyTransform(coastLayer, coastLayer.width, coastLayer.height);
-    drawCoastLayer(coastLayer, s, seaLevel);
-    coastLayer.popStyle();
-    coastLayer.popMatrix();
-    coastLayer.endDraw();
+    try {
+      coastLayer.beginDraw();
+      coastLayer.clear();
+      coastLayer.pushMatrix();
+      coastLayer.pushStyle();
+      viewport.applyTransform(coastLayer, coastLayer.width, coastLayer.height);
+      drawCoastLayer(coastLayer, s, seaLevel);
+      coastLayer.popStyle();
+      coastLayer.popMatrix();
+      coastLayer.endDraw();
+    } catch (Exception ex) {
+      println("Coast layer build failed: " + ex);
+      coastLayer = null;
+      return;
+    }
 
     coastLayerHash = hash;
     coastLayerZoom = viewport.zoom;
@@ -1621,7 +1640,12 @@ class MapRenderer {
                               zoneLayerZoneCount != model.zones.size();
 
     if (sizeChanged) {
-      zoneLayer = app.createGraphics(targetW, targetH, P2D);
+      try {
+        zoneLayer = app.createGraphics(targetW, targetH, JAVA2D);
+      } catch (Exception ex) {
+        println("Zone layer alloc failed: " + ex);
+        zoneLayer = null;
+      }
       zoneLayerW = targetW;
       zoneLayerH = targetH;
       if (zoneLayer != null) {
@@ -1635,16 +1659,22 @@ class MapRenderer {
     if (zoneLayer == null) return;
     if (!(sizeChanged || viewChanged || settingsChanged)) return;
 
-    zoneLayer.beginDraw();
-    zoneLayer.clear();
-    zoneLayer.pushMatrix();
-    zoneLayer.pushStyle();
-    viewport.applyTransform(zoneLayer, zoneLayer.width, zoneLayer.height);
-    float zoneW = max(0.1f, s.zoneStrokeSizePx) / viewport.zoom;
-    drawZoneLayer(zoneLayer, zoneStrokeCols, zoneW);
-    zoneLayer.popStyle();
-    zoneLayer.popMatrix();
-    zoneLayer.endDraw();
+    try {
+      zoneLayer.beginDraw();
+      zoneLayer.clear();
+      zoneLayer.pushMatrix();
+      zoneLayer.pushStyle();
+      viewport.applyTransform(zoneLayer, zoneLayer.width, zoneLayer.height);
+      float zoneW = max(0.1f, s.zoneStrokeSizePx) / viewport.zoom;
+      drawZoneLayer(zoneLayer, zoneStrokeCols, zoneW);
+      zoneLayer.popStyle();
+      zoneLayer.popMatrix();
+      zoneLayer.endDraw();
+    } catch (Exception ex) {
+      println("Zone layer build failed: " + ex);
+      zoneLayer = null;
+      return;
+    }
 
     zoneLayerHash = hash;
     zoneLayerZoom = viewport.zoom;
@@ -1861,7 +1891,16 @@ class MapRenderer {
                               biomeLayerBiomeCount != model.biomeTypes.size();
 
     if (sizeChanged) {
-      biomeLayer = app.createGraphics(targetW, targetH, P2D);
+      try {
+        biomeLayer = app.createGraphics(targetW, targetH, P2D);
+      } catch (Exception ex) {
+        println("Biome layer P2D alloc failed, falling back to JAVA2D: " + ex);
+        try {
+          biomeLayer = app.createGraphics(targetW, targetH, JAVA2D);
+        } catch (Exception ignored) {
+          biomeLayer = null;
+        }
+      }
       biomeLayerW = targetW;
       biomeLayerH = targetH;
       if (biomeLayer != null) {
@@ -1875,15 +1914,21 @@ class MapRenderer {
     if (biomeLayer == null) return;
     if (!(sizeChanged || viewChanged || settingsChanged)) return;
 
-    biomeLayer.beginDraw();
-    biomeLayer.clear();
-    biomeLayer.pushMatrix();
-    biomeLayer.pushStyle();
-    viewport.applyTransform(biomeLayer, biomeLayer.width, biomeLayer.height);
-    drawBiomeLayer(biomeLayer, s, biomeScaledCols);
-    biomeLayer.popStyle();
-    biomeLayer.popMatrix();
-    biomeLayer.endDraw();
+    try {
+      biomeLayer.beginDraw();
+      biomeLayer.clear();
+      biomeLayer.pushMatrix();
+      biomeLayer.pushStyle();
+      viewport.applyTransform(biomeLayer, biomeLayer.width, biomeLayer.height);
+      drawBiomeLayer(biomeLayer, s, biomeScaledCols);
+      biomeLayer.popStyle();
+      biomeLayer.popMatrix();
+      biomeLayer.endDraw();
+    } catch (Exception ex) {
+      println("Biome layer build failed: " + ex);
+      biomeLayer = null;
+      return;
+    }
 
     biomeLayerHash = hash;
     biomeLayerZoom = viewport.zoom;
@@ -2051,7 +2096,12 @@ class MapRenderer {
                               currentTool == Tool.EDIT_ELEVATION;
 
     if (sizeChanged) {
-      elevationLightLayer = app.createGraphics(targetW, targetH, P2D);
+      try {
+        elevationLightLayer = app.createGraphics(targetW, targetH, JAVA2D);
+      } catch (Exception ex) {
+        println("Elevation light layer alloc failed: " + ex);
+        elevationLightLayer = null;
+      }
       elevationLightW = targetW;
       elevationLightH = targetH;
       if (elevationLightLayer != null) {
@@ -2065,16 +2115,22 @@ class MapRenderer {
     if (elevationLightLayer == null) return;
     if (!(sizeChanged || viewChanged || settingsChanged)) return;
 
-    elevationLightLayer.beginDraw();
-    elevationLightLayer.clear();
-    elevationLightLayer.background(255);
-    elevationLightLayer.pushMatrix();
-    elevationLightLayer.pushStyle();
-    viewport.applyTransform(elevationLightLayer, elevationLightLayer.width, elevationLightLayer.height);
-    drawElevationLightLayer(elevationLightLayer, s, seaLevel);
-    elevationLightLayer.popStyle();
-    elevationLightLayer.popMatrix();
-    elevationLightLayer.endDraw();
+    try {
+      elevationLightLayer.beginDraw();
+      elevationLightLayer.clear();
+      elevationLightLayer.background(255);
+      elevationLightLayer.pushMatrix();
+      elevationLightLayer.pushStyle();
+      viewport.applyTransform(elevationLightLayer, elevationLightLayer.width, elevationLightLayer.height);
+      drawElevationLightLayer(elevationLightLayer, s, seaLevel);
+      elevationLightLayer.popStyle();
+      elevationLightLayer.popMatrix();
+      elevationLightLayer.endDraw();
+    } catch (Exception ex) {
+      println("Elevation light layer build failed: " + ex);
+      elevationLightLayer = null;
+      return;
+    }
 
     float dither = max(0, s.elevationLightDitherPx);
     if (dither > 1e-3f) {
