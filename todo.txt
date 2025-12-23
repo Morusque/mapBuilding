@@ -1,6 +1,5 @@
 
 Mandatory for full first use milestone :
-some sliders don't work well
 some ugly dots sometimes appear between polygones
 mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 revise rendering presets

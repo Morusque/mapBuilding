@@ -90,6 +90,15 @@ final float FLATTEST_BIAS_MIN = 0.0f;
 final float FLATTEST_BIAS_MAX = 1000.0f;
 final String[] LABEL_FONT_OPTIONS = { "SansSerif", "Serif", "Monospaced", "Arial", "Georgia" };
 
+float sliderNorm(IntRect r, int mx) {
+  if (r == null) return 0;
+  int padding = max(4, r.h / 2);
+  float startX = r.x + padding;
+  float endX = r.x + r.w - padding;
+  if (endX <= startX) return 0;
+  return constrain((mx - startX) / (endX - startX), 0, 1);
+}
+
 // Cells (site seeds) generation config
 PlacementMode[] placementModes = {
   PlacementMode.GRID,
@@ -448,7 +457,6 @@ final int SLIDER_RENDER_ZONE_ALPHA = 57;
 final int SLIDER_RENDER_ZONE_SIZE = 58;
 final int SLIDER_RENDER_ZONE_SAT = 59;
 final int SLIDER_RENDER_LABEL_OUTLINE_ALPHA = 60;
-final int SLIDER_RENDER_ELEV_LINES_STYLE = 61;
 final int SLIDER_RENDER_BIOME_BRI = 62;
 final int SLIDER_RENDER_ZONE_BRI = 63;
 final int SLIDER_RENDER_PRESET_SELECT = 64;
@@ -471,7 +479,16 @@ final int SLIDER_RENDER_WATER_HATCH_LENGTH = 73;
 final int SLIDER_RENDER_WATER_HATCH_SPACING = 74;
 final int SLIDER_RENDER_WATER_HATCH_ALPHA = 75;
 final int SLIDER_RENDER_LIGHT_DITHER = 76;
+final int SLIDER_BIOME_PATTERN = 97;
+final int SLIDER_PATH_ROUTE_MODE = 98;
+final int SLIDER_STRUCT_GEN_TOWN = 99;
+final int SLIDER_STRUCT_GEN_BUILDING = 100;
+final int SLIDER_STRUCT_SNAP_DIV = 101;
+final int SLIDER_STRUCT_SHAPE = 102;
+final int SLIDER_STRUCT_ALIGNMENT = 103;
+
 int activeSlider = SLIDER_NONE;
+
 
 void applyRenderPreset(int idx) {
   if (renderPresets == null || renderPresets.length == 0) return;

@@ -1970,7 +1970,6 @@ class RenderLayout {
   IntRect waterRippleAlphaStartSlider;
   IntRect waterRippleAlphaEndSlider;
   IntRect elevationLinesCountSlider;
-  IntRect elevationLineStyleSelector;
   IntRect elevationLinesAlphaSlider;
 
   IntRect pathsShowCheckbox;
@@ -2131,9 +2130,6 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.elevationLinesCountSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-
-    l.elevationLineStyleSelector = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.elevationLinesAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
@@ -2327,10 +2323,6 @@ void drawRenderPanel() {
     float elevCountNorm = constrain(renderSettings.elevationLinesCount / 24.0f, 0, 1);
     drawSlider(layout.elevationLinesCountSlider, elevCountNorm, "Elevation lines (" + renderSettings.elevationLinesCount + ")");
     registerUiTooltip(layout.elevationLinesCountSlider, tooltipFor("render_elev_lines_count"));
-    if (layout.elevationLineStyleSelector != null) {
-      IntRect b = layout.elevationLineStyleSelector;
-      drawSelectorSlider(b, 0, "Style: Basic", 1);
-    }
     drawSlider(layout.elevationLinesAlphaSlider, renderSettings.elevationLinesAlpha01, "Elevation lines alpha (" + nf(renderSettings.elevationLinesAlpha01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.elevationLinesAlphaSlider, tooltipFor("render_elev_lines_alpha"));
   }
