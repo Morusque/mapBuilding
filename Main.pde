@@ -152,9 +152,11 @@ float renderPaddingPct = 0.01f; // fraction of min(screenW, screenH) cropped fro
 float exportScale = 2.0f; // multiplier for PNG export resolution
 boolean fullGenRunning = false;
 int fullGenStep = 0;
+boolean fullGenPrimed = false;
 Tool prevTool = Tool.EDIT_SITES;
 boolean renderPrepRunning = false;
 boolean renderPrepDone = false;
+boolean renderPrepPrimed = false;
 String lastExportStatus = "";
 boolean renderContoursDirty = true;
 void markRenderDirty() {
@@ -630,6 +632,7 @@ void startFullGenerateFromCells() {
   if (fullGenRunning) return;
   fullGenRunning = true;
   fullGenStep = 0;
+  fullGenPrimed = false;
   loadingPct = 0.0f;
   startLoading();
 }
@@ -671,6 +674,7 @@ void requestRenderPrep() {
   renderPrepRunning = true;
   renderPrepDone = false;
   loadingPct = 0.0f;
+  renderPrepPrimed = false;
   startLoading();
   mapModel.renderer.resetRenderPrep();
 }
@@ -868,19 +872,31 @@ void draw() {
       if (renderPrepRunning) {
         boolean prepComplete = renderPrepDone;
         if (!prepComplete) {
-          prepComplete = mapModel.renderer.stepRenderPrep(this, renderSettings, seaLevel);
-          float prepPct = (mapModel.renderer != null) ? mapModel.renderer.renderPrepProgress() : 0.0f;
-          loadingPct = min(1.0f, 0.05f + prepPct * 0.9f);
-          if (mapModel.renderer != null) {
-            int st = mapModel.renderer.getRenderPrepStage();
+          int stageBefore = (mapModel.renderer != null) ? mapModel.renderer.getRenderPrepStage() : 0;
+          // Prime label one frame before doing work on a stage
+          if (!renderPrepPrimed && mapModel.renderer != null) {
             int total = max(1, mapModel.renderer.getRenderPrepStageCount());
             String label = mapModel.renderer.getRenderPrepStageLabel();
-            loadingDetail = "Render prep " + (st + 1) + "/" + total + (label.length() > 0 ? (" - " + label) : "");
+            loadingDetail = "Render prep " + (stageBefore + 1) + "/" + total + (label.length() > 0 ? (" - " + label) : "");
+            renderPrepPrimed = true;
+          } else {
+            prepComplete = mapModel.renderer.stepRenderPrep(this, renderSettings, seaLevel);
+            float prepPct = (mapModel.renderer != null) ? mapModel.renderer.renderPrepProgress() : 0.0f;
+            loadingPct = min(1.0f, 0.05f + prepPct * 0.9f);
+            if (mapModel.renderer != null) {
+              int st = mapModel.renderer.getRenderPrepStage();
+              int total = max(1, mapModel.renderer.getRenderPrepStageCount());
+              String label = mapModel.renderer.getRenderPrepStageLabel();
+              loadingDetail = "Render prep " + (st + 1) + "/" + total + (label.length() > 0 ? (" - " + label) : "");
+              // If we advanced a stage, re-prime for next frame
+              if (st != stageBefore) renderPrepPrimed = false;
+            }
           }
         }
         if (prepComplete) {
           renderPrepRunning = false;
           renderPrepDone = true;
+          renderPrepPrimed = false;
           stopLoading();
         }
       } else {
@@ -3015,8 +3031,24 @@ void drawStructurePreview() {
 }
 void stepFullGenerateFromCells() {
   if (!fullGenRunning || mapModel == null) return;
+  String stageLabel = "";
+  switch (fullGenStep) {
+    case 0: stageLabel = "Full gen: elevation + plateaus"; break;
+    case 1: stageLabel = "Full gen: biomes"; break;
+    case 2: stageLabel = "Full gen: zones"; break;
+    case 3: stageLabel = "Full gen: paths"; break;
+    case 4: stageLabel = "Full gen: structures"; break;
+    case 5: stageLabel = "Full gen: labels"; break;
+    default: stageLabel = ""; break;
+  }
+  if (!fullGenPrimed) {
+    loadingDetail = stageLabel;
+    fullGenPrimed = true;
+    return;
+  }
   switch (fullGenStep) {
     case 0: {
+      loadingDetail = stageLabel;
       loadingPct = 0.05f;
       noiseSeed((int)random(Integer.MAX_VALUE));
       mapModel.generateElevationNoise(elevationNoiseScale, 1.0f, seaLevel);
@@ -3024,17 +3056,21 @@ void stepFullGenerateFromCells() {
         mapModel.makePlateaus(seaLevel);
       }
       loadingPct = 0.20f;
+      fullGenPrimed = false;
       fullGenStep++;
       break;
     }
     case 1: {
+      loadingDetail = stageLabel;
       biomeGenerateModeIndex = max(0, biomeGenerateModes.length - 1);
       applyBiomeGeneration();
       loadingPct = 0.35f;
+      fullGenPrimed = false;
       fullGenStep++;
       break;
     }
     case 2: {
+      loadingDetail = stageLabel;
       int targetZones = (mapModel.zones == null || mapModel.zones.isEmpty()) ? 5 : mapModel.zones.size();
       mapModel.regenerateRandomZones(targetZones);
       activeZoneIndex = -1;
@@ -3042,38 +3078,47 @@ void stepFullGenerateFromCells() {
       editingZoneComment = false;
       mapModel.removeUnderwaterCellsFromZone(-1, seaLevel);
       loadingPct = 0.45f;
+      fullGenPrimed = false;
       fullGenStep++;
       break;
     }
     case 3: {
+      loadingDetail = stageLabel;
       selectedPathIndex = -1;
       pendingPathStart = null;
       mapModel.generatePathsAuto(seaLevel);
       loadingPct = 0.70f;
+      fullGenPrimed = false;
       fullGenStep++;
       break;
     }
     case 4: {
+      loadingDetail = stageLabel;
       mapModel.generateStructuresAuto(structGenTownCount, structGenBuildingDensity, seaLevel);
       clearStructureSelection();
       loadingPct = 0.85f;
+      fullGenPrimed = false;
       fullGenStep++;
       break;
     }
     case 5: {
+      loadingDetail = stageLabel;
       mapModel.generateArbitraryLabels(seaLevel);
       selectedLabelIndex = -1;
       editingLabelIndex = -1;
       editingLabelCommentIndex = -1;
       loadingPct = 1.0f;
       markRenderDirty();
+      fullGenPrimed = false;
       fullGenStep++;
       break;
     }
     default: {
       fullGenRunning = false;
       stopLoading();
+      loadingDetail = "";
       loadingPct = 1.0f;
+      fullGenPrimed = false;
       break;
     }
   }

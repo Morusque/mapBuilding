@@ -1299,22 +1299,24 @@ boolean handleRenderPanelClick(int mx, int my) {
 
   // Base
   if (renderSectionBaseOpen) {
-    if (layout.landHSB[0].contains(mx, my)) { renderSettings.landHue01 = sliderNorm(layout.landHSB[0], mx); activeSlider = SLIDER_RENDER_LAND_H; return true; }
-    if (layout.landHSB[1].contains(mx, my)) { renderSettings.landSat01 = sliderNorm(layout.landHSB[1], mx); activeSlider = SLIDER_RENDER_LAND_S; return true; }
-    if (layout.landHSB[2].contains(mx, my)) { renderSettings.landBri01 = sliderNorm(layout.landHSB[2], mx); activeSlider = SLIDER_RENDER_LAND_B; return true; }
-    if (layout.waterHSB[0].contains(mx, my)) { renderSettings.waterHue01 = sliderNorm(layout.waterHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_H; return true; }
-    if (layout.waterHSB[1].contains(mx, my)) { renderSettings.waterSat01 = sliderNorm(layout.waterHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_S; return true; }
-    if (layout.waterHSB[2].contains(mx, my)) { renderSettings.waterBri01 = sliderNorm(layout.waterHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_B; return true; }
+    if (layout.landHSB[0].contains(mx, my)) { renderSettings.landHue01 = sliderNorm(layout.landHSB[0], mx); activeSlider = SLIDER_RENDER_LAND_H; markRenderDirty(); return true; }
+    if (layout.landHSB[1].contains(mx, my)) { renderSettings.landSat01 = sliderNorm(layout.landHSB[1], mx); activeSlider = SLIDER_RENDER_LAND_S; markRenderDirty(); return true; }
+    if (layout.landHSB[2].contains(mx, my)) { renderSettings.landBri01 = sliderNorm(layout.landHSB[2], mx); activeSlider = SLIDER_RENDER_LAND_B; markRenderDirty(); return true; }
+    if (layout.waterHSB[0].contains(mx, my)) { renderSettings.waterHue01 = sliderNorm(layout.waterHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_H; markRenderDirty(); return true; }
+    if (layout.waterHSB[1].contains(mx, my)) { renderSettings.waterSat01 = sliderNorm(layout.waterHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_S; markRenderDirty(); return true; }
+    if (layout.waterHSB[2].contains(mx, my)) { renderSettings.waterBri01 = sliderNorm(layout.waterHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_B; markRenderDirty(); return true; }
     if (layout.cellBordersAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.cellBordersAlphaSlider, mx);
       renderSettings.cellBorderAlpha01 = t;
       activeSlider = SLIDER_RENDER_CELL_BORDER_ALPHA;
+      markRenderDirty();
       return true;
     }
     if (layout.backgroundNoiseSlider.contains(mx, my)) {
       float t = sliderNorm(layout.backgroundNoiseSlider, mx);
       renderSettings.backgroundNoiseAlpha01 = t;
       activeSlider = SLIDER_RENDER_BACKGROUND_NOISE;
+      markRenderDirty();
       return true;
     }
   }
@@ -1325,18 +1327,21 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = sliderNorm(layout.biomeFillAlphaSlider, mx);
       renderSettings.biomeFillAlpha01 = t;
       activeSlider = SLIDER_RENDER_BIOME_FILL_ALPHA;
+      markRenderDirty();
       return true;
     }
     if (layout.biomeSatSlider.contains(mx, my)) {
       float t = sliderNorm(layout.biomeSatSlider, mx);
       renderSettings.biomeSatScale01 = t;
       activeSlider = SLIDER_RENDER_BIOME_SAT;
+      markRenderDirty();
       return true;
     }
     if (layout.biomeBriSlider != null && layout.biomeBriSlider.contains(mx, my)) {
       float t = sliderNorm(layout.biomeBriSlider, mx);
       renderSettings.biomeBriScale01 = t;
       activeSlider = SLIDER_RENDER_BIOME_BRI;
+      markRenderDirty();
       return true;
     }
     for (int i = 0; i < layout.biomeFillTypeButtons.size(); i++) {
@@ -1345,6 +1350,7 @@ boolean handleRenderPanelClick(int mx, int my) {
         if (i == 0) renderSettings.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
         else if (i == 1) renderSettings.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
         else renderSettings.biomeFillType = RenderFillType.RENDER_FILL_PATTERN_BG;
+        markRenderDirty();
         return true;
       }
     }
@@ -1352,18 +1358,21 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = sliderNorm(layout.biomeOutlineSizeSlider, mx);
       renderSettings.biomeOutlineSizePx = constrain(t * 5.0f, 0, 5.0f);
       activeSlider = SLIDER_RENDER_BIOME_OUTLINE_SIZE;
+      markRenderDirty();
       return true;
     }
     if (layout.biomeOutlineAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.biomeOutlineAlphaSlider, mx);
       renderSettings.biomeOutlineAlpha01 = t;
       activeSlider = SLIDER_RENDER_BIOME_OUTLINE_ALPHA;
+      markRenderDirty();
       return true;
     }
     if (layout.biomeUnderwaterAlphaSlider != null && layout.biomeUnderwaterAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.biomeUnderwaterAlphaSlider, mx);
       renderSettings.biomeUnderwaterAlpha01 = t;
       activeSlider = SLIDER_RENDER_BIOME_UNDERWATER_ALPHA;
+      markRenderDirty();
       return true;
     }
   }
@@ -1374,30 +1383,35 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = sliderNorm(layout.waterDepthAlphaSlider, mx);
       renderSettings.waterDepthAlpha01 = t;
       activeSlider = SLIDER_RENDER_WATER_DEPTH_ALPHA;
+      markRenderDirty();
       return true;
     }
     if (layout.lightAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.lightAlphaSlider, mx);
       renderSettings.elevationLightAlpha01 = t;
       activeSlider = SLIDER_RENDER_LIGHT_ALPHA;
+      markRenderDirty();
       return true;
     }
     if (layout.lightAzimuthSlider.contains(mx, my)) {
       float t = sliderNorm(layout.lightAzimuthSlider, mx);
       renderSettings.elevationLightAzimuthDeg = constrain(t * 360.0f, 0, 360.0f);
       activeSlider = SLIDER_RENDER_LIGHT_AZIMUTH;
+      markRenderDirty();
       return true;
     }
     if (layout.lightAltitudeSlider.contains(mx, my)) {
       float t = sliderNorm(layout.lightAltitudeSlider, mx);
       renderSettings.elevationLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
       activeSlider = SLIDER_RENDER_LIGHT_ALTITUDE;
+      markRenderDirty();
       return true;
     }
     if (layout.lightDitherSlider != null && layout.lightDitherSlider.contains(mx, my)) {
       float t = sliderNorm(layout.lightDitherSlider, mx);
       renderSettings.elevationLightDitherPx = constrain(t * 10.0f, 0, 10.0f);
       activeSlider = SLIDER_RENDER_LIGHT_DITHER;
+      markRenderDirty();
       return true;
     }
   }
