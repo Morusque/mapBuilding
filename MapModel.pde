@@ -1721,7 +1721,6 @@ class MapModel {
   ArrayList<PVector> truncateRouteAtFirstIntersection(ArrayList<PVector> route, ArrayList<PVector[]> existing) {
     if (route == null || route.size() < 2 || existing == null || existing.isEmpty()) return route;
     int hitIdx = -1;
-    float hitT = Float.MAX_VALUE;
     PVector hitPt = null;
     for (int i = 0; i < route.size() - 1; i++) {
       PVector a = route.get(i);
@@ -1732,7 +1731,6 @@ class MapModel {
         if (p != null) {
           hitIdx = i;
           // store the earliest along the route; approximate by i order
-          hitT = 0; // unused but keep pattern
           hitPt = p;
           break;
         }
@@ -1747,7 +1745,6 @@ class MapModel {
   }
 
   void generatePathsAuto(float seaLevel) {
-    long tGenStart = millis();
     long tStep;
     ensureCellNeighborsComputed();
     if (structures != null) {
@@ -1947,7 +1944,6 @@ class MapModel {
     ArrayList<ArrayList<PVector>> roadCandidates = new ArrayList<ArrayList<PVector>>();
     ArrayList<Float> roadCandidateDistSq = new ArrayList<Float>();
     boolean usePathfindingForRoads = true; // set false to skip pathfinding for debugging
-    int pathfindsTried = 0;
     for (int i = 0; i < interest.size(); i++) {
       for (int j = i + 1; j < interest.size(); j++) {
         PVector pa = interest.get(i);
@@ -1955,7 +1951,6 @@ class MapModel {
         ArrayList<PVector> pathPts;
         if (usePathfindingForRoads) {
           pathPts = findSnapPath(pa, pb);
-          pathfindsTried++;
         } else {
           pathPts = new ArrayList<PVector>();
           pathPts.add(pa);

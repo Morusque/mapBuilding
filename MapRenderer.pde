@@ -1001,27 +1001,6 @@ class MapRenderer {
     app.endShape(CLOSE);
   }
 
-  // Overloads for PGraphics targets (used by cached layers)
-  private void drawPoly(PGraphics g, ArrayList<PVector> verts) {
-    drawPoly(g, verts, false);
-  }
-
-  private void drawPoly(PGraphics g, ArrayList<PVector> verts, boolean outlineOnly) {
-    if (verts == null || verts.size() < 3 || g == null) return;
-    if (outlineOnly) {
-      int n = verts.size();
-      for (int i = 0; i < n; i++) {
-        PVector a = verts.get(i);
-        PVector b = verts.get((i + 1) % n);
-        g.line(a.x, a.y, b.x, b.y);
-      }
-      return;
-    }
-    g.beginShape();
-    for (PVector v : verts) g.vertex(v.x, v.y);
-    g.endShape(PConstants.CLOSE);
-  }
-
   private int hsbColor(float h, float s, float b, float a) {
     int rgb = hsb01ToRGB(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1));
     int ai = constrain(round(constrain(a, 0, 1) * 255.0f), 0, 255);
