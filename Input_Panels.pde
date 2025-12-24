@@ -1299,24 +1299,22 @@ boolean handleRenderPanelClick(int mx, int my) {
 
   // Base
   if (renderSectionBaseOpen) {
-    if (layout.landHSB[0].contains(mx, my)) { renderSettings.landHue01 = sliderNorm(layout.landHSB[0], mx); activeSlider = SLIDER_RENDER_LAND_H; markRenderDirty(); return true; }
-    if (layout.landHSB[1].contains(mx, my)) { renderSettings.landSat01 = sliderNorm(layout.landHSB[1], mx); activeSlider = SLIDER_RENDER_LAND_S; markRenderDirty(); return true; }
-    if (layout.landHSB[2].contains(mx, my)) { renderSettings.landBri01 = sliderNorm(layout.landHSB[2], mx); activeSlider = SLIDER_RENDER_LAND_B; markRenderDirty(); return true; }
-    if (layout.waterHSB[0].contains(mx, my)) { renderSettings.waterHue01 = sliderNorm(layout.waterHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_H; markRenderDirty(); return true; }
-    if (layout.waterHSB[1].contains(mx, my)) { renderSettings.waterSat01 = sliderNorm(layout.waterHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_S; markRenderDirty(); return true; }
-    if (layout.waterHSB[2].contains(mx, my)) { renderSettings.waterBri01 = sliderNorm(layout.waterHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_B; markRenderDirty(); return true; }
+    if (layout.landHSB[0].contains(mx, my)) { renderSettings.landHue01 = sliderNorm(layout.landHSB[0], mx); activeSlider = SLIDER_RENDER_LAND_H; return true; }
+    if (layout.landHSB[1].contains(mx, my)) { renderSettings.landSat01 = sliderNorm(layout.landHSB[1], mx); activeSlider = SLIDER_RENDER_LAND_S; return true; }
+    if (layout.landHSB[2].contains(mx, my)) { renderSettings.landBri01 = sliderNorm(layout.landHSB[2], mx); activeSlider = SLIDER_RENDER_LAND_B; return true; }
+    if (layout.waterHSB[0].contains(mx, my)) { renderSettings.waterHue01 = sliderNorm(layout.waterHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_H; return true; }
+    if (layout.waterHSB[1].contains(mx, my)) { renderSettings.waterSat01 = sliderNorm(layout.waterHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_S; return true; }
+    if (layout.waterHSB[2].contains(mx, my)) { renderSettings.waterBri01 = sliderNorm(layout.waterHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_B; return true; }
     if (layout.cellBordersAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.cellBordersAlphaSlider, mx);
       renderSettings.cellBorderAlpha01 = t;
       activeSlider = SLIDER_RENDER_CELL_BORDER_ALPHA;
-      markRenderDirty();
       return true;
     }
     if (layout.backgroundNoiseSlider.contains(mx, my)) {
       float t = sliderNorm(layout.backgroundNoiseSlider, mx);
       renderSettings.backgroundNoiseAlpha01 = t;
       activeSlider = SLIDER_RENDER_BACKGROUND_NOISE;
-      markRenderDirty();
       return true;
     }
   }
@@ -1422,76 +1420,88 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = sliderNorm(layout.waterContourSizeSlider, mx);
       renderSettings.waterContourSizePx = constrain(t * 5.0f, 0, 5.0f);
       activeSlider = SLIDER_RENDER_WATER_CONTOUR_SIZE;
+      markRenderDirty();
       return true;
     }
     if (layout.waterRippleCountSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleCountSlider, mx);
       renderSettings.waterRippleCount = constrain(round(t * 5.0f), 0, 5);
       activeSlider = SLIDER_RENDER_WATER_RIPPLE_COUNT;
+      markRenderDirty();
       return true;
     }
     if (layout.waterRippleDistanceSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleDistanceSlider, mx);
       renderSettings.waterRippleDistancePx = constrain(t * 40.0f, 0.0f, 40.0f);
       activeSlider = SLIDER_RENDER_WATER_RIPPLE_DIST;
+      markRenderDirty();
       return true;
     }
-    if (layout.waterContourHSB[0].contains(mx, my)) { renderSettings.waterContourHue01 = sliderNorm(layout.waterContourHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_H; return true; }
-    if (layout.waterContourHSB[1].contains(mx, my)) { renderSettings.waterContourSat01 = sliderNorm(layout.waterContourHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_S; return true; }
-    if (layout.waterContourHSB[2].contains(mx, my)) { renderSettings.waterContourBri01 = sliderNorm(layout.waterContourHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_B; return true; }
+    if (layout.waterContourHSB[0].contains(mx, my)) { renderSettings.waterContourHue01 = sliderNorm(layout.waterContourHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_H; markRenderDirty(); return true; }
+    if (layout.waterContourHSB[1].contains(mx, my)) { renderSettings.waterContourSat01 = sliderNorm(layout.waterContourHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_S; markRenderDirty(); return true; }
+    if (layout.waterContourHSB[2].contains(mx, my)) { renderSettings.waterContourBri01 = sliderNorm(layout.waterContourHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_B; markRenderDirty(); return true; }
     if (layout.waterContourCoastAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterContourCoastAlphaSlider, mx);
       renderSettings.waterCoastAlpha01 = t;
       renderSettings.waterContourAlpha01 = renderSettings.waterCoastAlpha01; // keep legacy field in sync
       activeSlider = SLIDER_RENDER_WATER_CONTOUR_ALPHA;
+      markRenderDirty();
       return true;
     }
     if (layout.waterHatchAngleSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterHatchAngleSlider, mx);
       renderSettings.waterHatchAngleDeg = constrain(-90.0f + t * 180.0f, -90.0f, 90.0f);
       activeSlider = SLIDER_RENDER_WATER_HATCH_ANGLE;
+      markRenderDirty();
       return true;
     }
     if (layout.waterHatchLengthSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterHatchLengthSlider, mx);
       renderSettings.waterHatchLengthPx = constrain(t * 400.0f, 0, 400);
       activeSlider = SLIDER_RENDER_WATER_HATCH_LENGTH;
+      markRenderDirty();
       return true;
     }
     if (layout.waterHatchSpacingSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterHatchSpacingSlider, mx);
       renderSettings.waterHatchSpacingPx = constrain(t * 120.0f, 0, 120.0f);
       activeSlider = SLIDER_RENDER_WATER_HATCH_SPACING;
+      markRenderDirty();
       return true;
     }
     if (layout.waterHatchAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterHatchAlphaSlider, mx);
       renderSettings.waterHatchAlpha01 = t;
       activeSlider = SLIDER_RENDER_WATER_HATCH_ALPHA;
+      markRenderDirty();
       return true;
     }
     if (layout.waterRippleAlphaStartSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleAlphaStartSlider, mx);
       renderSettings.waterRippleAlphaStart01 = t;
       activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_START;
+      markRenderDirty();
       return true;
     }
     if (layout.waterRippleAlphaEndSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleAlphaEndSlider, mx);
       renderSettings.waterRippleAlphaEnd01 = t;
       activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_END;
+      markRenderDirty();
       return true;
     }
     if (layout.elevationLinesCountSlider.contains(mx, my)) {
       float t = sliderNorm(layout.elevationLinesCountSlider, mx);
       renderSettings.elevationLinesCount = constrain(round(t * 24.0f), 0, 24);
       activeSlider = SLIDER_RENDER_ELEV_LINES_COUNT;
+      markRenderDirty();
       return true;
     }
     if (layout.elevationLinesAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.elevationLinesAlphaSlider, mx);
       renderSettings.elevationLinesAlpha01 = t;
       activeSlider = SLIDER_RENDER_ELEV_LINES_ALPHA;
+      markRenderDirty();
       return true;
     }
   }
@@ -1524,24 +1534,28 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderSettings.zoneStrokeAlpha01 = t;
       renderShowZoneOutlines = t > 0.001f;
       activeSlider = SLIDER_RENDER_ZONE_ALPHA;
+      markRenderDirty();
       return true;
     }
     if (layout.zoneSizeSlider != null && layout.zoneSizeSlider.contains(mx, my)) {
       float t = sliderNorm(layout.zoneSizeSlider, mx);
       renderSettings.zoneStrokeSizePx = constrain(t * 5.0f, 0, 5.0f);
       activeSlider = SLIDER_RENDER_ZONE_SIZE;
+      markRenderDirty();
       return true;
     }
     if (layout.zoneSatSlider.contains(mx, my)) {
       float t = sliderNorm(layout.zoneSatSlider, mx);
       renderSettings.zoneStrokeSatScale01 = t;
       activeSlider = SLIDER_RENDER_ZONE_SAT;
+      markRenderDirty();
       return true;
     }
     if (layout.zoneBriSlider.contains(mx, my)) {
       float t = sliderNorm(layout.zoneBriSlider, mx);
       renderSettings.zoneStrokeBriScale01 = t;
       activeSlider = SLIDER_RENDER_ZONE_BRI;
+      markRenderDirty();
       return true;
     }
   }
@@ -1640,6 +1654,7 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderSettings.exportPaddingPct = constrain(t * 0.10f, 0, 0.10f);
       renderPaddingPct = renderSettings.exportPaddingPct;
       activeSlider = SLIDER_RENDER_PADDING;
+      markRenderDirty();
       return true;
     }
     if (layout.antialiasCheckbox.contains(mx, my)) {
