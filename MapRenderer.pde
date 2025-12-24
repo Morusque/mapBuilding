@@ -2153,7 +2153,11 @@ class MapRenderer {
     float alt = radians(s.elevationLightAltitudeDeg);
     PVector lightDir = new PVector(cos(alt) * cos(az), cos(alt) * sin(az), sin(alt));
     lightDir.normalize();
-    g.noStroke();
+    // Draw with a matching stroke to hide seams between polygons
+    g.strokeJoin(PConstants.MITER);
+    g.strokeCap(PConstants.PROJECT);
+    float seamW = 1.0f / max(0.1f, viewport.zoom);
+    g.strokeWeight(seamW);
     for (int ci = 0; ci < model.cells.size(); ci++) {
       Cell c = model.cells.get(ci);
       if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
@@ -2162,8 +2166,12 @@ class MapRenderer {
       float a = s.elevationLightAlpha01 * (1.0f - light);
       if (a <= 1e-4f) continue;
       float shade = constrain(255.0f - a * 255.0f, 0, 255); // 255=no change in multiply, darker when lower
+      g.stroke(shade);
       g.fill(shade);
-      drawPoly(g, c.vertices);
+      // Stroke then fill to ensure overlap
+      g.beginShape();
+      for (PVector v : c.vertices) g.vertex(v.x, v.y);
+      g.endShape(PConstants.CLOSE);
     }
   }
 
