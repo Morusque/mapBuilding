@@ -1,5 +1,5 @@
 
-Mandatory for full first use milestone :
+Next :
 revise rendering presets
 make sure everything can be bitmap
 export should be same than rendering but with difference sue to ratio visible
@@ -26,30 +26,26 @@ Other :
 (maybe) Labels : optionally associate labels with map elements
 (maybe) Labels : have type presets for label styles (like with path types)
 (maybe) Export : importing from picture
-
-Rendering :
-(later) parametrable label outline (per label type)
-(later) better paths labels
-(later) LOD rules: hide/show groups vs members depending on zoom, optional merging visually of dense structures.
-(later) Rendering/exporting the legend for reference.
-(later) take inspiration from real map pictures (eg ign maps)
-(later) ripple lines are approximative, so either we optimize them or we make tem display below lands. make sure water contour lines never cross actual coastline
-(later) make outline display apply to all kinds of outlines that share the same border all-together at once
-(later) parametrable label font (per label type)
-(later) label size (per label type) should be handled better (typo appears blurry)
-(later) parametrable label color fill (per label type)
-(later) water contour lines distance should be zoom-dependant
-(later) structures sat and alpha variables exist but show no slider
-(later) push labels so they don't overlap, cache positions
-(maybe) a "save preset" button
-
-General :
+(later) Rendering :parametrable label outline (per label type)
+(later) Rendering :better paths labels
+(later) Rendering :LOD rules: hide/show groups vs members depending on zoom, optional merging visually of dense structures.
+(later) Rendering : Rendering/exporting the legend for reference.
+(later) Rendering : take inspiration from real map pictures (eg ign maps)
+(later) Rendering : ripple lines are approximative, so either we optimize them or we make tem display below lands. make sure water contour lines never cross actual coastline
+(later) Rendering : make outline display apply to all kinds of outlines that share the same border all-together at once
+(later) Rendering : parametrable label font (per label type)
+(later) Rendering : label size (per label type) should be handled better (typo appears blurry)
+(later) Rendering : parametrable label color fill (per label type)
+(later) Rendering : water contour lines distance should be zoom-dependant
+(later) Rendering : structures sat and alpha variables exist but show no slider
+(later) Rendering : push labels so they don't overlap, cache positions
+(maybe) Rendering : a "save preset" button
 (later) investigate caching options, Refactor, optimize etc.
 (later) undo states
 (later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
 (later) correctly merge strokes that overlap with alpha
+(later) Update comments to multiline
+(later) make the generations better overall
 (maybe) option to generate details (about everything) for zooming
 (maybe) use HSB directly instead of converting?
 (maybe) Editable types: visually show which parameters "belong" to a type or to a more general part of the interface.
-(later) Update comments to multiline
-(later) make the generations better overall
