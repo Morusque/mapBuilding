@@ -152,6 +152,9 @@ float renderPaddingPct = 0.01f; // fraction of min(screenW, screenH) cropped fro
 float exportScale = 2.0f; // multiplier for PNG export resolution
 boolean fullGenRunning = false;
 int fullGenStep = 0;
+Tool prevTool = Tool.EDIT_SITES;
+boolean renderPrepRunning = false;
+boolean renderPrepDone = false;
 String lastExportStatus = "";
 boolean renderContoursDirty = true;
 
@@ -808,6 +811,18 @@ void drawExportPaddingOverlay() {
 void draw() {
   background(245);
 
+  // Track tool changes to prepare loading for heavy modes
+  if (currentTool != prevTool) {
+    if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS) {
+      renderPrepRunning = true;
+      renderPrepDone = false;
+      startLoading();
+      loadingPct = 0.0f;
+      mapModel.renderer.resetRenderPrep();
+    }
+    prevTool = currentTool;
+  }
+
   // Drive incremental Voronoi rebuilds; loading state follows the job
   if (fullGenRunning) {
     if (!isLoading) startLoading();
@@ -826,8 +841,22 @@ void draw() {
       if (!isLoading) startLoading();
       loadingPct = combinedPct;
     } else {
-      if (isLoading) stopLoading();
-      loadingPct = 1.0f;
+      if (renderPrepRunning) {
+        boolean prepComplete = renderPrepDone;
+        if (!prepComplete) {
+          prepComplete = mapModel.renderer.stepRenderPrep(this, renderSettings, seaLevel);
+          float prepPct = (mapModel.renderer != null) ? mapModel.renderer.renderPrepProgress() : 0.0f;
+          loadingPct = min(1.0f, 0.05f + prepPct * 0.9f);
+        }
+        if (prepComplete) {
+          renderPrepRunning = false;
+          renderPrepDone = true;
+          stopLoading();
+        }
+      } else {
+        if (isLoading) stopLoading();
+        loadingPct = 1.0f;
+      }
     }
   }
 
@@ -837,10 +866,12 @@ void draw() {
   pushMatrix();
   viewport.applyTransform(this.g);
 
-  if (renderView) {
+  boolean skipWorld = renderPrepRunning && (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS);
+
+  if (renderView && !skipWorld) {
     triggerRenderPrerequisitesIfDirty();
     drawRenderView(this);
-  } else {
+  } else if (!skipWorld) {
     boolean allowLabels = renderShowLabels;
     switch (currentTool) {
       case EDIT_SITES: {
@@ -2888,7 +2919,7 @@ void startLoading() {
 
 void stopLoading() {
   isLoading = false;
-  loadingHoldFrames = 30; // keep bar visible briefly
+  loadingHoldFrames = 0;
   loadingPct = 1.0f;
 }
 
@@ -2958,7 +2989,7 @@ void stepFullGenerateFromCells() {
       loadingPct = 0.05f;
       noiseSeed((int)random(Integer.MAX_VALUE));
       mapModel.generateElevationNoise(elevationNoiseScale, 1.0f, seaLevel);
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 15; i++) {
         mapModel.makePlateaus(seaLevel);
       }
       loadingPct = 0.20f;

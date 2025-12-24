@@ -53,6 +53,9 @@ class MapRenderer {
   private int elevationLightCellCount = -1;
   private PImage noiseTex;
   private final int NOISE_TEX_SIZE = 1024;
+  // Render prep staging (to spread heavy layer builds across frames)
+  private int renderPrepStage = 0;
+  private final int RENDER_PREP_STAGES = 4;
 
   MapRenderer(MapModel model) {
     this.model = model;
@@ -2198,6 +2201,40 @@ class MapRenderer {
     }
     im.updatePixels();
     return im;
+  }
+
+  // Reset staged render prep (call when entering heavy modes or after invalidation)
+  void resetRenderPrep() {
+    renderPrepStage = 0;
+  }
+
+  // Incrementally build render layers; returns true when all stages done
+  boolean stepRenderPrep(PApplet app, RenderSettings s, float seaLevel) {
+    switch (renderPrepStage) {
+      case 0:
+        ensureCoastLayer(app, s, seaLevel);
+        renderPrepStage++;
+        break;
+      case 1:
+        ensureBiomeLayer(app, s);
+        renderPrepStage++;
+        break;
+      case 2:
+        ensureZoneLayer(app, s);
+        renderPrepStage++;
+        break;
+      case 3:
+        ensureElevationLightLayer(app, s, seaLevel);
+        renderPrepStage++;
+        break;
+      default:
+        break;
+    }
+    return renderPrepStage >= RENDER_PREP_STAGES;
+  }
+
+  float renderPrepProgress() {
+    return constrain(renderPrepStage / (float)RENDER_PREP_STAGES, 0, 1);
   }
 
   private int[] buildBiomeScaledColors(RenderSettings s) {

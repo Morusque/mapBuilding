@@ -172,10 +172,9 @@ void drawTopBar() {
   }
 
   // Loading bar (top-right, small)
-  boolean showLoad = isLoading || loadingHoldFrames > 0;
+  boolean showLoad = isLoading;
   if (showLoad) {
     if (isLoading) loadingPhase += 0.02f;
-    else loadingHoldFrames = max(0, loadingHoldFrames - 1);
     float barW = 120;
     float barH = 10;
     float x = width - barW - 12;

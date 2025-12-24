@@ -1,12 +1,11 @@
 
 Mandatory for full first use milestone :
-mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 revise rendering presets
 make sure everything can be bitmap
-loading bars
 export should be same than rendering but with difference sue to ratio visible
 
 Other :
+(later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
 (later) join segments (eg zones outlines) in a nicer way
 (later) Zones : options to allow overlapping or not (two groups? allowed / not-allowed)
 (later) Zones : use polygon tracing as an alternative to brush
