@@ -246,7 +246,7 @@ void mouseDragged() {
     PVector w = viewport.screenToWorld(mouseX, mouseY);
     float dir = elevationBrushRaise ? 1 : -1;
     mapModel.applyElevationBrush(w.x, w.y, elevationBrushRadius, elevationBrushStrength * dir, seaLevel);
-    renderContoursDirty = true;
+    markRenderDirty();
   }
 }
 
@@ -258,7 +258,7 @@ void mouseReleased() {
     draggingSite = null;
     if (siteDirtyDuringDrag) {
       mapModel.markVoronoiDirty();
-      renderContoursDirty = true;
+      markRenderDirty();
       siteDirtyDuringDrag = false;
     }
     activeSlider = SLIDER_NONE;
@@ -365,7 +365,7 @@ void updateActiveSlider(int mx, int my) {
       float newSea = lerp(-1.2f, 1.2f, t);
       if (abs(newSea - seaLevel) > 1e-6f) {
         seaLevel = newSea;
-        renderContoursDirty = true;
+        markRenderDirty();
       }
       break;
     }

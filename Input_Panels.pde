@@ -634,7 +634,7 @@ void mousePressed() {
     } else if (currentTool == Tool.EDIT_ELEVATION) {
       float dir = elevationBrushRaise ? 1 : -1;
       mapModel.applyElevationBrush(worldPos.x, worldPos.y, elevationBrushRadius, elevationBrushStrength * dir, seaLevel);
-      renderContoursDirty = true;
+      markRenderDirty();
     } else if (currentTool == Tool.EDIT_PATHS) {
       if (pathEraserMode) {
         mapModel.erasePathSegments(worldPos.x, worldPos.y, pathEraserRadius);
@@ -776,7 +776,7 @@ boolean handlePathsPanelClick(int mx, int my) {
     } finally {
       stopLoading();
     }
-    renderContoursDirty = true;
+    markRenderDirty();
   }})) return true;
   if (layout.taperCheck.contains(mx, my)) {
     if (activePathTypeIndex >= 0 && activePathTypeIndex < mapModel.pathTypes.size()) {
@@ -1721,7 +1721,7 @@ boolean handleElevationPanelClick(int mx, int my) {
     float newSea = lerp(-1.2f, 1.2f, t);
     if (abs(newSea - seaLevel) > 1e-6f) {
       seaLevel = newSea;
-      renderContoursDirty = true;
+      markRenderDirty();
     }
     activeSlider = SLIDER_ELEV_SEA;
     return true;

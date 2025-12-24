@@ -157,6 +157,14 @@ boolean renderPrepRunning = false;
 boolean renderPrepDone = false;
 String lastExportStatus = "";
 boolean renderContoursDirty = true;
+void markRenderDirty() {
+  renderContoursDirty = true;
+  renderPrepDone = false;
+  // If already in render-heavy modes, kick prep immediately.
+  if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS) {
+    requestRenderPrep();
+  }
+}
 
 float labelSizeDefault() {
   return labelSizeDefaultVal;
@@ -399,6 +407,7 @@ float loadingPct = 0;
 String uiNotice = "";
 int uiNoticeFrames = 0;
 final int NOTICE_DURATION_FRAMES = 150;
+String loadingDetail = "";
 
 // Slider drag state
 final int SLIDER_NONE = 0;
@@ -650,10 +659,20 @@ void resetAllMapData() {
     activeZoneIndex = 1;
     zonesListScroll = pathsListScroll = structuresListScroll = labelsListScroll = 0;
     mapModel.snapDirty = true;
-    renderContoursDirty = true;
+    markRenderDirty();
   } finally {
     stopLoading();
   }
+}
+
+// Request staged render prep (used when entering heavy modes or after invalidation)
+void requestRenderPrep() {
+  if (mapModel == null || mapModel.renderer == null) return;
+  renderPrepRunning = true;
+  renderPrepDone = false;
+  loadingPct = 0.0f;
+  startLoading();
+  mapModel.renderer.resetRenderPrep();
 }
 
 void triggerRenderPrerequisites() {
@@ -676,6 +695,10 @@ void triggerRenderPrerequisitesIfDirty() {
   if (mapModel.isContourJobRunning()) return;
   renderContoursDirty = false;
   triggerRenderPrerequisites();
+  // Kick off staged render prep when already in heavy modes.
+  if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS) {
+    requestRenderPrep();
+  }
 }
 
 int ensureBiomeType(String name) {
@@ -723,6 +746,10 @@ void setup() {
   initBiomeTypes();
   initZones();
   initPathTypes();
+  // Prime label font cache early to avoid first render/label stutter.
+  if (mapModel != null && mapModel.renderer != null) {
+    mapModel.renderer.warmLabelFonts(this, renderSettings);
+  }
   mapModel.generateSites(currentPlacementMode(), siteTargetCount);
   mapModel.ensureVoronoiComputed();
   seedDefaultZones();
@@ -810,15 +837,12 @@ void drawExportPaddingOverlay() {
 
 void draw() {
   background(245);
+  loadingDetail = "";
 
   // Track tool changes to prepare loading for heavy modes
   if (currentTool != prevTool) {
     if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS) {
-      renderPrepRunning = true;
-      renderPrepDone = false;
-      startLoading();
-      loadingPct = 0.0f;
-      mapModel.renderer.resetRenderPrep();
+      requestRenderPrep();
     }
     prevTool = currentTool;
   }
@@ -847,6 +871,12 @@ void draw() {
           prepComplete = mapModel.renderer.stepRenderPrep(this, renderSettings, seaLevel);
           float prepPct = (mapModel.renderer != null) ? mapModel.renderer.renderPrepProgress() : 0.0f;
           loadingPct = min(1.0f, 0.05f + prepPct * 0.9f);
+          if (mapModel.renderer != null) {
+            int st = mapModel.renderer.getRenderPrepStage();
+            int total = max(1, mapModel.renderer.getRenderPrepStageCount());
+            String label = mapModel.renderer.getRenderPrepStageLabel();
+            loadingDetail = "Render prep " + (st + 1) + "/" + total + (label.length() > 0 ? (" - " + label) : "");
+          }
         }
         if (prepComplete) {
           renderPrepRunning = false;
@@ -3035,7 +3065,7 @@ void stepFullGenerateFromCells() {
       editingLabelIndex = -1;
       editingLabelCommentIndex = -1;
       loadingPct = 1.0f;
-      renderContoursDirty = true;
+      markRenderDirty();
       fullGenStep++;
       break;
     }
@@ -3047,3 +3077,4 @@ void stepFullGenerateFromCells() {
     }
   }
 }
+

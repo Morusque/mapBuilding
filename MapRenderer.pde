@@ -2212,6 +2212,25 @@ class MapRenderer {
     renderPrepStage = 0;
   }
 
+  int getRenderPrepStage() {
+    return renderPrepStage;
+  }
+
+  int getRenderPrepStageCount() {
+    return RENDER_PREP_STAGES;
+  }
+
+  String getRenderPrepStageLabel() {
+    switch (renderPrepStage) {
+      case 0: return "fonts";
+      case 1: return "coastlines";
+      case 2: return "biomes";
+      case 3: return "zones";
+      case 4: return "elevation light";
+      default: return "";
+    }
+  }
+
   // Incrementally build render layers; returns true when all stages done
   boolean stepRenderPrep(PApplet app, RenderSettings s, float seaLevel) {
     switch (renderPrepStage) {

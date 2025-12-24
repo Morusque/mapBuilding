@@ -191,6 +191,13 @@ void drawTopBar() {
     float w = barW * pct;
     fill(60, 140, 220);
     rect(x + 1, y + 1, w - 2, barH - 2, 2);
+
+    // Detail text (e.g., render prep stage)
+    if (loadingDetail != null && loadingDetail.length() > 0) {
+      fill(20);
+      textAlign(RIGHT, CENTER);
+      text(loadingDetail, x - 8, y + barH * 0.5f);
+    }
   }
 }
 
