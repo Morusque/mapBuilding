@@ -1,7 +1,6 @@
 
 Next :
-revise rendering presets
-make sure everything can be bitmap
+revise rendering presets, make sure everything can be bitmap
 export should be same than rendering but with difference sue to ratio visible
 
 Other :
