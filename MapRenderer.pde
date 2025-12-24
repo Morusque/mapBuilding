@@ -55,7 +55,7 @@ class MapRenderer {
   private final int NOISE_TEX_SIZE = 1024;
   // Render prep staging (to spread heavy layer builds across frames)
   private int renderPrepStage = 0;
-  private final int RENDER_PREP_STAGES = 4;
+  private final int RENDER_PREP_STAGES = 5;
 
   MapRenderer(MapModel model) {
     this.model = model;
@@ -449,6 +449,23 @@ class MapRenderer {
       labelFontName = chosen;
     }
     return f;
+  }
+
+  // Pre-load likely label fonts/sizes so entering render/labels modes does not stutter.
+  void warmLabelFonts(PApplet app, RenderSettings s) {
+    if (app == null) return;
+    String fontName = resolveLabelFontName(s);
+    HashSet<Integer> sizes = new HashSet<Integer>();
+    sizes.add(max(1, round(labelSizeDefault())));
+    if (s != null) {
+      sizes.add(max(1, round((s.labelSizeArbPx > 0) ? s.labelSizeArbPx : labelSizeDefault())));
+      sizes.add(max(1, round((s.labelSizeZonePx > 0) ? s.labelSizeZonePx : labelSizeDefault())));
+      sizes.add(max(1, round((s.labelSizePathPx > 0) ? s.labelSizePathPx : labelSizeDefault())));
+      sizes.add(max(1, round((s.labelSizeStructPx > 0) ? s.labelSizeStructPx : labelSizeDefault())));
+    }
+    for (int sz : sizes) {
+      labelFont(app, sz, fontName);
+    }
   }
 
   void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad, boolean snapToPixel, String fontName) {
@@ -2199,18 +2216,22 @@ class MapRenderer {
   boolean stepRenderPrep(PApplet app, RenderSettings s, float seaLevel) {
     switch (renderPrepStage) {
       case 0:
-        ensureCoastLayer(app, s, seaLevel);
+        warmLabelFonts(app, s);
         renderPrepStage++;
         break;
       case 1:
-        ensureBiomeLayer(app, s);
+        ensureCoastLayer(app, s, seaLevel);
         renderPrepStage++;
         break;
       case 2:
-        ensureZoneLayer(app, s);
+        ensureBiomeLayer(app, s);
         renderPrepStage++;
         break;
       case 3:
+        ensureZoneLayer(app, s);
+        renderPrepStage++;
+        break;
+      case 4:
         ensureElevationLightLayer(app, s, seaLevel);
         renderPrepStage++;
         break;
