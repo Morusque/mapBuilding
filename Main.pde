@@ -1265,6 +1265,7 @@ String exportSvg() {
   java.util.function.Function<PVector, PVector> worldToSvg = (PVector w) -> {
     return new PVector((w.x - innerWX) * scaleX, (w.y - innerWY) * scaleY);
   };
+  float[] hsbScratch = new float[3];
 
   RenderSettings s = renderSettings;
   int landRgb = hsb01ToRGB(s.landHue01, s.landSat01, s.landBri01);
@@ -1320,10 +1321,10 @@ String exportSvg() {
       if (c.biomeId < 0 || c.biomeId >= mapModel.biomeTypes.size()) continue;
       ZoneType zt = mapModel.biomeTypes.get(c.biomeId);
       if (zt == null) continue;
-      float[] hsb = mapModel.rgbToHSB(zt.col);
-      hsb[1] = constrain(hsb[1] * s.biomeSatScale01, 0, 1);
-      hsb[2] = constrain(hsb[2] * s.biomeBriScale01, 0, 1);
-      int rgb = hsb01ToRGB(hsb[0], hsb[1], hsb[2]);
+      rgbToHSB01(zt.col, hsbScratch);
+      hsbScratch[1] = constrain(hsbScratch[1] * s.biomeSatScale01, 0, 1);
+      hsbScratch[2] = constrain(hsbScratch[2] * s.biomeBriScale01, 0, 1);
+      int rgb = hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]);
       String fill = toHex.apply(rgb);
       StringBuilder path = new StringBuilder();
       for (int i = 0; i < c.vertices.size(); i++) {
@@ -1352,10 +1353,10 @@ String exportSvg() {
     for (int zi = 0; zi < mapModel.zones.size(); zi++) {
       MapModel.MapZone z = mapModel.zones.get(zi);
       if (z == null || z.cells == null) continue;
-      float[] hsb = mapModel.rgbToHSB(z.col);
-      hsb[1] = constrain(hsb[1] * s.zoneStrokeSatScale01, 0, 1);
-      hsb[2] = constrain(hsb[2] * s.zoneStrokeBriScale01, 0, 1);
-      String stroke = toHex.apply(hsb01ToRGB(hsb[0], hsb[1], hsb[2]));
+      rgbToHSB01(z.col, hsbScratch);
+      hsbScratch[1] = constrain(hsbScratch[1] * s.zoneStrokeSatScale01, 0, 1);
+      hsbScratch[2] = constrain(hsbScratch[2] * s.zoneStrokeBriScale01, 0, 1);
+      String stroke = toHex.apply(hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]));
       for (int ci : z.cells) {
         if (ci < 0 || ci >= mapModel.cells.size()) continue;
         Cell c = mapModel.cells.get(ci);

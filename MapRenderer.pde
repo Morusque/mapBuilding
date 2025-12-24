@@ -56,6 +56,7 @@ class MapRenderer {
   // Render prep staging (to spread heavy layer builds across frames)
   private int renderPrepStage = 0;
   private final int RENDER_PREP_STAGES = 5;
+  private final float[] hsbScratch = new float[3];
 
   MapRenderer(MapModel model) {
     this.model = model;
@@ -122,16 +123,16 @@ class MapRenderer {
         col = lerpColor(col, color(30, 70, 120), 0.15f);
       }
       if (desaturate) {
-        float[] hsb;
-        if (biomeHSB != null && c.biomeId >= 0 && c.biomeId < biomeHSB.length && biomeHSB[c.biomeId] != null) {
-          hsb = biomeHSB[c.biomeId];
-        } else {
-          hsb = new float[3];
-          rgbToHSB01(col, hsb);
-        }
-        float sat = constrain(hsb[1] * 0.82f, 0, 1);
-        float bri = constrain(hsb[2] * 1.05f, 0, 1);
-        col = hsb01ToRGB(hsb[0], sat, bri);
+      float[] hsb;
+      if (biomeHSB != null && c.biomeId >= 0 && c.biomeId < biomeHSB.length && biomeHSB[c.biomeId] != null) {
+        hsb = biomeHSB[c.biomeId];
+      } else {
+        hsb = hsbScratch;
+        rgbToHSB01(col, hsb);
+      }
+      float sat = constrain(hsb[1] * 0.82f, 0, 1);
+      float bri = constrain(hsb[2] * 1.05f, 0, 1);
+      col = hsb01ToRGB(hsb[0], sat, bri);
       }
 
       app.fill(col, 255 * biomeAlphaScale);
@@ -211,9 +212,9 @@ class MapRenderer {
       if (st == null) continue;
       float baseAlpha = st.alpha01 * s.structureAlphaScale01;
       if (baseAlpha <= 1e-4f) continue;
-      float[] hsb = model.rgbToHSB(st.fillCol);
-      float sat = constrain(hsb[1] * s.structureSatScale01, 0, 1);
-      int col = hsb01ToRGB(hsb[0], sat, hsb[2]);
+      rgbToHSB01(st.fillCol, hsbScratch);
+      float sat = constrain(hsbScratch[1] * s.structureSatScale01, 0, 1);
+      int col = hsb01ToRGB(hsbScratch[0], sat, hsbScratch[2]);
 
       float shadowAlpha = baseAlpha * s.structureShadowAlpha01;
       float shadowLen = st.size * shadowLenFactor;
@@ -2294,11 +2295,10 @@ class MapRenderer {
         continue;
       }
       cachedBiomeSrcCols[i] = zt.col;
-      float[] hsb = new float[3];
-      rgbToHSB01(zt.col, hsb);
-      float sat = constrain(hsb[1] * satScale, 0, 1);
-      float bri = constrain(hsb[2] * briScale, 0, 1);
-      cachedBiomeScaledColors[i] = hsb01ToRGB(hsb[0], sat, bri);
+      rgbToHSB01(zt.col, hsbScratch);
+      float sat = constrain(hsbScratch[1] * satScale, 0, 1);
+      float bri = constrain(hsbScratch[2] * briScale, 0, 1);
+      cachedBiomeScaledColors[i] = hsb01ToRGB(hsbScratch[0], sat, bri);
     }
     return cachedBiomeScaledColors;
   }
@@ -2333,11 +2333,10 @@ class MapRenderer {
         continue;
       }
       cachedZoneSrcCols[i] = z.col;
-      float[] hsb = new float[3];
-      rgbToHSB01(z.col, hsb);
-      float sat = constrain(hsb[1] * satScale, 0, 1);
-      float bri = constrain(hsb[2] * briScale, 0, 1);
-      cachedZoneStrokeColors[i] = hsb01ToRGB(hsb[0], sat, bri);
+      rgbToHSB01(z.col, hsbScratch);
+      float sat = constrain(hsbScratch[1] * satScale, 0, 1);
+      float bri = constrain(hsbScratch[2] * briScale, 0, 1);
+      cachedZoneStrokeColors[i] = hsb01ToRGB(hsbScratch[0], sat, bri);
     }
     return cachedZoneStrokeColors;
   }
