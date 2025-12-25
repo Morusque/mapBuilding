@@ -712,51 +712,69 @@ void updateActiveSlider(int mx, int my) {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.lightAlphaSlider, mx);
       renderSettings.elevationLightAlpha01 = t;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateLightCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_LIGHT_AZIMUTH: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.lightAzimuthSlider, mx);
       renderSettings.elevationLightAzimuthDeg = constrain(t * 360.0f, 0, 360);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateLightCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_LIGHT_ALTITUDE: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.lightAltitudeSlider, mx);
       renderSettings.elevationLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateLightCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_SIZE: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterContourSizeSlider, mx);
       renderSettings.waterContourSizePx = constrain(t * 5.0f, 0, 5.0f);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_RIPPLE_COUNT: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterRippleCountSlider, mx);
       renderSettings.waterRippleCount = constrain(round(t * 5.0f), 0, 5);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_RIPPLE_DIST: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterRippleDistanceSlider, mx);
       renderSettings.waterRippleDistancePx = constrain(t * 40.0f, 0.0f, 40.0f);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_H: {
       RenderLayout l = buildRenderLayout();
       renderSettings.waterContourHue01 = sliderNorm(l.waterContourHSB[0], mx);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_S: {
       RenderLayout l = buildRenderLayout();
       renderSettings.waterContourSat01 = sliderNorm(l.waterContourHSB[1], mx);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_B: {
       RenderLayout l = buildRenderLayout();
       renderSettings.waterContourBri01 = sliderNorm(l.waterContourHSB[2], mx);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_CONTOUR_ALPHA: {
@@ -764,54 +782,70 @@ void updateActiveSlider(int mx, int my) {
       float t = sliderNorm(l.waterContourCoastAlphaSlider, mx);
       renderSettings.waterCoastAlpha01 = t;
       renderSettings.waterContourAlpha01 = renderSettings.waterCoastAlpha01; // keep legacy field aligned
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_HATCH_ANGLE: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterHatchAngleSlider, mx);
       renderSettings.waterHatchAngleDeg = constrain(-90.0f + t * 180.0f, -90.0f, 90.0f);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_HATCH_LENGTH: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterHatchLengthSlider, mx);
       renderSettings.waterHatchLengthPx = constrain(t * 400.0f, 0, 400.0f);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_HATCH_SPACING: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterHatchSpacingSlider, mx);
       renderSettings.waterHatchSpacingPx = constrain(t * 120.0f, 0, 120.0f);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_HATCH_ALPHA: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterHatchAlphaSlider, mx);
       renderSettings.waterHatchAlpha01 = t;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_RIPPLE_ALPHA_START: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterRippleAlphaStartSlider, mx);
       renderSettings.waterRippleAlphaStart01 = t;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_WATER_RIPPLE_ALPHA_END: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterRippleAlphaEndSlider, mx);
       renderSettings.waterRippleAlphaEnd01 = t;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_ELEV_LINES_COUNT: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.elevationLinesCountSlider, mx);
       renderSettings.elevationLinesCount = constrain(round(t * 24.0f), 0, 24);
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_ELEV_LINES_ALPHA: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.elevationLinesAlphaSlider, mx);
       renderSettings.elevationLinesAlpha01 = t;
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_PATH_SAT: {
@@ -831,30 +865,40 @@ void updateActiveSlider(int mx, int my) {
       float t = sliderNorm(l.zoneAlphaSlider, mx);
       renderSettings.zoneStrokeAlpha01 = t;
       renderShowZoneOutlines = t > 0.001f;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_ZONE_SIZE: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.zoneSizeSlider, mx);
       renderSettings.zoneStrokeSizePx = constrain(t * 5.0f, 0, 5.0f);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_ZONE_SAT: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.zoneSatSlider, mx);
       renderSettings.zoneStrokeSatScale01 = t;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_ZONE_BRI: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.zoneBriSlider, mx);
       renderSettings.zoneStrokeBriScale01 = t;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_LIGHT_DITHER: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.lightDitherSlider, mx);
       renderSettings.elevationLightDitherPx = constrain(t * 10.0f, 0, 10.0f);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateLightCache();
+      markRenderVisualChange();
       break;
     }
     case SLIDER_RENDER_LABEL_OUTLINE_ALPHA: {

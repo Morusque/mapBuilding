@@ -33,7 +33,8 @@ class MapRenderer {
   private int zoneLayerH = -1;
   private int zoneLayerCellCount = -1;
   private int zoneLayerZoneCount = -1;
-  private PGraphics biomeLayer;
+  private PGraphics biomeLandLayer;
+  private PGraphics biomeWaterLayer;
   private int biomeLayerHash = 0;
   private float biomeLayerZoom = -1;
   private float biomeLayerCenterX = Float.MAX_VALUE;
@@ -57,6 +58,19 @@ class MapRenderer {
   private int renderPrepStage = 0;
   private final int RENDER_PREP_STAGES = 5;
   private final float[] hsbScratch = new float[3];
+  // Layer dirty flags
+  boolean coastDirty = true;
+  boolean biomeDirty = true;
+  boolean zoneDirty = true;
+  boolean lightDirty = true;
+  boolean fontPrepNeeded = true;
+  private int renderPrepCompleted = 0;
+  private int renderPrepTotal = 0;
+
+  void invalidateCoastCache() { coastDirty = true; }
+  void invalidateBiomeCache() { biomeDirty = true; }
+  void invalidateZoneCache() { zoneDirty = true; }
+  void invalidateLightCache() { lightDirty = true; }
 
   MapRenderer(MapModel model) {
     this.model = model;
@@ -1415,17 +1429,26 @@ class MapRenderer {
 
     if (drawBiomes) {
       ensureBiomeLayer(app, s);
-      if (biomeLayer != null) {
+      if (biomeLandLayer != null) {
         app.pushStyle();
         app.pushMatrix();
         app.resetMatrix();
-        app.tint(255, constrain(s.biomeOutlineAlpha01, 0, 1) * 255);
-        app.image(biomeLayer, 0, 0);
+        float landAlpha = constrain(s.biomeFillAlpha01, 0, 1);
+        if (landAlpha > 1e-4f) {
+          app.tint(255, landAlpha * 255);
+          app.image(biomeLandLayer, 0, 0);
+        }
+        float waterAlpha = constrain(s.biomeUnderwaterAlpha01, 0, 1);
+        if (waterAlpha > 1e-4f && biomeWaterLayer != null) {
+          app.tint(255, waterAlpha * 255);
+          app.image(biomeWaterLayer, 0, 0);
+        }
         app.popMatrix();
         app.popStyle();
       }
     } else {
-      biomeLayer = null;
+      biomeLandLayer = null;
+      biomeWaterLayer = null;
     }
   }
 
@@ -1467,6 +1490,16 @@ class MapRenderer {
     h = 31 * h + round(s.waterContourHue01 * 1000.0f);
     h = 31 * h + round(s.waterContourSat01 * 1000.0f);
     h = 31 * h + round(s.waterContourBri01 * 1000.0f);
+    h = 31 * h + round(s.waterCoastAlpha01 * 1000.0f);
+    h = 31 * h + round(s.waterRippleCount);
+    h = 31 * h + round(s.waterRippleDistancePx * 1000.0f);
+    h = 31 * h + round(s.waterRippleAlphaStart01 * 1000.0f);
+    h = 31 * h + round(s.waterRippleAlphaEnd01 * 1000.0f);
+    h = 31 * h + round(s.waterHatchAngleDeg * 10.0f);
+    h = 31 * h + round(s.waterHatchLengthPx * 1000.0f);
+    h = 31 * h + round(s.waterHatchSpacingPx * 1000.0f);
+    h = 31 * h + round(s.waterHatchAlpha01 * 1000.0f);
+    h = 31 * h + (s.antialiasing ? 1 : 0);
     h = 31 * h + (drawRoundCaps ? 1 : 0);
     h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
     return h;
@@ -1513,7 +1546,7 @@ class MapRenderer {
       }
     }
     if (coastLayer == null) return;
-    if (!(sizeChanged || viewChanged || settingsChanged)) return;
+    if (!coastDirty && !(sizeChanged || viewChanged || settingsChanged)) return;
 
     try {
       coastLayer.beginDraw();
@@ -1537,6 +1570,7 @@ class MapRenderer {
     coastLayerCenterY = viewport.centerY;
     coastLayerSeaLevel = seaLevel;
     coastLayerCellCount = model.cells.size();
+    coastDirty = false;
   }
 
   private void drawCoastLayer(PGraphics g, RenderSettings s, float seaLevel) {
@@ -1612,6 +1646,7 @@ class MapRenderer {
     h = 31 * h + round(s.zoneStrokeSatScale01 * 1000.0f);
     h = 31 * h + round(s.zoneStrokeBriScale01 * 1000.0f);
     h = 31 * h + round(s.zoneStrokeSizePx * 1000.0f);
+    h = 31 * h + round(s.zoneStrokeAlpha01 * 1000.0f);
     h = 31 * h + hashArray(zoneCols);
     h = 31 * h + (drawRoundCaps ? 1 : 0);
     h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
@@ -1657,7 +1692,7 @@ class MapRenderer {
       }
     }
     if (zoneLayer == null) return;
-    if (!(sizeChanged || viewChanged || settingsChanged)) return;
+    if (!zoneDirty && !(sizeChanged || viewChanged || settingsChanged)) return;
 
     try {
       zoneLayer.beginDraw();
@@ -1682,6 +1717,7 @@ class MapRenderer {
     zoneLayerCenterY = viewport.centerY;
     zoneLayerCellCount = model.cells.size();
     zoneLayerZoneCount = model.zones.size();
+    zoneDirty = false;
   }
 
   private void drawZoneLayer(PGraphics g, int[] zoneStrokeCols, float zoneW) {
@@ -1853,10 +1889,13 @@ class MapRenderer {
   private int biomeSettingsHash(RenderSettings s, int[] biomeCols) {
     int h = 23;
     h = 31 * h + round(s.biomeOutlineSizePx * 1000.0f);
+    h = 31 * h + round(s.biomeSatScale01 * 1000.0f);
+    h = 31 * h + round(s.biomeBriScale01 * 1000.0f);
+    h = 31 * h + (s.biomeFillType != null ? s.biomeFillType.ordinal() : -1);
+    h = 31 * h + ((model != null && model.biomeTypes != null) ? model.biomeTypes.size() : 0);
     h = 31 * h + hashArray(biomeCols);
     h = 31 * h + (drawRoundCaps ? 1 : 0);
     h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
-    h = 31 * h + ((model != null && model.biomeTypes != null) ? model.biomeTypes.size() : 0);
     return h;
   }
 
@@ -1866,13 +1905,15 @@ class MapRenderer {
     h = 31 * h + round(s.elevationLightAltitudeDeg * 100.0f);
     h = 31 * h + round(s.elevationLightAlpha01 * 1000.0f);
     h = 31 * h + round(s.elevationLightDitherPx * 1000.0f);
+    h = 31 * h + (s.antialiasing ? 1 : 0);
     h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
     return h;
   }
 
   private void ensureBiomeLayer(PApplet app, RenderSettings s) {
     if (model == null || model.cells == null || model.cells.isEmpty() || model.biomeTypes == null) {
-      biomeLayer = null;
+      biomeLandLayer = null;
+      biomeWaterLayer = null;
       return;
     }
     if (app == null) return;
@@ -1880,53 +1921,74 @@ class MapRenderer {
     int targetW = (app.g != null) ? app.g.width : app.width;
     int targetH = (app.g != null) ? app.g.height : app.height;
     int hash = biomeSettingsHash(s, biomeScaledCols);
-    boolean sizeChanged = biomeLayer == null || biomeLayerW != targetW || biomeLayerH != targetH;
-    boolean viewChanged = biomeLayer == null ||
+    boolean sizeChanged = biomeLandLayer == null || biomeWaterLayer == null || biomeLayerW != targetW || biomeLayerH != targetH;
+    boolean viewChanged = biomeLandLayer == null ||
                           abs(biomeLayerZoom - viewport.zoom) > 1e-4f ||
                           abs(biomeLayerCenterX - viewport.centerX) > 1e-4f ||
                           abs(biomeLayerCenterY - viewport.centerY) > 1e-4f;
-    boolean settingsChanged = biomeLayer == null ||
+    boolean settingsChanged = biomeLandLayer == null ||
                               biomeLayerHash != hash ||
                               biomeLayerCellCount != model.cells.size() ||
                               biomeLayerBiomeCount != model.biomeTypes.size();
 
     if (sizeChanged) {
       try {
-        biomeLayer = app.createGraphics(targetW, targetH, P2D);
+        biomeLandLayer = app.createGraphics(targetW, targetH, P2D);
+        biomeWaterLayer = app.createGraphics(targetW, targetH, P2D);
       } catch (Exception ex) {
         println("Biome layer P2D alloc failed, falling back to JAVA2D: " + ex);
         try {
-          biomeLayer = app.createGraphics(targetW, targetH, JAVA2D);
+          biomeLandLayer = app.createGraphics(targetW, targetH, JAVA2D);
+          biomeWaterLayer = app.createGraphics(targetW, targetH, JAVA2D);
         } catch (Exception ignored) {
-          biomeLayer = null;
+          biomeLandLayer = null;
+          biomeWaterLayer = null;
         }
       }
       biomeLayerW = targetW;
       biomeLayerH = targetH;
-      if (biomeLayer != null) {
-        if (s.antialiasing) biomeLayer.smooth(8); else biomeLayer.noSmooth();
+      if (biomeLandLayer != null) {
+        if (s.antialiasing) biomeLandLayer.smooth(8); else biomeLandLayer.noSmooth();
+      }
+      if (biomeWaterLayer != null) {
+        if (s.antialiasing) biomeWaterLayer.smooth(8); else biomeWaterLayer.noSmooth();
       }
     } else {
-      if (biomeLayer != null) {
-        if (s.antialiasing) biomeLayer.smooth(8); else biomeLayer.noSmooth();
+      if (biomeLandLayer != null) {
+        if (s.antialiasing) biomeLandLayer.smooth(8); else biomeLandLayer.noSmooth();
+      }
+      if (biomeWaterLayer != null) {
+        if (s.antialiasing) biomeWaterLayer.smooth(8); else biomeWaterLayer.noSmooth();
       }
     }
-    if (biomeLayer == null) return;
+    if (biomeLandLayer == null || biomeWaterLayer == null) return;
     if (!(sizeChanged || viewChanged || settingsChanged)) return;
 
     try {
-      biomeLayer.beginDraw();
-      biomeLayer.clear();
-      biomeLayer.pushMatrix();
-      biomeLayer.pushStyle();
-      viewport.applyTransform(biomeLayer, biomeLayer.width, biomeLayer.height);
-      drawBiomeLayer(biomeLayer, s, biomeScaledCols);
-      biomeLayer.popStyle();
-      biomeLayer.popMatrix();
-      biomeLayer.endDraw();
+      biomeLandLayer.beginDraw();
+      biomeLandLayer.clear();
+      biomeLandLayer.pushMatrix();
+      biomeLandLayer.pushStyle();
+      viewport.applyTransform(biomeLandLayer, biomeLandLayer.width, biomeLandLayer.height);
+
+      biomeWaterLayer.beginDraw();
+      biomeWaterLayer.clear();
+      biomeWaterLayer.pushMatrix();
+      biomeWaterLayer.pushStyle();
+      viewport.applyTransform(biomeWaterLayer, biomeWaterLayer.width, biomeWaterLayer.height);
+
+      drawBiomeLayer(biomeLandLayer, biomeWaterLayer, s, biomeScaledCols);
+
+      biomeLandLayer.popStyle();
+      biomeLandLayer.popMatrix();
+      biomeLandLayer.endDraw();
+      biomeWaterLayer.popStyle();
+      biomeWaterLayer.popMatrix();
+      biomeWaterLayer.endDraw();
     } catch (Exception ex) {
       println("Biome layer build failed: " + ex);
-      biomeLayer = null;
+      biomeLandLayer = null;
+      biomeWaterLayer = null;
       return;
     }
 
@@ -1936,142 +1998,28 @@ class MapRenderer {
     biomeLayerCenterY = viewport.centerY;
     biomeLayerCellCount = model.cells.size();
     biomeLayerBiomeCount = model.biomeTypes.size();
+    biomeDirty = false;
   }
 
-  private void drawBiomeLayer(PGraphics g, RenderSettings s, int[] biomeScaledCols) {
+  private void drawBiomeLayer(PGraphics landG, PGraphics waterG, RenderSettings s, int[] biomeScaledCols) {
     if (model.cells == null || model.cells.isEmpty()) return;
     model.ensureCellNeighborsComputed();
     int n = model.cells.size();
-    float eps2 = 1e-6f;
-    float biomeW = max(0.1f, s.biomeOutlineSizePx) / viewport.zoom;
-    float laneGap = max(0.2f / viewport.zoom, (2.0f / viewport.zoom) * 0.4f);
-    HashSet<String> drawn = new HashSet<String>();
-    HashSet<String> capsDrawn = new HashSet<String>();
-
-    class Lane {
-      float width;
-      int col;
-      Lane(float w, int ccol) { width = w; col = ccol; }
-    }
-
+    landG.noStroke();
+    waterG.noStroke();
     for (int ci = 0; ci < n; ci++) {
       Cell c = model.cells.get(ci);
       if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
-      int vc = c.vertices.size();
-      for (int e = 0; e < vc; e++) {
-        PVector a = c.vertices.get(e);
-        PVector b = c.vertices.get((e + 1) % vc);
-        String key = undirectedEdgeKey(a, b);
-        if (drawn.contains(key)) continue;
-
-        int biomeA = c.biomeId;
-        int biomeB = biomeA;
-        ArrayList<Integer> nbs = (ci < model.cellNeighbors.size()) ? model.cellNeighbors.get(ci) : null;
-        if (nbs != null) {
-          for (int nbIdx : nbs) {
-            if (nbIdx < 0 || nbIdx >= n) continue;
-            Cell nb = model.cells.get(nbIdx);
-            if (nb == null || nb.vertices == null) continue;
-            int nv = nb.vertices.size();
-            boolean matched = false;
-            for (int j = 0; j < nv; j++) {
-              PVector na = nb.vertices.get(j);
-              PVector nbp = nb.vertices.get((j + 1) % nv);
-              boolean match = model.distSq(a, na) < eps2 && model.distSq(b, nbp) < eps2;
-              boolean matchRev = model.distSq(a, nbp) < eps2 && model.distSq(b, na) < eps2;
-              if (match || matchRev) {
-                biomeB = nb.biomeId;
-                matched = true;
-                break;
-              }
-            }
-            if (matched) break;
-          }
-        }
-
-        boolean biomeDiff = biomeA != biomeB;
-        if (!biomeDiff) { drawn.add(key); continue; }
-
-        PVector cenA = model.cellCentroid(c);
-        PVector mid = new PVector((a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f);
-        PVector edgeDir = new PVector(b.x - a.x, b.y - a.y);
-        PVector nrm = new PVector(-edgeDir.y, edgeDir.x);
-        float nLen = max(1e-6f, sqrt(nrm.x * nrm.x + nrm.y * nrm.y));
-        nrm.mult(1.0f / nLen);
-        if (cenA != null) {
-          PVector toCenter = PVector.sub(cenA, mid);
-          if (toCenter.dot(nrm) < 0) nrm.mult(-1);
-        }
-
-        ArrayList<Lane> lanesPos = new ArrayList<Lane>();
-        ArrayList<Lane> lanesNeg = new ArrayList<Lane>();
-        if (biomeA >= 0 && biomeScaledCols != null && biomeA < biomeScaledCols.length) {
-          int col = biomeScaledCols[biomeA];
-          if (col != -1) lanesPos.add(new Lane(biomeW, col));
-        }
-        if (biomeB >= 0 && biomeScaledCols != null && biomeB < biomeScaledCols.length) {
-          int col = biomeScaledCols[biomeB];
-          if (col != -1) lanesNeg.add(new Lane(biomeW, col));
-        }
-
-        Comparator<Lane> cmp = new Comparator<Lane>() {
-          public int compare(Lane aL, Lane bL) { return Float.compare(bL.width, aL.width); }
-        };
-        Collections.sort(lanesPos, cmp);
-        Collections.sort(lanesNeg, cmp);
-
-        g.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
-        g.strokeJoin(PConstants.ROUND);
-
-        float offsetPos = 0;
-        for (Lane l : lanesPos) {
-          if (l.width <= 1e-4f) continue;
-          float laneOff = offsetPos + l.width * 0.5f;
-          g.stroke(l.col, 255);
-          g.strokeWeight(l.width);
-          float ax = a.x + nrm.x * laneOff;
-          float ay = a.y + nrm.y * laneOff;
-          float bx = b.x + nrm.x * laneOff;
-          float by = b.y + nrm.y * laneOff;
-          g.line(ax, ay, bx, by);
-          if (drawRoundCaps) {
-            float hw = l.width * 0.5f;
-            g.noStroke();
-            g.fill(l.col, 255);
-            String ka = model.keyFor(ax, ay);
-            String kb = model.keyFor(bx, by);
-            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
-            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
-            g.stroke(l.col, 255);
-          }
-          offsetPos += l.width + laneGap;
-        }
-        float offsetNeg = 0;
-        for (Lane l : lanesNeg) {
-          if (l.width <= 1e-4f) continue;
-          float laneOff = offsetNeg + l.width * 0.5f;
-          g.stroke(l.col, 255);
-          g.strokeWeight(l.width);
-          float ax = a.x - nrm.x * laneOff;
-          float ay = a.y - nrm.y * laneOff;
-          float bx = b.x - nrm.x * laneOff;
-          float by = b.y - nrm.y * laneOff;
-          g.line(ax, ay, bx, by);
-          if (drawRoundCaps) {
-            float hw = l.width * 0.5f;
-            g.noStroke();
-            g.fill(l.col, 255);
-            String ka = model.keyFor(ax, ay);
-            String kb = model.keyFor(bx, by);
-            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
-            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
-            g.stroke(l.col, 255);
-          }
-          offsetNeg += l.width + laneGap;
-        }
-
-        drawn.add(key);
-      }
+      int biomeIdx = c.biomeId;
+      if (biomeIdx < 0 || biomeIdx >= biomeScaledCols.length) continue;
+      int col = biomeScaledCols[biomeIdx];
+      if (col == 0) continue;
+      boolean underwater = c.elevation < seaLevel;
+      PGraphics tgt = underwater ? waterG : landG;
+      tgt.fill(col, 255);
+      tgt.beginShape();
+      for (PVector v : c.vertices) tgt.vertex(v.x, v.y);
+      tgt.endShape(CLOSE);
     }
   }
 
@@ -2113,7 +2061,7 @@ class MapRenderer {
       }
     }
     if (elevationLightLayer == null) return;
-    if (!(sizeChanged || viewChanged || settingsChanged)) return;
+    if (!lightDirty && !(sizeChanged || viewChanged || settingsChanged)) return;
 
     try {
       elevationLightLayer.beginDraw();
@@ -2143,6 +2091,7 @@ class MapRenderer {
     elevationLightCenterY = viewport.centerY;
     elevationLightSeaLevel = seaLevel;
     elevationLightCellCount = model.cells.size();
+    lightDirty = false;
   }
 
   private void drawElevationLightLayer(PGraphics g, RenderSettings s, float seaLevel) {
@@ -2209,60 +2158,141 @@ class MapRenderer {
   }
 
   // Reset staged render prep (call when entering heavy modes or after invalidation)
-  void resetRenderPrep() {
-    renderPrepStage = 0;
+  void resetRenderPrep(boolean forceAllDirty) {
+    renderPrepCompleted = 0;
+    renderPrepTotal = 0;
+    // Only rebuild fonts on explicit full dirties; otherwise leave as-is.
+    if (forceAllDirty) {
+      fontPrepNeeded = true;
+      coastDirty = biomeDirty = zoneDirty = lightDirty = true;
+    }
+  }
+
+  boolean hasAnyRenderCache() {
+    return coastLayer != null || biomeLandLayer != null || biomeWaterLayer != null || zoneLayer != null || elevationLightLayer != null;
+  }
+
+  boolean isRenderWorkNeeded() {
+    return fontPrepNeeded || coastDirty || biomeDirty || zoneDirty || lightDirty || !hasAnyRenderCache();
+  }
+
+  // Rebuild non-heavy layers immediately (biomes, zones, light). Returns true if any work was done.
+  boolean rebuildCheapLayersImmediate(PApplet app, RenderSettings s, float seaLevel) {
+    if (app == null || s == null) return false;
+    boolean did = false;
+    if (biomeDirty) {
+      ensureBiomeLayer(app, s);
+      biomeDirty = false;
+      did = true;
+    }
+    if (zoneDirty) {
+      ensureZoneLayer(app, s);
+      zoneDirty = false;
+      did = true;
+    }
+    if (lightDirty) {
+      ensureElevationLightLayer(app, s, seaLevel);
+      lightDirty = false;
+      did = true;
+    }
+    return did;
   }
 
   int getRenderPrepStage() {
-    return renderPrepStage;
+    return renderPrepCompleted;
   }
 
   int getRenderPrepStageCount() {
-    return RENDER_PREP_STAGES;
+    return max(renderPrepTotal, renderPrepCompleted + pendingStageCount());
   }
 
   String getRenderPrepStageLabel() {
-    switch (renderPrepStage) {
-      case 0: return "fonts";
-      case 1: return "coastlines";
-      case 2: return "biomes";
-      case 3: return "zones";
-      case 4: return "elevation light";
+    int st = nextPendingStage();
+    switch (st) {
+      case STAGE_FONTS: return "fonts";
+      case STAGE_COAST: return "coastlines";
+      case STAGE_BIOMES: return "biomes";
+      case STAGE_ZONES: return "zones";
+      case STAGE_LIGHT: return "elevation light";
       default: return "";
     }
   }
 
+  private static final int STAGE_FONTS = 0;
+  private static final int STAGE_COAST = 1;
+  private static final int STAGE_BIOMES = 2;
+  private static final int STAGE_ZONES = 3;
+  private static final int STAGE_LIGHT = 4;
+
+  private int pendingStageCount() {
+    int c = 0;
+    if (fontPrepNeeded) c++;
+    if (coastDirty) c++;
+    if (biomeDirty) c++;
+    if (zoneDirty) c++;
+    if (lightDirty) c++;
+    return c;
+  }
+
+  private int nextPendingStage() {
+    if (fontPrepNeeded) return STAGE_FONTS;
+    if (coastDirty) return STAGE_COAST;
+    if (biomeDirty) return STAGE_BIOMES;
+    if (zoneDirty) return STAGE_ZONES;
+    if (lightDirty) return STAGE_LIGHT;
+    return -1;
+  }
+
   // Incrementally build render layers; returns true when all stages done
   boolean stepRenderPrep(PApplet app, RenderSettings s, float seaLevel) {
-    switch (renderPrepStage) {
-      case 0:
+    if (!isRenderWorkNeeded()) {
+      renderPrepCompleted = renderPrepTotal = 0;
+      return true;
+    }
+
+    // Refresh total if it drifted
+    renderPrepTotal = max(renderPrepTotal, renderPrepCompleted + pendingStageCount());
+
+    int stage = nextPendingStage();
+    if (stage == -1) {
+      renderPrepCompleted = renderPrepTotal;
+      return true;
+    }
+
+    switch (stage) {
+      case STAGE_FONTS:
         warmLabelFonts(app, s);
-        renderPrepStage++;
+        fontPrepNeeded = false;
+        renderPrepCompleted++;
         break;
-      case 1:
+      case STAGE_COAST:
         ensureCoastLayer(app, s, seaLevel);
-        renderPrepStage++;
+        coastDirty = false;
+        renderPrepCompleted++;
         break;
-      case 2:
+      case STAGE_BIOMES:
         ensureBiomeLayer(app, s);
-        renderPrepStage++;
+        biomeDirty = false;
+        renderPrepCompleted++;
         break;
-      case 3:
+      case STAGE_ZONES:
         ensureZoneLayer(app, s);
-        renderPrepStage++;
+        zoneDirty = false;
+        renderPrepCompleted++;
         break;
-      case 4:
+      case STAGE_LIGHT:
         ensureElevationLightLayer(app, s, seaLevel);
-        renderPrepStage++;
-        break;
-      default:
+        lightDirty = false;
+        renderPrepCompleted++;
         break;
     }
-    return renderPrepStage >= RENDER_PREP_STAGES;
+    return pendingStageCount() == 0;
   }
 
   float renderPrepProgress() {
-    return constrain(renderPrepStage / (float)RENDER_PREP_STAGES, 0, 1);
+    int total = max(renderPrepTotal, renderPrepCompleted + pendingStageCount());
+    if (total <= 0) return 1.0f;
+    return constrain(renderPrepCompleted / (float)total, 0, 1);
   }
 
   private int[] buildBiomeScaledColors(RenderSettings s) {

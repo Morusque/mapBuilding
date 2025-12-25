@@ -159,10 +159,20 @@ boolean renderPrepDone = false;
 boolean renderPrepPrimed = false;
 String lastExportStatus = "";
 boolean renderContoursDirty = true;
+boolean renderForceDirtyAll = false;
 void markRenderDirty() {
   renderContoursDirty = true;
   renderPrepDone = false;
+  renderForceDirtyAll = true;
   // If already in render-heavy modes, kick prep immediately.
+  if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS) {
+    requestRenderPrep();
+  }
+}
+
+// Trigger a render rebuild without forcing contour/grid recomputation
+void markRenderVisualChange() {
+  renderPrepDone = false;
   if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS) {
     requestRenderPrep();
   }
@@ -671,12 +681,13 @@ void resetAllMapData() {
 // Request staged render prep (used when entering heavy modes or after invalidation)
 void requestRenderPrep() {
   if (mapModel == null || mapModel.renderer == null) return;
-  renderPrepRunning = true;
-  renderPrepDone = false;
-  loadingPct = 0.0f;
+  // For now, avoid staged prep; rebuild happens on demand during draw.
+  mapModel.renderer.resetRenderPrep(renderForceDirtyAll);
+  renderForceDirtyAll = false;
+  renderPrepRunning = false;
+  renderPrepDone = true;
   renderPrepPrimed = false;
-  startLoading();
-  mapModel.renderer.resetRenderPrep();
+  stopLoading();
 }
 
 void triggerRenderPrerequisites() {
@@ -912,7 +923,11 @@ void draw() {
   pushMatrix();
   viewport.applyTransform(this.g);
 
-  boolean skipWorld = renderPrepRunning && (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS);
+  boolean skipWorld = false;
+  if (renderPrepRunning && (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS)) {
+    // Only skip if we have no cached layers to display yet.
+    skipWorld = (mapModel.renderer == null || !mapModel.renderer.hasAnyRenderCache());
+  }
 
   if (renderView && !skipWorld) {
     triggerRenderPrerequisitesIfDirty();

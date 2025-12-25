@@ -1325,21 +1325,22 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = sliderNorm(layout.biomeFillAlphaSlider, mx);
       renderSettings.biomeFillAlpha01 = t;
       activeSlider = SLIDER_RENDER_BIOME_FILL_ALPHA;
-      markRenderDirty();
       return true;
     }
     if (layout.biomeSatSlider.contains(mx, my)) {
       float t = sliderNorm(layout.biomeSatSlider, mx);
       renderSettings.biomeSatScale01 = t;
       activeSlider = SLIDER_RENDER_BIOME_SAT;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateBiomeCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.biomeBriSlider != null && layout.biomeBriSlider.contains(mx, my)) {
       float t = sliderNorm(layout.biomeBriSlider, mx);
       renderSettings.biomeBriScale01 = t;
       activeSlider = SLIDER_RENDER_BIOME_BRI;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateBiomeCache();
+      markRenderVisualChange();
       return true;
     }
     for (int i = 0; i < layout.biomeFillTypeButtons.size(); i++) {
@@ -1348,7 +1349,8 @@ boolean handleRenderPanelClick(int mx, int my) {
         if (i == 0) renderSettings.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
         else if (i == 1) renderSettings.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
         else renderSettings.biomeFillType = RenderFillType.RENDER_FILL_PATTERN_BG;
-        markRenderDirty();
+        if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateBiomeCache();
+        markRenderVisualChange();
         return true;
       }
     }
@@ -1356,21 +1358,20 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = sliderNorm(layout.biomeOutlineSizeSlider, mx);
       renderSettings.biomeOutlineSizePx = constrain(t * 5.0f, 0, 5.0f);
       activeSlider = SLIDER_RENDER_BIOME_OUTLINE_SIZE;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateBiomeCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.biomeOutlineAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.biomeOutlineAlphaSlider, mx);
       renderSettings.biomeOutlineAlpha01 = t;
       activeSlider = SLIDER_RENDER_BIOME_OUTLINE_ALPHA;
-      markRenderDirty();
       return true;
     }
     if (layout.biomeUnderwaterAlphaSlider != null && layout.biomeUnderwaterAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.biomeUnderwaterAlphaSlider, mx);
       renderSettings.biomeUnderwaterAlpha01 = t;
       activeSlider = SLIDER_RENDER_BIOME_UNDERWATER_ALPHA;
-      markRenderDirty();
       return true;
     }
   }
@@ -1381,35 +1382,38 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = sliderNorm(layout.waterDepthAlphaSlider, mx);
       renderSettings.waterDepthAlpha01 = t;
       activeSlider = SLIDER_RENDER_WATER_DEPTH_ALPHA;
-      markRenderDirty();
       return true;
     }
     if (layout.lightAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.lightAlphaSlider, mx);
       renderSettings.elevationLightAlpha01 = t;
       activeSlider = SLIDER_RENDER_LIGHT_ALPHA;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateLightCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.lightAzimuthSlider.contains(mx, my)) {
       float t = sliderNorm(layout.lightAzimuthSlider, mx);
       renderSettings.elevationLightAzimuthDeg = constrain(t * 360.0f, 0, 360.0f);
       activeSlider = SLIDER_RENDER_LIGHT_AZIMUTH;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateLightCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.lightAltitudeSlider.contains(mx, my)) {
       float t = sliderNorm(layout.lightAltitudeSlider, mx);
       renderSettings.elevationLightAltitudeDeg = constrain(5.0f + t * (80.0f - 5.0f), 5.0f, 80.0f);
       activeSlider = SLIDER_RENDER_LIGHT_ALTITUDE;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateLightCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.lightDitherSlider != null && layout.lightDitherSlider.contains(mx, my)) {
       float t = sliderNorm(layout.lightDitherSlider, mx);
       renderSettings.elevationLightDitherPx = constrain(t * 10.0f, 0, 10.0f);
       activeSlider = SLIDER_RENDER_LIGHT_DITHER;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateLightCache();
+      markRenderVisualChange();
       return true;
     }
   }
@@ -1420,88 +1424,97 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = sliderNorm(layout.waterContourSizeSlider, mx);
       renderSettings.waterContourSizePx = constrain(t * 5.0f, 0, 5.0f);
       activeSlider = SLIDER_RENDER_WATER_CONTOUR_SIZE;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.waterRippleCountSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleCountSlider, mx);
       renderSettings.waterRippleCount = constrain(round(t * 5.0f), 0, 5);
       activeSlider = SLIDER_RENDER_WATER_RIPPLE_COUNT;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.waterRippleDistanceSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleDistanceSlider, mx);
       renderSettings.waterRippleDistancePx = constrain(t * 40.0f, 0.0f, 40.0f);
       activeSlider = SLIDER_RENDER_WATER_RIPPLE_DIST;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
-    if (layout.waterContourHSB[0].contains(mx, my)) { renderSettings.waterContourHue01 = sliderNorm(layout.waterContourHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_H; markRenderDirty(); return true; }
-    if (layout.waterContourHSB[1].contains(mx, my)) { renderSettings.waterContourSat01 = sliderNorm(layout.waterContourHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_S; markRenderDirty(); return true; }
-    if (layout.waterContourHSB[2].contains(mx, my)) { renderSettings.waterContourBri01 = sliderNorm(layout.waterContourHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_B; markRenderDirty(); return true; }
+    if (layout.waterContourHSB[0].contains(mx, my)) { renderSettings.waterContourHue01 = sliderNorm(layout.waterContourHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_H; if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache(); markRenderVisualChange(); return true; }
+    if (layout.waterContourHSB[1].contains(mx, my)) { renderSettings.waterContourSat01 = sliderNorm(layout.waterContourHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_S; if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache(); markRenderVisualChange(); return true; }
+    if (layout.waterContourHSB[2].contains(mx, my)) { renderSettings.waterContourBri01 = sliderNorm(layout.waterContourHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_B; if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache(); markRenderVisualChange(); return true; }
     if (layout.waterContourCoastAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterContourCoastAlphaSlider, mx);
       renderSettings.waterCoastAlpha01 = t;
       renderSettings.waterContourAlpha01 = renderSettings.waterCoastAlpha01; // keep legacy field in sync
       activeSlider = SLIDER_RENDER_WATER_CONTOUR_ALPHA;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.waterHatchAngleSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterHatchAngleSlider, mx);
       renderSettings.waterHatchAngleDeg = constrain(-90.0f + t * 180.0f, -90.0f, 90.0f);
       activeSlider = SLIDER_RENDER_WATER_HATCH_ANGLE;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.waterHatchLengthSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterHatchLengthSlider, mx);
       renderSettings.waterHatchLengthPx = constrain(t * 400.0f, 0, 400);
       activeSlider = SLIDER_RENDER_WATER_HATCH_LENGTH;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.waterHatchSpacingSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterHatchSpacingSlider, mx);
       renderSettings.waterHatchSpacingPx = constrain(t * 120.0f, 0, 120.0f);
       activeSlider = SLIDER_RENDER_WATER_HATCH_SPACING;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.waterHatchAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterHatchAlphaSlider, mx);
       renderSettings.waterHatchAlpha01 = t;
       activeSlider = SLIDER_RENDER_WATER_HATCH_ALPHA;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.waterRippleAlphaStartSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleAlphaStartSlider, mx);
       renderSettings.waterRippleAlphaStart01 = t;
       activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_START;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.waterRippleAlphaEndSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleAlphaEndSlider, mx);
       renderSettings.waterRippleAlphaEnd01 = t;
       activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_END;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.elevationLinesCountSlider.contains(mx, my)) {
       float t = sliderNorm(layout.elevationLinesCountSlider, mx);
       renderSettings.elevationLinesCount = constrain(round(t * 24.0f), 0, 24);
       activeSlider = SLIDER_RENDER_ELEV_LINES_COUNT;
-      markRenderDirty();
+      markRenderVisualChange();
       return true;
     }
     if (layout.elevationLinesAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.elevationLinesAlphaSlider, mx);
       renderSettings.elevationLinesAlpha01 = t;
       activeSlider = SLIDER_RENDER_ELEV_LINES_ALPHA;
-      markRenderDirty();
       return true;
     }
   }
@@ -1534,28 +1547,32 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderSettings.zoneStrokeAlpha01 = t;
       renderShowZoneOutlines = t > 0.001f;
       activeSlider = SLIDER_RENDER_ZONE_ALPHA;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.zoneSizeSlider != null && layout.zoneSizeSlider.contains(mx, my)) {
       float t = sliderNorm(layout.zoneSizeSlider, mx);
       renderSettings.zoneStrokeSizePx = constrain(t * 5.0f, 0, 5.0f);
       activeSlider = SLIDER_RENDER_ZONE_SIZE;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.zoneSatSlider.contains(mx, my)) {
       float t = sliderNorm(layout.zoneSatSlider, mx);
       renderSettings.zoneStrokeSatScale01 = t;
       activeSlider = SLIDER_RENDER_ZONE_SAT;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
+      markRenderVisualChange();
       return true;
     }
     if (layout.zoneBriSlider.contains(mx, my)) {
       float t = sliderNorm(layout.zoneBriSlider, mx);
       renderSettings.zoneStrokeBriScale01 = t;
       activeSlider = SLIDER_RENDER_ZONE_BRI;
-      markRenderDirty();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
+      markRenderVisualChange();
       return true;
     }
   }
@@ -1643,6 +1660,7 @@ boolean handleRenderPanelClick(int mx, int my) {
       int idx = constrain(round(t * n), 0, LABEL_FONT_OPTIONS.length - 1);
       renderSettings.labelFontIndex = idx;
       activeSlider = SLIDER_RENDER_LABEL_FONT;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.fontPrepNeeded = true;
       return true;
     }
   }
@@ -1654,11 +1672,17 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderSettings.exportPaddingPct = constrain(t * 0.10f, 0, 0.10f);
       renderPaddingPct = renderSettings.exportPaddingPct;
       activeSlider = SLIDER_RENDER_PADDING;
-      markRenderDirty();
       return true;
     }
     if (layout.antialiasCheckbox.contains(mx, my)) {
       renderSettings.antialiasing = !renderSettings.antialiasing;
+      if (mapModel != null && mapModel.renderer != null) {
+        mapModel.renderer.invalidateCoastCache();
+        mapModel.renderer.invalidateBiomeCache();
+        mapModel.renderer.invalidateZoneCache();
+        mapModel.renderer.invalidateLightCache();
+      }
+      markRenderDirty();
       return true;
     }
     if (layout.presetSelector.contains(mx, my) && renderPresets != null && renderPresets.length > 0) {
