@@ -161,15 +161,20 @@ boolean renderPrepPrimed = false;
 String lastExportStatus = "";
 boolean renderContoursDirty = true;
 boolean renderForceDirtyAll = false;
+PGraphics exportPreview = null;
+boolean exportPreviewDirty = true;
+float[] exportPreviewRect = new float[4]; // x, y, w, h in world units
 void markRenderDirty() {
   renderContoursDirty = true;
   renderPrepDone = false;
   renderForceDirtyAll = true;
+  exportPreviewDirty = true;
 }
 
 // Trigger a render rebuild without forcing contour/grid recomputation
 void markRenderVisualChange() {
   renderPrepDone = false;
+  exportPreviewDirty = true;
 }
 
 float labelSizeDefault() {
@@ -680,6 +685,7 @@ void requestRenderPrep() {
   renderPrepRunning = false;
   renderPrepDone = true;
   renderPrepPrimed = false;
+  exportPreviewDirty = true;
 }
 
 void triggerRenderPrerequisites() {
@@ -883,7 +889,11 @@ void draw() {
 
   if (renderView && !skipWorld) {
     triggerRenderPrerequisitesIfDirty();
-    drawRenderView(this);
+    if (currentTool == Tool.EDIT_EXPORT) {
+      drawExportPreviewView();
+    } else {
+      drawRenderView(this);
+    }
   } else if (!skipWorld) {
     boolean allowLabels = renderShowLabels;
     switch (currentTool) {
@@ -3091,3 +3101,94 @@ void stepFullGenerateFromCells() {
   }
 }
 
+// Compute inner world rect for export based on padding; returns {x, y, w, h}
+float[] exportInnerRect() {
+  float worldW = mapModel.maxX - mapModel.minX;
+  float worldH = mapModel.maxY - mapModel.minY;
+  float safePad = constrain(renderPaddingPct, 0, 0.49f); // avoid collapsing to zero
+  float padX = max(0, safePad) * worldW;
+  float padY = max(0, safePad) * worldH;
+  float innerWX = mapModel.minX + padX;
+  float innerWY = mapModel.minY + padY;
+  float innerWW = worldW - padX * 2;
+  float innerWH = worldH - padY * 2;
+  return new float[]{ innerWX, innerWY, innerWW, innerWH };
+}
+
+boolean ensureExportPreview() {
+  if (mapModel == null || mapModel.renderer == null) return false;
+  if (!exportPreviewDirty && exportPreview != null) return true;
+  float[] rect = exportInnerRect();
+  float innerWX = rect[0], innerWY = rect[1], innerWW = rect[2], innerWH = rect[3];
+  if (innerWW <= 1e-6f || innerWH <= 1e-6f) return false;
+
+  float innerAspect = innerWW / innerWH;
+  float safeScale = constrain(exportScale, 0.1f, 8.0f);
+  int pxH = max(1, round(max(1, height) * safeScale));
+  int pxW = max(1, round(pxH * innerAspect));
+  if (pxW <= 0 || pxH <= 0) return false;
+
+  PGraphics g = null;
+  try { g = createGraphics(pxW, pxH, JAVA2D); } catch (Exception ignored) {}
+  if (g == null) {
+    try { g = createGraphics(pxW, pxH, P2D); } catch (Exception ignored) {}
+  }
+  if (g == null) return false;
+
+  float prevCenterX = viewport.centerX;
+  float prevCenterY = viewport.centerY;
+  float prevZoom = viewport.zoom;
+
+  float zoomX = g.width / innerWW;
+  float zoomY = g.height / innerWH;
+  float newZoom = max(zoomX, zoomY);
+  viewport.centerX = innerWX + innerWW * 0.5f;
+  viewport.centerY = innerWY + innerWH * 0.5f;
+  viewport.zoom = newZoom;
+
+  triggerRenderPrerequisites();
+
+  g.beginDraw();
+  g.background(245);
+  PGraphics prev = this.g;
+  this.g = g;
+  pushMatrix();
+  viewport.applyTransform(g, g.width, g.height);
+  drawRenderView(this);
+  popMatrix();
+  this.g = prev;
+  g.endDraw();
+
+  viewport.centerX = prevCenterX;
+  viewport.centerY = prevCenterY;
+  viewport.zoom = prevZoom;
+
+  exportPreview = g;
+  exportPreviewRect = rect;
+  exportPreviewDirty = false;
+  return true;
+}
+
+void drawExportPreviewView() {
+  if (!ensureExportPreview()) {
+    drawRenderView(this); // fallback
+    return;
+  }
+  float wx = exportPreviewRect[0];
+  float wy = exportPreviewRect[1];
+  float ww = exportPreviewRect[2];
+  float wh = exportPreviewRect[3];
+  PVector tl = viewport.worldToScreen(wx, wy);
+  PVector br = viewport.worldToScreen(wx + ww, wy + wh);
+  float sx = min(tl.x, br.x);
+  float sy = min(tl.y, br.y);
+  float sw = abs(br.x - tl.x);
+  float sh = abs(br.y - tl.y);
+  pushStyle();
+  pushMatrix();
+  resetMatrix();
+  imageMode(CORNER);
+  image(exportPreview, sx, sy, sw, sh);
+  popMatrix();
+  popStyle();
+}

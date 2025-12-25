@@ -1672,6 +1672,7 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderSettings.exportPaddingPct = constrain(t * 0.10f, 0, 0.10f);
       renderPaddingPct = renderSettings.exportPaddingPct;
       activeSlider = SLIDER_RENDER_PADDING;
+      exportPreviewDirty = true;
       return true;
     }
     if (layout.antialiasCheckbox.contains(mx, my)) {
@@ -1737,6 +1738,7 @@ boolean handleExportPanelClick(int mx, int my) {
     float t = sliderNorm(layout.scaleSlider, mx);
     exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);
     activeSlider = SLIDER_EXPORT_SCALE;
+    exportPreviewDirty = true;
     return true;
   }
   if (queueButtonAction(layout.mapExportBtn, new Runnable() { public void run() {
