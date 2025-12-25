@@ -1299,8 +1299,8 @@ String exportSvg() {
   float[] hsbScratch = new float[3];
 
   RenderSettings s = renderSettings;
-  int landRgb = hsb01ToRGB(s.landHue01, s.landSat01, s.landBri01);
-  int waterRgb = hsb01ToRGB(s.waterHue01, s.waterSat01, s.waterBri01);
+  int landRgb = hsb01ToARGB(s.landHue01, s.landSat01, s.landBri01, 1.0f);
+  int waterRgb = hsb01ToARGB(s.waterHue01, s.waterSat01, s.waterBri01, 1.0f);
   String landHex = toHex.apply(landRgb);
   String waterHex = toHex.apply(waterRgb);
 
@@ -1355,7 +1355,7 @@ String exportSvg() {
       rgbToHSB01(zt.col, hsbScratch);
       hsbScratch[1] = constrain(hsbScratch[1] * s.biomeSatScale01, 0, 1);
       hsbScratch[2] = constrain(hsbScratch[2] * s.biomeBriScale01, 0, 1);
-      int rgb = hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]);
+      int rgb = hsb01ToARGB(hsbScratch[0], hsbScratch[1], hsbScratch[2], 1.0f);
       String fill = toHex.apply(rgb);
       StringBuilder path = new StringBuilder();
       for (int i = 0; i < c.vertices.size(); i++) {
@@ -1387,7 +1387,7 @@ String exportSvg() {
       rgbToHSB01(z.col, hsbScratch);
       hsbScratch[1] = constrain(hsbScratch[1] * s.zoneStrokeSatScale01, 0, 1);
       hsbScratch[2] = constrain(hsbScratch[2] * s.zoneStrokeBriScale01, 0, 1);
-      String stroke = toHex.apply(hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]));
+      String stroke = toHex.apply(hsb01ToARGB(hsbScratch[0], hsbScratch[1], hsbScratch[2], 1.0f));
       for (int ci : z.cells) {
         if (ci < 0 || ci >= mapModel.cells.size()) continue;
         Cell c = mapModel.cells.get(ci);
@@ -2746,7 +2746,7 @@ ArrayList<MapModel.MapZone> deserializeZones(JSONArray arr) {
     z.hue01 = o.getFloat("hue01", z.hue01);
     z.sat01 = o.getFloat("sat01", z.sat01);
     z.bri01 = o.getFloat("bri01", z.bri01);
-    z.col = hsb01ToRGB(z.hue01, z.sat01, z.bri01);
+    z.col = hsb01ToARGB(z.hue01, z.sat01, z.bri01, 1.0f);
     z.cells.clear();
     JSONArray cellsArr = o.getJSONArray("cells");
     if (cellsArr != null) {

@@ -102,11 +102,11 @@ class MapModel {
       hue01 = hsb[0];
       sat01 = sb[0];
       bri01 = sb[1];
-      this.col = hsb01ToRGB(hue01, sat01, bri01);
+      this.col = hsb01ToARGB(hue01, sat01, bri01, 1.0f);
     }
 
     void updateColorFromHSB() {
-      col = hsb01ToRGB(hue01, ZONE_BASE_SAT, ZONE_BASE_BRI);
+      col = hsb01ToARGB(hue01, ZONE_BASE_SAT, ZONE_BASE_BRI, 1.0f);
       sat01 = ZONE_BASE_SAT;
       bri01 = ZONE_BASE_BRI;
   }
@@ -220,7 +220,7 @@ class MapModel {
 
   int zoneColorForHue(float hue) {
     float[] sb = zoneBaseSatBri();
-    return hsb01ToRGB(hue, sb[0], sb[1]);
+    return hsb01ToARGB(hue, sb[0], sb[1], 1.0f);
   }
 
   float hueDistance01(float a, float b) {
@@ -1669,7 +1669,7 @@ class MapModel {
       hsbScratch[1] = constrain(hsbScratch[1] * satScale, 0, 1);
       float briScale = constrain(s.pathBriScale01, 0, 1);
       hsbScratch[2] = constrain(hsbScratch[2] * briScale, 0, 1);
-      int rgb = hsb01ToRGB(hsbScratch[0], hsbScratch[1], hsbScratch[2]);
+      int rgb = hsb01ToARGB(hsbScratch[0], hsbScratch[1], hsbScratch[2], 1.0f);
       int baseA = (baseCol >> 24) & 0xFF;
       if (baseA == 0) baseA = 255;
       int col = app.color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, baseA);
@@ -4722,7 +4722,7 @@ boolean structuresOverlap(ArrayList<Structure> list, float x, float y, float siz
       }
       int newIndex = n;
       String name = "Type " + newIndex;
-      int col = hsb01ToRGB(baseHue, baseSat, baseBri);
+      int col = hsb01ToARGB(baseHue, baseSat, baseBri, 1.0f);
       ZoneType z = new ZoneType(name, col);
       z.patternIndex = defaultPatternIndexForBiome(biomeTypes.size());
       biomeTypes.add(z);

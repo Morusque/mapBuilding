@@ -23,7 +23,7 @@ class ZoneType {
   }
 
   void updateColorFromHSB() {
-    col = hsb01ToRGB(hue01, sat01, bri01);
+    col = hsb01ToARGB(hue01, sat01, bri01, 1.0f);
   }
 }
 
@@ -96,7 +96,7 @@ class PathType {
   }
 
   void updateColorFromHSB() {
-    col = hsb01ToRGB(hue01, sat01, bri01);
+    col = hsb01ToARGB(hue01, sat01, bri01, 1.0f);
   }
 }
 
@@ -168,10 +168,11 @@ void rgbToHSB01(int c, float[] outHSB) {
   outHSB[2] = constrain(v, 0, 1);
 }
 
-int hsb01ToRGB(float h, float s, float b) {
+int hsb01ToARGB(float h, float s, float b, float a) {
   h = constrain(h, 0, 1);
   s = constrain(s, 0, 1);
   b = constrain(b, 0, 1);
+  a = constrain(a, 0, 1);
 
   float hh = (h * 6.0f) % 6.0f;
   int sector = floor(hh);
@@ -192,8 +193,13 @@ int hsb01ToRGB(float h, float s, float b) {
   int ri = constrain(round(rf * 255.0f), 0, 255);
   int gi = constrain(round(gf * 255.0f), 0, 255);
   int bi = constrain(round(bf * 255.0f), 0, 255);
-  return 0xFF000000 | (ri << 16) | (gi << 8) | bi;
+  int ai = constrain(round(a * 255.0f), 0, 255);
+  return (ai << 24) | (ri << 16) | (gi << 8) | bi;
+}
 
+// Backward compatibility for callers still using RGB helper
+int hsb01ToRGB(float h, float s, float b) {
+  return hsb01ToARGB(h, s, b, 1.0f);
 }
 
 // ---------- Structures ----------
@@ -322,11 +328,8 @@ class Structure {
   }
 
   void updateFillColor() {
-    int rgb = hsb01ToRGB(hue01, sat01, bri01);
-    int r = (rgb >> 16) & 0xFF;
-    int g = (rgb >> 8) & 0xFF;
-    int b = rgb & 0xFF;
-    fillCol = color(r, g, b, alpha01 * 255.0f);
+    int argb = hsb01ToARGB(hue01, sat01, bri01, alpha01);
+    fillCol = argb;
   }
 
   void draw(PApplet app) {

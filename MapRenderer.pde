@@ -146,7 +146,7 @@ class MapRenderer {
       }
       float sat = constrain(hsb[1] * 0.82f, 0, 1);
       float bri = constrain(hsb[2] * 1.05f, 0, 1);
-      col = hsb01ToRGB(hsb[0], sat, bri);
+      col = hsb01ToARGB(hsb[0], sat, bri, 1.0f);
       }
 
       app.fill(col, 255 * biomeAlphaScale);
@@ -228,7 +228,7 @@ class MapRenderer {
       if (baseAlpha <= 1e-4f) continue;
       rgbToHSB01(st.fillCol, hsbScratch);
       float sat = constrain(hsbScratch[1] * s.structureSatScale01, 0, 1);
-      int col = hsb01ToRGB(hsbScratch[0], sat, hsbScratch[2]);
+      int col = hsb01ToARGB(hsbScratch[0], sat, hsbScratch[2], 1.0f);
 
       float shadowAlpha = baseAlpha * s.structureShadowAlpha01;
       float shadowLen = st.size * shadowLenFactor;
@@ -1034,9 +1034,7 @@ class MapRenderer {
   }
 
   private int hsbColor(float h, float s, float b, float a) {
-    int rgb = hsb01ToRGB(constrain(h, 0, 1), constrain(s, 0, 1), constrain(b, 0, 1));
-    int ai = constrain(round(constrain(a, 0, 1) * 255.0f), 0, 255);
-    return (ai << 24) | (rgb & 0x00FFFFFF);
+    return hsb01ToARGB(h, s, b, a);
   }
 
   private void drawPatternPoly(PApplet app, ArrayList<PVector> verts, PImage pattern, int tintCol, float alpha01) {
@@ -2328,7 +2326,7 @@ class MapRenderer {
       rgbToHSB01(zt.col, hsbScratch);
       float sat = constrain(hsbScratch[1] * satScale, 0, 1);
       float bri = constrain(hsbScratch[2] * briScale, 0, 1);
-      cachedBiomeScaledColors[i] = hsb01ToRGB(hsbScratch[0], sat, bri);
+      cachedBiomeScaledColors[i] = hsb01ToARGB(hsbScratch[0], sat, bri, 1.0f);
     }
     return cachedBiomeScaledColors;
   }
@@ -2366,7 +2364,7 @@ class MapRenderer {
       rgbToHSB01(z.col, hsbScratch);
       float sat = constrain(hsbScratch[1] * satScale, 0, 1);
       float bri = constrain(hsbScratch[2] * briScale, 0, 1);
-      cachedZoneStrokeColors[i] = hsb01ToRGB(hsbScratch[0], sat, bri);
+      cachedZoneStrokeColors[i] = hsb01ToARGB(hsbScratch[0], sat, bri, 1.0f);
     }
     return cachedZoneStrokeColors;
   }
