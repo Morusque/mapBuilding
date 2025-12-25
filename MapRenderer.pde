@@ -55,8 +55,6 @@ class MapRenderer {
   private PImage noiseTex;
   private final int NOISE_TEX_SIZE = 1024;
   // Render prep staging (to spread heavy layer builds across frames)
-  private int renderPrepStage = 0;
-  private final int RENDER_PREP_STAGES = 5;
   private final float[] hsbScratch = new float[3];
   // Layer dirty flags
   boolean coastDirty = true;
@@ -1975,7 +1973,7 @@ class MapRenderer {
       biomeWaterLayer.pushStyle();
       viewport.applyTransform(biomeWaterLayer, biomeWaterLayer.width, biomeWaterLayer.height);
 
-      drawBiomeLayer(biomeLandLayer, biomeWaterLayer, s, biomeScaledCols);
+      drawBiomeLayer(biomeLandLayer, biomeWaterLayer, biomeScaledCols);
 
       biomeLandLayer.popStyle();
       biomeLandLayer.popMatrix();
@@ -1999,7 +1997,7 @@ class MapRenderer {
     biomeDirty = false;
   }
 
-  private void drawBiomeLayer(PGraphics landG, PGraphics waterG, RenderSettings s, int[] biomeScaledCols) {
+  private void drawBiomeLayer(PGraphics landG, PGraphics waterG, int[] biomeScaledCols) {
     if (model.cells == null || model.cells.isEmpty()) return;
     model.ensureCellNeighborsComputed();
     int n = model.cells.size();

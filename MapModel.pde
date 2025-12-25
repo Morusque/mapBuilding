@@ -1940,17 +1940,29 @@ class MapModel {
       interest = new ArrayList<PVector>(interest.subList(0, 20));
     }
 
-    // Connect five closest pairs with roads (debug)
+    // Connect a bounded set of closest pairs with roads
     ArrayList<ArrayList<PVector>> roadCandidates = new ArrayList<ArrayList<PVector>>();
     ArrayList<Float> roadCandidateDistSq = new ArrayList<Float>();
     boolean usePathfindingForRoads = true; // set false to skip pathfinding for debugging
+    int maxRoadCandidates = 40;
+    float maxRoadLenSq = sq(min(worldW, worldH) * 0.7f);
+    int pathfindBudget = 50; // cap expensive pathfind calls
     for (int i = 0; i < interest.size(); i++) {
+      if (roadCandidates.size() >= maxRoadCandidates) break;
       for (int j = i + 1; j < interest.size(); j++) {
+        if (roadCandidates.size() >= maxRoadCandidates) break;
+        if (usePathfindingForRoads && pathfindBudget <= 0) break;
         PVector pa = interest.get(i);
         PVector pb = interest.get(j);
+        float dx = pa.x - pb.x;
+        float dy = pa.y - pb.y;
+        float lenSq = dx * dx + dy * dy;
+        if (lenSq > maxRoadLenSq) continue;
         ArrayList<PVector> pathPts;
         if (usePathfindingForRoads) {
+          if (pathfindBudget <= 0) break;
           pathPts = findSnapPath(pa, pb);
+          pathfindBudget--;
         } else {
           pathPts = new ArrayList<PVector>();
           pathPts.add(pa);
@@ -1963,11 +1975,8 @@ class MapModel {
           if (sampleElevationAt(p.x, p.y, seaLevel) < seaLevel) { overWater = true; break; }
         }
         if (overWater) continue;
-        float dx = pa.x - pb.x;
-        float dy = pa.y - pb.y;
-        float len = dx * dx + dy * dy; // compare by squared distance for speed
         roadCandidates.add(pathPts);
-        roadCandidateDistSq.add(len);
+        roadCandidateDistSq.add(lenSq);
       }
     }
     ArrayList<Integer> roadOrder = new ArrayList<Integer>();

@@ -154,6 +154,7 @@ boolean fullGenRunning = false;
 int fullGenStep = 0;
 boolean fullGenPrimed = false;
 Tool prevTool = Tool.EDIT_SITES;
+// Render prep staging is currently disabled; flags kept for compatibility.
 boolean renderPrepRunning = false;
 boolean renderPrepDone = false;
 boolean renderPrepPrimed = false;
@@ -164,18 +165,11 @@ void markRenderDirty() {
   renderContoursDirty = true;
   renderPrepDone = false;
   renderForceDirtyAll = true;
-  // If already in render-heavy modes, kick prep immediately.
-  if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS) {
-    requestRenderPrep();
-  }
 }
 
 // Trigger a render rebuild without forcing contour/grid recomputation
 void markRenderVisualChange() {
   renderPrepDone = false;
-  if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS) {
-    requestRenderPrep();
-  }
 }
 
 float labelSizeDefault() {
@@ -681,13 +675,11 @@ void resetAllMapData() {
 // Request staged render prep (used when entering heavy modes or after invalidation)
 void requestRenderPrep() {
   if (mapModel == null || mapModel.renderer == null) return;
-  // For now, avoid staged prep; rebuild happens on demand during draw.
   mapModel.renderer.resetRenderPrep(renderForceDirtyAll);
   renderForceDirtyAll = false;
   renderPrepRunning = false;
   renderPrepDone = true;
   renderPrepPrimed = false;
-  stopLoading();
 }
 
 void triggerRenderPrerequisites() {
@@ -854,14 +846,6 @@ void draw() {
   background(245);
   loadingDetail = "";
 
-  // Track tool changes to prepare loading for heavy modes
-  if (currentTool != prevTool) {
-    if (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS) {
-      requestRenderPrep();
-    }
-    prevTool = currentTool;
-  }
-
   // Drive incremental Voronoi rebuilds; loading state follows the job
   if (fullGenRunning) {
     if (!isLoading) startLoading();
@@ -880,40 +864,8 @@ void draw() {
       if (!isLoading) startLoading();
       loadingPct = combinedPct;
     } else {
-      if (renderPrepRunning) {
-        boolean prepComplete = renderPrepDone;
-        if (!prepComplete) {
-          int stageBefore = (mapModel.renderer != null) ? mapModel.renderer.getRenderPrepStage() : 0;
-          // Prime label one frame before doing work on a stage
-          if (!renderPrepPrimed && mapModel.renderer != null) {
-            int total = max(1, mapModel.renderer.getRenderPrepStageCount());
-            String label = mapModel.renderer.getRenderPrepStageLabel();
-            loadingDetail = "Render prep " + (stageBefore + 1) + "/" + total + (label.length() > 0 ? (" - " + label) : "");
-            renderPrepPrimed = true;
-          } else {
-            prepComplete = mapModel.renderer.stepRenderPrep(this, renderSettings, seaLevel);
-            float prepPct = (mapModel.renderer != null) ? mapModel.renderer.renderPrepProgress() : 0.0f;
-            loadingPct = min(1.0f, 0.05f + prepPct * 0.9f);
-            if (mapModel.renderer != null) {
-              int st = mapModel.renderer.getRenderPrepStage();
-              int total = max(1, mapModel.renderer.getRenderPrepStageCount());
-              String label = mapModel.renderer.getRenderPrepStageLabel();
-              loadingDetail = "Render prep " + (st + 1) + "/" + total + (label.length() > 0 ? (" - " + label) : "");
-              // If we advanced a stage, re-prime for next frame
-              if (st != stageBefore) renderPrepPrimed = false;
-            }
-          }
-        }
-        if (prepComplete) {
-          renderPrepRunning = false;
-          renderPrepDone = true;
-          renderPrepPrimed = false;
-          stopLoading();
-        }
-      } else {
-        if (isLoading) stopLoading();
-        loadingPct = 1.0f;
-      }
+      if (isLoading) stopLoading();
+      loadingPct = 1.0f;
     }
   }
 
