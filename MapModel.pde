@@ -1895,79 +1895,81 @@ class MapModel {
     }
     if (bestP != null) interest.add(snapToNearestSnapNode(bestP));
 
-    // Dedup interest
-    ArrayList<PVector> interestUnique = new ArrayList<PVector>();
-    HashSet<String> seen = new HashSet<String>();
-    for (PVector p : interest) {
-      if (p == null) continue;
-      String k = keyFor(p.x, p.y);
-      if (seen.contains(k)) continue;
-      seen.add(k);
-      interestUnique.add(p);
-    }
-    interest = interestUnique;
-
-    // Dedup very close interest points, keep closer to center
+    // Build a tiny set of road seeds
+    ArrayList<PVector> roadSeeds = new ArrayList<PVector>();
+    HashSet<String> seedSeen = new HashSet<String>();
     PVector center = new PVector((minX + maxX) * 0.5f, (minY + maxY) * 0.5f);
-    float dedupThresh = min(worldW, worldH) * 0.2f;
-    ArrayList<PVector> dedup = new ArrayList<PVector>();
-    for (PVector p : interest) {
-      if (p == null) continue;
-      boolean replaced = false;
-      for (int i = 0; i < dedup.size(); i++) {
-        PVector q = dedup.get(i);
-        if (dist2D(p, q) < dedupThresh) {
-          float dp = dist2D(p, center);
-          float dq = dist2D(q, center);
-          if (dp < dq) dedup.set(i, p);
-          replaced = true;
-          break;
-        }
+    float seedMargin = min(worldW, worldH) * 0.05f;
+    ensureSnapGraph();
+
+    // Helper to add snapped seed if valid and unique
+    java.util.function.Consumer<PVector> addSeed = (p) -> {
+      if (p == null) return;
+      PVector snapped = snapToNearestSnapNode(p);
+      if (snapped == null) return;
+      String k = keyFor(snapped.x, snapped.y);
+      if (seedSeen.contains(k)) return;
+      seedSeen.add(k);
+      roadSeeds.add(snapped);
+    };
+
+    // Border point
+    for (Cell c : cells) {
+      if (c == null || c.vertices == null || c.vertices.isEmpty()) continue;
+      if (c.elevation <= seaLevel) continue;
+      PVector cen = cellCentroid(c);
+      if (cen == null) continue;
+      if (abs(cen.x - minX) < seedMargin || abs(cen.x - maxX) < seedMargin || abs(cen.y - minY) < seedMargin || abs(cen.y - maxY) < seedMargin) {
+        addSeed.accept(cen);
+        break;
       }
-      if (!replaced) dedup.add(p);
-    }
-    interest = dedup;
-
-    // Limit interest points to keep road pairing work bounded
-    if (interest.size() > 20) {
-      Collections.sort(interest, new Comparator<PVector>() {
-        public int compare(PVector a, PVector b) {
-          float da = dist2D(a, center);
-          float db = dist2D(b, center);
-          return Float.compare(da, db);
-        }
-      });
-      interest = new ArrayList<PVector>(interest.subList(0, 20));
     }
 
-    // Connect a bounded set of closest pairs with roads
-    ArrayList<ArrayList<PVector>> roadCandidates = new ArrayList<ArrayList<PVector>>();
-    ArrayList<Float> roadCandidateDistSq = new ArrayList<Float>();
-    boolean usePathfindingForRoads = true; // set false to skip pathfinding for debugging
-    int maxRoadCandidates = 40;
-    float maxRoadLenSq = sq(min(worldW, worldH) * 0.7f);
-    int pathfindBudget = 50; // cap expensive pathfind calls
-    for (int i = 0; i < interest.size(); i++) {
-      if (roadCandidates.size() >= maxRoadCandidates) break;
-      for (int j = i + 1; j < interest.size(); j++) {
-        if (roadCandidates.size() >= maxRoadCandidates) break;
-        if (usePathfindingForRoads && pathfindBudget <= 0) break;
-        PVector pa = interest.get(i);
-        PVector pb = interest.get(j);
-        float dx = pa.x - pb.x;
-        float dy = pa.y - pb.y;
-        float lenSq = dx * dx + dy * dy;
-        if (lenSq > maxRoadLenSq) continue;
-        ArrayList<PVector> pathPts;
-        if (usePathfindingForRoads) {
-          if (pathfindBudget <= 0) break;
-          pathPts = findSnapPath(pa, pb);
-          pathfindBudget--;
-        } else {
-          pathPts = new ArrayList<PVector>();
-          pathPts.add(pa);
-          pathPts.add(pb);
-        }
+    // Zone center
+    for (MapZone z : zones) {
+      if (z == null || z.cells == null || z.cells.isEmpty()) continue;
+      float sx = 0, sy = 0; int cnt = 0;
+      for (int ci : z.cells) {
+        if (ci < 0 || ci >= cells.size()) continue;
+        Cell c = cells.get(ci);
+        if (c == null || c.vertices == null || c.vertices.isEmpty()) continue;
+        if (c.elevation <= seaLevel) continue;
+        PVector cen = cellCentroid(c);
+        if (cen == null) continue;
+        sx += cen.x; sy += cen.y; cnt++;
+      }
+      if (cnt > 0) { addSeed.accept(new PVector(sx / cnt, sy / cnt)); break; }
+    }
+
+    // Biggest structure
+    if (structures != null && !structures.isEmpty()) {
+      Structure biggest = null;
+      for (Structure s : structures) {
+        if (s == null) continue;
+        if (biggest == null || s.size > biggest.size) biggest = s;
+      }
+      if (biggest != null) addSeed.accept(new PVector(biggest.x, biggest.y));
+    }
+
+    // Fill up to at least 3 seeds with random emerged cells
+    int safety = 0;
+    while (roadSeeds.size() < 3 && safety++ < 30) {
+      int idx = (int)random(cells.size());
+      Cell c = cells.get(idx);
+      if (c == null || c.vertices == null || c.vertices.isEmpty()) continue;
+      if (c.elevation <= seaLevel) continue;
+      PVector cen = cellCentroid(c);
+      addSeed.accept(cen);
+    }
+
+    // Connect seeds pairwise (small set) with road paths
+    int maxRoadLinks = 5;
+    int roadLinks = 0;
+    for (int i = 0; i < roadSeeds.size() && roadLinks < maxRoadLinks; i++) {
+      for (int j = i + 1; j < roadSeeds.size() && roadLinks < maxRoadLinks; j++) {
+        PVector pa = roadSeeds.get(i);
+        PVector pb = roadSeeds.get(j);
+        ArrayList<PVector> pathPts = findSnapPathFlattest(pa, pb);
         if (pathPts == null || pathPts.size() < 2) continue;
         boolean overWater = false;
         for (PVector p : pathPts) {
@@ -1975,29 +1977,14 @@ class MapModel {
           if (sampleElevationAt(p.x, p.y, seaLevel) < seaLevel) { overWater = true; break; }
         }
         if (overWater) continue;
-        roadCandidates.add(pathPts);
-        roadCandidateDistSq.add(lenSq);
+        pathPts = truncateRouteAtFirstIntersection(pathPts, existingRoadSegs);
+        if (pathPts == null || pathPts.size() < 2) continue;
+        addPathFromPoints(roadType, useDefaultPathNames ? "Road " + (paths.size() + 1) : "", pathPts);
+        existingRoadSegs.addAll(segmentsFromPoints(pathPts));
+        roadLinks++;
       }
     }
-    ArrayList<Integer> roadOrder = new ArrayList<Integer>();
-    for (int i = 0; i < roadCandidates.size(); i++) roadOrder.add(i);
-    final ArrayList<Float> roadLenRef = roadCandidateDistSq;
-    Collections.sort(roadOrder, new Comparator<Integer>() {
-      public int compare(Integer a, Integer b) {
-        return Float.compare(roadLenRef.get(a), roadLenRef.get(b));
-      }
-    });
-    int roadLinks = 0;
-    for (int idx : roadOrder) {
-      if (roadLinks >= 5) break;
-      ArrayList<PVector> pathPts = roadCandidates.get(idx);
-      pathPts = truncateRouteAtFirstIntersection(pathPts, existingRoadSegs);
-      if (pathPts == null || pathPts.size() < 2) continue;
-      addPathFromPoints(roadType, useDefaultPathNames ? "Road " + (paths.size() + 1) : "", pathPts);
-      // update existing road segments so later roads can fork off earlier ones
-      existingRoadSegs.addAll(segmentsFromPoints(pathPts));
-      roadLinks++;
-    }
+
     // Bridges: try three times
     // Bridge generation: coastline cells with >=3 consecutive water edges
     ArrayList<Integer> coastCells = new ArrayList<Integer>();
