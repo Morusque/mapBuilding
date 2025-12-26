@@ -1527,6 +1527,15 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderShowPaths = renderSettings.showPaths;
       return true;
     }
+    if (layout.pathsScaleWithZoomCheckbox != null && layout.pathsScaleWithZoomCheckbox.contains(mx, my)) {
+      renderSettings.pathScaleWithZoom = !renderSettings.pathScaleWithZoom;
+      if (renderSettings.pathScaleWithZoom) {
+        renderSettings.pathScaleRefZoom = DEFAULT_VIEW_ZOOM;
+      }
+      markRenderVisualChange();
+      markExportPreviewDirty();
+      return true;
+    }
     if (layout.pathSatSlider.contains(mx, my)) {
       float t = sliderNorm(layout.pathSatSlider, mx);
       renderSettings.pathSatScale01 = t;

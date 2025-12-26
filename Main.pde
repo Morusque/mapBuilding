@@ -2236,6 +2236,8 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   paths.setFloat("pathSatScale01", s.pathSatScale01);
   paths.setFloat("pathBriScale01", s.pathBriScale01);
   paths.setBoolean("showPaths", s.showPaths);
+  paths.setBoolean("pathScaleWithZoom", s.pathScaleWithZoom);
+  paths.setFloat("pathScaleRefZoom", s.pathScaleRefZoom);
   r.setJSONObject("paths", paths);
 
   JSONObject zones = new JSONObject();
@@ -2339,6 +2341,8 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.pathSatScale01 = b.getFloat("pathSatScale01", target.pathSatScale01);
     target.pathBriScale01 = b.getFloat("pathBriScale01", target.pathBriScale01);
     target.showPaths = b.getBoolean("showPaths", target.showPaths);
+    target.pathScaleWithZoom = b.getBoolean("pathScaleWithZoom", target.pathScaleWithZoom);
+    target.pathScaleRefZoom = b.getFloat("pathScaleRefZoom", target.pathScaleRefZoom);
   }
 
   if (r.hasKey("zones")) {

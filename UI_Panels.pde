@@ -1973,6 +1973,7 @@ class RenderLayout {
   IntRect elevationLinesAlphaSlider;
 
   IntRect pathsShowCheckbox;
+  IntRect pathsScaleWithZoomCheckbox;
   IntRect pathSatSlider;
   IntRect pathBriSlider;
 
@@ -2142,6 +2143,8 @@ RenderLayout buildRenderLayout() {
   curY += PANEL_TITLE_H + PANEL_ROW_GAP;
   if (renderSectionPathsOpen) {
     l.pathsShowCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.pathsScaleWithZoomCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
     l.pathSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
@@ -2335,6 +2338,7 @@ void drawRenderPanel() {
   if (renderSectionPathsOpen) {
     drawCheckbox(layout.pathsShowCheckbox.x, layout.pathsShowCheckbox.y, layout.pathsShowCheckbox.w, renderSettings.showPaths, "Show paths");
     registerUiTooltip(layout.pathsShowCheckbox, tooltipFor("render_paths_show"));
+    drawCheckbox(layout.pathsScaleWithZoomCheckbox.x, layout.pathsScaleWithZoomCheckbox.y, layout.pathsScaleWithZoomCheckbox.w, renderSettings.pathScaleWithZoom, "Scale stroke with zoom");
     drawSlider(layout.pathSatSlider, renderSettings.pathSatScale01, "Paths saturation (" + nf(renderSettings.pathSatScale01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.pathSatSlider, tooltipFor("render_paths_sat"));
     drawSlider(layout.pathBriSlider, renderSettings.pathBriScale01, "Paths brightness (" + nf(renderSettings.pathBriScale01 * 100, 1, 0) + "%)");

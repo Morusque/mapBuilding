@@ -1674,6 +1674,11 @@ class MapModel {
       if (baseA == 0) baseA = 255;
       int col = app.color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, baseA);
       float w = (pt != null) ? pt.weightPx : 2.0f;
+      if (s.pathScaleWithZoom) {
+        float ref = (s.pathScaleRefZoom > 1e-6f) ? s.pathScaleRefZoom : DEFAULT_VIEW_ZOOM;
+        w *= max(1e-6f, viewport.zoom) / ref;
+      }
+      w = constrain(w, 0.1f, 256.0f);
       if (w <= 0.01f) continue;
       app.stroke(col);
       boolean taperOn = (pt != null && pt.taperOn);

@@ -71,6 +71,8 @@ class RenderSettings {
   float pathSatScale01 = 1.0f;
   float pathBriScale01 = 1.0f;
   boolean showPaths = true;
+  boolean pathScaleWithZoom = false;
+  float pathScaleRefZoom = DEFAULT_VIEW_ZOOM;
 
   // Zones (strokes only)
   float zoneStrokeAlpha01 = 0.5f;
@@ -153,6 +155,8 @@ class RenderSettings {
     c.pathSatScale01 = pathSatScale01;
     c.pathBriScale01 = pathBriScale01;
     c.showPaths = showPaths;
+    c.pathScaleWithZoom = pathScaleWithZoom;
+    c.pathScaleRefZoom = pathScaleRefZoom;
     // Zones
     c.zoneStrokeAlpha01 = zoneStrokeAlpha01;
     c.zoneStrokeSizePx = zoneStrokeSizePx;
@@ -234,6 +238,8 @@ class RenderSettings {
     pathSatScale01 = o.pathSatScale01;
     pathBriScale01 = o.pathBriScale01;
     showPaths = o.showPaths;
+    pathScaleWithZoom = o.pathScaleWithZoom;
+    pathScaleRefZoom = o.pathScaleRefZoom;
     // Zones
     zoneStrokeAlpha01 = o.zoneStrokeAlpha01;
     zoneStrokeSizePx = o.zoneStrokeSizePx;
@@ -312,6 +318,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLinesCount = 0;
     s.elevationLinesAlpha01 = 0.3f;
     s.pathSatScale01 = 1.0f;
+    s.pathScaleWithZoom = false;
     s.showPaths = true;
     s.zoneStrokeAlpha01 = 0.5f;
     s.zoneStrokeSizePx = 2.0f;
