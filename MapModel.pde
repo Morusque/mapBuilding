@@ -1898,7 +1898,6 @@ class MapModel {
     // Build a tiny set of road seeds
     ArrayList<PVector> roadSeeds = new ArrayList<PVector>();
     HashSet<String> seedSeen = new HashSet<String>();
-    PVector center = new PVector((minX + maxX) * 0.5f, (minY + maxY) * 0.5f);
     float seedMargin = min(worldW, worldH) * 0.05f;
     ensureSnapGraph();
 

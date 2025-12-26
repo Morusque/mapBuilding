@@ -1637,6 +1637,25 @@ boolean handleRenderPanelClick(int mx, int my) {
       renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
+    if (layout.labelsScaleWithZoomCheckbox != null && layout.labelsScaleWithZoomCheckbox.contains(mx, my)) {
+      renderSettings.labelScaleWithZoom = !renderSettings.labelScaleWithZoom;
+      if (renderSettings.labelScaleWithZoom) {
+        renderSettings.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
+      }
+      markExportPreviewDirty();
+      return true;
+    }
+    if (layout.labelsScaleWithZoomCheckbox != null &&
+        mx >= layout.labelsScaleWithZoomCheckbox.x + layout.labelsScaleWithZoomCheckbox.w + PANEL_ROW_GAP &&
+        mx <= layout.labelsScaleWithZoomCheckbox.x + layout.labelsScaleWithZoomCheckbox.w + PANEL_ROW_GAP + 80 &&
+        my >= layout.labelsScaleWithZoomCheckbox.y &&
+        my <= layout.labelsScaleWithZoomCheckbox.y + PANEL_LABEL_H) {
+      // Quick toggle for ref zoom: click label to set to current zoom, click again to reset.
+      if (renderSettings.labelScaleRefZoom != 1.0f) renderSettings.labelScaleRefZoom = 1.0f;
+      else renderSettings.labelScaleRefZoom = max(0.1f, viewport.zoom);
+      markExportPreviewDirty();
+      return true;
+    }
     if (layout.labelsStructSizeSlider.contains(mx, my)) {
       float t = sliderNorm(layout.labelsStructSizeSlider, mx);
       renderSettings.labelSizeStructPx = round(constrain(8 + t * (40 - 8), 4, 80));

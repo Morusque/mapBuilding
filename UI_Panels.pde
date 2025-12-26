@@ -1996,6 +1996,7 @@ class RenderLayout {
   IntRect labelsPathSizeSlider;
   IntRect labelsStructSizeSlider;
   IntRect labelsFontSelector;
+  IntRect labelsScaleWithZoomCheckbox;
 
   IntRect exportPaddingSlider;
   IntRect antialiasCheckbox;
@@ -2198,6 +2199,8 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.labelsOutlineSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.labelsScaleWithZoomCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
     l.labelsFontSelector = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
@@ -2375,6 +2378,12 @@ void drawRenderPanel() {
     drawSlider(layout.labelsStructSizeSlider, structSizeNorm, "Structures size (" + nf(renderSettings.labelSizeStructPx, 1, 0) + " px)");
     drawSlider(layout.labelsOutlineAlphaSlider, renderSettings.labelOutlineAlpha01, "Label outline alpha (" + nf(renderSettings.labelOutlineAlpha01 * 100, 1, 0) + "%)");
     drawSlider(layout.labelsOutlineSizeSlider, constrain(renderSettings.labelOutlineSizePx / 16.0f, 0, 1), "Label outline size (" + nf(renderSettings.labelOutlineSizePx, 1, 0) + " px)");
+    drawCheckbox(layout.labelsScaleWithZoomCheckbox.x, layout.labelsScaleWithZoomCheckbox.y, layout.labelsScaleWithZoomCheckbox.w, renderSettings.labelScaleWithZoom, "Scale with zoom");
+    fill(60);
+    textAlign(LEFT, CENTER);
+    text("Ref zoom: " + nf(renderSettings.labelScaleRefZoom, 1, 2),
+         layout.labelsScaleWithZoomCheckbox.x,
+         layout.labelsScaleWithZoomCheckbox.y + PANEL_CHECK_SIZE + PANEL_ROW_GAP);
     if (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0 && layout.labelsFontSelector != null) {
       int idx = constrain(renderSettings.labelFontIndex, 0, LABEL_FONT_OPTIONS.length - 1);
       float tFont = (LABEL_FONT_OPTIONS.length > 1) ? constrain(idx / (float)(LABEL_FONT_OPTIONS.length - 1), 0, 1) : 0;

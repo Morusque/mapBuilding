@@ -488,6 +488,13 @@ class MapRenderer {
   void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad, boolean snapToPixel, String fontName) {
     if (app == null || txt == null) return;
     try {
+      float finalSize = ts;
+      if (renderSettings != null && renderSettings.labelScaleWithZoom) {
+        float ref = (renderSettings.labelScaleRefZoom > 1e-6f) ? renderSettings.labelScaleRefZoom : DEFAULT_VIEW_ZOOM;
+        finalSize = ts * (max(1e-6f, viewport.zoom) / ref);
+      }
+      // Prevent runaway font allocations for huge zoom/export scales.
+      finalSize = constrain(finalSize, 4.0f, 128.0f);
       PVector screen = viewport.worldToScreen(x, y);
       if (snapToPixel && !renderingForExport) {
         screen.x = round(screen.x);
@@ -497,7 +504,7 @@ class MapRenderer {
       app.resetMatrix();
       app.translate(screen.x, screen.y);
       app.rotate(angleRad);
-      int fontSize = max(1, round(ts));
+      int fontSize = max(1, round(finalSize));
       PFont font = labelFont(app, fontSize, fontName);
       if (font != null) {
         app.textFont(font);

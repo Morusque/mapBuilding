@@ -150,6 +150,8 @@ int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
 float renderPaddingPct = 0.01f; // fraction of min(screenW, screenH) cropped from all sides
 float exportScale = 2.0f; // multiplier for PNG export resolution
+// Nominal initial viewport zoom (matches Viewport constructor); used as label scale reference.
+final float DEFAULT_VIEW_ZOOM = 600.0f;
 boolean fullGenRunning = false;
 int fullGenStep = 0;
 boolean fullGenPrimed = false;

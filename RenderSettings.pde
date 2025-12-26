@@ -96,6 +96,8 @@ class RenderSettings {
   float labelSizeZonePx = 14.0f;
   float labelSizePathPx = 12.0f;
   float labelSizeStructPx = 12.0f;
+  boolean labelScaleWithZoom = false;
+  float labelScaleRefZoom = 1.0f;
   int labelFontIndex = 0;
 
   // General
@@ -173,6 +175,8 @@ class RenderSettings {
     c.labelSizeZonePx = labelSizeZonePx;
     c.labelSizePathPx = labelSizePathPx;
     c.labelSizeStructPx = labelSizeStructPx;
+    c.labelScaleWithZoom = labelScaleWithZoom;
+    c.labelScaleRefZoom = labelScaleRefZoom;
     c.labelFontIndex = labelFontIndex;
     // General
     c.exportPaddingPct = exportPaddingPct;
@@ -252,6 +256,8 @@ class RenderSettings {
     labelSizeZonePx = o.labelSizeZonePx;
     labelSizePathPx = o.labelSizePathPx;
     labelSizeStructPx = o.labelSizeStructPx;
+    labelScaleWithZoom = o.labelScaleWithZoom;
+    labelScaleRefZoom = o.labelScaleRefZoom;
     labelFontIndex = o.labelFontIndex;
     if (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) {
       labelFontIndex = constrain(labelFontIndex, 0, LABEL_FONT_OPTIONS.length - 1);
@@ -326,6 +332,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
+    s.labelScaleWithZoom = false;
     s.labelFontIndex = 0;
     s.exportPaddingPct = 0.015f;
     s.antialiasing = true;
@@ -443,6 +450,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
+    s.labelScaleWithZoom = false;
     s.labelFontIndex = 0;
     s.exportPaddingPct = 0.02f;
     s.antialiasing = true;
@@ -561,6 +569,8 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
+    s.labelScaleWithZoom = false;
+    s.labelScaleRefZoom = 1.0f;
     s.labelFontIndex = 0;
     s.exportPaddingPct = 0.015f;
     s.antialiasing = false;
