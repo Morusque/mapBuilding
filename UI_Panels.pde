@@ -2200,7 +2200,8 @@ RenderLayout buildRenderLayout() {
     l.labelsOutlineSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.labelsScaleWithZoomCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
-    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    // Extra gap to leave space for the reference zoom text under the checkbox.
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP + PANEL_LABEL_H + PANEL_ROW_GAP;
     l.labelsFontSelector = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }

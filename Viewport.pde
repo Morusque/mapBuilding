@@ -46,8 +46,12 @@ class Viewport {
   }
 
   PVector worldToScreen(float wx, float wy) {
-    float sx = (wx - centerX) * zoom + width * 0.5f;
-    float sy = (wy - centerY) * zoom + height * 0.5f;
+    return worldToScreen(wx, wy, width, height);
+  }
+
+  PVector worldToScreen(float wx, float wy, float canvasW, float canvasH) {
+    float sx = (wx - centerX) * zoom + canvasW * 0.5f;
+    float sy = (wy - centerY) * zoom + canvasH * 0.5f;
     return new PVector(sx, sy);
   }
 }

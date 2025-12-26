@@ -495,7 +495,9 @@ class MapRenderer {
       }
       // Prevent runaway font allocations for huge zoom/export scales.
       finalSize = constrain(finalSize, 4.0f, 128.0f);
-      PVector screen = viewport.worldToScreen(x, y);
+      float canvasW = (app != null && app.g != null) ? app.g.width : app.width;
+      float canvasH = (app != null && app.g != null) ? app.g.height : app.height;
+      PVector screen = viewport.worldToScreen(x, y, canvasW, canvasH);
       if (snapToPixel && !renderingForExport) {
         screen.x = round(screen.x);
         screen.y = round(screen.y);
