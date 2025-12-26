@@ -320,10 +320,11 @@ class MapRenderer {
     app.pushStyle();
     app.textAlign(CENTER, CENTER);
     String fontName = resolveLabelFontName(s);
+    boolean snap = !(currentTool == Tool.EDIT_EXPORT);
     for (MapLabel l : model.labels) {
       if (l == null) continue;
       float ts = (s.labelSizeArbPx > 0) ? s.labelSizeArbPx : l.size;
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true, fontName);
+      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, snap, fontName);
     }
     app.popStyle();
   }
@@ -354,7 +355,8 @@ class MapRenderer {
       cx /= count;
       cy /= count;
       float ts = baseSize;
-      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true, fontName);
+      boolean snap = !(currentTool == Tool.EDIT_EXPORT);
+      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, snap, fontName);
     }
     app.popStyle();
   }
@@ -393,7 +395,8 @@ class MapRenderer {
       if (angle > HALF_PI || angle < -HALF_PI) angle += PI; // keep text upright
       float mx = (bestA.x + bestB.x) * 0.5f;
       float my = (bestA.y + bestB.y) * 0.5f;
-      drawTextWithOutline(app, txt, mx, my, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, angle, true, fontName);
+      boolean snap = !(currentTool == Tool.EDIT_EXPORT);
+      drawTextWithOutline(app, txt, mx, my, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, angle, snap, fontName);
     }
     app.popStyle();
   }
@@ -406,11 +409,12 @@ class MapRenderer {
     app.textAlign(CENTER, CENTER);
     float baseSize = (s.labelSizeStructPx > 0) ? s.labelSizeStructPx : labelSizeDefault();
     String fontName = resolveLabelFontName(s);
+    boolean snap = !(currentTool == Tool.EDIT_EXPORT);
     for (Structure st : model.structures) {
       if (st == null) continue;
       String txt = (st.name != null && st.name.length() > 0) ? st.name : "";
       float ts = baseSize;
-      drawTextWithOutline(app, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, true, fontName);
+      drawTextWithOutline(app, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, snap, fontName);
     }
     app.popStyle();
   }
@@ -485,7 +489,7 @@ class MapRenderer {
     if (app == null || txt == null) return;
     try {
       PVector screen = viewport.worldToScreen(x, y);
-      if (snapToPixel) {
+      if (snapToPixel && !renderingForExport) {
         screen.x = round(screen.x);
         screen.y = round(screen.y);
       }

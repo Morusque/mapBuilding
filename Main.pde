@@ -161,6 +161,7 @@ boolean renderPrepPrimed = false;
 String lastExportStatus = "";
 boolean renderContoursDirty = true;
 boolean renderForceDirtyAll = false;
+boolean renderingForExport = false;
 PGraphics exportPreview = null;
 boolean exportPreviewDirty = true;
 float[] exportPreviewRect = new float[4]; // x, y, w, h in world units
@@ -174,6 +175,10 @@ void markRenderDirty() {
 // Trigger a render rebuild without forcing contour/grid recomputation
 void markRenderVisualChange() {
   renderPrepDone = false;
+  exportPreviewDirty = true;
+}
+
+void markExportPreviewDirty() {
   exportPreviewDirty = true;
 }
 
@@ -851,6 +856,10 @@ void drawExportPaddingOverlay() {
 void draw() {
   background(245);
   loadingDetail = "";
+  if (currentTool != prevTool) {
+    if (currentTool == Tool.EDIT_EXPORT) exportPreviewDirty = true;
+    prevTool = currentTool;
+  }
 
   // Drive incremental Voronoi rebuilds; loading state follows the job
   if (fullGenRunning) {
@@ -1165,6 +1174,7 @@ String exportPng() {
   triggerRenderPrerequisites();
   long tPrepEnd = millis();
 
+  renderingForExport = true;
   g.beginDraw();
   g.background(245);
   // Temporarily redirect drawing to offscreen buffer
@@ -3148,6 +3158,7 @@ boolean ensureExportPreview() {
 
   triggerRenderPrerequisites();
 
+  renderingForExport = true;
   g.beginDraw();
   g.background(245);
   PGraphics prev = this.g;
@@ -3158,6 +3169,8 @@ boolean ensureExportPreview() {
   popMatrix();
   this.g = prev;
   g.endDraw();
+  renderingForExport = false;
+  renderingForExport = false;
 
   viewport.centerX = prevCenterX;
   viewport.centerY = prevCenterY;
