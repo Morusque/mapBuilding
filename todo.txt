@@ -1,11 +1,4 @@
-
-Next :
-revise rendering presets, make sure everything can be bitmap
-export should be same than rendering but with difference sue to ratio visible
-
-Other :
-(later) mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
-(later) join segments (eg zones outlines) in a nicer way
+(Next) : revise rendering presets, make sure everything can be bitmap
 (later) Zones : options to allow overlapping or not (two groups? allowed / not-allowed)
 (later) Zones : use polygon tracing as an alternative to brush
 (later) Paths : refine the way path generation works
@@ -14,17 +7,11 @@ Other :
 (later) Structures : structures should be groupable
 (later) Structures : shrink big left menu a little
 (later) Structures : crosses (as on treasure maps)
+(later) Structures : use pictures instead of structs
 (later) Export : path rendering slightly differ from their rendering in rendering mode (should be similar)
 (later) Export : rendering shoud look exactly like the picture to be rendered (including points on paths and resolution, this should be cached, use loading bar)
-(later) pictures instead of structs
-(maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
-(maybe) Sites : anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
-(maybe) Elevation : use techtonic logic in addition to perlin or double multiplied perlin
-(maybe) Paths : width definer similar to water but using pathfinding to define more important roads
-(maybe) Structures : use polygon tracing as a structure input mode
-(maybe) Labels : optionally associate labels with map elements
-(maybe) Labels : have type presets for label styles (like with path types)
-(maybe) Export : importing from picture
+(later) Rendering : mountain/forest/etc rendering style: use billboarded (mount/trees etc) tiles
+(later) Rendering : join segments (eg zones outlines) in a nicer way
 (later) Rendering :parametrable label outline (per label type)
 (later) Rendering :better paths labels
 (later) Rendering :LOD rules: hide/show groups vs members depending on zoom, optional merging visually of dense structures.
@@ -38,13 +25,21 @@ Other :
 (later) Rendering : water contour lines distance should be zoom-dependant
 (later) Rendering : structures sat and alpha variables exist but show no slider
 (later) Rendering : push labels so they don't overlap, cache positions
+(later) Other : investigate caching options, Refactor, optimize etc.
+(later) Other : undo states
+(later) Other : the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
+(later) Other : correctly merge strokes that overlap with alpha
+(later) Other : Update comments to multiline
+(later) Other : make the generations better overall
+(maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
+(maybe) Sites : anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
+(maybe) Elevation : use techtonic logic in addition to perlin or double multiplied perlin
+(maybe) Paths : width definer similar to water but using pathfinding to define more important roads
+(maybe) Structures : use polygon tracing as a structure input mode
+(maybe) Labels : optionally associate labels with map elements
+(maybe) Labels : have type presets for label styles (like with path types)
+(maybe) Export : importing from picture
 (maybe) Rendering : a "save preset" button
-(later) investigate caching options, Refactor, optimize etc.
-(later) undo states
-(later) the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
-(later) correctly merge strokes that overlap with alpha
-(later) Update comments to multiline
-(later) make the generations better overall
 (maybe) option to generate details (about everything) for zooming
 (maybe) use HSB directly instead of converting?
 (maybe) Editable types: visually show which parameters "belong" to a type or to a more general part of the interface.

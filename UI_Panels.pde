@@ -1942,6 +1942,8 @@ class RenderLayout {
   IntRect[] landHSB = new IntRect[3];
   IntRect[] waterHSB = new IntRect[3];
   IntRect cellBordersAlphaSlider;
+  IntRect cellBordersSizeSlider;
+  IntRect cellBordersScaleCheckbox;
   IntRect backgroundNoiseSlider;
 
   IntRect biomeFillAlphaSlider;
@@ -1951,6 +1953,7 @@ class RenderLayout {
   IntRect biomeOutlineSizeSlider;
   IntRect biomeOutlineAlphaSlider;
   IntRect biomeUnderwaterAlphaSlider;
+  IntRect biomeOutlineScaleCheckbox;
 
   IntRect waterDepthAlphaSlider;
   IntRect lightAlphaSlider;
@@ -1967,10 +1970,13 @@ class RenderLayout {
   IntRect waterHatchLengthSlider;
   IntRect waterHatchSpacingSlider;
   IntRect waterHatchAlphaSlider;
+  IntRect waterContourScaleCheckbox;
   IntRect waterRippleAlphaStartSlider;
   IntRect waterRippleAlphaEndSlider;
   IntRect elevationLinesCountSlider;
   IntRect elevationLinesAlphaSlider;
+  IntRect elevationLinesSizeSlider;
+  IntRect elevationLinesScaleCheckbox;
 
   IntRect pathsShowCheckbox;
   IntRect pathsScaleWithZoomCheckbox;
@@ -1981,10 +1987,12 @@ class RenderLayout {
   IntRect zoneSizeSlider;
   IntRect zoneSatSlider;
   IntRect zoneBriSlider;
+  IntRect zoneScaleWithZoomCheckbox;
 
   IntRect structuresShowCheckbox;
   IntRect structuresMergeCheckbox;
   IntRect structuresShadowAlphaSlider;
+  IntRect structuresScaleWithZoomCheckbox;
 
   IntRect labelsArbitraryCheckbox;
   IntRect labelsZonesCheckbox;
@@ -2037,6 +2045,10 @@ RenderLayout buildRenderLayout() {
 
     l.cellBordersAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.cellBordersSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.cellBordersScaleCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
 
     l.backgroundNoiseSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
@@ -2068,7 +2080,10 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.biomeOutlineAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.biomeOutlineScaleCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
   }
 
   // ----- Shading -----
@@ -2097,6 +2112,9 @@ RenderLayout buildRenderLayout() {
   if (renderSectionContoursOpen) {
     l.waterContourSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.waterContourScaleCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
 
     l.waterRippleCountSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
@@ -2135,7 +2153,13 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.elevationLinesAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.elevationLinesSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
+    l.elevationLinesScaleCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
   }
 
   // ----- Paths -----
@@ -2160,6 +2184,8 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.zoneSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.zoneScaleWithZoomCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
     l.zoneSatSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.zoneBriSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
@@ -2173,6 +2199,8 @@ RenderLayout buildRenderLayout() {
     l.structuresShowCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
     l.structuresMergeCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.structuresScaleWithZoomCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
     l.structuresShadowAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
@@ -2251,6 +2279,10 @@ void drawRenderPanel() {
     registerUiTooltip(layout.waterHSB[2], tooltipFor("render_water_b"));
     drawSlider(layout.cellBordersAlphaSlider, renderSettings.cellBorderAlpha01, "Cell borders alpha (" + nf(renderSettings.cellBorderAlpha01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.cellBordersAlphaSlider, tooltipFor("render_cell_borders"));
+    drawSlider(layout.cellBordersSizeSlider, constrain(renderSettings.cellBorderSizePx / 5.0f, 0, 1), "Cell borders size (" + nf(renderSettings.cellBorderSizePx, 1, 1) + " px)");
+    if (layout.cellBordersScaleCheckbox != null) {
+      drawCheckbox(layout.cellBordersScaleCheckbox.x, layout.cellBordersScaleCheckbox.y, layout.cellBordersScaleCheckbox.w, renderSettings.cellBorderScaleWithZoom, "Scale cell borders with zoom");
+    }
     drawSlider(layout.backgroundNoiseSlider, renderSettings.backgroundNoiseAlpha01, "Background noise (" + nf(renderSettings.backgroundNoiseAlpha01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.backgroundNoiseSlider, tooltipFor("render_noise_alpha"));
   }
@@ -2282,6 +2314,9 @@ void drawRenderPanel() {
     registerUiTooltip(layout.biomeOutlineSizeSlider, tooltipFor("render_biome_outline_size"));
     drawSlider(layout.biomeOutlineAlphaSlider, renderSettings.biomeOutlineAlpha01, "Biomes outlines alpha (" + nf(renderSettings.biomeOutlineAlpha01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.biomeOutlineAlphaSlider, tooltipFor("render_biome_outline_alpha"));
+    if (layout.biomeOutlineScaleCheckbox != null) {
+      drawCheckbox(layout.biomeOutlineScaleCheckbox.x, layout.biomeOutlineScaleCheckbox.y, layout.biomeOutlineScaleCheckbox.w, renderSettings.biomeOutlineScaleWithZoom, "Scale biome outlines with zoom");
+    }
   }
 
   drawSectionHeader(layout.headerShading, "Shading", renderSectionShadingOpen);
@@ -2304,6 +2339,9 @@ void drawRenderPanel() {
   if (renderSectionContoursOpen) {
     drawSlider(layout.waterContourSizeSlider, constrain(renderSettings.waterContourSizePx / 5.0f, 0, 1), "Water contour size (" + nf(renderSettings.waterContourSizePx, 1, 1) + " px)");
     registerUiTooltip(layout.waterContourSizeSlider, tooltipFor("render_water_contour_size"));
+    if (layout.waterContourScaleCheckbox != null) {
+      drawCheckbox(layout.waterContourScaleCheckbox.x, layout.waterContourScaleCheckbox.y, layout.waterContourScaleCheckbox.w, renderSettings.waterContourScaleWithZoom, "Scale water strokes with zoom");
+    }
     drawSlider(layout.waterRippleCountSlider, constrain(renderSettings.waterRippleCount / 5.0f, 0, 1), "Number of ripples (" + renderSettings.waterRippleCount + ")");
     registerUiTooltip(layout.waterRippleCountSlider, tooltipFor("render_water_ripple_count"));
     drawSlider(layout.waterRippleDistanceSlider, constrain(renderSettings.waterRippleDistancePx / 40.0f, 0, 1), "Ripple distance (" + nf(renderSettings.waterRippleDistancePx, 1, 1) + " px)");
@@ -2332,6 +2370,10 @@ void drawRenderPanel() {
     registerUiTooltip(layout.elevationLinesCountSlider, tooltipFor("render_elev_lines_count"));
     drawSlider(layout.elevationLinesAlphaSlider, renderSettings.elevationLinesAlpha01, "Elevation lines alpha (" + nf(renderSettings.elevationLinesAlpha01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.elevationLinesAlphaSlider, tooltipFor("render_elev_lines_alpha"));
+    drawSlider(layout.elevationLinesSizeSlider, constrain(renderSettings.elevationLinesSizePx / 5.0f, 0, 1), "Elevation lines size (" + nf(renderSettings.elevationLinesSizePx, 1, 1) + " px)");
+    if (layout.elevationLinesScaleCheckbox != null) {
+      drawCheckbox(layout.elevationLinesScaleCheckbox.x, layout.elevationLinesScaleCheckbox.y, layout.elevationLinesScaleCheckbox.w, renderSettings.elevationLinesScaleWithZoom, "Scale elevation lines with zoom");
+    }
   }
 
   drawSectionHeader(layout.headerPaths, "Paths", renderSectionPathsOpen);
@@ -2351,6 +2393,9 @@ void drawRenderPanel() {
     registerUiTooltip(layout.zoneAlphaSlider, tooltipFor("render_zone_alpha"));
     drawSlider(layout.zoneSizeSlider, constrain(renderSettings.zoneStrokeSizePx / 5.0f, 0, 1), "Zone line width (" + nf(renderSettings.zoneStrokeSizePx, 1, 1) + " px)");
     registerUiTooltip(layout.zoneSizeSlider, tooltipFor("render_zone_size"));
+    if (layout.zoneScaleWithZoomCheckbox != null) {
+      drawCheckbox(layout.zoneScaleWithZoomCheckbox.x, layout.zoneScaleWithZoomCheckbox.y, layout.zoneScaleWithZoomCheckbox.w, renderSettings.zoneStrokeScaleWithZoom, "Scale zone lines with zoom");
+    }
     drawSlider(layout.zoneSatSlider, renderSettings.zoneStrokeSatScale01, "Zone lines saturation (" + nf(renderSettings.zoneStrokeSatScale01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.zoneSatSlider, tooltipFor("render_zone_sat"));
     drawSlider(layout.zoneBriSlider, renderSettings.zoneStrokeBriScale01, "Zone lines brightness (" + nf(renderSettings.zoneStrokeBriScale01 * 100, 1, 0) + "%)");
@@ -2361,6 +2406,9 @@ void drawRenderPanel() {
   if (renderSectionStructuresOpen) {
     drawCheckbox(layout.structuresShowCheckbox.x, layout.structuresShowCheckbox.y, layout.structuresShowCheckbox.w, renderSettings.showStructures, "Show structures");
     drawCheckbox(layout.structuresMergeCheckbox.x, layout.structuresMergeCheckbox.y, layout.structuresMergeCheckbox.w, renderSettings.mergeStructures, "Merge structures");
+    if (layout.structuresScaleWithZoomCheckbox != null) {
+      drawCheckbox(layout.structuresScaleWithZoomCheckbox.x, layout.structuresScaleWithZoomCheckbox.y, layout.structuresScaleWithZoomCheckbox.w, renderSettings.structureStrokeScaleWithZoom, "Scale structure strokes with zoom");
+    }
     drawSlider(layout.structuresShadowAlphaSlider, renderSettings.structureShadowAlpha01, "Shadow alpha (" + nf(renderSettings.structureShadowAlpha01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.structuresShowCheckbox, tooltipFor("render_struct_show"));
     registerUiTooltip(layout.structuresMergeCheckbox, tooltipFor("render_struct_merge"));

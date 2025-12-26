@@ -834,6 +834,13 @@ void updateActiveSlider(int mx, int my) {
       markRenderVisualChange();
       break;
     }
+    case SLIDER_RENDER_CELL_BORDER_SIZE: {
+      RenderLayout l = buildRenderLayout();
+      float t = sliderNorm(l.cellBordersSizeSlider, mx);
+      renderSettings.cellBorderSizePx = constrain(t * 5.0f, 0, 5.0f);
+      markRenderVisualChange();
+      break;
+    }
     case SLIDER_RENDER_ELEV_LINES_COUNT: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.elevationLinesCountSlider, mx);
@@ -845,6 +852,13 @@ void updateActiveSlider(int mx, int my) {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.elevationLinesAlphaSlider, mx);
       renderSettings.elevationLinesAlpha01 = t;
+      markRenderVisualChange();
+      break;
+    }
+    case SLIDER_RENDER_ELEV_LINES_SIZE: {
+      RenderLayout l = buildRenderLayout();
+      float t = sliderNorm(l.elevationLinesSizeSlider, mx);
+      renderSettings.elevationLinesSizePx = constrain(t * 5.0f, 0, 5.0f);
       markRenderVisualChange();
       break;
     }

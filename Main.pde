@@ -518,6 +518,8 @@ final int SLIDER_STRUCT_GEN_BUILDING = 100;
 final int SLIDER_STRUCT_SNAP_DIV = 101;
 final int SLIDER_STRUCT_SHAPE = 102;
 final int SLIDER_STRUCT_ALIGNMENT = 103;
+final int SLIDER_RENDER_CELL_BORDER_SIZE = 104;
+final int SLIDER_RENDER_ELEV_LINES_SIZE = 105;
 
 int activeSlider = SLIDER_NONE;
 
@@ -2188,6 +2190,9 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   r.setFloat("waterSat01", s.waterSat01);
   r.setFloat("waterBri01", s.waterBri01);
   r.setFloat("cellBorderAlpha01", s.cellBorderAlpha01);
+  r.setFloat("cellBorderSizePx", s.cellBorderSizePx);
+  r.setBoolean("cellBorderScaleWithZoom", s.cellBorderScaleWithZoom);
+  r.setFloat("cellBorderRefZoom", s.cellBorderRefZoom);
   r.setFloat("backgroundNoiseAlpha01", s.backgroundNoiseAlpha01);
 
   JSONObject biomes = new JSONObject();
@@ -2201,6 +2206,8 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   biomes.setString("patternName", s.biomePatternName);
   biomes.setFloat("outlineSizePx", s.biomeOutlineSizePx);
   biomes.setFloat("outlineAlpha01", s.biomeOutlineAlpha01);
+  biomes.setBoolean("outlineScaleWithZoom", s.biomeOutlineScaleWithZoom);
+  biomes.setFloat("outlineRefZoom", s.biomeOutlineRefZoom);
   biomes.setFloat("underwaterAlpha01", s.biomeUnderwaterAlpha01);
   r.setJSONObject("biomes", biomes);
 
@@ -2221,6 +2228,8 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   contours.setFloat("waterContourBri01", s.waterContourBri01);
   contours.setFloat("waterContourAlpha01", s.waterCoastAlpha01);
   contours.setFloat("waterCoastAlpha01", s.waterCoastAlpha01);
+  contours.setBoolean("waterContourScaleWithZoom", s.waterContourScaleWithZoom);
+  contours.setFloat("waterContourRefZoom", s.waterContourRefZoom);
   contours.setFloat("waterRippleAlphaStart01", s.waterRippleAlphaStart01);
   contours.setFloat("waterRippleAlphaEnd01", s.waterRippleAlphaEnd01);
   contours.setFloat("waterHatchAngleDeg", s.waterHatchAngleDeg);
@@ -2230,6 +2239,9 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   contours.setInt("elevationLinesCount", s.elevationLinesCount);
   contours.setString("elevationLinesStyle", s.elevationLinesStyle.name());
   contours.setFloat("elevationLinesAlpha01", s.elevationLinesAlpha01);
+  contours.setFloat("elevationLinesSizePx", s.elevationLinesSizePx);
+  contours.setBoolean("elevationLinesScaleWithZoom", s.elevationLinesScaleWithZoom);
+  contours.setFloat("elevationLinesRefZoom", s.elevationLinesRefZoom);
   r.setJSONObject("contours", contours);
 
   JSONObject paths = new JSONObject();
@@ -2245,6 +2257,8 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   zones.setFloat("zoneStrokeSizePx", s.zoneStrokeSizePx);
   zones.setFloat("zoneStrokeSatScale01", s.zoneStrokeSatScale01);
   zones.setFloat("zoneStrokeBriScale01", s.zoneStrokeBriScale01);
+  zones.setBoolean("zoneStrokeScaleWithZoom", s.zoneStrokeScaleWithZoom);
+  zones.setFloat("zoneStrokeRefZoom", s.zoneStrokeRefZoom);
   r.setJSONObject("zones", zones);
 
   JSONObject structures = new JSONObject();
@@ -2253,6 +2267,8 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   structures.setFloat("structureSatScale01", s.structureSatScale01);
   structures.setFloat("structureAlphaScale01", s.structureAlphaScale01);
   structures.setFloat("structureShadowAlpha01", s.structureShadowAlpha01);
+  structures.setBoolean("structureStrokeScaleWithZoom", s.structureStrokeScaleWithZoom);
+  structures.setFloat("structureStrokeRefZoom", s.structureStrokeRefZoom);
   r.setJSONObject("structures", structures);
 
   JSONObject labels = new JSONObject();
@@ -2287,6 +2303,9 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
   target.waterSat01 = r.getFloat("waterSat01", target.waterSat01);
   target.waterBri01 = r.getFloat("waterBri01", target.waterBri01);
   target.cellBorderAlpha01 = r.getFloat("cellBorderAlpha01", target.cellBorderAlpha01);
+  target.cellBorderSizePx = r.getFloat("cellBorderSizePx", target.cellBorderSizePx);
+  target.cellBorderScaleWithZoom = r.getBoolean("cellBorderScaleWithZoom", target.cellBorderScaleWithZoom);
+  target.cellBorderRefZoom = r.getFloat("cellBorderRefZoom", target.cellBorderRefZoom);
   target.backgroundNoiseAlpha01 = r.getFloat("backgroundNoiseAlpha01", target.backgroundNoiseAlpha01);
 
   if (r.hasKey("biomes")) {
@@ -2301,6 +2320,8 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.biomePatternName = b.getString("patternName", target.biomePatternName);
     target.biomeOutlineSizePx = b.getFloat("outlineSizePx", target.biomeOutlineSizePx);
     target.biomeOutlineAlpha01 = b.getFloat("outlineAlpha01", target.biomeOutlineAlpha01);
+    target.biomeOutlineScaleWithZoom = b.getBoolean("outlineScaleWithZoom", target.biomeOutlineScaleWithZoom);
+    target.biomeOutlineRefZoom = b.getFloat("outlineRefZoom", target.biomeOutlineRefZoom);
     target.biomeUnderwaterAlpha01 = b.getFloat("underwaterAlpha01", target.biomeUnderwaterAlpha01);
   }
 
@@ -2323,6 +2344,8 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.waterContourBri01 = b.getFloat("waterContourBri01", target.waterContourBri01);
     target.waterContourAlpha01 = b.getFloat("waterContourAlpha01", target.waterContourAlpha01);
     target.waterCoastAlpha01 = b.getFloat("waterCoastAlpha01", target.waterContourAlpha01);
+    target.waterContourScaleWithZoom = b.getBoolean("waterContourScaleWithZoom", target.waterContourScaleWithZoom);
+    target.waterContourRefZoom = b.getFloat("waterContourRefZoom", target.waterContourRefZoom);
     target.waterRippleAlphaStart01 = b.getFloat("waterRippleAlphaStart01", target.waterContourAlpha01);
     target.waterRippleAlphaEnd01 = b.getFloat("waterRippleAlphaEnd01", target.waterRippleAlphaStart01);
     target.waterHatchAngleDeg = b.getFloat("waterHatchAngleDeg", target.waterHatchAngleDeg);
@@ -2334,6 +2357,9 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     String style = b.getString("elevationLinesStyle", target.elevationLinesStyle.name());
     target.elevationLinesStyle = "ELEV_LINES_BASIC".equals(style) ? ElevationLinesStyle.ELEV_LINES_BASIC : target.elevationLinesStyle;
     target.elevationLinesAlpha01 = b.getFloat("elevationLinesAlpha01", target.elevationLinesAlpha01);
+    target.elevationLinesSizePx = b.getFloat("elevationLinesSizePx", target.elevationLinesSizePx);
+    target.elevationLinesScaleWithZoom = b.getBoolean("elevationLinesScaleWithZoom", target.elevationLinesScaleWithZoom);
+    target.elevationLinesRefZoom = b.getFloat("elevationLinesRefZoom", target.elevationLinesRefZoom);
   }
 
   if (r.hasKey("paths")) {
@@ -2351,6 +2377,8 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.zoneStrokeSizePx = b.getFloat("zoneStrokeSizePx", target.zoneStrokeSizePx);
     target.zoneStrokeSatScale01 = b.getFloat("zoneStrokeSatScale01", target.zoneStrokeSatScale01);
     target.zoneStrokeBriScale01 = b.getFloat("zoneStrokeBriScale01", target.zoneStrokeBriScale01);
+    target.zoneStrokeScaleWithZoom = b.getBoolean("zoneStrokeScaleWithZoom", target.zoneStrokeScaleWithZoom);
+    target.zoneStrokeRefZoom = b.getFloat("zoneStrokeRefZoom", target.zoneStrokeRefZoom);
   }
 
   if (r.hasKey("structures")) {
@@ -2360,6 +2388,8 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.structureSatScale01 = b.getFloat("structureSatScale01", target.structureSatScale01);
     target.structureAlphaScale01 = b.getFloat("structureAlphaScale01", target.structureAlphaScale01);
     target.structureShadowAlpha01 = b.getFloat("structureShadowAlpha01", target.structureShadowAlpha01);
+    target.structureStrokeScaleWithZoom = b.getBoolean("structureStrokeScaleWithZoom", target.structureStrokeScaleWithZoom);
+    target.structureStrokeRefZoom = b.getFloat("structureStrokeRefZoom", target.structureStrokeRefZoom);
   }
 
   if (r.hasKey("labels")) {

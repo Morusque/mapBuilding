@@ -65,6 +65,16 @@ class MapRenderer {
   private int renderPrepCompleted = 0;
   private int renderPrepTotal = 0;
 
+  // Stroke helper: base size in screen px; returns world-space stroke that yields the desired on-screen width.
+  float strokeWorldPx(float basePx, boolean scaleWithZoom, float refZoom) {
+    float b = max(0.01f, basePx);
+    if (scaleWithZoom) {
+      float ref = max(1e-6f, refZoom);
+      b *= (viewport.zoom / ref);
+    }
+    return b / max(1e-6f, viewport.zoom);
+  }
+
   void invalidateCoastCache() { coastDirty = true; }
   void invalidateBiomeCache() { biomeDirty = true; }
   void invalidateZoneCache() { zoneDirty = true; }
@@ -245,7 +255,8 @@ class MapRenderer {
       app.translate(st.x, st.y);
       app.rotate(st.angle);
       app.stroke(0, 0, 0, baseAlpha * 255);
-      app.strokeWeight(st.strokeWeightPx / viewport.zoom);
+      float stW = strokeWorldPx(max(0.1f, st.strokeWeightPx), s.structureStrokeScaleWithZoom, s.structureStrokeRefZoom);
+      app.strokeWeight(stW);
       app.fill(col, baseAlpha * 255);
       drawStructureShape(app, st);
       app.popMatrix();
@@ -877,7 +888,8 @@ class MapRenderer {
     // Cell borders
     if (s.cellBorderAlpha01 > 1e-4f) {
       app.stroke(0, 0, 0, s.cellBorderAlpha01 * 255);
-      app.strokeWeight(1.0f / viewport.zoom);
+      float cbW = strokeWorldPx(max(0.1f, s.cellBorderSizePx), s.cellBorderScaleWithZoom, s.cellBorderRefZoom);
+      app.strokeWeight(cbW);
       app.strokeCap(PConstants.ROUND);
       app.strokeJoin(PConstants.ROUND);
       app.noFill();
@@ -891,7 +903,8 @@ class MapRenderer {
     if (s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f)) {
       ensureBiomeOutlineCache(seaLevel);
       app.noFill();
-      app.strokeWeight(max(0.1f, s.biomeOutlineSizePx) / viewport.zoom);
+      float boW = strokeWorldPx(max(0.1f, s.biomeOutlineSizePx), s.biomeOutlineScaleWithZoom, s.biomeOutlineRefZoom);
+      app.strokeWeight(boW);
       app.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
       HashSet<String> capsDrawn = new HashSet<String>();
       for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
@@ -981,7 +994,7 @@ class MapRenderer {
         float spacingWorld = s.waterRippleDistancePx / max(1e-6f, viewport.zoom);
         if (spacingWorld > 1e-6f) {
           float maxIso = spacingWorld * s.waterRippleCount;
-          float strokePx = max(0.8f, s.waterContourSizePx) / max(1e-6f, viewport.zoom);
+          float strokePx = strokeWorldPx(max(0.8f, s.waterContourSizePx), s.waterContourScaleWithZoom, s.waterContourRefZoom);
           app.pushStyle();
           app.noFill();
           app.strokeCap(PConstants.ROUND);
@@ -1254,7 +1267,8 @@ class MapRenderer {
     app.pushStyle();
     app.noFill();
     app.stroke(strokeCol);
-    app.strokeWeight(1.0f / viewport.zoom);
+    float elevW = strokeWorldPx(max(0.1f, renderSettings.elevationLinesSizePx), renderSettings.elevationLinesScaleWithZoom, renderSettings.elevationLinesRefZoom);
+    app.strokeWeight(elevW);
 
     if (step > 0) {
       for (float iso = start; iso <= end + 1e-6f; iso += step) {
@@ -1324,7 +1338,8 @@ class MapRenderer {
     app.pushStyle();
     int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, s.waterHatchAlpha01);
     app.stroke(strokeCol);
-    app.strokeWeight(max(0.6f, s.waterContourSizePx * 0.8f) / max(1e-6f, viewport.zoom));
+    float hatchStroke = strokeWorldPx(max(0.6f, s.waterContourSizePx * 0.8f), s.waterContourScaleWithZoom, s.waterContourRefZoom);
+    app.strokeWeight(hatchStroke);
     app.strokeCap(PConstants.SQUARE);
     app.noFill();
 
@@ -1585,8 +1600,9 @@ class MapRenderer {
   private void drawCoastLayer(PGraphics g, RenderSettings s, float seaLevel) {
     HashSet<String> drawn = new HashSet<String>();
     int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, 1.0f);
-    float thisHalfWeight = max(0.1f, s.waterContourSizePx) / viewport.zoom / 2.0f;
-    g.strokeWeight(thisHalfWeight * 2.0f);
+    float strokeW = strokeWorldPx(max(0.1f, s.waterContourSizePx), s.waterContourScaleWithZoom, s.waterContourRefZoom);
+    float thisHalfWeight = strokeW * 0.5f;
+    g.strokeWeight(strokeW);
     g.stroke(strokeCol);
     g.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
     g.noFill();
@@ -1709,7 +1725,7 @@ class MapRenderer {
       zoneLayer.pushMatrix();
       zoneLayer.pushStyle();
       viewport.applyTransform(zoneLayer, zoneLayer.width, zoneLayer.height);
-      float zoneW = max(0.1f, s.zoneStrokeSizePx) / viewport.zoom;
+      float zoneW = strokeWorldPx(max(0.1f, s.zoneStrokeSizePx), s.zoneStrokeScaleWithZoom, s.zoneStrokeRefZoom);
       drawZoneLayer(zoneLayer, zoneStrokeCols, zoneW);
       zoneLayer.popStyle();
       zoneLayer.popMatrix();

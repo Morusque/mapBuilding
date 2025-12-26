@@ -29,6 +29,9 @@ class RenderSettings {
   float waterSat01 = 0.28f;
   float waterBri01 = 0.35f;
   float cellBorderAlpha01 = 0.0f;
+  float cellBorderSizePx = 1.0f;
+  boolean cellBorderScaleWithZoom = false;
+  float cellBorderRefZoom = DEFAULT_VIEW_ZOOM;
   float backgroundNoiseAlpha01 = 0.0f;
 
   // Biomes
@@ -39,6 +42,8 @@ class RenderSettings {
   String biomePatternName = "dots01.png";
   float biomeOutlineSizePx = 0.0f;
   float biomeOutlineAlpha01 = 1.0f;
+  boolean biomeOutlineScaleWithZoom = false;
+  float biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
   float biomeUnderwaterAlpha01 = 0.0f;
 
   // Shading
@@ -57,6 +62,8 @@ class RenderSettings {
   float waterContourBri01 = 0.0f;
   float waterContourAlpha01 = 1.0f; // legacy: keep for backward compat
   float waterCoastAlpha01 = 1.0f;
+  boolean waterContourScaleWithZoom = false;
+  float waterContourRefZoom = DEFAULT_VIEW_ZOOM;
   float waterRippleAlphaStart01 = 1.0f;
   float waterRippleAlphaEnd01 = 0.3f;
   float waterHatchAngleDeg = 0.0f;     // 0 = horizontal lines
@@ -66,6 +73,9 @@ class RenderSettings {
   int elevationLinesCount = 0;
   ElevationLinesStyle elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
   float elevationLinesAlpha01 = 0.3f;
+  float elevationLinesSizePx = 1.0f;
+  boolean elevationLinesScaleWithZoom = false;
+  float elevationLinesRefZoom = DEFAULT_VIEW_ZOOM;
 
   // Paths
   float pathSatScale01 = 1.0f;
@@ -79,6 +89,8 @@ class RenderSettings {
   float zoneStrokeSizePx = 2.0f;
   float zoneStrokeSatScale01 = 0.5f;
   float zoneStrokeBriScale01 = 1.0f;
+  boolean zoneStrokeScaleWithZoom = false;
+  float zoneStrokeRefZoom = DEFAULT_VIEW_ZOOM;
 
   // Structures
   boolean showStructures = true;
@@ -86,6 +98,8 @@ class RenderSettings {
   float structureSatScale01 = 1.0f;
   float structureAlphaScale01 = 1.0f;
   float structureShadowAlpha01 = 0.0f;
+  boolean structureStrokeScaleWithZoom = false;
+  float structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
 
   // Labels
   boolean showLabelsArbitrary = true;
@@ -117,6 +131,9 @@ class RenderSettings {
     c.waterSat01 = waterSat01;
     c.waterBri01 = waterBri01;
     c.cellBorderAlpha01 = cellBorderAlpha01;
+    c.cellBorderSizePx = cellBorderSizePx;
+    c.cellBorderScaleWithZoom = cellBorderScaleWithZoom;
+    c.cellBorderRefZoom = cellBorderRefZoom;
     c.backgroundNoiseAlpha01 = backgroundNoiseAlpha01;
     // Biomes
     c.biomeFillAlpha01 = biomeFillAlpha01;
@@ -126,6 +143,8 @@ class RenderSettings {
     c.biomePatternName = biomePatternName;
     c.biomeOutlineSizePx = biomeOutlineSizePx;
     c.biomeOutlineAlpha01 = biomeOutlineAlpha01;
+    c.biomeOutlineScaleWithZoom = biomeOutlineScaleWithZoom;
+    c.biomeOutlineRefZoom = biomeOutlineRefZoom;
     c.biomeUnderwaterAlpha01 = biomeUnderwaterAlpha01;
     // Shading
     c.waterDepthAlpha01 = waterDepthAlpha01;
@@ -142,6 +161,8 @@ class RenderSettings {
     c.waterContourBri01 = waterContourBri01;
     c.waterContourAlpha01 = waterCoastAlpha01;
     c.waterCoastAlpha01 = waterCoastAlpha01;
+    c.waterContourScaleWithZoom = waterContourScaleWithZoom;
+    c.waterContourRefZoom = waterContourRefZoom;
     c.waterRippleAlphaStart01 = waterRippleAlphaStart01;
     c.waterRippleAlphaEnd01 = waterRippleAlphaEnd01;
     c.waterHatchAngleDeg = waterHatchAngleDeg;
@@ -151,6 +172,9 @@ class RenderSettings {
     c.elevationLinesCount = elevationLinesCount;
     c.elevationLinesStyle = elevationLinesStyle;
     c.elevationLinesAlpha01 = elevationLinesAlpha01;
+    c.elevationLinesSizePx = elevationLinesSizePx;
+    c.elevationLinesScaleWithZoom = elevationLinesScaleWithZoom;
+    c.elevationLinesRefZoom = elevationLinesRefZoom;
     // Paths
     c.pathSatScale01 = pathSatScale01;
     c.pathBriScale01 = pathBriScale01;
@@ -162,12 +186,16 @@ class RenderSettings {
     c.zoneStrokeSizePx = zoneStrokeSizePx;
     c.zoneStrokeSatScale01 = zoneStrokeSatScale01;
     c.zoneStrokeBriScale01 = zoneStrokeBriScale01;
+    c.zoneStrokeScaleWithZoom = zoneStrokeScaleWithZoom;
+    c.zoneStrokeRefZoom = zoneStrokeRefZoom;
     // Structures
     c.showStructures = showStructures;
     c.mergeStructures = mergeStructures;
     c.structureSatScale01 = structureSatScale01;
     c.structureAlphaScale01 = structureAlphaScale01;
     c.structureShadowAlpha01 = structureShadowAlpha01;
+    c.structureStrokeScaleWithZoom = structureStrokeScaleWithZoom;
+    c.structureStrokeRefZoom = structureStrokeRefZoom;
     // Labels
     c.showLabelsArbitrary = showLabelsArbitrary;
     c.showLabelsZones = showLabelsZones;
@@ -200,6 +228,9 @@ class RenderSettings {
     waterSat01 = o.waterSat01;
     waterBri01 = o.waterBri01;
     cellBorderAlpha01 = o.cellBorderAlpha01;
+    cellBorderSizePx = o.cellBorderSizePx;
+    cellBorderScaleWithZoom = o.cellBorderScaleWithZoom;
+    cellBorderRefZoom = o.cellBorderRefZoom;
     backgroundNoiseAlpha01 = o.backgroundNoiseAlpha01;
     // Biomes
     biomeFillAlpha01 = o.biomeFillAlpha01;
@@ -209,6 +240,8 @@ class RenderSettings {
     biomePatternName = o.biomePatternName;
     biomeOutlineSizePx = o.biomeOutlineSizePx;
     biomeOutlineAlpha01 = o.biomeOutlineAlpha01;
+    biomeOutlineScaleWithZoom = o.biomeOutlineScaleWithZoom;
+    biomeOutlineRefZoom = o.biomeOutlineRefZoom;
     biomeUnderwaterAlpha01 = o.biomeUnderwaterAlpha01;
     // Shading
     waterDepthAlpha01 = o.waterDepthAlpha01;
@@ -225,6 +258,8 @@ class RenderSettings {
     waterContourBri01 = o.waterContourBri01;
     waterContourAlpha01 = o.waterCoastAlpha01;
     waterCoastAlpha01 = o.waterCoastAlpha01;
+    waterContourScaleWithZoom = o.waterContourScaleWithZoom;
+    waterContourRefZoom = o.waterContourRefZoom;
     waterRippleAlphaStart01 = o.waterRippleAlphaStart01;
     waterRippleAlphaEnd01 = o.waterRippleAlphaEnd01;
     waterHatchAngleDeg = o.waterHatchAngleDeg;
@@ -234,6 +269,9 @@ class RenderSettings {
     elevationLinesCount = o.elevationLinesCount;
     elevationLinesStyle = o.elevationLinesStyle;
     elevationLinesAlpha01 = o.elevationLinesAlpha01;
+    elevationLinesSizePx = o.elevationLinesSizePx;
+    elevationLinesScaleWithZoom = o.elevationLinesScaleWithZoom;
+    elevationLinesRefZoom = o.elevationLinesRefZoom;
     // Paths
     pathSatScale01 = o.pathSatScale01;
     pathBriScale01 = o.pathBriScale01;
@@ -245,12 +283,16 @@ class RenderSettings {
     zoneStrokeSizePx = o.zoneStrokeSizePx;
     zoneStrokeSatScale01 = o.zoneStrokeSatScale01;
     zoneStrokeBriScale01 = o.zoneStrokeBriScale01;
+    zoneStrokeScaleWithZoom = o.zoneStrokeScaleWithZoom;
+    zoneStrokeRefZoom = o.zoneStrokeRefZoom;
     // Structures
     showStructures = o.showStructures;
     mergeStructures = o.mergeStructures;
     structureSatScale01 = o.structureSatScale01;
     structureAlphaScale01 = o.structureAlphaScale01;
     structureShadowAlpha01 = o.structureShadowAlpha01;
+    structureStrokeScaleWithZoom = o.structureStrokeScaleWithZoom;
+    structureStrokeRefZoom = o.structureStrokeRefZoom;
     // Labels
     showLabelsArbitrary = o.showLabelsArbitrary;
     showLabelsZones = o.showLabelsZones;

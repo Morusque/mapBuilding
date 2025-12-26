@@ -1312,6 +1312,20 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_CELL_BORDER_ALPHA;
       return true;
     }
+    if (layout.cellBordersSizeSlider != null && layout.cellBordersSizeSlider.contains(mx, my)) {
+      float t = sliderNorm(layout.cellBordersSizeSlider, mx);
+      renderSettings.cellBorderSizePx = constrain(t * 5.0f, 0, 5);
+      activeSlider = SLIDER_RENDER_CELL_BORDER_SIZE;
+      markRenderVisualChange();
+      return true;
+    }
+    if (layout.cellBordersScaleCheckbox != null && layout.cellBordersScaleCheckbox.contains(mx, my)) {
+      renderSettings.cellBorderScaleWithZoom = !renderSettings.cellBorderScaleWithZoom;
+      if (renderSettings.cellBorderScaleWithZoom) renderSettings.cellBorderRefZoom = DEFAULT_VIEW_ZOOM;
+      markRenderVisualChange();
+      markExportPreviewDirty();
+      return true;
+    }
     if (layout.backgroundNoiseSlider.contains(mx, my)) {
       float t = sliderNorm(layout.backgroundNoiseSlider, mx);
       renderSettings.backgroundNoiseAlpha01 = t;
@@ -1367,6 +1381,14 @@ boolean handleRenderPanelClick(int mx, int my) {
       float t = sliderNorm(layout.biomeOutlineAlphaSlider, mx);
       renderSettings.biomeOutlineAlpha01 = t;
       activeSlider = SLIDER_RENDER_BIOME_OUTLINE_ALPHA;
+      return true;
+    }
+    if (layout.biomeOutlineScaleCheckbox != null && layout.biomeOutlineScaleCheckbox.contains(mx, my)) {
+      renderSettings.biomeOutlineScaleWithZoom = !renderSettings.biomeOutlineScaleWithZoom;
+      if (renderSettings.biomeOutlineScaleWithZoom) renderSettings.biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateBiomeCache();
+      markRenderVisualChange();
+      markExportPreviewDirty();
       return true;
     }
     if (layout.biomeUnderwaterAlphaSlider != null && layout.biomeUnderwaterAlphaSlider.contains(mx, my)) {
@@ -1427,6 +1449,14 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_WATER_CONTOUR_SIZE;
       if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
       markRenderVisualChange();
+      return true;
+    }
+    if (layout.waterContourScaleCheckbox != null && layout.waterContourScaleCheckbox.contains(mx, my)) {
+      renderSettings.waterContourScaleWithZoom = !renderSettings.waterContourScaleWithZoom;
+      if (renderSettings.waterContourScaleWithZoom) renderSettings.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
+      markExportPreviewDirty();
       return true;
     }
     if (layout.waterRippleCountSlider.contains(mx, my)) {
@@ -1518,6 +1548,20 @@ boolean handleRenderPanelClick(int mx, int my) {
       activeSlider = SLIDER_RENDER_ELEV_LINES_ALPHA;
       return true;
     }
+    if (layout.elevationLinesSizeSlider != null && layout.elevationLinesSizeSlider.contains(mx, my)) {
+      float t = sliderNorm(layout.elevationLinesSizeSlider, mx);
+      renderSettings.elevationLinesSizePx = constrain(t * 5.0f, 0, 5.0f);
+      activeSlider = SLIDER_RENDER_ELEV_LINES_SIZE;
+      markRenderVisualChange();
+      return true;
+    }
+    if (layout.elevationLinesScaleCheckbox != null && layout.elevationLinesScaleCheckbox.contains(mx, my)) {
+      renderSettings.elevationLinesScaleWithZoom = !renderSettings.elevationLinesScaleWithZoom;
+      if (renderSettings.elevationLinesScaleWithZoom) renderSettings.elevationLinesRefZoom = DEFAULT_VIEW_ZOOM;
+      markRenderVisualChange();
+      markExportPreviewDirty();
+      return true;
+    }
   }
 
   // Paths
@@ -1569,6 +1613,14 @@ boolean handleRenderPanelClick(int mx, int my) {
       markRenderVisualChange();
       return true;
     }
+    if (layout.zoneScaleWithZoomCheckbox != null && layout.zoneScaleWithZoomCheckbox.contains(mx, my)) {
+      renderSettings.zoneStrokeScaleWithZoom = !renderSettings.zoneStrokeScaleWithZoom;
+      if (renderSettings.zoneStrokeScaleWithZoom) renderSettings.zoneStrokeRefZoom = DEFAULT_VIEW_ZOOM;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
+      markRenderVisualChange();
+      markExportPreviewDirty();
+      return true;
+    }
     if (layout.zoneSatSlider.contains(mx, my)) {
       float t = sliderNorm(layout.zoneSatSlider, mx);
       renderSettings.zoneStrokeSatScale01 = t;
@@ -1596,6 +1648,13 @@ boolean handleRenderPanelClick(int mx, int my) {
     }
     if (layout.structuresMergeCheckbox.contains(mx, my)) {
       renderSettings.mergeStructures = !renderSettings.mergeStructures;
+      return true;
+    }
+    if (layout.structuresScaleWithZoomCheckbox != null && layout.structuresScaleWithZoomCheckbox.contains(mx, my)) {
+      renderSettings.structureStrokeScaleWithZoom = !renderSettings.structureStrokeScaleWithZoom;
+      if (renderSettings.structureStrokeScaleWithZoom) renderSettings.structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
+      markRenderVisualChange();
+      markExportPreviewDirty();
       return true;
     }
     if (layout.structuresShadowAlphaSlider.contains(mx, my)) {
