@@ -43,6 +43,16 @@ class MapRenderer {
   private int biomeLayerH = -1;
   private int biomeLayerCellCount = -1;
   private int biomeLayerBiomeCount = -1;
+  private PGraphics biomeOutlineLayerLand;
+  private PGraphics biomeOutlineLayerWater;
+  private int biomeOutlineHash = 0;
+  private float biomeOutlineZoom = -1;
+  private float biomeOutlineCenterX = Float.MAX_VALUE;
+  private float biomeOutlineCenterY = Float.MAX_VALUE;
+  private int biomeOutlineW = -1;
+  private int biomeOutlineH = -1;
+  private int biomeOutlineCellCount = -1;
+  private float biomeOutlineSeaLevel = Float.MAX_VALUE;
   private PGraphics elevationLightLayer;
   private int elevationLightHashVal = 0;
   private float elevationLightZoom = -1;
@@ -909,46 +919,6 @@ class MapRenderer {
       }
     }
 
-    // Biome outlines (boundary edges between biomes)
-    if (s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f)) {
-      ensureBiomeOutlineCache(seaLevel);
-      app.noFill();
-      float boW = strokeWorldPx(max(0.1f, s.biomeOutlineSizePx), s.biomeOutlineScaleWithZoom, s.biomeOutlineRefZoom);
-      app.strokeWeight(boW);
-      app.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
-      HashSet<String> capsDrawn = new HashSet<String>();
-      HashSet<String> drawnEdge = new HashSet<String>();
-      for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
-        PVector[] seg = cachedBiomeOutlineEdges.get(i);
-        int biomeId = (i < cachedBiomeOutlineBiomes.size()) ? cachedBiomeOutlineBiomes.get(i) : -1;
-        boolean underwaterEdge = (i < cachedBiomeOutlineUnderwater.size()) ? cachedBiomeOutlineUnderwater.get(i) : false;
-        if (underwaterEdge && s.biomeUnderwaterAlpha01 <= 1e-4f) continue;
-        if (!underwaterEdge && s.biomeOutlineAlpha01 <= 1e-4f) continue;
-        String edgeKey = undirectedEdgeKey(seg[0], seg[1]);
-        if (drawnEdge.contains(edgeKey)) continue;
-        drawnEdge.add(edgeKey);
-        int col = landBase;
-        if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size()) {
-          if (biomeScaledCols != null) {
-            col = biomeScaledCols[biomeId];
-          }
-        }
-        float outlineAlpha = underwaterEdge ? min(s.biomeOutlineAlpha01, s.biomeUnderwaterAlpha01) : s.biomeOutlineAlpha01;
-        app.stroke(col, outlineAlpha * 255);
-        app.line(seg[0].x, seg[0].y, seg[1].x, seg[1].y);
-        if (drawRoundCaps) {
-          float hw = strokeWorldPx(max(0.1f, s.biomeOutlineSizePx), s.biomeOutlineScaleWithZoom, s.biomeOutlineRefZoom) * 0.5f;
-          app.noStroke();
-          app.fill(col, outlineAlpha * 255);
-          String k0 = undirectedEdgeKey(seg[0], seg[0]);
-          String k1 = undirectedEdgeKey(seg[1], seg[1]);
-          if (!capsDrawn.contains(k0)) { capsDrawn.add(k0); app.ellipse(seg[0].x, seg[0].y, hw * 2, hw * 2); }
-          if (!capsDrawn.contains(k1)) { capsDrawn.add(k1); app.ellipse(seg[1].x, seg[1].y, hw * 2, hw * 2); }
-          app.stroke(col, outlineAlpha * 255);
-        }
-      }
-    }
-
     // Water depth shading
     if (s.waterDepthAlpha01 > 1e-4f) {
       app.noStroke();
@@ -1046,6 +1016,28 @@ class MapRenderer {
         drawContourSet(app, grid, start, grid.max, step, strokeCol);
         app.popStyle();
       }
+    }
+
+    // Biome outlines layer (composited to avoid alpha stacking)
+    if (s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f)) {
+      ensureBiomeOutlineLayer(app, s, seaLevel, landBase, biomeScaledCols);
+      if (biomeOutlineLayerLand != null) {
+        app.pushMatrix();
+        app.resetMatrix();
+        app.tint(255, constrain(s.biomeOutlineAlpha01, 0, 1) * 255);
+        app.image(biomeOutlineLayerLand, 0, 0);
+        app.popMatrix();
+      }
+      if (biomeOutlineLayerWater != null) {
+        app.pushMatrix();
+        app.resetMatrix();
+        app.tint(255, constrain(s.biomeUnderwaterAlpha01, 0, 1) * 255);
+        app.image(biomeOutlineLayerWater, 0, 0);
+        app.popMatrix();
+      }
+    } else {
+      biomeOutlineLayerLand = null;
+      biomeOutlineLayerWater = null;
     }
 
     app.popStyle();
@@ -1173,7 +1165,7 @@ class MapRenderer {
     cachedBiomeOutlineEdges.clear();
     cachedBiomeOutlineBiomes.clear();
     cachedBiomeOutlineUnderwater.clear();
-    HashSet<String> drawn = new HashSet<String>();
+    HashMap<String, Integer> edgeToIndex = new HashMap<String, Integer>();
     float eps2 = 1e-6f;
 
     for (int ci = 0; ci < model.cells.size(); ci++) {
@@ -1186,9 +1178,6 @@ class MapRenderer {
         PVector a = c.vertices.get(e);
         PVector b = c.vertices.get((e + 1) % vc);
         String key = undirectedEdgeKey(a, b);
-        if (drawn.contains(key)) continue;
-        drawn.add(key);
-
         int nbBiome = biomeId;
         boolean nbUnderwater = cellUnderwater;
         boolean boundary = true;
@@ -1219,9 +1208,21 @@ class MapRenderer {
         }
 
         if (boundary) {
-          cachedBiomeOutlineEdges.add(new PVector[] { a.copy(), b.copy() });
-          cachedBiomeOutlineBiomes.add(biomeId);
-          cachedBiomeOutlineUnderwater.add(cellUnderwater || nbUnderwater);
+          int chosenBiome = max(biomeId, nbBiome); // priority to later/ higher-index biome types
+          boolean underwater = cellUnderwater || nbUnderwater;
+          Integer existingIdx = edgeToIndex.get(key);
+          if (existingIdx != null) {
+            int currentBiome = (existingIdx < cachedBiomeOutlineBiomes.size()) ? cachedBiomeOutlineBiomes.get(existingIdx) : chosenBiome;
+            if (chosenBiome > currentBiome) {
+              cachedBiomeOutlineBiomes.set(existingIdx, chosenBiome);
+              cachedBiomeOutlineUnderwater.set(existingIdx, underwater);
+            }
+          } else {
+            edgeToIndex.put(key, cachedBiomeOutlineEdges.size());
+            cachedBiomeOutlineEdges.add(new PVector[] { a.copy(), b.copy() });
+            cachedBiomeOutlineBiomes.add(chosenBiome);
+            cachedBiomeOutlineUnderwater.add(underwater);
+          }
         }
       }
     }
@@ -1541,6 +1542,134 @@ class MapRenderer {
     h = 31 * h + (drawRoundCaps ? 1 : 0);
     h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
     return h;
+  }
+
+  private int biomeOutlineHash(RenderSettings s) {
+    int h = 23;
+    h = 31 * h + round(s.biomeOutlineSizePx * 1000.0f);
+    h = 31 * h + round(s.biomeOutlineAlpha01 * 1000.0f);
+    h = 31 * h + round(s.biomeUnderwaterAlpha01 * 1000.0f);
+    h = 31 * h + round(s.biomeOutlineScaleWithZoom ? 1 : 0);
+    h = 31 * h + round(s.biomeOutlineRefZoom * 1000.0f);
+    h = 31 * h + ((model != null && model.biomeTypes != null) ? model.biomeTypes.size() : 0);
+    h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
+    return h;
+  }
+
+  private void ensureBiomeOutlineLayer(PApplet app, RenderSettings s, float seaLevel, int landBase, int[] biomeScaledCols) {
+    if (model == null || model.cells == null || model.cells.isEmpty()) {
+      biomeOutlineLayerLand = null;
+      biomeOutlineLayerWater = null;
+      return;
+    }
+    int targetW = (app.g != null) ? app.g.width : app.width;
+    int targetH = (app.g != null) ? app.g.height : app.height;
+    int hash = biomeOutlineHash(s);
+    boolean sizeChanged = biomeOutlineLayerLand == null || biomeOutlineW != targetW || biomeOutlineH != targetH;
+    boolean viewChanged = biomeOutlineLayerLand == null ||
+                          abs(biomeOutlineZoom - viewport.zoom) > 1e-4f ||
+                          abs(biomeOutlineCenterX - viewport.centerX) > 1e-4f ||
+                          abs(biomeOutlineCenterY - viewport.centerY) > 1e-4f;
+    boolean settingsChanged = biomeOutlineLayerLand == null ||
+                              biomeOutlineHash != hash ||
+                              biomeOutlineCellCount != model.cells.size() ||
+                              abs(biomeOutlineSeaLevel - seaLevel) > 1e-6f;
+    boolean needLand = s.biomeOutlineAlpha01 > 1e-4f;
+    boolean needWater = s.biomeUnderwaterAlpha01 > 1e-4f;
+
+    if (sizeChanged || biomeOutlineLayerLand == null) {
+      biomeOutlineLayerLand = needLand ? app.createGraphics(targetW, targetH, JAVA2D) : null;
+      biomeOutlineLayerWater = needWater ? app.createGraphics(targetW, targetH, JAVA2D) : null;
+      biomeOutlineW = targetW;
+      biomeOutlineH = targetH;
+    }
+    if (!needLand) biomeOutlineLayerLand = null;
+    if (!needWater) biomeOutlineLayerWater = null;
+
+    if (!sizeChanged && !viewChanged && !settingsChanged) return;
+
+    ensureBiomeOutlineCache(seaLevel);
+    float boW = strokeWorldPx(max(0.1f, s.biomeOutlineSizePx), s.biomeOutlineScaleWithZoom, s.biomeOutlineRefZoom);
+
+    if (biomeOutlineLayerLand != null) {
+      biomeOutlineLayerLand.beginDraw();
+      biomeOutlineLayerLand.clear();
+      if (s.antialiasing) biomeOutlineLayerLand.smooth(8); else biomeOutlineLayerLand.noSmooth();
+      biomeOutlineLayerLand.pushMatrix();
+      biomeOutlineLayerLand.pushStyle();
+      viewport.applyTransform(biomeOutlineLayerLand, targetW, targetH);
+      biomeOutlineLayerLand.strokeWeight(boW);
+      biomeOutlineLayerLand.strokeCap(PConstants.ROUND);
+      HashSet<String> caps = new HashSet<String>();
+      for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
+        if (i < cachedBiomeOutlineUnderwater.size() && cachedBiomeOutlineUnderwater.get(i)) continue;
+        PVector[] seg = cachedBiomeOutlineEdges.get(i);
+        int biomeId = (i < cachedBiomeOutlineBiomes.size()) ? cachedBiomeOutlineBiomes.get(i) : -1;
+        int col = landBase;
+        if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size() && biomeScaledCols != null) {
+          col = biomeScaledCols[biomeId];
+        }
+        biomeOutlineLayerLand.stroke(col, 255);
+        biomeOutlineLayerLand.line(seg[0].x, seg[0].y, seg[1].x, seg[1].y);
+        String k0 = undirectedEdgeKey(seg[0], seg[0]);
+        String k1 = undirectedEdgeKey(seg[1], seg[1]);
+        if (drawRoundCaps) {
+          float d = boW;
+          biomeOutlineLayerLand.noStroke();
+          biomeOutlineLayerLand.fill(col, 255);
+          if (!caps.contains(k0)) { caps.add(k0); biomeOutlineLayerLand.ellipse(seg[0].x, seg[0].y, d, d); }
+          if (!caps.contains(k1)) { caps.add(k1); biomeOutlineLayerLand.ellipse(seg[1].x, seg[1].y, d, d); }
+          biomeOutlineLayerLand.stroke(col, 255);
+        }
+      }
+      biomeOutlineLayerLand.popStyle();
+      biomeOutlineLayerLand.popMatrix();
+      biomeOutlineLayerLand.endDraw();
+    }
+
+    if (biomeOutlineLayerWater != null) {
+      biomeOutlineLayerWater.beginDraw();
+      biomeOutlineLayerWater.clear();
+      if (s.antialiasing) biomeOutlineLayerWater.smooth(8); else biomeOutlineLayerWater.noSmooth();
+      biomeOutlineLayerWater.pushMatrix();
+      biomeOutlineLayerWater.pushStyle();
+      viewport.applyTransform(biomeOutlineLayerWater, targetW, targetH);
+      biomeOutlineLayerWater.strokeWeight(boW);
+      biomeOutlineLayerWater.strokeCap(PConstants.ROUND);
+      HashSet<String> caps = new HashSet<String>();
+      for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
+        boolean underwater = (i < cachedBiomeOutlineUnderwater.size()) ? cachedBiomeOutlineUnderwater.get(i) : false;
+        if (!underwater) continue;
+        PVector[] seg = cachedBiomeOutlineEdges.get(i);
+        int biomeId = (i < cachedBiomeOutlineBiomes.size()) ? cachedBiomeOutlineBiomes.get(i) : -1;
+        int col = landBase;
+        if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size() && biomeScaledCols != null) {
+          col = biomeScaledCols[biomeId];
+        }
+        biomeOutlineLayerWater.stroke(col, 255);
+        biomeOutlineLayerWater.line(seg[0].x, seg[0].y, seg[1].x, seg[1].y);
+        if (drawRoundCaps) {
+          float d = boW;
+          String k0 = undirectedEdgeKey(seg[0], seg[0]);
+          String k1 = undirectedEdgeKey(seg[1], seg[1]);
+          biomeOutlineLayerWater.noStroke();
+          biomeOutlineLayerWater.fill(col, 255);
+          if (!caps.contains(k0)) { caps.add(k0); biomeOutlineLayerWater.ellipse(seg[0].x, seg[0].y, d, d); }
+          if (!caps.contains(k1)) { caps.add(k1); biomeOutlineLayerWater.ellipse(seg[1].x, seg[1].y, d, d); }
+          biomeOutlineLayerWater.stroke(col, 255);
+        }
+      }
+      biomeOutlineLayerWater.popStyle();
+      biomeOutlineLayerWater.popMatrix();
+      biomeOutlineLayerWater.endDraw();
+    }
+
+    biomeOutlineHash = hash;
+    biomeOutlineZoom = viewport.zoom;
+    biomeOutlineCenterX = viewport.centerX;
+    biomeOutlineCenterY = viewport.centerY;
+    biomeOutlineCellCount = model.cells.size();
+    biomeOutlineSeaLevel = seaLevel;
   }
 
   private void ensureCoastLayer(PApplet app, RenderSettings s, float seaLevel) {
