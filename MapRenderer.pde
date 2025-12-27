@@ -70,6 +70,24 @@ class MapRenderer {
   private int elevationLightH = -1;
   private float elevationLightSeaLevel = Float.MAX_VALUE;
   private int elevationLightCellCount = -1;
+  private PGraphics elevationLineLayer;
+  private int elevationLineHash = 0;
+  private float elevationLineZoom = -1;
+  private float elevationLineCenterX = Float.MAX_VALUE;
+  private float elevationLineCenterY = Float.MAX_VALUE;
+  private int elevationLineW = -1;
+  private int elevationLineH = -1;
+  private float elevationLineSeaLevel = Float.MAX_VALUE;
+  private int elevationLineCellCount = -1;
+  private PGraphics waterDetailLayer;
+  private int waterDetailLayerHash = 0;
+  private float waterDetailLayerZoom = -1;
+  private float waterDetailLayerCenterX = Float.MAX_VALUE;
+  private float waterDetailLayerCenterY = Float.MAX_VALUE;
+  private int waterDetailLayerW = -1;
+  private int waterDetailLayerH = -1;
+  private float waterDetailLayerSeaLevel = Float.MAX_VALUE;
+  private int waterDetailLayerCellCount = -1;
   private PImage noiseTex;
   private final int NOISE_TEX_SIZE = 1024;
   // Render prep staging (to spread heavy layer builds across frames)
@@ -80,7 +98,9 @@ class MapRenderer {
   boolean zoneDirty = true;
   boolean lightDirty = true;
   boolean biomeOutlineDirty = true;
+  boolean waterDetailDirty = true;
   boolean cellBorderDirty = true;
+  boolean elevationLineDirty = true;
   boolean fontPrepNeeded = true;
   private int renderPrepCompleted = 0;
   private int renderPrepTotal = 0;
@@ -95,12 +115,14 @@ class MapRenderer {
     return b / max(1e-6f, viewport.zoom);
   }
 
-  void invalidateCoastCache() { coastDirty = true; }
+  void invalidateCoastCache() { coastDirty = true; waterDetailDirty = true; }
+  void invalidateWaterDetailLayer() { waterDetailDirty = true; }
   void invalidateBiomeCache() { biomeDirty = true; biomeOutlineDirty = true; }
   void invalidateBiomeOutlineLayer() { biomeOutlineDirty = true; }
   void invalidateZoneCache() { zoneDirty = true; }
   void invalidateLightCache() { lightDirty = true; }
   void invalidateCellBorderLayer() { cellBorderDirty = true; }
+  void invalidateElevationLineLayer() { elevationLineDirty = true; }
 
   MapRenderer(MapModel model) {
     this.model = model;
@@ -538,8 +560,8 @@ class MapRenderer {
       // Prevent runaway font allocations for huge zoom/export scales.
       finalSize = constrain(finalSize, 4.0f, 128.0f);
       outlineSize = constrain(outlineSize, 0, 64.0f);
-      float canvasW = (app != null && app.g != null) ? app.g.width : app.width;
-      float canvasH = (app != null && app.g != null) ? app.g.height : app.height;
+      float canvasW = (app.g != null) ? app.g.width : app.width;
+      float canvasH = (app.g != null) ? app.g.height : app.height;
       PVector screen = viewport.worldToScreen(x, y, canvasW, canvasH);
       if (snapToPixel && !renderingForExport) {
         screen.x = round(screen.x);
@@ -979,57 +1001,39 @@ class MapRenderer {
     coastLayer = null;
   }
 
-    // Water ripples (distance-field contours)
-    if (s.waterRippleCount > 0 &&
-        s.waterRippleDistancePx > 1e-4f &&
-        (s.waterRippleAlphaStart01 > 1e-4f || s.waterRippleAlphaEnd01 > 1e-4f)) {
-      int cols = max(80, min(200, (int)(sqrt(max(1, model.cells.size())) * 1.0f)));
-      int rows = cols;
-      MapModel.ContourGrid g = model.getCoastDistanceGrid(cols, rows, seaLevel);
-      if (g != null) {
-        float spacingFactor = (s.waterContourScaleWithZoom) ? (max(1e-6f, viewport.zoom) / max(1e-6f, s.waterContourRefZoom)) : 1.0f;
-        float spacingWorld = (s.waterRippleDistancePx * spacingFactor) / max(1e-6f, viewport.zoom);
-        if (spacingWorld > 1e-6f) {
-          float maxIso = spacingWorld * s.waterRippleCount;
-          float strokePx = strokeWorldPx(max(0.8f, s.waterContourSizePx), s.waterContourScaleWithZoom, s.waterContourRefZoom);
-          app.pushStyle();
-          app.noFill();
-          app.strokeCap(PConstants.ROUND);
-          app.strokeJoin(PConstants.ROUND);
-          app.strokeWeight(strokePx);
-          for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
-            float t = (maxIso <= spacingWorld + 1e-6f) ? 0.0f : constrain((iso - spacingWorld) / max(1e-6f, maxIso - spacingWorld), 0, 1);
-            float a = constrain(lerp(s.waterRippleAlphaStart01, s.waterRippleAlphaEnd01, t), 0, 1);
-            if (a <= 1e-4f) continue;
-            int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, a);
-            app.stroke(strokeCol);
-            HashSet<String> rippleCaps = drawRoundCaps ? new HashSet<String>() : null;
-            drawIsoLine(app, g, iso, drawRoundCaps, strokePx * 0.5f, strokeCol, rippleCaps);
-          }
-          app.popStyle();
-        }
+    // Water ripples + hatching (cached layer)
+    boolean drawRipples = s.waterRippleCount > 0 &&
+                          s.waterRippleDistancePx > 1e-4f &&
+                          (s.waterRippleAlphaStart01 > 1e-4f || s.waterRippleAlphaEnd01 > 1e-4f);
+    boolean drawHatching = s.waterHatchAlpha01 > 1e-4f &&
+                           s.waterHatchLengthPx > 1e-4f &&
+                           s.waterHatchSpacingPx > 1e-4f;
+    if (drawRipples || drawHatching) {
+      ensureWaterDetailLayer(app, s, seaLevel, drawRipples, drawHatching);
+      if (waterDetailLayer != null) {
+        app.pushMatrix();
+        app.resetMatrix();
+        app.tint(255);
+        app.image(waterDetailLayer, 0, 0);
+        app.popMatrix();
       }
+    } else {
+      waterDetailLayer = null;
     }
 
-    // Water hatching (screen-like parallel lines near coast, over water)
-    drawWaterHatching(app, s, seaLevel);
-
-    // Elevation contour lines (land only)
-    if (s.elevationLinesCount > 0 && s.elevationLinesAlpha01 > 1e-4f) {
-      int cols = 90;
-      int rows = 90;
-      MapModel.ContourGrid grid = model.getElevationGridForRender(cols, rows, seaLevel);
-      if (grid != null) {
-        float range = max(1e-4f, grid.max - seaLevel);
-        float step = range / max(1, s.elevationLinesCount);
-        float start = seaLevel + step;
-        int strokeCol = app.color(0, 0, 0, s.elevationLinesAlpha01 * 255);
-        app.pushStyle();
-        app.strokeCap(PConstants.ROUND);
-        app.strokeJoin(PConstants.ROUND);
-        drawContourSet(app, grid, start, grid.max, step, strokeCol);
-        app.popStyle();
+  // Elevation contour lines (land only)
+  if (s.elevationLinesCount > 0 && s.elevationLinesAlpha01 > 1e-4f) {
+      ensureElevationLineLayer(app, s, seaLevel);
+      if (elevationLineLayer != null) {
+        app.pushMatrix();
+        app.resetMatrix();
+        app.tint(255, constrain(s.elevationLinesAlpha01, 0, 1) * 255);
+        app.image(elevationLineLayer, 0, 0);
+        app.popMatrix();
       }
+    } else {
+      elevationLineLayer = null;
+      elevationLineDirty = true;
     }
 
     // Biome outlines layer (composited to avoid alpha stacking)
@@ -1315,17 +1319,44 @@ class MapRenderer {
     app.stroke(strokeCol);
     float elevW = strokeWorldPx(max(0.1f, renderSettings.elevationLinesSizePx), renderSettings.elevationLinesScaleWithZoom, renderSettings.elevationLinesRefZoom);
     app.strokeWeight(elevW);
+    HashSet<String> caps = drawRoundCaps ? new HashSet<String>() : null;
+    float capR = elevW * 0.5f;
 
     if (step > 0) {
       for (float iso = start; iso <= end + 1e-6f; iso += step) {
-        drawIsoLine(app, g, iso);
+        drawIsoLine(app, g, iso, drawRoundCaps, capR, strokeCol, caps);
       }
     } else {
       for (float iso = start; iso >= end - 1e-6f; iso += step) {
-        drawIsoLine(app, g, iso);
+        drawIsoLine(app, g, iso, drawRoundCaps, capR, strokeCol, caps);
       }
     }
     app.popStyle();
+  }
+
+  // Overload for drawing into cached layers.
+  void drawContourSet(PApplet appCtx, PGraphics g, MapModel.ContourGrid grid, float start, float end, float step, int strokeCol) {
+    if (grid == null || g == null || appCtx == null) return;
+    if (step == 0) return;
+    if ((step > 0 && start > end) || (step < 0 && start < end)) return;
+    g.pushStyle();
+    g.noFill();
+    g.stroke(strokeCol);
+    float elevW = strokeWorldPx(max(0.1f, renderSettings.elevationLinesSizePx), renderSettings.elevationLinesScaleWithZoom, renderSettings.elevationLinesRefZoom);
+    g.strokeWeight(elevW);
+    HashSet<String> caps = drawRoundCaps ? new HashSet<String>() : null;
+    float capR = elevW * 0.5f;
+
+    if (step > 0) {
+      for (float iso = start; iso <= end + 1e-6f; iso += step) {
+        drawIsoLine(appCtx, grid, iso, drawRoundCaps, capR, strokeCol, caps);
+      }
+    } else {
+      for (float iso = start; iso >= end - 1e-6f; iso += step) {
+        drawIsoLine(appCtx, grid, iso, drawRoundCaps, capR, strokeCol, caps);
+      }
+    }
+    g.popStyle();
   }
 
   private float sampleGrid(MapModel.ContourGrid g, float x, float y) {
@@ -1343,6 +1374,39 @@ class MapRenderer {
     float a = lerp(v00, v10, tx);
     float b = lerp(v01, v11, tx);
     return lerp(a, b, ty);
+  }
+
+  void drawWaterRipples(PApplet app, RenderSettings s, float seaLevel) {
+    if (s == null) return;
+    if (s.waterRippleCount <= 0) return;
+    if (s.waterRippleDistancePx <= 1e-4f) return;
+    if (s.waterRippleAlphaStart01 <= 1e-4f && s.waterRippleAlphaEnd01 <= 1e-4f) return;
+    int cols = max(80, min(200, (int)(sqrt(max(1, model.cells.size())) * 1.0f)));
+    int rows = cols;
+    MapModel.ContourGrid g = model.getCoastDistanceGrid(cols, rows, seaLevel);
+    if (g == null) return;
+
+    float spacingFactor = (s.waterContourScaleWithZoom) ? (max(1e-6f, viewport.zoom) / max(1e-6f, s.waterContourRefZoom)) : 1.0f;
+    float spacingWorld = (s.waterRippleDistancePx * spacingFactor) / max(1e-6f, viewport.zoom);
+    if (spacingWorld <= 1e-6f) return;
+
+    float maxIso = spacingWorld * s.waterRippleCount;
+    float strokePx = strokeWorldPx(max(0.8f, s.waterContourSizePx), s.waterContourScaleWithZoom, s.waterContourRefZoom);
+    app.pushStyle();
+    app.noFill();
+    app.strokeCap(PConstants.ROUND);
+    app.strokeJoin(PConstants.ROUND);
+    app.strokeWeight(strokePx);
+    for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
+      float t = (maxIso <= spacingWorld + 1e-6f) ? 0.0f : constrain((iso - spacingWorld) / max(1e-6f, maxIso - spacingWorld), 0, 1);
+      float a = constrain(lerp(s.waterRippleAlphaStart01, s.waterRippleAlphaEnd01, t), 0, 1);
+      if (a <= 1e-4f) continue;
+      int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, a);
+      app.stroke(strokeCol);
+      HashSet<String> rippleCaps = drawRoundCaps ? new HashSet<String>() : null;
+      drawIsoLine(app, g, iso, drawRoundCaps, strokePx * 0.5f, strokeCol, rippleCaps);
+    }
+    app.popStyle();
   }
 
   void drawWaterHatching(PApplet app, RenderSettings s, float seaLevel) {
@@ -1591,6 +1655,19 @@ class MapRenderer {
     return h;
   }
 
+  private int elevationLineSettingsHash(RenderSettings s) {
+    int h = 13;
+    h = 31 * h + round(s.elevationLinesCount);
+    h = 31 * h + round(s.elevationLinesSizePx * 1000.0f);
+    h = 31 * h + round(s.elevationLinesScaleWithZoom ? 1 : 0);
+    h = 31 * h + round(s.elevationLinesRefZoom * 1000.0f);
+    h = 31 * h + round(s.elevationLinesAlpha01 * 1000.0f);
+    h = 31 * h + (drawRoundCaps ? 1 : 0);
+    h = 31 * h + (renderSettings != null && renderSettings.antialiasing ? 1 : 0);
+    h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
+    return h;
+  }
+
   private int coastSettingsHash(RenderSettings s) {
     int h = 17;
     h = 31 * h + round(s.waterCoastSizePx * 1000.0f);
@@ -1599,15 +1676,28 @@ class MapRenderer {
     h = 31 * h + round(s.waterContourBri01 * 1000.0f);
     h = 31 * h + round(s.waterCoastAlpha01 * 1000.0f);
     h = 31 * h + (s.waterCoastScaleWithZoom ? 1 : 0);
+    h = 31 * h + (s.antialiasing ? 1 : 0);
+    h = 31 * h + (drawRoundCaps ? 1 : 0);
+    h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
+    return h;
+  }
+
+  private int waterDetailSettingsHash(RenderSettings s) {
+    int h = 29;
     h = 31 * h + round(s.waterRippleCount);
     h = 31 * h + round(s.waterRippleDistancePx * 1000.0f);
     h = 31 * h + round(s.waterRippleAlphaStart01 * 1000.0f);
     h = 31 * h + round(s.waterRippleAlphaEnd01 * 1000.0f);
+    h = 31 * h + round(s.waterContourHue01 * 1000.0f);
+    h = 31 * h + round(s.waterContourSat01 * 1000.0f);
+    h = 31 * h + round(s.waterContourBri01 * 1000.0f);
+    h = 31 * h + round(s.waterContourSizePx * 1000.0f);
+    h = 31 * h + (s.waterContourScaleWithZoom ? 1 : 0);
+    h = 31 * h + round(s.waterContourRefZoom * 1000.0f);
     h = 31 * h + round(s.waterHatchAngleDeg * 10.0f);
     h = 31 * h + round(s.waterHatchLengthPx * 1000.0f);
     h = 31 * h + round(s.waterHatchSpacingPx * 1000.0f);
     h = 31 * h + round(s.waterHatchAlpha01 * 1000.0f);
-    h = 31 * h + (s.antialiasing ? 1 : 0);
     h = 31 * h + (drawRoundCaps ? 1 : 0);
     h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
     return h;
@@ -1877,6 +1967,158 @@ class MapRenderer {
     coastLayerSeaLevel = seaLevel;
     coastLayerCellCount = model.cells.size();
     coastDirty = false;
+  }
+
+  private void ensureElevationLineLayer(PApplet app, RenderSettings s, float seaLevel) {
+    if (model == null || model.cells == null || model.cells.isEmpty()) {
+      elevationLineLayer = null;
+      return;
+    }
+    if (app == null) return;
+    int targetW = (app.g != null) ? app.g.width : app.width;
+    int targetH = (app.g != null) ? app.g.height : app.height;
+    if (targetW <= 0 || targetH <= 0) {
+      elevationLineLayer = null;
+      return;
+    }
+    int hash = elevationLineSettingsHash(s);
+    boolean sizeChanged = elevationLineLayer == null || elevationLineW != targetW || elevationLineH != targetH;
+    boolean viewChanged = elevationLineLayer == null ||
+                          abs(elevationLineZoom - viewport.zoom) > 1e-4f ||
+                          abs(elevationLineCenterX - viewport.centerX) > 1e-4f ||
+                          abs(elevationLineCenterY - viewport.centerY) > 1e-4f;
+    boolean settingsChanged = elevationLineLayer == null ||
+                              elevationLineHash != hash ||
+                              abs(elevationLineSeaLevel - seaLevel) > 1e-6f ||
+                              elevationLineCellCount != model.cells.size();
+
+    if (sizeChanged) {
+      try {
+        elevationLineLayer = app.createGraphics(targetW, targetH, JAVA2D);
+      } catch (Exception ex) {
+        println("Elevation line layer alloc failed: " + ex);
+        elevationLineLayer = null;
+      }
+      elevationLineW = targetW;
+      elevationLineH = targetH;
+      if (elevationLineLayer != null) {
+        if (s.antialiasing) elevationLineLayer.smooth(8); else elevationLineLayer.noSmooth();
+      }
+    } else {
+      if (elevationLineLayer != null) {
+        if (s.antialiasing) elevationLineLayer.smooth(8); else elevationLineLayer.noSmooth();
+      }
+    }
+    if (elevationLineLayer == null) return;
+    if (!elevationLineDirty && !(sizeChanged || viewChanged || settingsChanged)) return;
+
+    int cols = 90;
+    int rows = 90;
+    MapModel.ContourGrid grid = model.getElevationGridForRender(cols, rows, seaLevel);
+    if (grid == null) {
+      elevationLineLayer = null;
+      return;
+    }
+
+    float range = max(1e-4f, grid.max - seaLevel);
+    float step = range / max(1, s.elevationLinesCount);
+    float start = seaLevel + step;
+    int strokeCol = app.color(0, 0, 0, 255);
+
+    try {
+      elevationLineLayer.beginDraw();
+      elevationLineLayer.clear();
+      elevationLineLayer.pushMatrix();
+      elevationLineLayer.pushStyle();
+      viewport.applyTransform(elevationLineLayer, elevationLineLayer.width, elevationLineLayer.height);
+      drawContourSet(app, elevationLineLayer, grid, start, grid.max, step, strokeCol);
+      elevationLineLayer.popStyle();
+      elevationLineLayer.popMatrix();
+      elevationLineLayer.endDraw();
+    } catch (Exception ex) {
+      println("Elevation line layer build failed: " + ex);
+      elevationLineLayer = null;
+      return;
+    }
+
+    elevationLineHash = hash;
+    elevationLineZoom = viewport.zoom;
+    elevationLineCenterX = viewport.centerX;
+    elevationLineCenterY = viewport.centerY;
+    elevationLineSeaLevel = seaLevel;
+    elevationLineCellCount = model.cells.size();
+    elevationLineDirty = false;
+  }
+
+  private void ensureWaterDetailLayer(PApplet app, RenderSettings s, float seaLevel, boolean wantRipples, boolean wantHatching) {
+    if (model == null || model.cells == null || model.cells.isEmpty()) {
+      waterDetailLayer = null;
+      return;
+    }
+    if (app == null) return;
+    int targetW = (app.g != null) ? app.g.width : app.width;
+    int targetH = (app.g != null) ? app.g.height : app.height;
+    if (targetW <= 0 || targetH <= 0) {
+      waterDetailLayer = null;
+      return;
+    }
+    int hash = waterDetailSettingsHash(s);
+    boolean sizeChanged = waterDetailLayer == null || waterDetailLayerW != targetW || waterDetailLayerH != targetH;
+    boolean viewChanged = waterDetailLayer == null ||
+                          abs(waterDetailLayerZoom - viewport.zoom) > 1e-4f ||
+                          abs(waterDetailLayerCenterX - viewport.centerX) > 1e-4f ||
+                          abs(waterDetailLayerCenterY - viewport.centerY) > 1e-4f;
+    boolean settingsChanged = waterDetailLayer == null ||
+                              waterDetailLayerHash != hash ||
+                              abs(waterDetailLayerSeaLevel - seaLevel) > 1e-6f ||
+                              waterDetailLayerCellCount != model.cells.size();
+
+    if (sizeChanged) {
+      try {
+        waterDetailLayer = app.createGraphics(targetW, targetH, JAVA2D);
+      } catch (Exception ex) {
+        println("Water detail layer alloc failed: " + ex);
+        waterDetailLayer = null;
+      }
+      waterDetailLayerW = targetW;
+      waterDetailLayerH = targetH;
+      if (waterDetailLayer != null) {
+        if (s.antialiasing) waterDetailLayer.smooth(8); else waterDetailLayer.noSmooth();
+      }
+    } else {
+      if (waterDetailLayer != null) {
+        if (s.antialiasing) waterDetailLayer.smooth(8); else waterDetailLayer.noSmooth();
+      }
+    }
+    if (waterDetailLayer == null) return;
+    if (!waterDetailDirty && !(sizeChanged || viewChanged || settingsChanged)) return;
+
+    try {
+      waterDetailLayer.beginDraw();
+      waterDetailLayer.clear();
+      PGraphics prev = app.g;
+      app.g = waterDetailLayer;
+      waterDetailLayer.pushMatrix();
+      waterDetailLayer.pushStyle();
+      viewport.applyTransform(waterDetailLayer, waterDetailLayer.width, waterDetailLayer.height);
+      if (wantRipples) drawWaterRipples(app, s, seaLevel);
+      if (wantHatching) drawWaterHatching(app, s, seaLevel);
+      waterDetailLayer.popStyle();
+      waterDetailLayer.popMatrix();
+      app.g = prev;
+      waterDetailLayer.endDraw();
+    } catch (Exception ex) {
+      println("Water detail layer build failed: " + ex);
+      waterDetailLayer = null;
+    }
+
+    waterDetailLayerHash = hash;
+    waterDetailLayerZoom = viewport.zoom;
+    waterDetailLayerCenterX = viewport.centerX;
+    waterDetailLayerCenterY = viewport.centerY;
+    waterDetailLayerSeaLevel = seaLevel;
+    waterDetailLayerCellCount = model.cells.size();
+    waterDetailDirty = false;
   }
 
   private void drawCoastLayer(PGraphics g, RenderSettings s, float seaLevel) {
@@ -2156,8 +2398,8 @@ class MapRenderer {
             float hw = l.width * 0.5f;
             g.noStroke();
             g.fill(l.col, 255);
-            String ka = model.keyFor(ax, ay);
-            String kb = model.keyFor(bx, by);
+            String ka = capKey(new PVector(ax, ay));
+            String kb = capKey(new PVector(bx, by));
             if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
             if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
             g.stroke(l.col, 255);
@@ -2179,8 +2421,8 @@ class MapRenderer {
             float hw = l.width * 0.5f;
             g.noStroke();
             g.fill(l.col, 255);
-            String ka = model.keyFor(ax, ay);
-            String kb = model.keyFor(bx, by);
+            String ka = capKey(new PVector(ax, ay));
+            String kb = capKey(new PVector(bx, by));
             if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
             if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
             g.stroke(l.col, 255);

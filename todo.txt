@@ -1,4 +1,4 @@
-(Next) : revise rendering presets, make sure everything can be bitmap
+(next) : revise rendering presets, make sure everything can be bitmap
 (later) Zones : options to allow overlapping or not (two groups? allowed / not-allowed)
 (later) Zones : use polygon tracing as an alternative to brush
 (later) Paths : refine the way path generation works
