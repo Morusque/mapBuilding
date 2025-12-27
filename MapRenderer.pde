@@ -987,7 +987,8 @@ class MapRenderer {
       int rows = cols;
       MapModel.ContourGrid g = model.getCoastDistanceGrid(cols, rows, seaLevel);
       if (g != null) {
-        float spacingWorld = s.waterRippleDistancePx / max(1e-6f, viewport.zoom);
+        float spacingFactor = (s.waterContourScaleWithZoom) ? (max(1e-6f, viewport.zoom) / max(1e-6f, s.waterContourRefZoom)) : 1.0f;
+        float spacingWorld = (s.waterRippleDistancePx * spacingFactor) / max(1e-6f, viewport.zoom);
         if (spacingWorld > 1e-6f) {
           float maxIso = spacingWorld * s.waterRippleCount;
           float strokePx = strokeWorldPx(max(0.8f, s.waterContourSizePx), s.waterContourScaleWithZoom, s.waterContourRefZoom);
@@ -1002,7 +1003,8 @@ class MapRenderer {
             if (a <= 1e-4f) continue;
             int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, a);
             app.stroke(strokeCol);
-            drawIsoLine(app, g, iso);
+            HashSet<String> rippleCaps = drawRoundCaps ? new HashSet<String>() : null;
+            drawIsoLine(app, g, iso, drawRoundCaps, strokePx * 0.5f, strokeCol, rippleCaps);
           }
           app.popStyle();
         }
@@ -1355,8 +1357,9 @@ class MapRenderer {
     float angleRad = radians(s.waterHatchAngleDeg);
     PVector d = new PVector(cos(angleRad), sin(angleRad));
     PVector n = new PVector(-d.y, d.x);
-    float spacing = s.waterHatchSpacingPx / max(1e-6f, viewport.zoom);
-    float maxLen = s.waterHatchLengthPx / max(1e-6f, viewport.zoom);
+    float spacingFactor = (s.waterContourScaleWithZoom) ? (max(1e-6f, viewport.zoom) / max(1e-6f, s.waterContourRefZoom)) : 1.0f;
+    float spacing = (s.waterHatchSpacingPx * spacingFactor) / max(1e-6f, viewport.zoom);
+    float maxLen = (s.waterHatchLengthPx * spacingFactor) / max(1e-6f, viewport.zoom);
     if (spacing <= 1e-6f || maxLen <= 1e-6f) return;
 
     float minX = model.minX;
@@ -1430,6 +1433,10 @@ class MapRenderer {
   }
 
   void drawIsoLine(PApplet app, MapModel.ContourGrid g, float iso) {
+    drawIsoLine(app, g, iso, false, 0, 0, null);
+  }
+
+  void drawIsoLine(PApplet app, MapModel.ContourGrid g, float iso, boolean caps, float capRadius, int capCol, HashSet<String> capsDrawn) {
     for (int j = 0; j < g.rows - 1; j++) {
       float y0 = g.oy + j * g.dy;
       float y1 = y0 + g.dy;
@@ -1455,20 +1462,20 @@ class MapRenderer {
         PVector eLeft = interpIso(x0, y0, v00, x0, y1, v01, iso);
 
         switch (caseId) {
-          case 1:  drawSeg(app, eLeft, eTop); break;
-          case 2:  drawSeg(app, eTop, eRight); break;
-          case 3:  drawSeg(app, eLeft, eRight); break;
-          case 4:  drawSeg(app, eRight, eBottom); break;
-          case 5:  drawSeg(app, eTop, eRight); drawSeg(app, eLeft, eBottom); break;
-          case 6:  drawSeg(app, eTop, eBottom); break;
-          case 7:  drawSeg(app, eLeft, eBottom); break;
-          case 8:  drawSeg(app, eBottom, eLeft); break;
-          case 9:  drawSeg(app, eTop, eBottom); break;
-          case 10: drawSeg(app, eTop, eLeft); drawSeg(app, eRight, eBottom); break;
-          case 11: drawSeg(app, eRight, eBottom); break;
-          case 12: drawSeg(app, eRight, eLeft); break;
-          case 13: drawSeg(app, eRight, eTop); break;
-          case 14: drawSeg(app, eTop, eLeft); break;
+          case 1:  drawSeg(app, eLeft, eTop, caps, capRadius, capCol, capsDrawn); break;
+          case 2:  drawSeg(app, eTop, eRight, caps, capRadius, capCol, capsDrawn); break;
+          case 3:  drawSeg(app, eLeft, eRight, caps, capRadius, capCol, capsDrawn); break;
+          case 4:  drawSeg(app, eRight, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 5:  drawSeg(app, eTop, eRight, caps, capRadius, capCol, capsDrawn); drawSeg(app, eLeft, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 6:  drawSeg(app, eTop, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 7:  drawSeg(app, eLeft, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 8:  drawSeg(app, eBottom, eLeft, caps, capRadius, capCol, capsDrawn); break;
+          case 9:  drawSeg(app, eTop, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 10: drawSeg(app, eTop, eLeft, caps, capRadius, capCol, capsDrawn); drawSeg(app, eRight, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 11: drawSeg(app, eRight, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 12: drawSeg(app, eRight, eLeft, caps, capRadius, capCol, capsDrawn); break;
+          case 13: drawSeg(app, eRight, eTop, caps, capRadius, capCol, capsDrawn); break;
+          case 14: drawSeg(app, eTop, eLeft, caps, capRadius, capCol, capsDrawn); break;
         }
       }
     }
@@ -1525,6 +1532,31 @@ class MapRenderer {
     app.line(a.x, a.y, b.x, b.y);
   }
 
+  void drawSeg(PApplet app, PVector a, PVector b, boolean caps, float capRadius, int capCol, HashSet<String> capsDrawn) {
+    if (a == null || b == null) return;
+    app.line(a.x, a.y, b.x, b.y);
+    if (!caps || capRadius <= 1e-6f) return;
+    app.pushStyle();
+    app.noStroke();
+    app.fill(capCol);
+    if (capsDrawn != null) {
+      String ka = capKey(a);
+      if (!capsDrawn.contains(ka)) {
+        capsDrawn.add(ka);
+        app.ellipse(a.x, a.y, capRadius * 2, capRadius * 2);
+      }
+      String kb = capKey(b);
+      if (!capsDrawn.contains(kb)) {
+        capsDrawn.add(kb);
+        app.ellipse(b.x, b.y, capRadius * 2, capRadius * 2);
+      }
+    } else {
+      app.ellipse(a.x, a.y, capRadius * 2, capRadius * 2);
+      app.ellipse(b.x, b.y, capRadius * 2, capRadius * 2);
+    }
+    app.popStyle();
+  }
+
   PVector interpIso(float x0, float y0, float v0, float x1, float y1, float v1, float iso) {
     float denom = (v1 - v0);
     if (abs(denom) < 1e-6f) return new PVector((x0 + x1) * 0.5f, (y0 + y1) * 0.5f);
@@ -1543,6 +1575,13 @@ class MapRenderer {
     } else {
       return bx + "," + by + "-" + ax + "," + ay;
     }
+  }
+
+  private String capKey(PVector p) {
+    if (p == null) return "";
+    int px = round(p.x * 10000);
+    int py = round(p.y * 10000);
+    return px + ":" + py;
   }
 
   private int hashArray(int[] arr) {
