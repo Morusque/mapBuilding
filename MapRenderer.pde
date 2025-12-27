@@ -240,6 +240,10 @@ class MapRenderer {
 
       float shadowAlpha = baseAlpha * s.structureShadowAlpha01;
       float shadowLen = st.size * shadowLenFactor;
+      if (s.structureStrokeScaleWithZoom) {
+        float ref = (s.structureStrokeRefZoom > 1e-6f) ? s.structureStrokeRefZoom : DEFAULT_VIEW_ZOOM;
+        shadowLen *= max(1e-6f, viewport.zoom) / ref;
+      }
       if (shadowAlpha > 1e-4f && shadowLen > 1e-6f) {
         PVector off = PVector.mult(shadowDir, shadowLen);
         app.pushMatrix();
@@ -500,12 +504,18 @@ class MapRenderer {
     if (app == null || txt == null) return;
     try {
       float finalSize = ts;
+      float outlineSize = outlineSizePx;
       if (renderSettings != null && renderSettings.labelScaleWithZoom) {
         float ref = (renderSettings.labelScaleRefZoom > 1e-6f) ? renderSettings.labelScaleRefZoom : DEFAULT_VIEW_ZOOM;
         finalSize = ts * (max(1e-6f, viewport.zoom) / ref);
       }
+      if (renderSettings != null && renderSettings.labelOutlineScaleWithZoom) {
+        float ref = (renderSettings.labelScaleRefZoom > 1e-6f) ? renderSettings.labelScaleRefZoom : DEFAULT_VIEW_ZOOM;
+        outlineSize = outlineSizePx * (max(1e-6f, viewport.zoom) / ref);
+      }
       // Prevent runaway font allocations for huge zoom/export scales.
       finalSize = constrain(finalSize, 4.0f, 128.0f);
+      outlineSize = constrain(outlineSize, 0, 64.0f);
       float canvasW = (app != null && app.g != null) ? app.g.width : app.width;
       float canvasH = (app != null && app.g != null) ? app.g.height : app.height;
       PVector screen = viewport.worldToScreen(x, y, canvasW, canvasH);
@@ -526,7 +536,7 @@ class MapRenderer {
         app.textSize(fontSize);
       }
       float oa = constrain(outlineAlpha01, 0, 1);
-      int radius = max(0, round(outlineSizePx));
+      int radius = max(0, round(outlineSize));
       if (oa > 1e-4f) {
         app.fill(255, oa * 255);
         for (int dx = -radius; dx <= radius; dx++) {
@@ -907,12 +917,16 @@ class MapRenderer {
       app.strokeWeight(boW);
       app.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
       HashSet<String> capsDrawn = new HashSet<String>();
+      HashSet<String> drawnEdge = new HashSet<String>();
       for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
         PVector[] seg = cachedBiomeOutlineEdges.get(i);
         int biomeId = (i < cachedBiomeOutlineBiomes.size()) ? cachedBiomeOutlineBiomes.get(i) : -1;
         boolean underwaterEdge = (i < cachedBiomeOutlineUnderwater.size()) ? cachedBiomeOutlineUnderwater.get(i) : false;
         if (underwaterEdge && s.biomeUnderwaterAlpha01 <= 1e-4f) continue;
         if (!underwaterEdge && s.biomeOutlineAlpha01 <= 1e-4f) continue;
+        String edgeKey = undirectedEdgeKey(seg[0], seg[1]);
+        if (drawnEdge.contains(edgeKey)) continue;
+        drawnEdge.add(edgeKey);
         int col = landBase;
         if (model.biomeTypes != null && biomeId >= 0 && biomeId < model.biomeTypes.size()) {
           if (biomeScaledCols != null) {
@@ -923,7 +937,7 @@ class MapRenderer {
         app.stroke(col, outlineAlpha * 255);
         app.line(seg[0].x, seg[0].y, seg[1].x, seg[1].y);
         if (drawRoundCaps) {
-          float hw = max(0.1f, s.biomeOutlineSizePx) / viewport.zoom / 2.0f;
+          float hw = strokeWorldPx(max(0.1f, s.biomeOutlineSizePx), s.biomeOutlineScaleWithZoom, s.biomeOutlineRefZoom) * 0.5f;
           app.noStroke();
           app.fill(col, outlineAlpha * 255);
           String k0 = undirectedEdgeKey(seg[0], seg[0]);

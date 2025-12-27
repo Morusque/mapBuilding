@@ -114,6 +114,7 @@ class RenderSettings {
   float labelSizeStructPx = 12.0f;
   boolean labelScaleWithZoom = false;
   float labelScaleRefZoom = 1.0f;
+  boolean labelOutlineScaleWithZoom = false;
   int labelFontIndex = 0;
 
   // General
@@ -209,6 +210,7 @@ class RenderSettings {
     c.labelSizeStructPx = labelSizeStructPx;
     c.labelScaleWithZoom = labelScaleWithZoom;
     c.labelScaleRefZoom = labelScaleRefZoom;
+    c.labelOutlineScaleWithZoom = labelOutlineScaleWithZoom;
     c.labelFontIndex = labelFontIndex;
     // General
     c.exportPaddingPct = exportPaddingPct;
@@ -306,6 +308,7 @@ class RenderSettings {
     labelSizeStructPx = o.labelSizeStructPx;
     labelScaleWithZoom = o.labelScaleWithZoom;
     labelScaleRefZoom = o.labelScaleRefZoom;
+    labelOutlineScaleWithZoom = o.labelOutlineScaleWithZoom;
     labelFontIndex = o.labelFontIndex;
     if (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) {
       labelFontIndex = constrain(labelFontIndex, 0, LABEL_FONT_OPTIONS.length - 1);

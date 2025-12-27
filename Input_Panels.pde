@@ -1713,6 +1713,11 @@ boolean handleRenderPanelClick(int mx, int my) {
       markExportPreviewDirty();
       return true;
     }
+    if (layout.labelsOutlineScaleWithZoomCheckbox != null && layout.labelsOutlineScaleWithZoomCheckbox.contains(mx, my)) {
+      renderSettings.labelOutlineScaleWithZoom = !renderSettings.labelOutlineScaleWithZoom;
+      markExportPreviewDirty();
+      return true;
+    }
     if (layout.labelsScaleWithZoomCheckbox != null &&
         mx >= layout.labelsScaleWithZoomCheckbox.x + layout.labelsScaleWithZoomCheckbox.w + PANEL_ROW_GAP &&
         mx <= layout.labelsScaleWithZoomCheckbox.x + layout.labelsScaleWithZoomCheckbox.w + PANEL_ROW_GAP + 80 &&

@@ -2006,6 +2006,7 @@ class RenderLayout {
   IntRect labelsStructSizeSlider;
   IntRect labelsFontSelector;
   IntRect labelsScaleWithZoomCheckbox;
+  IntRect labelsOutlineScaleWithZoomCheckbox;
 
   IntRect exportPaddingSlider;
   IntRect antialiasCheckbox;
@@ -2233,6 +2234,8 @@ RenderLayout buildRenderLayout() {
     l.labelsScaleWithZoomCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     // Extra gap to leave space for the reference zoom text under the checkbox.
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP + PANEL_LABEL_H + PANEL_ROW_GAP;
+    l.labelsOutlineScaleWithZoomCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
     l.labelsFontSelector = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
   }
@@ -2437,6 +2440,9 @@ void drawRenderPanel() {
     text("Ref zoom: " + nf(renderSettings.labelScaleRefZoom, 1, 2),
          layout.labelsScaleWithZoomCheckbox.x,
          layout.labelsScaleWithZoomCheckbox.y + PANEL_CHECK_SIZE + PANEL_ROW_GAP);
+    if (layout.labelsOutlineScaleWithZoomCheckbox != null) {
+      drawCheckbox(layout.labelsOutlineScaleWithZoomCheckbox.x, layout.labelsOutlineScaleWithZoomCheckbox.y, layout.labelsOutlineScaleWithZoomCheckbox.w, renderSettings.labelOutlineScaleWithZoom, "Scale outline with zoom");
+    }
     if (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0 && layout.labelsFontSelector != null) {
       int idx = constrain(renderSettings.labelFontIndex, 0, LABEL_FONT_OPTIONS.length - 1);
       float tFont = (LABEL_FONT_OPTIONS.length > 1) ? constrain(idx / (float)(LABEL_FONT_OPTIONS.length - 1), 0, 1) : 0;
