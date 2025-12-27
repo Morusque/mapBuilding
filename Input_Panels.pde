@@ -1451,11 +1451,26 @@ boolean handleRenderPanelClick(int mx, int my) {
       markRenderVisualChange();
       return true;
     }
+    if (layout.waterCoastSizeSlider != null && layout.waterCoastSizeSlider.contains(mx, my)) {
+      float t = sliderNorm(layout.waterCoastSizeSlider, mx);
+      renderSettings.waterCoastSizePx = constrain(t * 5.0f, 0, 5.0f);
+      activeSlider = SLIDER_RENDER_WATER_COAST_SIZE;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
+      return true;
+    }
     if (layout.waterContourScaleCheckbox != null && layout.waterContourScaleCheckbox.contains(mx, my)) {
       renderSettings.waterContourScaleWithZoom = !renderSettings.waterContourScaleWithZoom;
       if (renderSettings.waterContourScaleWithZoom) renderSettings.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
       if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
       markRenderVisualChange();
+      markExportPreviewDirty();
+      return true;
+    }
+    if (layout.waterCoastScaleCheckbox != null && layout.waterCoastScaleCheckbox.contains(mx, my)) {
+      renderSettings.waterCoastScaleWithZoom = !renderSettings.waterCoastScaleWithZoom;
+      markRenderVisualChange();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
       markExportPreviewDirty();
       return true;
     }

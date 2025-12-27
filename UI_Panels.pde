@@ -1966,6 +1966,8 @@ class RenderLayout {
   IntRect waterRippleDistanceSlider;
   IntRect[] waterContourHSB = new IntRect[3];
   IntRect waterContourCoastAlphaSlider;
+  IntRect waterCoastSizeSlider;
+  IntRect waterCoastScaleCheckbox;
   IntRect waterHatchAngleSlider;
   IntRect waterHatchLengthSlider;
   IntRect waterHatchSpacingSlider;
@@ -2111,6 +2113,11 @@ RenderLayout buildRenderLayout() {
   l.headerContours = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
   curY += PANEL_TITLE_H + PANEL_ROW_GAP;
   if (renderSectionContoursOpen) {
+    l.waterCoastSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.waterCoastScaleCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+
     l.waterContourSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
@@ -2344,6 +2351,10 @@ void drawRenderPanel() {
     registerUiTooltip(layout.waterContourSizeSlider, tooltipFor("render_water_contour_size"));
     if (layout.waterContourScaleCheckbox != null) {
       drawCheckbox(layout.waterContourScaleCheckbox.x, layout.waterContourScaleCheckbox.y, layout.waterContourScaleCheckbox.w, renderSettings.waterContourScaleWithZoom, "Scale water strokes with zoom");
+    }
+    drawSlider(layout.waterCoastSizeSlider, constrain(renderSettings.waterCoastSizePx / 5.0f, 0, 1), "Coastline size (" + nf(renderSettings.waterCoastSizePx, 1, 1) + " px)");
+    if (layout.waterCoastScaleCheckbox != null) {
+      drawCheckbox(layout.waterCoastScaleCheckbox.x, layout.waterCoastScaleCheckbox.y, layout.waterCoastScaleCheckbox.w, renderSettings.waterCoastScaleWithZoom, "Scale coastline with zoom");
     }
     drawSlider(layout.waterRippleCountSlider, constrain(renderSettings.waterRippleCount / 5.0f, 0, 1), "Number of ripples (" + renderSettings.waterRippleCount + ")");
     registerUiTooltip(layout.waterRippleCountSlider, tooltipFor("render_water_ripple_count"));

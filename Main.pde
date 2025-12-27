@@ -172,6 +172,14 @@ void markRenderDirty() {
   renderPrepDone = false;
   renderForceDirtyAll = true;
   exportPreviewDirty = true;
+  if (mapModel != null && mapModel.renderer != null) {
+    mapModel.renderer.invalidateCoastCache();
+    mapModel.renderer.invalidateBiomeCache();
+    mapModel.renderer.invalidateBiomeOutlineLayer();
+    mapModel.renderer.invalidateZoneCache();
+    mapModel.renderer.invalidateLightCache();
+    mapModel.renderer.invalidateCellBorderLayer();
+  }
 }
 
 // Trigger a render rebuild without forcing contour/grid recomputation
@@ -520,6 +528,7 @@ final int SLIDER_STRUCT_SHAPE = 102;
 final int SLIDER_STRUCT_ALIGNMENT = 103;
 final int SLIDER_RENDER_CELL_BORDER_SIZE = 104;
 final int SLIDER_RENDER_ELEV_LINES_SIZE = 105;
+final int SLIDER_RENDER_WATER_COAST_SIZE = 106;
 
 int activeSlider = SLIDER_NONE;
 
@@ -2228,6 +2237,8 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   contours.setFloat("waterContourBri01", s.waterContourBri01);
   contours.setFloat("waterContourAlpha01", s.waterCoastAlpha01);
   contours.setFloat("waterCoastAlpha01", s.waterCoastAlpha01);
+  contours.setFloat("waterCoastSizePx", s.waterCoastSizePx);
+  contours.setBoolean("waterCoastScaleWithZoom", s.waterCoastScaleWithZoom);
   contours.setBoolean("waterContourScaleWithZoom", s.waterContourScaleWithZoom);
   contours.setFloat("waterContourRefZoom", s.waterContourRefZoom);
   contours.setFloat("waterRippleAlphaStart01", s.waterRippleAlphaStart01);
@@ -2282,6 +2293,7 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   labels.setFloat("labelSizeZonePx", s.labelSizeZonePx);
   labels.setFloat("labelSizePathPx", s.labelSizePathPx);
   labels.setFloat("labelSizeStructPx", s.labelSizeStructPx);
+  labels.setBoolean("labelOutlineScaleWithZoom", s.labelOutlineScaleWithZoom);
   labels.setInt("labelFontIndex", s.labelFontIndex);
   r.setJSONObject("labels", labels);
 
@@ -2344,6 +2356,8 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.waterContourBri01 = b.getFloat("waterContourBri01", target.waterContourBri01);
     target.waterContourAlpha01 = b.getFloat("waterContourAlpha01", target.waterContourAlpha01);
     target.waterCoastAlpha01 = b.getFloat("waterCoastAlpha01", target.waterContourAlpha01);
+    target.waterCoastSizePx = b.getFloat("waterCoastSizePx", target.waterCoastSizePx);
+    target.waterCoastScaleWithZoom = b.getBoolean("waterCoastScaleWithZoom", target.waterCoastScaleWithZoom);
     target.waterContourScaleWithZoom = b.getBoolean("waterContourScaleWithZoom", target.waterContourScaleWithZoom);
     target.waterContourRefZoom = b.getFloat("waterContourRefZoom", target.waterContourRefZoom);
     target.waterRippleAlphaStart01 = b.getFloat("waterRippleAlphaStart01", target.waterContourAlpha01);
@@ -2404,6 +2418,7 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.labelSizeZonePx = b.getFloat("labelSizeZonePx", target.labelSizeZonePx);
     target.labelSizePathPx = b.getFloat("labelSizePathPx", target.labelSizePathPx);
     target.labelSizeStructPx = b.getFloat("labelSizeStructPx", target.labelSizeStructPx);
+    target.labelOutlineScaleWithZoom = b.getBoolean("labelOutlineScaleWithZoom", target.labelOutlineScaleWithZoom);
     target.labelFontIndex = b.getInt("labelFontIndex", target.labelFontIndex);
     if (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) {
       target.labelFontIndex = constrain(target.labelFontIndex, 0, LABEL_FONT_OPTIONS.length - 1);

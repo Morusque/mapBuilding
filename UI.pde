@@ -163,12 +163,20 @@ void drawTopBar() {
   text(info1, 10, topBarH / 2.0f - 7);
   text(info2, 10, topBarH / 2.0f + 7);
 
-  // Notice (right side, above loading bar)
-  if (uiNoticeFrames > 0 && uiNotice != null && uiNotice.length() > 0) {
+  // Notice/status (right side, above loading bar). Prefer ongoing ops over transient notices.
+  String statusMsg = null;
+  if (fullGenRunning) {
+    statusMsg = "Generation in progress...";
+  } else if (renderPrepRunning) {
+    statusMsg = "Rendering...";
+  } else if (uiNoticeFrames > 0 && uiNotice != null && uiNotice.length() > 0) {
+    statusMsg = uiNotice;
+    uiNoticeFrames--;
+  }
+  if (statusMsg != null) {
     fill(180, 50, 50);
     textAlign(RIGHT, CENTER);
-    text(uiNotice, width - 150, topBarH / 2.0f - 6);
-    uiNoticeFrames--;
+    text(statusMsg, width - 150, topBarH / 2.0f - 6);
   }
 
   // Loading bar (top-right, small)

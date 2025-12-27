@@ -740,6 +740,14 @@ void updateActiveSlider(int mx, int my) {
       markRenderVisualChange();
       break;
     }
+    case SLIDER_RENDER_WATER_COAST_SIZE: {
+      RenderLayout l = buildRenderLayout();
+      float t = sliderNorm(l.waterCoastSizeSlider, mx);
+      renderSettings.waterCoastSizePx = constrain(t * 5.0f, 0, 5.0f);
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
+      break;
+    }
     case SLIDER_RENDER_WATER_RIPPLE_COUNT: {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterRippleCountSlider, mx);

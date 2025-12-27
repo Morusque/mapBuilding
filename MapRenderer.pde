@@ -53,6 +53,14 @@ class MapRenderer {
   private int biomeOutlineH = -1;
   private int biomeOutlineCellCount = -1;
   private float biomeOutlineSeaLevel = Float.MAX_VALUE;
+  private PGraphics cellBorderLayer;
+  private int cellBorderHash = 0;
+  private float cellBorderZoom = -1;
+  private float cellBorderCenterX = Float.MAX_VALUE;
+  private float cellBorderCenterY = Float.MAX_VALUE;
+  private int cellBorderW = -1;
+  private int cellBorderH = -1;
+  private int cellBorderCellCount = -1;
   private PGraphics elevationLightLayer;
   private int elevationLightHashVal = 0;
   private float elevationLightZoom = -1;
@@ -71,6 +79,8 @@ class MapRenderer {
   boolean biomeDirty = true;
   boolean zoneDirty = true;
   boolean lightDirty = true;
+  boolean biomeOutlineDirty = true;
+  boolean cellBorderDirty = true;
   boolean fontPrepNeeded = true;
   private int renderPrepCompleted = 0;
   private int renderPrepTotal = 0;
@@ -86,9 +96,11 @@ class MapRenderer {
   }
 
   void invalidateCoastCache() { coastDirty = true; }
-  void invalidateBiomeCache() { biomeDirty = true; }
+  void invalidateBiomeCache() { biomeDirty = true; biomeOutlineDirty = true; }
+  void invalidateBiomeOutlineLayer() { biomeOutlineDirty = true; }
   void invalidateZoneCache() { zoneDirty = true; }
   void invalidateLightCache() { lightDirty = true; }
+  void invalidateCellBorderLayer() { cellBorderDirty = true; }
 
   MapRenderer(MapModel model) {
     this.model = model;
@@ -905,18 +917,18 @@ class MapRenderer {
       }
     }
 
-    // Cell borders
-    if (s.cellBorderAlpha01 > 1e-4f) {
-      app.stroke(0, 0, 0, s.cellBorderAlpha01 * 255);
-      float cbW = strokeWorldPx(max(0.1f, s.cellBorderSizePx), s.cellBorderScaleWithZoom, s.cellBorderRefZoom);
-      app.strokeWeight(cbW);
-      app.strokeCap(PConstants.ROUND);
-      app.strokeJoin(PConstants.ROUND);
-      app.noFill();
-      for (Cell c : model.cells) {
-        if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
-        drawPoly(app, c.vertices, true);
+    // Cell borders (layered to avoid alpha stacking)
+    if (s.cellBorderAlpha01 > 1e-4f && s.cellBorderSizePx > 1e-4f) {
+      ensureCellBorderLayer(app, s);
+      if (cellBorderLayer != null) {
+        app.pushMatrix();
+        app.resetMatrix();
+        app.tint(255, constrain(s.cellBorderAlpha01, 0, 1) * 255);
+        app.image(cellBorderLayer, 0, 0);
+        app.popMatrix();
       }
+    } else {
+      cellBorderLayer = null;
     }
 
     // Water depth shading
@@ -1061,6 +1073,23 @@ class MapRenderer {
     app.beginShape();
     for (PVector v : verts) app.vertex(v.x, v.y);
     app.endShape(CLOSE);
+  }
+
+  // PGraphics overload for cached layer drawing.
+  private void drawPoly(PGraphics g, ArrayList<PVector> verts, boolean outlineOnly) {
+    if (verts == null || verts.size() < 3 || g == null) return;
+    if (outlineOnly) {
+      int n = verts.size();
+      for (int i = 0; i < n; i++) {
+        PVector a = verts.get(i);
+        PVector b = verts.get((i + 1) % n);
+        g.line(a.x, a.y, b.x, b.y);
+      }
+      return;
+    }
+    g.beginShape();
+    for (PVector v : verts) g.vertex(v.x, v.y);
+    g.endShape(CLOSE);
   }
 
   private int hsbColor(float h, float s, float b, float a) {
@@ -1525,11 +1554,12 @@ class MapRenderer {
 
   private int coastSettingsHash(RenderSettings s) {
     int h = 17;
-    h = 31 * h + round(s.waterContourSizePx * 1000.0f);
+    h = 31 * h + round(s.waterCoastSizePx * 1000.0f);
     h = 31 * h + round(s.waterContourHue01 * 1000.0f);
     h = 31 * h + round(s.waterContourSat01 * 1000.0f);
     h = 31 * h + round(s.waterContourBri01 * 1000.0f);
     h = 31 * h + round(s.waterCoastAlpha01 * 1000.0f);
+    h = 31 * h + (s.waterCoastScaleWithZoom ? 1 : 0);
     h = 31 * h + round(s.waterRippleCount);
     h = 31 * h + round(s.waterRippleDistancePx * 1000.0f);
     h = 31 * h + round(s.waterRippleAlphaStart01 * 1000.0f);
@@ -1586,7 +1616,7 @@ class MapRenderer {
     if (!needLand) biomeOutlineLayerLand = null;
     if (!needWater) biomeOutlineLayerWater = null;
 
-    if (!sizeChanged && !viewChanged && !settingsChanged) return;
+    if (!biomeOutlineDirty && !sizeChanged && !viewChanged && !settingsChanged) return;
 
     ensureBiomeOutlineCache(seaLevel);
     float boW = strokeWorldPx(max(0.1f, s.biomeOutlineSizePx), s.biomeOutlineScaleWithZoom, s.biomeOutlineRefZoom);
@@ -1670,6 +1700,76 @@ class MapRenderer {
     biomeOutlineCenterY = viewport.centerY;
     biomeOutlineCellCount = model.cells.size();
     biomeOutlineSeaLevel = seaLevel;
+    biomeOutlineDirty = false;
+  }
+
+  private int cellBorderSettingsHash(RenderSettings s) {
+    int h = 29;
+    h = 31 * h + round(s.cellBorderSizePx * 1000.0f);
+    h = 31 * h + (s.cellBorderScaleWithZoom ? 1 : 0);
+    h = 31 * h + round(s.cellBorderRefZoom * 1000.0f);
+    h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
+    return h;
+  }
+
+  private void ensureCellBorderLayer(PApplet app, RenderSettings s) {
+    if (model == null || model.cells == null || model.cells.isEmpty()) {
+      cellBorderLayer = null;
+      return;
+    }
+    if (s.cellBorderSizePx <= 1e-4f || s.cellBorderAlpha01 <= 1e-4f) {
+      cellBorderLayer = null;
+      return;
+    }
+    int targetW = (app.g != null) ? app.g.width : app.width;
+    int targetH = (app.g != null) ? app.g.height : app.height;
+    int hash = cellBorderSettingsHash(s);
+    boolean sizeChanged = cellBorderLayer == null || cellBorderW != targetW || cellBorderH != targetH;
+    boolean viewChanged = cellBorderLayer == null ||
+                          abs(cellBorderZoom - viewport.zoom) > 1e-4f ||
+                          abs(cellBorderCenterX - viewport.centerX) > 1e-4f ||
+                          abs(cellBorderCenterY - viewport.centerY) > 1e-4f;
+    boolean settingsChanged = cellBorderLayer == null ||
+                              cellBorderHash != hash ||
+                              cellBorderCellCount != model.cells.size();
+    if (!cellBorderDirty && !(sizeChanged || viewChanged || settingsChanged)) return;
+
+    try {
+      cellBorderLayer = app.createGraphics(targetW, targetH, JAVA2D);
+      if (cellBorderLayer != null) {
+        if (s.antialiasing) cellBorderLayer.smooth(8); else cellBorderLayer.noSmooth();
+        cellBorderLayer.beginDraw();
+        cellBorderLayer.clear();
+        cellBorderLayer.pushMatrix();
+        cellBorderLayer.pushStyle();
+        viewport.applyTransform(cellBorderLayer, targetW, targetH);
+        cellBorderLayer.stroke(0, 0, 0, 255);
+        float cbW = strokeWorldPx(max(0.1f, s.cellBorderSizePx), s.cellBorderScaleWithZoom, s.cellBorderRefZoom);
+        cellBorderLayer.strokeWeight(cbW);
+        cellBorderLayer.strokeCap(PConstants.ROUND);
+        cellBorderLayer.strokeJoin(PConstants.ROUND);
+        cellBorderLayer.noFill();
+        for (Cell c : model.cells) {
+          if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
+          drawPoly(cellBorderLayer, c.vertices, true);
+        }
+        cellBorderLayer.popStyle();
+        cellBorderLayer.popMatrix();
+        cellBorderLayer.endDraw();
+      }
+    } catch (Exception ex) {
+      println("Cell border layer build failed: " + ex);
+      cellBorderLayer = null;
+    }
+
+    cellBorderHash = hash;
+    cellBorderZoom = viewport.zoom;
+    cellBorderCenterX = viewport.centerX;
+    cellBorderCenterY = viewport.centerY;
+    cellBorderW = targetW;
+    cellBorderH = targetH;
+    cellBorderCellCount = model.cells.size();
+    cellBorderDirty = false;
   }
 
   private void ensureCoastLayer(PApplet app, RenderSettings s, float seaLevel) {
@@ -1743,7 +1843,7 @@ class MapRenderer {
   private void drawCoastLayer(PGraphics g, RenderSettings s, float seaLevel) {
     HashSet<String> drawn = new HashSet<String>();
     int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, 1.0f);
-    float strokeW = strokeWorldPx(max(0.1f, s.waterContourSizePx), s.waterContourScaleWithZoom, s.waterContourRefZoom);
+    float strokeW = strokeWorldPx(max(0.1f, s.waterCoastSizePx), s.waterCoastScaleWithZoom, s.waterContourRefZoom);
     float thisHalfWeight = strokeW * 0.5f;
     g.strokeWeight(strokeW);
     g.stroke(strokeCol);

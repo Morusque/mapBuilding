@@ -62,6 +62,8 @@ class RenderSettings {
   float waterContourBri01 = 0.0f;
   float waterContourAlpha01 = 1.0f; // legacy: keep for backward compat
   float waterCoastAlpha01 = 1.0f;
+  float waterCoastSizePx = 2.0f;
+  boolean waterCoastScaleWithZoom = false;
   boolean waterContourScaleWithZoom = false;
   float waterContourRefZoom = DEFAULT_VIEW_ZOOM;
   float waterRippleAlphaStart01 = 1.0f;
@@ -162,6 +164,8 @@ class RenderSettings {
     c.waterContourBri01 = waterContourBri01;
     c.waterContourAlpha01 = waterCoastAlpha01;
     c.waterCoastAlpha01 = waterCoastAlpha01;
+    c.waterCoastSizePx = waterCoastSizePx;
+    c.waterCoastScaleWithZoom = waterCoastScaleWithZoom;
     c.waterContourScaleWithZoom = waterContourScaleWithZoom;
     c.waterContourRefZoom = waterContourRefZoom;
     c.waterRippleAlphaStart01 = waterRippleAlphaStart01;
@@ -260,6 +264,8 @@ class RenderSettings {
     waterContourBri01 = o.waterContourBri01;
     waterContourAlpha01 = o.waterCoastAlpha01;
     waterCoastAlpha01 = o.waterCoastAlpha01;
+    waterCoastSizePx = o.waterCoastSizePx;
+    waterCoastScaleWithZoom = o.waterCoastScaleWithZoom;
     waterContourScaleWithZoom = o.waterContourScaleWithZoom;
     waterContourRefZoom = o.waterContourRefZoom;
     waterRippleAlphaStart01 = o.waterRippleAlphaStart01;
@@ -354,6 +360,8 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 1.0f;
     s.waterCoastAlpha01 = 1.0f;
+    s.waterCoastSizePx = 2.0f;
+    s.waterCoastScaleWithZoom = false;
     s.waterRippleAlphaStart01 = 1.0f;
     s.waterRippleAlphaEnd01 = 0.3f;
     s.waterHatchAngleDeg = 0.0f;
