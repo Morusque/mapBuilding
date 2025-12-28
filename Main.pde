@@ -885,6 +885,13 @@ void draw() {
   if (fullGenRunning) {
     if (!isLoading) startLoading();
     stepFullGenerateFromCells();
+    // Safety: if full gen steps exceeded, clear flags.
+    if (fullGenStep > 5) {
+      fullGenRunning = false;
+      stopLoading();
+      loadingDetail = "";
+      loadingPct = 1.0f;
+    }
   }
   mapModel.ensureVoronoiComputed();
   mapModel.stepContourJobs(6);
@@ -901,6 +908,14 @@ void draw() {
     } else {
       if (isLoading) stopLoading();
       loadingPct = 1.0f;
+    }
+  } else {
+    // If full gen is running and all jobs plus steps are done, clear loading.
+    if (!building && fullGenStep > 5) {
+      fullGenRunning = false;
+      stopLoading();
+      loadingPct = 1.0f;
+      loadingDetail = "";
     }
   }
 

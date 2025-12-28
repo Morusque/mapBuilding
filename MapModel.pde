@@ -1750,7 +1750,6 @@ class MapModel {
   }
 
   void generatePathsAuto(float seaLevel) {
-    long tStep;
     ensureCellNeighborsComputed();
     if (structures != null) {
       for (int i = structures.size() - 1; i >= 0; i--) {
@@ -1766,7 +1765,6 @@ class MapModel {
     float stepLen = max(1e-4f, min(worldW, worldH) * 0.02f);
 
     // Collect coastline midpoints (land/water boundary)
-    tStep = millis();
     ArrayList<PVector> coastPts = new ArrayList<PVector>();
     ArrayList<PVector> coastNrm = new ArrayList<PVector>(); // normal pointing from land to water
     int n = cells.size();
@@ -1817,15 +1815,11 @@ class MapModel {
     }
 
     // Precompute mesh vertices for snapping
-    println("Paths gen: coast pts " + coastPts.size() + " in " + (millis() - tStep) + " ms");
-    tStep = millis();
     ensureSnapGraph();
     ArrayList<PVector[]> existingSegs = collectAllPathSegments();
     ArrayList<PVector[]> existingRoadSegs = collectPathSegmentsByType(roadType);
-    println("Paths gen: snapGraph nodes=" + snapNodes.size() + " edges=" + snapAdj.size() + " in " + (millis() - tStep) + " ms; existing segs " + existingSegs.size());
 
     // Rivers
-    tStep = millis();
     for (int i = 0; i < 5; i++) {
       if (coastPts.isEmpty()) break;
       PVector start = coastPts.get((int)random(coastPts.size()));
@@ -1836,9 +1830,7 @@ class MapModel {
       addPathFromPoints(riverType, useDefaultPathNames ? "River " + (paths.size() + 1) : "", route);
       existingSegs = collectAllPathSegments();
     }
-    println("Paths gen: rivers in " + (millis() - tStep) + " ms");
     // Interest points (snap to nearest cell vertex)
-    tStep = millis();
     ArrayList<PVector> interest = new ArrayList<PVector>();
     // biggest structures
     if (structures != null && !structures.isEmpty()) {

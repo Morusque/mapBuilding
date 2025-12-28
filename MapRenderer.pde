@@ -6,6 +6,35 @@ class MapRenderer {
   private final MapModel model;
   private final HashMap<String, PFont> labelFontCache = new HashMap<String, PFont>();
   private String labelFontName = (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) ? LABEL_FONT_OPTIONS[0] : "SansSerif";
+  // Shared helpers for line caps and zone segments
+  private class CapInfo {
+    SegInfo seg;
+    boolean atStart;
+    float r;
+    int col;
+    CapInfo(SegInfo seg, boolean atStart, float r, int col) {
+      this.seg = seg;
+      this.atStart = atStart;
+      this.r = r;
+      this.col = col;
+    }
+  }
+  private class SegInfo {
+    PVector a, b;
+    PVector origA, origB;
+    float w;
+    int col;
+    int zoneId;
+    SegInfo(PVector a, PVector b, PVector origA, PVector origB, float w, int col, int zoneId) {
+      this.a = a;
+      this.b = b;
+      this.origA = origA;
+      this.origB = origB;
+      this.w = w;
+      this.col = col;
+      this.zoneId = zoneId;
+    }
+  }
 
   // Cached biome outline edges
   private ArrayList<PVector[]> cachedBiomeOutlineEdges = new ArrayList<PVector[]>();
@@ -115,6 +144,20 @@ class MapRenderer {
     return b / max(1e-6f, viewport.zoom);
   }
 
+// Line intersection helper; returns null if nearly parallel.
+  private PVector lineIntersection(PVector p1, PVector p2, PVector p3, PVector p4) {
+    float x1 = p1.x, y1 = p1.y;
+    float x2 = p2.x, y2 = p2.y;
+    float x3 = p3.x, y3 = p3.y;
+    float x4 = p4.x, y4 = p4.y;
+    float denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+    if (abs(denom) < 1e-6f) return null;
+    float ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
+    float ix = x1 + ua * (x2 - x1);
+    float iy = y1 + ua * (y2 - y1);
+    return new PVector(ix, iy);
+  }
+
   void invalidateCoastCache() { coastDirty = true; waterDetailDirty = true; }
   void invalidateWaterDetailLayer() { waterDetailDirty = true; }
   void invalidateBiomeCache() { biomeDirty = true; biomeOutlineDirty = true; }
@@ -132,8 +175,8 @@ class MapRenderer {
     app.pushStyle();
     app.noFill();
     app.stroke(0);
-    app.strokeCap(PConstants.ROUND);
-    app.strokeJoin(PConstants.ROUND);
+    // app.strokeCap(PConstants.ROUND);
+    // app.strokeJoin(PConstants.ROUND);
     app.strokeWeight(1.5f / viewport.zoom);
     app.rect(model.minX, model.minY, model.maxX - model.minX, model.maxY - model.minY);
     app.popStyle();
@@ -164,8 +207,8 @@ class MapRenderer {
   void drawCellsRender(PApplet app, boolean showBorders, boolean desaturate) {
     if (model.cells == null) return;
     app.pushStyle();
-    app.strokeCap(PConstants.ROUND);
-    app.strokeJoin(PConstants.ROUND);
+    // app.strokeCap(PConstants.ROUND);
+    // app.strokeJoin(PConstants.ROUND);
     float biomeAlphaScale = (currentTool == Tool.EDIT_ELEVATION) ? 0.8f : 1.0f;
     float[][] biomeHSB = null;
     if (desaturate && model.biomeTypes != null && !model.biomeTypes.isEmpty()) {
@@ -209,8 +252,8 @@ class MapRenderer {
         // Use a thin stroke matching the fill to hide tiny AA gaps between adjacent polygons.
         app.stroke(col);
         app.strokeWeight(0.35f / viewport.zoom);
-        app.strokeJoin(PConstants.MITER);
-        app.strokeCap(PConstants.PROJECT);
+        // app.strokeJoin(PConstants.MITER);
+        // app.strokeCap(PConstants.PROJECT);
       }
 
       app.beginShape();
@@ -623,8 +666,8 @@ class MapRenderer {
     HashSet<String> drawn = new HashSet<String>();
 
     app.pushStyle();
-    app.strokeCap(PConstants.ROUND);
-    app.strokeJoin(PConstants.ROUND);
+    // app.strokeCap(PConstants.ROUND);
+    // app.strokeJoin(PConstants.ROUND);
     app.noFill();
 
     for (int ci = 0; ci < n; ci++) {
@@ -1394,8 +1437,8 @@ class MapRenderer {
     float strokePx = strokeWorldPx(max(0.8f, s.waterContourSizePx), s.waterContourScaleWithZoom, s.waterContourRefZoom);
     app.pushStyle();
     app.noFill();
-    app.strokeCap(PConstants.ROUND);
-    app.strokeJoin(PConstants.ROUND);
+    // app.strokeCap(PConstants.ROUND);
+    // app.strokeJoin(PConstants.ROUND);
     app.strokeWeight(strokePx);
     for (float iso = spacingWorld; iso <= maxIso + 1e-6f; iso += spacingWorld) {
       float t = (maxIso <= spacingWorld + 1e-6f) ? 0.0f : constrain((iso - spacingWorld) / max(1e-6f, maxIso - spacingWorld), 0, 1);
@@ -1451,7 +1494,7 @@ class MapRenderer {
     app.stroke(strokeCol);
     float hatchStroke = strokeWorldPx(max(0.6f, s.waterContourSizePx * 0.8f), s.waterContourScaleWithZoom, s.waterContourRefZoom);
     app.strokeWeight(hatchStroke);
-    app.strokeCap(PConstants.SQUARE);
+    // app.strokeCap(PConstants.SQUARE);
     app.noFill();
 
     float startOff = floor((minProj - originProj) / spacing) * spacing + originProj;
@@ -1758,7 +1801,7 @@ class MapRenderer {
       biomeOutlineLayerLand.pushStyle();
       viewport.applyTransform(biomeOutlineLayerLand, targetW, targetH);
       biomeOutlineLayerLand.strokeWeight(boW);
-      biomeOutlineLayerLand.strokeCap(PConstants.ROUND);
+      // biomeOutlineLayerLand.strokeCap(PConstants.ROUND);
       HashSet<String> caps = new HashSet<String>();
       for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
         if (i < cachedBiomeOutlineUnderwater.size() && cachedBiomeOutlineUnderwater.get(i)) continue;
@@ -1794,7 +1837,7 @@ class MapRenderer {
       biomeOutlineLayerWater.pushStyle();
       viewport.applyTransform(biomeOutlineLayerWater, targetW, targetH);
       biomeOutlineLayerWater.strokeWeight(boW);
-      biomeOutlineLayerWater.strokeCap(PConstants.ROUND);
+      // biomeOutlineLayerWater.strokeCap(PConstants.ROUND);
       HashSet<String> caps = new HashSet<String>();
       for (int i = 0; i < cachedBiomeOutlineEdges.size(); i++) {
         boolean underwater = (i < cachedBiomeOutlineUnderwater.size()) ? cachedBiomeOutlineUnderwater.get(i) : false;
@@ -1875,8 +1918,8 @@ class MapRenderer {
         cellBorderLayer.stroke(0, 0, 0, 255);
         float cbW = strokeWorldPx(max(0.1f, s.cellBorderSizePx), s.cellBorderScaleWithZoom, s.cellBorderRefZoom);
         cellBorderLayer.strokeWeight(cbW);
-        cellBorderLayer.strokeCap(PConstants.ROUND);
-        cellBorderLayer.strokeJoin(PConstants.ROUND);
+        // cellBorderLayer.strokeCap(PConstants.ROUND);
+        // cellBorderLayer.strokeJoin(PConstants.ROUND);
         cellBorderLayer.noFill();
         for (Cell c : model.cells) {
           if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
@@ -2123,14 +2166,14 @@ class MapRenderer {
 
   private void drawCoastLayer(PGraphics g, RenderSettings s, float seaLevel) {
     HashSet<String> drawn = new HashSet<String>();
+    HashSet<String> capsDrawn = new HashSet<String>();
     int strokeCol = hsbColor(s.waterContourHue01, s.waterContourSat01, s.waterContourBri01, 1.0f);
     float strokeW = strokeWorldPx(max(0.1f, s.waterCoastSizePx), s.waterCoastScaleWithZoom, s.waterContourRefZoom);
     float thisHalfWeight = strokeW * 0.5f;
     g.strokeWeight(strokeW);
     g.stroke(strokeCol);
-    g.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
+    // g.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
     g.noFill();
-    HashSet<String> capsDrawn = new HashSet<String>();
     model.ensureCellNeighborsComputed();
     for (int ci = 0; ci < model.cells.size(); ci++) {
       Cell c = model.cells.get(ci);
@@ -2250,7 +2293,7 @@ class MapRenderer {
       zoneLayer.pushStyle();
       viewport.applyTransform(zoneLayer, zoneLayer.width, zoneLayer.height);
       float zoneW = strokeWorldPx(max(0.1f, s.zoneStrokeSizePx), s.zoneStrokeScaleWithZoom, s.zoneStrokeRefZoom);
-      drawZoneLayer(zoneLayer, zoneStrokeCols, zoneW);
+      drawZoneLayer(zoneLayer, zoneStrokeCols, zoneW, s);
       zoneLayer.popStyle();
       zoneLayer.popMatrix();
       zoneLayer.endDraw();
@@ -2269,8 +2312,8 @@ class MapRenderer {
     zoneDirty = false;
   }
 
-  private void drawZoneLayer(PGraphics g, int[] zoneStrokeCols, float zoneW) {
-    if (model.cells == null || model.cells.isEmpty()) return;
+  private void drawZoneLayer(PGraphics g, int[] zoneStrokeCols, float zoneW, RenderSettings s) {
+    if (s == null || model.cells == null || model.cells.isEmpty()) return;
     model.ensureCellNeighborsComputed();
     int n = model.cells.size();
 
@@ -2294,12 +2337,14 @@ class MapRenderer {
     HashSet<String> drawn = new HashSet<String>();
     ArrayList<Integer> listA = new ArrayList<Integer>();
     ArrayList<Integer> listB = new ArrayList<Integer>();
-    HashSet<String> capsDrawn = new HashSet<String>();
+    ArrayList<SegInfo> allSegs = new ArrayList<SegInfo>();
+    HashMap<String, CapInfo> capMap = new HashMap<String, CapInfo>();
 
     class Lane {
       float width;
       int col;
-      Lane(float w, int ccol) { width = w; col = ccol; }
+      int zoneId;
+      Lane(float w, int ccol, int zid) { width = w; col = ccol; zoneId = zid; }
     }
 
     for (int ci = 0; ci < n; ci++) {
@@ -2366,12 +2411,12 @@ class MapRenderer {
         for (int zId : listA) {
           if (zId < 0 || zId >= model.zones.size()) continue;
           int colZ = (zoneStrokeCols != null && zId < zoneStrokeCols.length) ? zoneStrokeCols[zId] : -1;
-          if (colZ != -1) lanesPos.add(new Lane(zoneW, colZ));
+          if (colZ != -1) lanesPos.add(new Lane(zoneW, colZ, zId));
         }
         for (int zId : listB) {
           if (zId < 0 || zId >= model.zones.size()) continue;
           int colZ = (zoneStrokeCols != null && zId < zoneStrokeCols.length) ? zoneStrokeCols[zId] : -1;
-          if (colZ != -1) lanesNeg.add(new Lane(zoneW, colZ));
+          if (colZ != -1) lanesNeg.add(new Lane(zoneW, colZ, zId));
         }
 
         Comparator<Lane> cmp = new Comparator<Lane>() {
@@ -2380,57 +2425,115 @@ class MapRenderer {
         Collections.sort(lanesPos, cmp);
         Collections.sort(lanesNeg, cmp);
 
-        g.strokeCap(drawRoundCaps ? PConstants.ROUND : PConstants.SQUARE);
-        g.strokeJoin(PConstants.ROUND);
-
         float offsetPos = 0;
         for (Lane l : lanesPos) {
           if (l.width <= 1e-4f) continue;
           float laneOff = offsetPos + l.width * 0.5f;
-          g.stroke(l.col, 255);
-          g.strokeWeight(l.width);
           float ax = a.x + nrm.x * laneOff;
           float ay = a.y + nrm.y * laneOff;
           float bx = b.x + nrm.x * laneOff;
           float by = b.y + nrm.y * laneOff;
-          g.line(ax, ay, bx, by);
-          if (drawRoundCaps) {
-            float hw = l.width * 0.5f;
-            g.noStroke();
-            g.fill(l.col, 255);
-            String ka = capKey(new PVector(ax, ay));
-            String kb = capKey(new PVector(bx, by));
-            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
-            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
-            g.stroke(l.col, 255);
-          }
+          SegInfo si = new SegInfo(new PVector(ax, ay), new PVector(bx, by), a, b, l.width, l.col, l.zoneId);
+          allSegs.add(si);
+          capMap.putIfAbsent(undirectedEdgeKey(a, a) + "#" + l.zoneId, new CapInfo(si, true, l.width * 0.5f, l.col));
+          capMap.putIfAbsent(undirectedEdgeKey(b, b) + "#" + l.zoneId, new CapInfo(si, false, l.width * 0.5f, l.col));
           offsetPos += l.width + laneGap;
         }
         float offsetNeg = 0;
         for (Lane l : lanesNeg) {
           if (l.width <= 1e-4f) continue;
           float laneOff = offsetNeg + l.width * 0.5f;
-          g.stroke(l.col, 255);
-          g.strokeWeight(l.width);
           float ax = a.x - nrm.x * laneOff;
           float ay = a.y - nrm.y * laneOff;
           float bx = b.x - nrm.x * laneOff;
           float by = b.y - nrm.y * laneOff;
-          g.line(ax, ay, bx, by);
-          if (drawRoundCaps) {
-            float hw = l.width * 0.5f;
-            g.noStroke();
-            g.fill(l.col, 255);
-            String ka = capKey(new PVector(ax, ay));
-            String kb = capKey(new PVector(bx, by));
-            if (!capsDrawn.contains(ka)) { capsDrawn.add(ka); g.ellipse(ax, ay, hw * 2, hw * 2); }
-            if (!capsDrawn.contains(kb)) { capsDrawn.add(kb); g.ellipse(bx, by, hw * 2, hw * 2); }
-            g.stroke(l.col, 255);
-          }
+          SegInfo si = new SegInfo(new PVector(ax, ay), new PVector(bx, by), a, b, l.width, l.col, l.zoneId);
+          allSegs.add(si);
+          capMap.putIfAbsent(undirectedEdgeKey(a, a) + "#" + l.zoneId, new CapInfo(si, true, l.width * 0.5f, l.col));
+          capMap.putIfAbsent(undirectedEdgeKey(b, b) + "#" + l.zoneId, new CapInfo(si, false, l.width * 0.5f, l.col));
           offsetNeg += l.width + laneGap;
         }
-
         drawn.add(key);
+      }
+    }
+
+    adjustZoneSegmentIntersections(allSegs);
+
+    g.strokeWeight(1);
+    for (SegInfo si : allSegs) {
+      g.stroke(si.col, s.zoneStrokeAlpha01 * 255.0f);
+      g.strokeWeight(si.w);
+      g.line(si.a.x, si.a.y, si.b.x, si.b.y);
+    }
+
+    if (drawRoundCaps) {
+      g.noStroke();
+      for (CapInfo ci : capMap.values()) {
+        PVector p = ci.atStart ? ci.seg.a : ci.seg.b;
+        g.fill(ci.col, s.zoneStrokeAlpha01 * 255.0f);
+        float d = ci.r * 2;
+        g.ellipse(p.x, p.y, d, d);
+      }
+    }
+  }
+
+  private void adjustZoneSegmentIntersections(ArrayList<SegInfo> segs) {
+    if (segs == null || segs.isEmpty()) return;
+
+    class SegEndpoint {
+      SegInfo s;
+      boolean isStart;
+      int zoneId;
+      PVector orig;
+      SegEndpoint(SegInfo s, boolean isStart, int zoneId, PVector orig) {
+        this.s = s; this.isStart = isStart; this.zoneId = zoneId; this.orig = orig;
+      }
+    }
+
+    HashMap<String, ArrayList<SegEndpoint>> byVertex = new HashMap<String, ArrayList<SegEndpoint>>();
+    for (SegInfo s : segs) {
+      if (s == null) continue;
+      String ka = undirectedEdgeKey(s.origA, s.origA) + "#" + s.zoneId;
+      String kb = undirectedEdgeKey(s.origB, s.origB) + "#" + s.zoneId;
+      byVertex.computeIfAbsent(ka, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, true, s.zoneId, s.origA));
+      byVertex.computeIfAbsent(kb, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, false, s.zoneId, s.origB));
+    }
+
+    for (ArrayList<SegEndpoint> list : byVertex.values()) {
+      if (list == null || list.size() < 2) continue;
+      int m = list.size();
+      boolean[] used = new boolean[m];
+      for (int i = 0; i < m; i++) {
+        if (used[i]) continue;
+        SegEndpoint ei = list.get(i);
+        PVector p1 = ei.isStart ? ei.s.a : ei.s.b;
+        PVector p1b = ei.isStart ? ei.s.b : ei.s.a;
+        PVector dir1 = PVector.sub(p1b, p1);
+        float dir1Len = max(1e-6f, dir1.mag());
+        dir1.mult(1.0f / dir1Len);
+        float bestDot = -2;
+        int bestJ = -1;
+        for (int j = 0; j < m; j++) {
+          if (i == j || used[j]) continue;
+          SegEndpoint ej = list.get(j);
+          if (ej.zoneId != ei.zoneId) continue;
+          PVector p2 = ej.isStart ? ej.s.a : ej.s.b;
+          PVector p2b = ej.isStart ? ej.s.b : ej.s.a;
+          PVector dir2 = PVector.sub(p2b, p2);
+          float dir2Len = max(1e-6f, dir2.mag());
+          dir2.mult(1.0f / dir2Len);
+          float d = dir1.dot(dir2);
+          if (d > bestDot) { bestDot = d; bestJ = j; }
+        }
+        if (bestJ == -1) continue;
+        SegEndpoint ej = list.get(bestJ);
+        PVector p2 = ej.isStart ? ej.s.a : ej.s.b;
+        PVector p2b = ej.isStart ? ej.s.b : ej.s.a;
+        PVector inter = lineIntersection(p1, p1b, p2, p2b);
+        if (inter == null) continue;
+        if (ei.isStart) ei.s.a = inter.copy(); else ei.s.b = inter.copy();
+        if (ej.isStart) ej.s.a = inter.copy(); else ej.s.b = inter.copy();
+        used[i] = used[bestJ] = true;
       }
     }
   }
@@ -2649,8 +2752,8 @@ class MapRenderer {
     PVector lightDir = new PVector(cos(alt) * cos(az), cos(alt) * sin(az), sin(alt));
     lightDir.normalize();
     // Draw with a matching stroke to hide seams between polygons
-    g.strokeJoin(PConstants.MITER);
-    g.strokeCap(PConstants.PROJECT);
+    // g.strokeJoin(PConstants.MITER);
+    // g.strokeCap(PConstants.PROJECT);
     float seamW = 1.0f / max(0.1f, viewport.zoom);
     g.strokeWeight(seamW);
     for (int ci = 0; ci < model.cells.size(); ci++) {

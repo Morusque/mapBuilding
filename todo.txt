@@ -28,18 +28,13 @@
 (later) Other : investigate caching options, Refactor, optimize etc.
 (later) Other : undo states
 (later) Other : the way ui elements are stored should be a box containing the labels as well, not having the labels partially above it (eg see how HSB sliders are inserted in the layout)
-(later) Other : correctly merge strokes that overlap with alpha
 (later) Other : Update comments to multiline
 (later) Other : make the generations better overall
 (maybe) Sites : there could be a "subdivide" button that splits each existing site in subregions (eg draws center to edges lines).
 (maybe) Sites : anything snapped to sites should move along with them when moved or resnapped to closer site when regenerated
-(maybe) Elevation : use techtonic logic in addition to perlin or double multiplied perlin
+(maybe) Elevation : use techtonic logic or vector field displacement in addition to perlin or double multiplied perlin
 (maybe) Paths : width definer similar to water but using pathfinding to define more important roads
 (maybe) Structures : use polygon tracing as a structure input mode
-(maybe) Labels : optionally associate labels with map elements
-(maybe) Labels : have type presets for label styles (like with path types)
 (maybe) Export : importing from picture
 (maybe) Rendering : a "save preset" button
-(maybe) option to generate details (about everything) for zooming
 (maybe) use HSB directly instead of converting?
-(maybe) Editable types: visually show which parameters "belong" to a type or to a more general part of the interface.
