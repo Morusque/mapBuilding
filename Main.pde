@@ -434,6 +434,10 @@ String uiNotice = "";
 int uiNoticeFrames = 0;
 final int NOTICE_DURATION_FRAMES = 150;
 String loadingDetail = "";
+// Transient render-loading overlay (for render prep / redraw feedback)
+boolean renderLoadingActive = false;
+float renderLoadingPct = 0;
+String renderLoadingDetail = "";
 
 // Slider drag state
 final int SLIDER_NONE = 0;
