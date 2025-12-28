@@ -64,6 +64,7 @@ class RenderSettings {
   float waterCoastAlpha01 = 1.0f;
   float waterCoastSizePx = 2.0f;
   boolean waterCoastScaleWithZoom = false;
+  boolean waterCoastAboveZones = false;
   boolean waterContourScaleWithZoom = false;
   float waterContourRefZoom = DEFAULT_VIEW_ZOOM;
   float waterRippleAlphaStart01 = 1.0f;
@@ -166,6 +167,7 @@ class RenderSettings {
     c.waterCoastAlpha01 = waterCoastAlpha01;
     c.waterCoastSizePx = waterCoastSizePx;
     c.waterCoastScaleWithZoom = waterCoastScaleWithZoom;
+    c.waterCoastAboveZones = waterCoastAboveZones;
     c.waterContourScaleWithZoom = waterContourScaleWithZoom;
     c.waterContourRefZoom = waterContourRefZoom;
     c.waterRippleAlphaStart01 = waterRippleAlphaStart01;
@@ -266,6 +268,7 @@ class RenderSettings {
     waterCoastAlpha01 = o.waterCoastAlpha01;
     waterCoastSizePx = o.waterCoastSizePx;
     waterCoastScaleWithZoom = o.waterCoastScaleWithZoom;
+    waterCoastAboveZones = o.waterCoastAboveZones;
     waterContourScaleWithZoom = o.waterContourScaleWithZoom;
     waterContourRefZoom = o.waterContourRefZoom;
     waterRippleAlphaStart01 = o.waterRippleAlphaStart01;
@@ -362,6 +365,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterCoastAlpha01 = 1.0f;
     s.waterCoastSizePx = 2.0f;
     s.waterCoastScaleWithZoom = false;
+    s.waterCoastAboveZones = false;
     s.waterRippleAlphaStart01 = 1.0f;
     s.waterRippleAlphaEnd01 = 0.3f;
     s.waterHatchAngleDeg = 0.0f;

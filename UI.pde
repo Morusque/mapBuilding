@@ -167,7 +167,7 @@ void drawTopBar() {
   // Loading bar & status (top-right, small)
   boolean showLoad = isLoading || renderPrepUiActive;
   String statusMsg = null;
-  if (fullGenRunning) {
+  if (fullGenRunning && isLoading) {
     statusMsg = "Generation in progress...";
   } else if (renderPrepRunning) {
     statusMsg = "Rendering...";

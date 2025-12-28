@@ -171,6 +171,8 @@ class MapRenderer {
     this.model = model;
   }
 
+  PGraphics getCoastLayer() { return coastLayer; }
+
   void drawDebugWorldBounds(PApplet app) {
     app.pushStyle();
     app.noFill();
@@ -742,7 +744,7 @@ class MapRenderer {
           if (zId < 0 || zId >= model.zones.size()) continue;
           float w = baseW;
           float lane = offsetA + w * 0.5f;
-          app.stroke(model.zones.get(zId).col, 240);
+          app.stroke(model.zones.get(zId).col, 255);
           app.strokeWeight(w);
           app.line(a.x + nrm.x * lane, a.y + nrm.y * lane, b.x + nrm.x * lane, b.y + nrm.y * lane);
           offsetA += w + laneGap;
@@ -753,7 +755,7 @@ class MapRenderer {
           if (zId < 0 || zId >= model.zones.size()) continue;
           float w = baseW;
           float lane = offsetB + w * 0.5f;
-          app.stroke(model.zones.get(zId).col, 240);
+          app.stroke(model.zones.get(zId).col, 255);
           app.strokeWeight(w);
           app.line(a.x - nrm.x * lane, a.y - nrm.y * lane, b.x - nrm.x * lane, b.y - nrm.y * lane);
           offsetB += w + laneGap;
@@ -1029,9 +1031,10 @@ class MapRenderer {
     }
 
   // Coast outline (draw into cached layer to avoid alpha stacking at caps)
-  if (s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f) {
+  boolean wantCoast = s.waterContourSizePx > 1e-4f && s.waterCoastAlpha01 > 1e-4f;
+  if (wantCoast) {
     ensureCoastLayer(app, s, seaLevel);
-    if (coastLayer != null) {
+    if (!s.waterCoastAboveZones && coastLayer != null) {
       app.pushStyle();
       app.pushMatrix();
       app.resetMatrix(); // draw in screen space to avoid double-transform
@@ -1944,7 +1947,7 @@ class MapRenderer {
     cellBorderDirty = false;
   }
 
-  private void ensureCoastLayer(PApplet app, RenderSettings s, float seaLevel) {
+  void ensureCoastLayer(PApplet app, RenderSettings s, float seaLevel) {
     if (model == null || model.cells == null || model.cells.isEmpty()) {
       coastLayer = null;
       return;
@@ -2485,55 +2488,44 @@ class MapRenderer {
       boolean isStart;
       int zoneId;
       PVector orig;
-      SegEndpoint(SegInfo s, boolean isStart, int zoneId, PVector orig) {
-        this.s = s; this.isStart = isStart; this.zoneId = zoneId; this.orig = orig;
+      float ang;
+      SegEndpoint(SegInfo s, boolean isStart, int zoneId, PVector orig, float ang) {
+        this.s = s; this.isStart = isStart; this.zoneId = zoneId; this.orig = orig; this.ang = ang;
       }
     }
 
     HashMap<String, ArrayList<SegEndpoint>> byVertex = new HashMap<String, ArrayList<SegEndpoint>>();
     for (SegInfo s : segs) {
       if (s == null) continue;
+      PVector dirA = PVector.sub(s.b, s.a);
+      PVector dirB = PVector.sub(s.a, s.b);
       String ka = undirectedEdgeKey(s.origA, s.origA) + "#" + s.zoneId;
       String kb = undirectedEdgeKey(s.origB, s.origB) + "#" + s.zoneId;
-      byVertex.computeIfAbsent(ka, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, true, s.zoneId, s.origA));
-      byVertex.computeIfAbsent(kb, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, false, s.zoneId, s.origB));
+      float angA = atan2(dirA.y, dirA.x);
+      float angB = atan2(dirB.y, dirB.x);
+      byVertex.computeIfAbsent(ka, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, true, s.zoneId, s.origA, angA));
+      byVertex.computeIfAbsent(kb, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, false, s.zoneId, s.origB, angB));
     }
 
     for (ArrayList<SegEndpoint> list : byVertex.values()) {
       if (list == null || list.size() < 2) continue;
+      Collections.sort(list, new Comparator<SegEndpoint>() {
+        public int compare(SegEndpoint a, SegEndpoint b) { return Float.compare(a.ang, b.ang); }
+      });
+
       int m = list.size();
-      boolean[] used = new boolean[m];
-      for (int i = 0; i < m; i++) {
-        if (used[i]) continue;
-        SegEndpoint ei = list.get(i);
-        PVector p1 = ei.isStart ? ei.s.a : ei.s.b;
-        PVector p1b = ei.isStart ? ei.s.b : ei.s.a;
-        PVector dir1 = PVector.sub(p1b, p1);
-        float dir1Len = max(1e-6f, dir1.mag());
-        dir1.mult(1.0f / dir1Len);
-        float bestDot = -2;
-        int bestJ = -1;
-        for (int j = 0; j < m; j++) {
-          if (i == j || used[j]) continue;
-          SegEndpoint ej = list.get(j);
-          if (ej.zoneId != ei.zoneId) continue;
-          PVector p2 = ej.isStart ? ej.s.a : ej.s.b;
-          PVector p2b = ej.isStart ? ej.s.b : ej.s.a;
-          PVector dir2 = PVector.sub(p2b, p2);
-          float dir2Len = max(1e-6f, dir2.mag());
-          dir2.mult(1.0f / dir2Len);
-          float d = dir1.dot(dir2);
-          if (d > bestDot) { bestDot = d; bestJ = j; }
-        }
-        if (bestJ == -1) continue;
-        SegEndpoint ej = list.get(bestJ);
-        PVector p2 = ej.isStart ? ej.s.a : ej.s.b;
-        PVector p2b = ej.isStart ? ej.s.b : ej.s.a;
-        PVector inter = lineIntersection(p1, p1b, p2, p2b);
+      for (int i = 0; i < m; i += 2) {
+        SegEndpoint e0 = list.get(i);
+        SegEndpoint e1 = list.get((i + 1) % m);
+        if (e0.zoneId != e1.zoneId) continue;
+        PVector p0a = e0.isStart ? e0.s.a : e0.s.b;
+        PVector p0b = e0.isStart ? e0.s.b : e0.s.a;
+        PVector p1a = e1.isStart ? e1.s.a : e1.s.b;
+        PVector p1b = e1.isStart ? e1.s.b : e1.s.a;
+        PVector inter = lineIntersection(p0a, p0b, p1a, p1b);
         if (inter == null) continue;
-        if (ei.isStart) ei.s.a = inter.copy(); else ei.s.b = inter.copy();
-        if (ej.isStart) ej.s.a = inter.copy(); else ej.s.b = inter.copy();
-        used[i] = used[bestJ] = true;
+        if (e0.isStart) e0.s.a = inter.copy(); else e0.s.b = inter.copy();
+        if (e1.isStart) e1.s.a = inter.copy(); else e1.s.b = inter.copy();
       }
     }
   }

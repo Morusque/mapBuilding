@@ -1187,6 +1187,21 @@ void drawRenderView(PApplet app) {
     mapModel.drawZoneOutlinesRender(app, renderSettings);
   }
 
+  // Coastlines overlay (optional above zones)
+  if (renderSettings.waterCoastAboveZones && renderSettings.waterCoastAlpha01 > 1e-4f) {
+    if (mapModel.renderer != null && mapModel.renderer.getCoastLayer() != null) {
+      pushStyle();
+      pushMatrix();
+      resetMatrix();
+      tint(255, constrain(renderSettings.waterCoastAlpha01, 0, 1) * 255);
+      image(mapModel.renderer.getCoastLayer(), 0, 0);
+      popMatrix();
+      popStyle();
+    } else if (mapModel.renderer != null) {
+      mapModel.renderer.ensureCoastLayer(app, renderSettings, seaLevel);
+    }
+  }
+
   // Paths
   if (renderSettings.showPaths) {
     mapModel.drawPathsRender(app, renderSettings);

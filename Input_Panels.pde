@@ -1474,6 +1474,13 @@ boolean handleRenderPanelClick(int mx, int my) {
       markExportPreviewDirty();
       return true;
     }
+    if (layout.waterCoastAboveZonesCheckbox != null && layout.waterCoastAboveZonesCheckbox.contains(mx, my)) {
+      renderSettings.waterCoastAboveZones = !renderSettings.waterCoastAboveZones;
+      markRenderVisualChange();
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markExportPreviewDirty();
+      return true;
+    }
     if (layout.waterRippleCountSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleCountSlider, mx);
       renderSettings.waterRippleCount = constrain(round(t * 5.0f), 0, 5);

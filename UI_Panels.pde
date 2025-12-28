@@ -1968,6 +1968,7 @@ class RenderLayout {
   IntRect waterContourCoastAlphaSlider;
   IntRect waterCoastSizeSlider;
   IntRect waterCoastScaleCheckbox;
+  IntRect waterCoastAboveZonesCheckbox;
   IntRect waterHatchAngleSlider;
   IntRect waterHatchLengthSlider;
   IntRect waterHatchSpacingSlider;
@@ -2116,6 +2117,8 @@ RenderLayout buildRenderLayout() {
     l.waterCoastSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.waterCoastScaleCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+    l.waterCoastAboveZonesCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
 
     l.waterContourSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
@@ -2355,6 +2358,9 @@ void drawRenderPanel() {
     drawSlider(layout.waterCoastSizeSlider, constrain(renderSettings.waterCoastSizePx / 5.0f, 0, 1), "Coastline size (" + nf(renderSettings.waterCoastSizePx, 1, 1) + " px)");
     if (layout.waterCoastScaleCheckbox != null) {
       drawCheckbox(layout.waterCoastScaleCheckbox.x, layout.waterCoastScaleCheckbox.y, layout.waterCoastScaleCheckbox.w, renderSettings.waterCoastScaleWithZoom, "Scale coastline with zoom");
+    }
+    if (layout.waterCoastAboveZonesCheckbox != null) {
+      drawCheckbox(layout.waterCoastAboveZonesCheckbox.x, layout.waterCoastAboveZonesCheckbox.y, layout.waterCoastAboveZonesCheckbox.w, renderSettings.waterCoastAboveZones, "Draw coastlines above zones");
     }
     drawSlider(layout.waterRippleCountSlider, constrain(renderSettings.waterRippleCount / 5.0f, 0, 1), "Number of ripples (" + renderSettings.waterRippleCount + ")");
     registerUiTooltip(layout.waterRippleCountSlider, tooltipFor("render_water_ripple_count"));
