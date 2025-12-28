@@ -1,4 +1,5 @@
 import java.util.*;
+import java.lang.reflect.*;
 import processing.core.PConstants;
 import processing.core.PFont;
 
@@ -6,6 +7,9 @@ class MapRenderer {
   private final MapModel model;
   private final HashMap<String, PFont> labelFontCache = new HashMap<String, PFont>();
   private String labelFontName = (LABEL_FONT_OPTIONS != null && LABEL_FONT_OPTIONS.length > 0) ? LABEL_FONT_OPTIONS[0] : "SansSerif";
+  private PGraphics labelLayer = null;
+  private int labelLayerW = 0;
+  private int labelLayerH = 0;
   // Shared helpers for line caps and zone segments
   private class CapInfo {
     SegInfo seg;
@@ -413,7 +417,7 @@ class MapRenderer {
       if (l == null || l.text == null) continue;
       float ts = l.size;
       // Use a tiny default outline in edit mode (alpha 0.2) to keep consistent look
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, 0.2f, 1.0f, 0.0f, false, resolveLabelFontName(renderSettings));
+      drawTextWithOutline(app, renderSettings, l.text, l.x, l.y, ts, 0.2f, 1.0f, 0.0f, false, resolveLabelFontName(renderSettings));
     }
     app.popStyle();
   }
@@ -428,7 +432,7 @@ class MapRenderer {
     for (MapLabel l : model.labels) {
       if (l == null) continue;
       float ts = (s.labelSizeArbPx > 0) ? s.labelSizeArbPx : l.size;
-      drawTextWithOutline(app, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, snap, fontName);
+      drawTextWithOutline(app, s, l.text, l.x, l.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, snap, fontName);
     }
     app.popStyle();
   }
@@ -460,7 +464,7 @@ class MapRenderer {
       cy /= count;
       float ts = baseSize;
       boolean snap = !(currentTool == Tool.EDIT_EXPORT);
-      drawTextWithOutline(app, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, snap, fontName);
+      drawTextWithOutline(app, s, (z.name != null) ? z.name : "Zone", cx, cy, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, snap, fontName);
     }
     app.popStyle();
   }
@@ -500,7 +504,7 @@ class MapRenderer {
       float mx = (bestA.x + bestB.x) * 0.5f;
       float my = (bestA.y + bestB.y) * 0.5f;
       boolean snap = !(currentTool == Tool.EDIT_EXPORT);
-      drawTextWithOutline(app, txt, mx, my, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, angle, snap, fontName);
+      drawTextWithOutline(app, s, txt, mx, my, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, angle, snap, fontName);
     }
     app.popStyle();
   }
@@ -518,9 +522,55 @@ class MapRenderer {
       if (st == null) continue;
       String txt = (st.name != null && st.name.length() > 0) ? st.name : "";
       float ts = baseSize;
-      drawTextWithOutline(app, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, snap, fontName);
+      drawTextWithOutline(app, s, txt, st.x, st.y, ts, s.labelOutlineAlpha01, s.labelOutlineSizePx, 0.0f, snap, fontName);
     }
     app.popStyle();
+  }
+
+  // Build an offscreen label layer (JAVA2D preferred) and draw all render labels into it.
+  PGraphics buildLabelLayer(PApplet app, RenderSettings s) {
+    PGraphics lg = ensureLabelLayer(app);
+    if (lg == null) return null;
+    try {
+      lg.beginDraw();
+      lg.clear();
+      if (s != null && s.antialiasing) lg.smooth(); else lg.noSmooth();
+      PGraphics prev = app.g;
+      app.g = lg;
+      if (s != null) {
+        if (s.showLabelsZones) model.drawZoneLabelsRender(app, s);
+        if (s.showLabelsPaths) model.drawPathLabelsRender(app, s);
+        if (s.showLabelsStructures) model.drawStructureLabelsRender(app, s);
+        if (s.showLabelsArbitrary) model.drawLabelsRender(app, s);
+      }
+      app.g = prev;
+      lg.endDraw();
+    } catch (Exception ex) {
+      println("Label layer build failed: " + ex);
+      lg = null;
+    }
+    return lg;
+  }
+
+  private PGraphics ensureLabelLayer(PApplet app) {
+    if (app == null) return null;
+    int targetW = (app.g != null) ? app.g.width : app.width;
+    int targetH = (app.g != null) ? app.g.height : app.height;
+    boolean sizeChanged = (labelLayer == null) || labelLayerW != targetW || labelLayerH != targetH;
+    if (sizeChanged) {
+      labelLayerW = targetW;
+      labelLayerH = targetH;
+      labelLayer = null;
+      try {
+        labelLayer = app.createGraphics(targetW, targetH, JAVA2D);
+      } catch (Exception ignored) {}
+      if (labelLayer == null) {
+        try {
+          labelLayer = app.createGraphics(targetW, targetH, P2D);
+        } catch (Exception ignored) {}
+      }
+    }
+    return labelLayer;
   }
 
   int labelPriority(LabelTarget t) {
@@ -589,24 +639,32 @@ class MapRenderer {
     }
   }
 
-  void drawTextWithOutline(PApplet app, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad, boolean snapToPixel, String fontName) {
+  void drawTextWithOutline(PApplet app, RenderSettings rs, String txt, float x, float y, float ts, float outlineAlpha01, float outlineSizePx, float angleRad, boolean snapToPixel, String fontName) {
     if (app == null || txt == null) return;
     try {
+      RenderSettings s = (rs != null) ? rs : renderSettings;
+      ensureFontMapReady(app.g);
       float finalSize = ts;
       float outlineSize = outlineSizePx;
-      if (renderSettings != null && renderSettings.labelScaleWithZoom) {
-        float ref = (renderSettings.labelScaleRefZoom > 1e-6f) ? renderSettings.labelScaleRefZoom : DEFAULT_VIEW_ZOOM;
-        finalSize = ts * (max(1e-6f, viewport.zoom) / ref);
+      float canvasW = (app.g != null) ? app.g.width : app.width;
+      float canvasH = (app.g != null) ? app.g.height : app.height;
+      float resolutionScale = 1.0f;
+      if (renderingForExport) {
+        float baseW = max(1, width);
+        float baseH = max(1, height);
+        resolutionScale = max(canvasW / baseW, canvasH / baseH);
       }
-      if (renderSettings != null && renderSettings.labelOutlineScaleWithZoom) {
-        float ref = (renderSettings.labelScaleRefZoom > 1e-6f) ? renderSettings.labelScaleRefZoom : DEFAULT_VIEW_ZOOM;
-        outlineSize = outlineSizePx * (max(1e-6f, viewport.zoom) / ref);
+      if (s != null && s.labelScaleWithZoom) {
+        float ref = (s.labelScaleRefZoom > 1e-6f) ? s.labelScaleRefZoom : DEFAULT_VIEW_ZOOM;
+        finalSize = ts * (max(1e-6f, viewport.zoom) / ref) * resolutionScale;
+      }
+      if (s != null && s.labelOutlineScaleWithZoom) {
+        float ref = (s.labelScaleRefZoom > 1e-6f) ? s.labelScaleRefZoom : DEFAULT_VIEW_ZOOM;
+        outlineSize = outlineSizePx * (max(1e-6f, viewport.zoom) / ref) * resolutionScale;
       }
       // Prevent runaway font allocations for huge zoom/export scales.
       finalSize = constrain(finalSize, 4.0f, 128.0f);
       outlineSize = constrain(outlineSize, 0, 64.0f);
-      float canvasW = (app.g != null) ? app.g.width : app.width;
-      float canvasH = (app.g != null) ? app.g.height : app.height;
       PVector screen = viewport.worldToScreen(x, y, canvasW, canvasH);
       if (snapToPixel && !renderingForExport) {
         screen.x = round(screen.x);
@@ -641,6 +699,66 @@ class MapRenderer {
     } catch (Exception ex) {
       println("Label draw skipped due to error: " + ex);
     }
+  }
+
+  // Some Processing builds leave fontMap null on offscreen P2D buffers; seed it so text works in exports.
+  private void ensureFontMapReady(PGraphics pg) {
+    if (pg == null) return;
+    try {
+      if (pg instanceof processing.opengl.PGraphicsOpenGL) {
+        processing.opengl.PGraphicsOpenGL ogl = (processing.opengl.PGraphicsOpenGL)pg;
+        Field fontField = findFontMapField(ogl.getClass());
+        if (fontField == null) return;
+        fontField.setAccessible(true);
+        Object map = fontField.get(ogl);
+
+        Object primary = null;
+        Field primaryFontField = null;
+        try {
+          Method primaryMeth = ogl.getClass().getMethod("getPrimaryPG");
+          primary = primaryMeth.invoke(ogl);
+          if (primary != null) {
+            primaryFontField = findFontMapField(primary.getClass());
+            if (primaryFontField != null) primaryFontField.setAccessible(true);
+          }
+        } catch (Exception ignored) {}
+
+        if (primary != null && primaryFontField != null) {
+          Object pMap = primaryFontField.get(primary);
+          if (pMap == null) {
+            pMap = (map != null) ? map : new java.util.WeakHashMap();
+            primaryFontField.set(primary, pMap);
+          }
+          if (map == null) {
+            map = pMap;
+            fontField.set(ogl, map);
+          }
+        }
+
+        if (map == null) {
+          map = new java.util.WeakHashMap();
+          fontField.set(ogl, map);
+          if (primary != null && primaryFontField != null && primaryFontField.get(primary) == null) {
+            primaryFontField.set(primary, map);
+          }
+        }
+      }
+    } catch (Exception ex) {
+      println("Font map init skipped: " + ex);
+    }
+  }
+
+  // Locate the fontMap field up the class hierarchy.
+  private Field findFontMapField(Class<?> cls) {
+    Class<?> cur = cls;
+    while (cur != null) {
+      try {
+        return cur.getDeclaredField("fontMap");
+      } catch (NoSuchFieldException ignored) {
+      }
+      cur = cur.getSuperclass();
+    }
+    return null;
   }
 
   void drawZoneOutlines(PApplet app) {
@@ -2243,7 +2361,6 @@ class MapRenderer {
     h = 31 * h + round(s.zoneStrokeSatScale01 * 1000.0f);
     h = 31 * h + round(s.zoneStrokeBriScale01 * 1000.0f);
     h = 31 * h + round(s.zoneStrokeSizePx * 1000.0f);
-    h = 31 * h + round(s.zoneStrokeAlpha01 * 1000.0f);
     h = 31 * h + hashArray(zoneCols);
     h = 31 * h + (drawRoundCaps ? 1 : 0);
     h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
@@ -2466,7 +2583,7 @@ class MapRenderer {
 
     g.strokeWeight(1);
     for (SegInfo si : allSegs) {
-      g.stroke(si.col, s.zoneStrokeAlpha01 * 255.0f);
+      g.stroke(si.col);
       g.strokeWeight(si.w);
       g.line(si.a.x, si.a.y, si.b.x, si.b.y);
     }
@@ -2475,7 +2592,7 @@ class MapRenderer {
       g.noStroke();
       for (CapInfo ci : capMap.values()) {
         PVector p = ci.atStart ? ci.seg.a : ci.seg.b;
-        g.fill(ci.col, s.zoneStrokeAlpha01 * 255.0f);
+        g.fill(ci.col);
         float d = ci.r * 2;
         g.ellipse(p.x, p.y, d, d);
       }

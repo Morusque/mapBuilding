@@ -1212,11 +1212,21 @@ void drawRenderView(PApplet app) {
     mapModel.drawStructuresRender(app, renderSettings);
   }
 
-  // Labels
-  if (renderSettings.showLabelsZones) mapModel.drawZoneLabelsRender(app, renderSettings);
-  if (renderSettings.showLabelsPaths) mapModel.drawPathLabelsRender(app, renderSettings);
-  if (renderSettings.showLabelsStructures) mapModel.drawStructureLabelsRender(app, renderSettings);
-  if (renderSettings.showLabelsArbitrary) mapModel.drawLabelsRender(app, renderSettings);
+  // Labels (export: render into a dedicated layer to avoid P2D text issues)
+  if (renderingForExport && mapModel != null && mapModel.renderer != null) {
+    PGraphics labels = mapModel.renderer.buildLabelLayer(this, renderSettings);
+    if (labels != null) {
+      pushMatrix();
+      resetMatrix();
+      image(labels, 0, 0);
+      popMatrix();
+    }
+  } else {
+    if (renderSettings.showLabelsZones) mapModel.drawZoneLabelsRender(app, renderSettings);
+    if (renderSettings.showLabelsPaths) mapModel.drawPathLabelsRender(app, renderSettings);
+    if (renderSettings.showLabelsStructures) mapModel.drawStructureLabelsRender(app, renderSettings);
+    if (renderSettings.showLabelsArbitrary) mapModel.drawLabelsRender(app, renderSettings);
+  }
 }
 
 String exportPng() {
