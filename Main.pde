@@ -435,9 +435,9 @@ int uiNoticeFrames = 0;
 final int NOTICE_DURATION_FRAMES = 150;
 String loadingDetail = "";
 // Transient render-loading overlay (for render prep / redraw feedback)
-boolean renderLoadingActive = false;
-float renderLoadingPct = 0;
-String renderLoadingDetail = "";
+boolean renderPrepUiActive = false;
+float renderPrepUiPct = 0;
+String renderPrepUiDetail = "";
 
 // Slider drag state
 final int SLIDER_NONE = 0;
@@ -696,6 +696,9 @@ void resetAllMapData() {
     markRenderDirty();
   } finally {
     stopLoading();
+    renderPrepUiActive = false;
+    renderPrepUiDetail = "";
+    renderPrepUiPct = 0;
   }
 }
 
@@ -902,19 +905,64 @@ void draw() {
   }
 
   boolean renderView = (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT);
+  // Run one render-prep stage per frame when needed (before world draw so UI can update).
+  if (renderView && mapModel != null && mapModel.renderer != null) {
+    if (mapModel.renderer.isRenderWorkNeeded()) {
+      renderPrepRunning = true;
+      renderPrepUiActive = true;
+      renderPrepUiPct = max(renderPrepUiPct, mapModel.renderer.renderPrepProgress());
+      renderPrepUiDetail = "Rendering " + mapModel.renderer.getRenderPrepStageLabel();
+      boolean donePrep = mapModel.renderer.stepRenderPrep(this, renderSettings, seaLevel);
+      renderPrepUiPct = max(renderPrepUiPct, mapModel.renderer.renderPrepProgress());
+      if (donePrep || !mapModel.renderer.isRenderWorkNeeded()) {
+        renderPrepRunning = false;
+        renderPrepUiActive = false;
+        renderPrepUiDetail = "";
+        renderPrepUiPct = 1;
+      }
+    } else {
+      renderPrepRunning = false;
+      renderPrepUiActive = false;
+      renderPrepUiDetail = "";
+      renderPrepUiPct = 1;
+    }
+  } else {
+    renderPrepRunning = false;
+  }
 
   // ----- World rendering -----
   pushMatrix();
   viewport.applyTransform(this.g);
 
   boolean skipWorld = false;
-  if (renderPrepRunning && (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS)) {
-    // Only skip if we have no cached layers to display yet.
-    skipWorld = (mapModel.renderer == null || !mapModel.renderer.hasAnyRenderCache());
+  if (renderPrepRunning && (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_LABELS || currentTool == Tool.EDIT_EXPORT)) {
+    // While prep is running, skip world to keep UI responsive; cached view will show once ready.
+    skipWorld = true;
   }
 
   if (renderView && !skipWorld) {
     triggerRenderPrerequisitesIfDirty();
+    if (mapModel != null && mapModel.renderer != null) {
+      if (mapModel.renderer.isRenderWorkNeeded()) {
+        renderPrepRunning = true;
+        renderPrepUiActive = true;
+        renderPrepUiPct = max(renderPrepUiPct, mapModel.renderer.renderPrepProgress());
+        renderPrepUiDetail = "Rendering " + mapModel.renderer.getRenderPrepStageLabel();
+        boolean donePrep = mapModel.renderer.stepRenderPrep(this, renderSettings, seaLevel);
+        renderPrepUiPct = max(renderPrepUiPct, mapModel.renderer.renderPrepProgress());
+        if (donePrep || !mapModel.renderer.isRenderWorkNeeded()) {
+          renderPrepRunning = false;
+          renderPrepUiActive = false;
+          renderPrepUiDetail = "";
+          renderPrepUiPct = 1;
+        }
+      } else {
+        renderPrepRunning = false;
+        renderPrepUiActive = false;
+        renderPrepUiDetail = "";
+        renderPrepUiPct = 0;
+      }
+    }
     if (currentTool == Tool.EDIT_EXPORT) {
       drawExportPreviewView();
     } else {

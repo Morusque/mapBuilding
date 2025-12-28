@@ -165,7 +165,7 @@ void drawTopBar() {
 
   // Notice/status (right side, above loading bar). Prefer ongoing ops over transient notices.
   // Loading bar & status (top-right, small)
-  boolean showLoad = isLoading;
+  boolean showLoad = isLoading || renderPrepUiActive;
   String statusMsg = null;
   if (fullGenRunning) {
     statusMsg = "Generation in progress...";
@@ -176,7 +176,7 @@ void drawTopBar() {
     uiNoticeFrames--;
   }
   if (showLoad || statusMsg != null) {
-    if (isLoading) loadingPhase += 0.02f;
+    if (isLoading || renderPrepUiActive) loadingPhase += 0.02f;
     float barW = 120;
     float barH = 10;
     float x = width - barW - 12;
@@ -185,9 +185,9 @@ void drawTopBar() {
     fill(235);
     rect(x, y, barW, barH, 3);
     noStroke();
-    float pct = loadingPct;
+    float pct = isLoading ? loadingPct : renderPrepUiPct;
     // Keep a tiny animated pulse to show activity even if progress stalls briefly.
-    if (isLoading || renderLoadingActive) {
+    if (isLoading) {
       pct = max(pct, (sin(loadingPhase) * 0.05f + 0.05f));
     }
     float w = barW * pct;
@@ -195,7 +195,10 @@ void drawTopBar() {
     rect(x + 1, y + 1, w - 2, barH - 2, 2);
 
     // Detail text (e.g., render prep stage) or status
-    String detail = (loadingDetail != null && loadingDetail.length() > 0) ? loadingDetail : statusMsg;
+    String detail = null;
+    if (isLoading && loadingDetail != null && loadingDetail.length() > 0) detail = loadingDetail;
+    else if (renderPrepUiActive && renderPrepUiDetail != null && renderPrepUiDetail.length() > 0) detail = renderPrepUiDetail;
+    else detail = statusMsg;
     if (detail != null && detail.length() > 0) {
       fill(20);
       textAlign(RIGHT, CENTER);
