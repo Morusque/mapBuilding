@@ -1243,11 +1243,11 @@ String exportPng() {
   if (pxW <= 0 || pxH <= 0) return "Failed: export size collapsed";
   PGraphics g = null;
   try {
-    g = createGraphics(pxW, pxH, JAVA2D);
+    g = createGraphics(pxW, pxH, P2D);
   } catch (Exception ignored) {}
   if (g == null) {
     try {
-      g = createGraphics(pxW, pxH, P2D);
+      g = createGraphics(pxW, pxH, JAVA2D);
     } catch (Exception ignored) {}
   }
   if (g == null) return "Failed to allocate buffer";
@@ -3272,9 +3272,9 @@ boolean ensureExportPreview() {
   if (pxW <= 0 || pxH <= 0) return false;
 
   PGraphics g = null;
-  try { g = createGraphics(pxW, pxH, JAVA2D); } catch (Exception ignored) {}
+  try { g = createGraphics(pxW, pxH, P2D); } catch (Exception ignored) {}
   if (g == null) {
-    try { g = createGraphics(pxW, pxH, P2D); } catch (Exception ignored) {}
+    try { g = createGraphics(pxW, pxH, JAVA2D); } catch (Exception ignored) {}
   }
   if (g == null) return false;
 

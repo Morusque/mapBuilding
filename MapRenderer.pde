@@ -1161,8 +1161,10 @@ class MapRenderer {
     // Keep 1:1 pixel density regardless of zoom; map using screen-space coords
     float pw = max(1, pattern.width);
     float ph = max(1, pattern.height);
+    float canvasW = (app.g != null) ? app.g.width : app.width;
+    float canvasH = (app.g != null) ? app.g.height : app.height;
     for (PVector v : verts) {
-      PVector s = viewport.worldToScreen(v.x, v.y);
+      PVector s = viewport.worldToScreen(v.x, v.y, canvasW, canvasH);
       float u = s.x / pw;
       float vv = s.y / ph;
       app.vertex(v.x, v.y, u, vv);
@@ -2487,10 +2489,9 @@ class MapRenderer {
       SegInfo s;
       boolean isStart;
       int zoneId;
-      PVector orig;
       float ang;
-      SegEndpoint(SegInfo s, boolean isStart, int zoneId, PVector orig, float ang) {
-        this.s = s; this.isStart = isStart; this.zoneId = zoneId; this.orig = orig; this.ang = ang;
+      SegEndpoint(SegInfo s, boolean isStart, int zoneId, float ang) {
+        this.s = s; this.isStart = isStart; this.zoneId = zoneId; this.ang = ang;
       }
     }
 
@@ -2503,8 +2504,8 @@ class MapRenderer {
       String kb = undirectedEdgeKey(s.origB, s.origB) + "#" + s.zoneId;
       float angA = atan2(dirA.y, dirA.x);
       float angB = atan2(dirB.y, dirB.x);
-      byVertex.computeIfAbsent(ka, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, true, s.zoneId, s.origA, angA));
-      byVertex.computeIfAbsent(kb, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, false, s.zoneId, s.origB, angB));
+      byVertex.computeIfAbsent(ka, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, true, s.zoneId, angA));
+      byVertex.computeIfAbsent(kb, k -> new ArrayList<SegEndpoint>()).add(new SegEndpoint(s, false, s.zoneId, angB));
     }
 
     for (ArrayList<SegEndpoint> list : byVertex.values()) {
