@@ -1853,11 +1853,11 @@ boolean handleExportPanelClick(int mx, int my) {
     float[] scales = layout.scaleValues;
     for (int i = 0; i < layout.scaleButtons.size() && i < scales.length; i++) {
       IntRect b = layout.scaleButtons.get(i);
-      if (b != null && b.contains(mx, my)) {
-        exportScale = scales[i];
+      final float target = scales[i];
+      if (b != null && queueButtonAction(b, new Runnable() { public void run() {
+        exportScale = target;
         markExportPreviewDirty();
-        return true;
-      }
+      }})) return true;
     }
   }
   if (queueButtonAction(layout.mapExportBtn, new Runnable() { public void run() {
