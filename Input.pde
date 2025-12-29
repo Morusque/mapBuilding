@@ -223,17 +223,6 @@ void mouseDragged() {
     return;
   }
 
-  // Export: slider dragging
-  if (mouseButton == LEFT && currentTool == Tool.EDIT_EXPORT && isInExportPanel(mouseX, mouseY)) {
-    ExportLayout layout = buildExportLayout();
-    if (layout.scaleSlider != null && layout.scaleSlider.contains(mouseX, mouseY)) {
-      float t = sliderNorm(layout.scaleSlider, mouseX);
-      exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);
-      activeSlider = SLIDER_EXPORT_SCALE;
-      return;
-    }
-  }
-
   // Ignore world if dragging in UI
   if (isInActivePanel(mouseX, mouseY)) return;
 
@@ -995,14 +984,6 @@ void updateActiveSlider(int mx, int my) {
         float t = sliderNorm(l.presetSelector, mx);
         int idx = constrain(round(t * n), 0, renderPresets.length - 1);
         renderSettings.activePresetIndex = idx;
-      }
-      break;
-    }
-    case SLIDER_EXPORT_SCALE: {
-      ExportLayout l = buildExportLayout();
-      if (l.scaleSlider != null) {
-        float t = sliderNorm(l.scaleSlider, mx);
-        exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);
       }
       break;
     }

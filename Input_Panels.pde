@@ -1849,12 +1849,16 @@ boolean handleExportPanelClick(int mx, int my) {
       showNotice("Export failed");
     }
   }})) return true;
-  if (layout.scaleSlider != null && layout.scaleSlider.contains(mx, my)) {
-    float t = sliderNorm(layout.scaleSlider, mx);
-    exportScale = constrain(1.0f + t * (4.0f - 1.0f), 1.0f, 4.0f);
-    activeSlider = SLIDER_EXPORT_SCALE;
-    markExportPreviewDirty();
-    return true;
+  if (layout.scaleButtons != null && !layout.scaleButtons.isEmpty()) {
+    float[] scales = layout.scaleValues;
+    for (int i = 0; i < layout.scaleButtons.size() && i < scales.length; i++) {
+      IntRect b = layout.scaleButtons.get(i);
+      if (b != null && b.contains(mx, my)) {
+        exportScale = scales[i];
+        markExportPreviewDirty();
+        return true;
+      }
+    }
   }
   if (queueButtonAction(layout.mapExportBtn, new Runnable() { public void run() {
     String path = exportMapJson();
