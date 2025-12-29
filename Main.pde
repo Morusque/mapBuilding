@@ -434,13 +434,16 @@ String uiNotice = "";
 int uiNoticeFrames = 0;
 final int NOTICE_DURATION_FRAMES = 150;
 String loadingDetail = "";
-// Transient render-loading overlay (for render prep / redraw feedback)
-boolean renderPrepUiActive = false;
-float renderPrepUiPct = 0;
-String renderPrepUiDetail = "";
-boolean exportRenderUiActive = false;
-float exportRenderUiPct = 0;
-String exportRenderUiDetail = "";
+// Unified progress indicator (top bar uses this)
+boolean progressActive = false;   // whether to show a bar
+float progressPct = 0.0f;         // 0..1
+String progressDetail = "";       // message next to bar
+String progressStatusMsg = "";    // status text (shown even if bar hidden)
+
+void setProgressStatus(String msg) {
+  if (msg == null) msg = "";
+  if (!msg.equals(progressStatusMsg)) progressStatusMsg = msg;
+}
 
 // Slider drag state
 final int SLIDER_NONE = 0;
@@ -697,9 +700,9 @@ void resetAllMapData() {
     markRenderDirty();
   } finally {
     stopLoading();
-    renderPrepUiActive = false;
-    renderPrepUiDetail = "";
-    renderPrepUiPct = 0;
+    progressActive = false;
+    progressDetail = "";
+    progressPct = 0;
   }
 }
 
@@ -904,10 +907,22 @@ void draw() {
   float combinedPct = buildingContours ? min(pctVoronoi, pctContours) : pctVoronoi;
   if (!fullGenRunning) {
     if (building) {
+      if (buildingVoronoi) {
+        setProgressStatus("Generating cells...");
+      } else if (buildingContours) {
+        setProgressStatus("Generating contours...");
+      }
       if (!isLoading) startLoading();
       loadingPct = combinedPct;
     } else {
-      if (isLoading) stopLoading();
+      if (isLoading) {
+        stopLoading();
+      }
+      setProgressStatus("");
+      if (uiNotice != null && uiNotice.equals("Generation in progress...")) {
+        uiNotice = "";
+        uiNoticeFrames = 0;
+      }
       loadingPct = 1.0f;
     }
   } else {
@@ -917,7 +932,20 @@ void draw() {
       stopLoading();
       loadingPct = 1.0f;
       loadingDetail = "";
+      setProgressStatus("");
+      progressActive = false;
+      progressPct = 0;
+      if (uiNotice != null && uiNotice.equals("Generation in progress...")) {
+        uiNotice = "";
+        uiNoticeFrames = 0;
+      }
     }
+  }
+  // When generation is running, show its status in the top bar.
+  if (fullGenRunning) {
+    setProgressStatus((loadingDetail != null && loadingDetail.length() > 0)
+      ? loadingDetail
+      : "Generation in progress...");
   }
 
   boolean renderView = (currentTool == Tool.EDIT_RENDER || currentTool == Tool.EDIT_EXPORT);
@@ -925,22 +953,25 @@ void draw() {
   if (renderView && mapModel != null && mapModel.renderer != null) {
     if (mapModel.renderer.isRenderWorkNeeded()) {
       renderPrepRunning = true;
-      renderPrepUiActive = true;
-      renderPrepUiPct = max(renderPrepUiPct, mapModel.renderer.renderPrepProgress());
-      renderPrepUiDetail = "Rendering " + mapModel.renderer.getRenderPrepStageLabel();
+      progressActive = true;
+      progressPct = max(progressPct, mapModel.renderer.renderPrepProgress());
+      progressDetail = "Rendering " + mapModel.renderer.getRenderPrepStageLabel();
+      if (!fullGenRunning) setProgressStatus("Rendering...");
       boolean donePrep = mapModel.renderer.stepRenderPrep(this, renderSettings, seaLevel);
-      renderPrepUiPct = max(renderPrepUiPct, mapModel.renderer.renderPrepProgress());
+      progressPct = max(progressPct, mapModel.renderer.renderPrepProgress());
       if (donePrep || !mapModel.renderer.isRenderWorkNeeded()) {
         renderPrepRunning = false;
-        renderPrepUiActive = false;
-        renderPrepUiDetail = "";
-        renderPrepUiPct = 1;
+        progressActive = false;
+        progressDetail = "";
+        progressPct = 1;
+        if (!fullGenRunning) setProgressStatus("");
       }
     } else {
       renderPrepRunning = false;
-      renderPrepUiActive = false;
-      renderPrepUiDetail = "";
-      renderPrepUiPct = 1;
+      progressActive = false;
+      progressDetail = "";
+      progressPct = 1;
+      if (!fullGenRunning) setProgressStatus("");
     }
   } else {
     renderPrepRunning = false;
@@ -961,22 +992,25 @@ void draw() {
     if (mapModel != null && mapModel.renderer != null) {
       if (mapModel.renderer.isRenderWorkNeeded()) {
         renderPrepRunning = true;
-        renderPrepUiActive = true;
-        renderPrepUiPct = max(renderPrepUiPct, mapModel.renderer.renderPrepProgress());
-        renderPrepUiDetail = "Rendering " + mapModel.renderer.getRenderPrepStageLabel();
+        progressActive = true;
+        progressPct = max(progressPct, mapModel.renderer.renderPrepProgress());
+        progressDetail = "Rendering " + mapModel.renderer.getRenderPrepStageLabel();
+        if (!fullGenRunning) setProgressStatus("Rendering...");
         boolean donePrep = mapModel.renderer.stepRenderPrep(this, renderSettings, seaLevel);
-        renderPrepUiPct = max(renderPrepUiPct, mapModel.renderer.renderPrepProgress());
+        progressPct = max(progressPct, mapModel.renderer.renderPrepProgress());
         if (donePrep || !mapModel.renderer.isRenderWorkNeeded()) {
           renderPrepRunning = false;
-          renderPrepUiActive = false;
-          renderPrepUiDetail = "";
-          renderPrepUiPct = 1;
+          progressActive = false;
+          progressDetail = "";
+          progressPct = 1;
+          if (!fullGenRunning) setProgressStatus("");
         }
       } else {
         renderPrepRunning = false;
-        renderPrepUiActive = false;
-        renderPrepUiDetail = "";
-        renderPrepUiPct = 0;
+        progressActive = false;
+        progressDetail = "";
+        progressPct = 0;
+        if (!fullGenRunning) setProgressStatus("");
       }
     }
     if (currentTool == Tool.EDIT_EXPORT) {
@@ -2738,32 +2772,56 @@ boolean ensureExportPreview() {
   triggerRenderPrerequisites();
 
   renderingForExport = true;
-  exportRenderUiActive = true;
-  exportRenderUiDetail = "Export render";
-  exportRenderUiPct = 0.25f;
-  g.beginDraw();
-  g.background(245);
-  PGraphics prev = this.g;
-  this.g = g;
-  pushMatrix();
-  viewport.applyTransform(g, g.width, g.height);
-  drawRenderView(this);
-  popMatrix();
-  this.g = prev;
-  g.endDraw();
-  exportRenderUiPct = 0.65f;
-  renderingForExport = false;
+  progressActive = true;
+  progressDetail = "Export render";
+  setProgressStatus("Exporting...");
+  try {
+    g.beginDraw();
+    g.background(245);
+    PGraphics prev = this.g;
+    this.g = g;
+    pushMatrix();
+    viewport.applyTransform(g, g.width, g.height);
+    drawRenderView(this);
+    popMatrix();
+    this.g = prev;
+    g.endDraw();
+    progressPct = 0.65f;
 
-  viewport.centerX = prevCenterX;
-  viewport.centerY = prevCenterY;
-  viewport.zoom = prevZoom;
+    // If contour jobs were triggered during the first pass, finish them and redraw
+    if (mapModel.isContourJobRunning()) {
+      int safety = 0;
+      while (mapModel.isContourJobRunning() && safety < 80) {
+        mapModel.stepContourJobs(16);
+        safety++;
+      }
+      g.beginDraw();
+      g.background(245);
+      PGraphics prev2 = this.g;
+      this.g = g;
+      pushMatrix();
+      viewport.applyTransform(g, g.width, g.height);
+      drawRenderView(this);
+      popMatrix();
+      this.g = prev2;
+      g.endDraw();
+      progressPct = 0.9f;
+    }
+  } finally {
+    // Restore viewport
+    viewport.centerX = prevCenterX;
+    viewport.centerY = prevCenterY;
+    viewport.zoom = prevZoom;
+    renderingForExport = false;
+    progressActive = false;
+    progressDetail = "";
+    setProgressStatus("Export done");
+    progressPct = 1.0f;
+  }
 
   exportPreview = g;
   exportPreviewRect = rect;
   exportPreviewDirty = false;
-  exportRenderUiActive = false;
-  exportRenderUiDetail = "";
-  exportRenderUiPct = 1.0f;
   return true;
 }
 

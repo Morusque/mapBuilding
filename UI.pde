@@ -165,18 +165,18 @@ void drawTopBar() {
 
   // Notice/status (right side, above loading bar). Prefer ongoing ops over transient notices.
   // Loading bar & status (top-right, small)
-  boolean showLoad = isLoading || renderPrepUiActive;
-  String statusMsg = null;
-  if (fullGenRunning && isLoading) {
-    statusMsg = "Generation in progress...";
-  } else if (renderPrepRunning) {
-    statusMsg = "Rendering...";
-  } else if (uiNoticeFrames > 0 && uiNotice != null && uiNotice.length() > 0) {
-    statusMsg = uiNotice;
+  boolean showLoad = progressActive || isLoading;
+  if (uiNoticeFrames > 0 && uiNotice != null && uiNotice.length() > 0) {
+    setProgressStatus(uiNotice);
     uiNoticeFrames--;
+  } else if (uiNoticeFrames == 0 && uiNotice != null && uiNotice.length() > 0) {
+    if (!showLoad && progressStatusMsg != null && progressStatusMsg.equals(uiNotice)) {
+      setProgressStatus("");
+    }
+    uiNotice = "";
   }
-  if (showLoad || statusMsg != null) {
-    if (isLoading || renderPrepUiActive) loadingPhase += 0.02f;
+  if (showLoad || (progressStatusMsg != null && progressStatusMsg.length() > 0)) {
+    if (showLoad) loadingPhase += 0.02f;
     float barW = 120;
     float barH = 10;
     float x = width - barW - 12;
@@ -185,20 +185,17 @@ void drawTopBar() {
     fill(235);
     rect(x, y, barW, barH, 3);
     noStroke();
-    float pct = isLoading ? loadingPct : renderPrepUiPct;
-    // Keep a tiny animated pulse to show activity even if progress stalls briefly.
-    if (isLoading) {
-      pct = max(pct, (sin(loadingPhase) * 0.05f + 0.05f));
+    float pct = progressActive ? constrain(progressPct, 0, 1) : loadingPct;
+    if (showLoad) {
+      pct = max(pct, (sin(loadingPhase) * 0.05f + 0.05f)); // tiny pulse
     }
     float w = barW * pct;
     fill(60, 140, 220);
     rect(x + 1, y + 1, w - 2, barH - 2, 2);
 
-    // Detail text (e.g., render prep stage) or status
     String detail = null;
-    if (isLoading && loadingDetail != null && loadingDetail.length() > 0) detail = loadingDetail;
-    else if (renderPrepUiActive && renderPrepUiDetail != null && renderPrepUiDetail.length() > 0) detail = renderPrepUiDetail;
-    else detail = statusMsg;
+    if (progressActive && progressDetail != null && progressDetail.length() > 0) detail = progressDetail;
+    else if (progressStatusMsg != null && progressStatusMsg.length() > 0) detail = progressStatusMsg;
     if (detail != null && detail.length() > 0) {
       fill(20);
       textAlign(RIGHT, CENTER);
