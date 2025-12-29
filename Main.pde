@@ -438,6 +438,9 @@ String loadingDetail = "";
 boolean renderPrepUiActive = false;
 float renderPrepUiPct = 0;
 String renderPrepUiDetail = "";
+boolean exportRenderUiActive = false;
+float exportRenderUiPct = 0;
+String exportRenderUiDetail = "";
 
 // Slider drag state
 final int SLIDER_NONE = 0;
@@ -2735,6 +2738,9 @@ boolean ensureExportPreview() {
   triggerRenderPrerequisites();
 
   renderingForExport = true;
+  exportRenderUiActive = true;
+  exportRenderUiDetail = "Export render";
+  exportRenderUiPct = 0.25f;
   g.beginDraw();
   g.background(245);
   PGraphics prev = this.g;
@@ -2745,7 +2751,7 @@ boolean ensureExportPreview() {
   popMatrix();
   this.g = prev;
   g.endDraw();
-  renderingForExport = false;
+  exportRenderUiPct = 0.65f;
   renderingForExport = false;
 
   viewport.centerX = prevCenterX;
@@ -2755,6 +2761,9 @@ boolean ensureExportPreview() {
   exportPreview = g;
   exportPreviewRect = rect;
   exportPreviewDirty = false;
+  exportRenderUiActive = false;
+  exportRenderUiDetail = "";
+  exportRenderUiPct = 1.0f;
   return true;
 }
 
