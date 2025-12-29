@@ -141,10 +141,10 @@ class LabelRenderer {
       PGraphics prev = app.g;
       app.g = lg;
       if (s != null) {
-        if (s.showLabelsZones) model.drawZoneLabelsRender(app, s);
-        if (s.showLabelsPaths) model.drawPathLabelsRender(app, s);
-        if (s.showLabelsStructures) model.drawStructureLabelsRender(app, s);
-        if (s.showLabelsArbitrary) model.drawLabelsRender(app, s);
+        if (s.showLabelsZones) drawZoneLabelsRender(app, s);
+        if (s.showLabelsPaths) drawPathLabelsRender(app, s);
+        if (s.showLabelsStructures) drawStructureLabelsRender(app, s);
+        if (s.showLabelsArbitrary) drawLabelsRender(app, s);
       }
       app.g = prev;
       lg.endDraw();
