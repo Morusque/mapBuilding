@@ -115,7 +115,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterBri01 = 0.4f;
     s.cellBorderAlpha01 = 0.0f;
     s.cellBorderSizePx = 1.0f;
-    s.cellBorderScaleWithZoom = false;
+    s.cellBorderScaleWithZoom = true;
     s.cellBorderRefZoom = DEFAULT_VIEW_ZOOM;
     s.backgroundNoiseAlpha01 = 0.0f;
     // Biomes
@@ -126,7 +126,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 0.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeOutlineScaleWithZoom = false;
+    s.biomeOutlineScaleWithZoom = true;
     s.biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
     s.biomeUnderwaterAlpha01 = 0.0f;
     // Shading
@@ -145,9 +145,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourAlpha01 = 0.3f;
     s.waterCoastAlpha01 = 0.3f;
     s.waterCoastSizePx = 2.0f;
-    s.waterCoastScaleWithZoom = false;
+    s.waterCoastScaleWithZoom = true;
     s.waterCoastAboveZones = false;
-    s.waterContourScaleWithZoom = false;
+    s.waterContourScaleWithZoom = true;
     s.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
     s.waterRippleAlphaStart01 = 0.25f;
     s.waterRippleAlphaEnd01 = 0.08f;
@@ -159,20 +159,20 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
     s.elevationLinesAlpha01 = 0.0f;
     s.elevationLinesSizePx = 1.0f;
-    s.elevationLinesScaleWithZoom = false;
+    s.elevationLinesScaleWithZoom = true;
     s.elevationLinesRefZoom = DEFAULT_VIEW_ZOOM;
     // Paths
     s.pathSatScale01 = 0.7f;
     s.pathBriScale01 = 1.0f;
     s.showPaths = true;
-    s.pathScaleWithZoom = false;
+    s.pathScaleWithZoom = true;
     s.pathScaleRefZoom = DEFAULT_VIEW_ZOOM;
     // Zones
     s.zoneStrokeAlpha01 = 0.0f;
     s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.0f;
     s.zoneStrokeBriScale01 = 0.0f;
-    s.zoneStrokeScaleWithZoom = false;
+    s.zoneStrokeScaleWithZoom = true;
     s.zoneStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Structures
     s.showStructures = true;
@@ -180,7 +180,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
     s.structureShadowAlpha01 = 0.2f;
-    s.structureStrokeScaleWithZoom = false;
+    s.structureStrokeScaleWithZoom = true;
     s.structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Labels
     s.showLabelsArbitrary = false;
@@ -193,9 +193,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
-    s.labelScaleWithZoom = false;
-    s.labelScaleRefZoom = 1.0f;
-    s.labelOutlineScaleWithZoom = false;
+    s.labelScaleWithZoom = true;
+    s.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
+    s.labelOutlineScaleWithZoom = true;
     s.labelFontIndex = 0;
     // General
     s.exportPaddingPct = 0.01f;
@@ -216,7 +216,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterBri01 = 0.6f;
     s.cellBorderAlpha01 = 0.0f;
     s.cellBorderSizePx = 1.0f;
-    s.cellBorderScaleWithZoom = false;
+    s.cellBorderScaleWithZoom = true;
     s.cellBorderRefZoom = DEFAULT_VIEW_ZOOM;
     s.backgroundNoiseAlpha01 = 0.0f;
     // Biomes
@@ -227,7 +227,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeOutlineScaleWithZoom = false;
+    s.biomeOutlineScaleWithZoom = true;
     s.biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
     s.biomeUnderwaterAlpha01 = 0.0f;
     // Shading
@@ -246,9 +246,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourAlpha01 = 1.0f;
     s.waterCoastAlpha01 = 1.0f;
     s.waterCoastSizePx = 2.0f;
-    s.waterCoastScaleWithZoom = false;
+    s.waterCoastScaleWithZoom = true;
     s.waterCoastAboveZones = false;
-    s.waterContourScaleWithZoom = false;
+    s.waterContourScaleWithZoom = true;
     s.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
     s.waterRippleAlphaStart01 = 0.9f;
     s.waterRippleAlphaEnd01 = 0.25f;
@@ -260,20 +260,20 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
     s.elevationLinesAlpha01 = 0.6f;
     s.elevationLinesSizePx = 1.0f;
-    s.elevationLinesScaleWithZoom = false;
+    s.elevationLinesScaleWithZoom = true;
     s.elevationLinesRefZoom = DEFAULT_VIEW_ZOOM;
     // Paths
     s.pathSatScale01 = 1.0f;
     s.pathBriScale01 = 1.0f;
     s.showPaths = true;
-    s.pathScaleWithZoom = false;
+    s.pathScaleWithZoom = true;
     s.pathScaleRefZoom = DEFAULT_VIEW_ZOOM;
     // Zones
     s.zoneStrokeAlpha01 = 0.0f;
     s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.0f;
     s.zoneStrokeBriScale01 = 0.0f;
-    s.zoneStrokeScaleWithZoom = false;
+    s.zoneStrokeScaleWithZoom = true;
     s.zoneStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Structures
     s.showStructures = false;
@@ -281,7 +281,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
     s.structureShadowAlpha01 = 0.2f;
-    s.structureStrokeScaleWithZoom = false;
+    s.structureStrokeScaleWithZoom = true;
     s.structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Labels
     s.showLabelsArbitrary = true;
@@ -294,9 +294,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
-    s.labelScaleWithZoom = false;
-    s.labelScaleRefZoom = 1.0f;
-    s.labelOutlineScaleWithZoom = false;
+    s.labelScaleWithZoom = true;
+    s.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
+    s.labelOutlineScaleWithZoom = true;
     s.labelFontIndex = 0;
     // General
     s.exportPaddingPct = 0.02f;
@@ -312,12 +312,12 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.landHue01 = 0.1f;
     s.landSat01 = 0.0f;
     s.landBri01 = 1.0f;
-    s.waterHue01 = 0.6f;
+    s.waterHue01 = 0.0f;
     s.waterSat01 = 0.0f;
-    s.waterBri01 = 0.2f;
+    s.waterBri01 = 0.25f;
     s.cellBorderAlpha01 = 0.0f;
     s.cellBorderSizePx = 1.0f;
-    s.cellBorderScaleWithZoom = false;
+    s.cellBorderScaleWithZoom = true;
     s.cellBorderRefZoom = DEFAULT_VIEW_ZOOM;
     s.backgroundNoiseAlpha01 = 0.0f;
     // Biomes
@@ -328,7 +328,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeOutlineScaleWithZoom = false;
+    s.biomeOutlineScaleWithZoom = true;
     s.biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
     s.biomeUnderwaterAlpha01 = 0.0f;
     // Shading
@@ -341,15 +341,15 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSizePx = 3.0f;
     s.waterRippleCount = 0;
     s.waterRippleDistancePx = 0.0f;
-    s.waterContourHue01 = 0.5f;
+    s.waterContourHue01 = 0.0f;
     s.waterContourSat01 = 0.0f;
     s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 1.0f;
     s.waterCoastAlpha01 = 1.0f;
     s.waterCoastSizePx = 2.0f;
-    s.waterCoastScaleWithZoom = false;
+    s.waterCoastScaleWithZoom = true;
     s.waterCoastAboveZones = false;
-    s.waterContourScaleWithZoom = false;
+    s.waterContourScaleWithZoom = true;
     s.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
     s.waterRippleAlphaStart01 = 0.8f;
     s.waterRippleAlphaEnd01 = 0.25f;
@@ -361,20 +361,20 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
     s.elevationLinesAlpha01 = 0.25f;
     s.elevationLinesSizePx = 1.0f;
-    s.elevationLinesScaleWithZoom = false;
+    s.elevationLinesScaleWithZoom = true;
     s.elevationLinesRefZoom = DEFAULT_VIEW_ZOOM;
     // Paths
-    s.pathSatScale01 = 0.8f;
+    s.pathSatScale01 = 0.0f;
     s.pathBriScale01 = 1.0f;
     s.showPaths = true;
-    s.pathScaleWithZoom = false;
+    s.pathScaleWithZoom = true;
     s.pathScaleRefZoom = DEFAULT_VIEW_ZOOM;
     // Zones
     s.zoneStrokeAlpha01 = 0.7f;
     s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.0f;
     s.zoneStrokeBriScale01 = 0.0f;
-    s.zoneStrokeScaleWithZoom = false;
+    s.zoneStrokeScaleWithZoom = true;
     s.zoneStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Structures
     s.showStructures = true;
@@ -382,7 +382,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.structureSatScale01 = 0.0f;
     s.structureAlphaScale01 = 1.0f;
     s.structureShadowAlpha01 = 0.25f;
-    s.structureStrokeScaleWithZoom = false;
+    s.structureStrokeScaleWithZoom = true;
     s.structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Labels
     s.showLabelsArbitrary = true;
@@ -395,9 +395,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
-    s.labelScaleWithZoom = false;
-    s.labelScaleRefZoom = 1.0f;
-    s.labelOutlineScaleWithZoom = false;
+    s.labelScaleWithZoom = true;
+    s.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
+    s.labelOutlineScaleWithZoom = true;
     s.labelFontIndex = 0;
     // General
     s.exportPaddingPct = 0.015f;
@@ -413,12 +413,12 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.landHue01 = 0.1f;
     s.landSat01 = 0.0f;
     s.landBri01 = 1.0f;
-    s.waterHue01 = 0.6f;
+    s.waterHue01 = 0.0f;
     s.waterSat01 = 0.0f;
-    s.waterBri01 = 1.0f;
+    s.waterBri01 = 0.25f;
     s.cellBorderAlpha01 = 0.0f;
     s.cellBorderSizePx = 1.0f;
-    s.cellBorderScaleWithZoom = false;
+    s.cellBorderScaleWithZoom = true;
     s.cellBorderRefZoom = DEFAULT_VIEW_ZOOM;
     s.backgroundNoiseAlpha01 = 0.0f;
     // Biomes
@@ -429,7 +429,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeOutlineScaleWithZoom = false;
+    s.biomeOutlineScaleWithZoom = true;
     s.biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
     s.biomeUnderwaterAlpha01 = 0.0f;
     // Shading
@@ -442,15 +442,15 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourSizePx = 2.0f;
     s.waterRippleCount = 3;
     s.waterRippleDistancePx = 4.0f;
-    s.waterContourHue01 = 0.5f;
+    s.waterContourHue01 = 0.0f;
     s.waterContourSat01 = 0.0f;
     s.waterContourBri01 = 0.0f;
     s.waterContourAlpha01 = 1.0f;
     s.waterCoastAlpha01 = 1.0f;
     s.waterCoastSizePx = 2.0f;
-    s.waterCoastScaleWithZoom = false;
+    s.waterCoastScaleWithZoom = true;
     s.waterCoastAboveZones = false;
-    s.waterContourScaleWithZoom = false;
+    s.waterContourScaleWithZoom = true;
     s.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
     s.waterRippleAlphaStart01 = 0.8f;
     s.waterRippleAlphaEnd01 = 0.25f;
@@ -462,20 +462,20 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
     s.elevationLinesAlpha01 = 1.0f;
     s.elevationLinesSizePx = 1.0f;
-    s.elevationLinesScaleWithZoom = false;
+    s.elevationLinesScaleWithZoom = true;
     s.elevationLinesRefZoom = DEFAULT_VIEW_ZOOM;
     // Paths
     s.pathSatScale01 = 0.0f;
     s.pathBriScale01 = 1.0f;
     s.showPaths = true;
-    s.pathScaleWithZoom = false;
+    s.pathScaleWithZoom = true;
     s.pathScaleRefZoom = DEFAULT_VIEW_ZOOM;
     // Zones
     s.zoneStrokeAlpha01 = 1.0f;
     s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.0f;
     s.zoneStrokeBriScale01 = 0.0f;
-    s.zoneStrokeScaleWithZoom = false;
+    s.zoneStrokeScaleWithZoom = true;
     s.zoneStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Structures
     s.showStructures = true;
@@ -483,7 +483,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.structureSatScale01 = 0.0f;
     s.structureAlphaScale01 = 1.0f;
     s.structureShadowAlpha01 = 0.25f;
-    s.structureStrokeScaleWithZoom = false;
+    s.structureStrokeScaleWithZoom = true;
     s.structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Labels
     s.showLabelsArbitrary = true;
@@ -496,9 +496,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
-    s.labelScaleWithZoom = false;
-    s.labelScaleRefZoom = 1.0f;
-    s.labelOutlineScaleWithZoom = false;
+    s.labelScaleWithZoom = true;
+    s.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
+    s.labelOutlineScaleWithZoom = true;
     s.labelFontIndex = 0;
     // General
     s.exportPaddingPct = 0.015f;
@@ -519,7 +519,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterBri01 = 0.2f;
     s.cellBorderAlpha01 = 0.05f;
     s.cellBorderSizePx = 1.0f;
-    s.cellBorderScaleWithZoom = false;
+    s.cellBorderScaleWithZoom = true;
     s.cellBorderRefZoom = DEFAULT_VIEW_ZOOM;
     s.backgroundNoiseAlpha01 = 0.0f;
     // Biomes
@@ -530,7 +530,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 2.0f;
     s.biomeOutlineAlpha01 = 0.9f;
-    s.biomeOutlineScaleWithZoom = false;
+    s.biomeOutlineScaleWithZoom = true;
     s.biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
     s.biomeUnderwaterAlpha01 = 1.0f;
     // Shading
@@ -549,9 +549,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourAlpha01 = 1.0f;
     s.waterCoastAlpha01 = 1.0f;
     s.waterCoastSizePx = 2.0f;
-    s.waterCoastScaleWithZoom = false;
+    s.waterCoastScaleWithZoom = true;
     s.waterCoastAboveZones = false;
-    s.waterContourScaleWithZoom = false;
+    s.waterContourScaleWithZoom = true;
     s.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
     s.waterRippleAlphaStart01 = 0.8f;
     s.waterRippleAlphaEnd01 = 0.25f;
@@ -569,14 +569,14 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.pathSatScale01 = 1.0f;
     s.pathBriScale01 = 1.0f;
     s.showPaths = true;
-    s.pathScaleWithZoom = false;
+    s.pathScaleWithZoom = true;
     s.pathScaleRefZoom = DEFAULT_VIEW_ZOOM;
     // Zones
     s.zoneStrokeAlpha01 = 0.5f;
     s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 0.8f;
     s.zoneStrokeBriScale01 = 0.2f;
-    s.zoneStrokeScaleWithZoom = false;
+    s.zoneStrokeScaleWithZoom = true;
     s.zoneStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Structures
     s.showStructures = true;
@@ -584,7 +584,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
     s.structureShadowAlpha01 = 0.4f;
-    s.structureStrokeScaleWithZoom = false;
+    s.structureStrokeScaleWithZoom = true;
     s.structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Labels
     s.showLabelsArbitrary = true;
@@ -597,9 +597,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
-    s.labelScaleWithZoom = false;
-    s.labelScaleRefZoom = 1.0f;
-    s.labelOutlineScaleWithZoom = false;
+    s.labelScaleWithZoom = true;
+    s.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
+    s.labelOutlineScaleWithZoom = true;
     s.labelFontIndex = 0;
     // General
     s.exportPaddingPct = 0.02f;
@@ -620,7 +620,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterBri01 = 0.5f;
     s.cellBorderAlpha01 = 0.0f;
     s.cellBorderSizePx = 1.0f;
-    s.cellBorderScaleWithZoom = false;
+    s.cellBorderScaleWithZoom = true;
     s.cellBorderRefZoom = DEFAULT_VIEW_ZOOM;
     s.backgroundNoiseAlpha01 = 0.0f;
     // Biomes
@@ -631,7 +631,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeOutlineScaleWithZoom = false;
+    s.biomeOutlineScaleWithZoom = true;
     s.biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
     s.biomeUnderwaterAlpha01 = 1.0f;
     // Shading
@@ -650,9 +650,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourAlpha01 = 0.5f;
     s.waterCoastAlpha01 = 0.5f;
     s.waterCoastSizePx = 2.0f;
-    s.waterCoastScaleWithZoom = false;
+    s.waterCoastScaleWithZoom = true;
     s.waterCoastAboveZones = false;
-    s.waterContourScaleWithZoom = false;
+    s.waterContourScaleWithZoom = true;
     s.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
     s.waterRippleAlphaStart01 = 0.35f;
     s.waterRippleAlphaEnd01 = 0.15f;
@@ -664,20 +664,20 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
     s.elevationLinesAlpha01 = 0.1f;
     s.elevationLinesSizePx = 1.0f;
-    s.elevationLinesScaleWithZoom = false;
+    s.elevationLinesScaleWithZoom = true;
     s.elevationLinesRefZoom = DEFAULT_VIEW_ZOOM;
     // Paths
     s.pathSatScale01 = 0.8f;
     s.pathBriScale01 = 1.0f;
     s.showPaths = true;
-    s.pathScaleWithZoom = false;
+    s.pathScaleWithZoom = true;
     s.pathScaleRefZoom = DEFAULT_VIEW_ZOOM;
     // Zones
     s.zoneStrokeAlpha01 = 1.0f;
     s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 1.0f;
     s.zoneStrokeBriScale01 = 1.0f;
-    s.zoneStrokeScaleWithZoom = false;
+    s.zoneStrokeScaleWithZoom = true;
     s.zoneStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Structures
     s.showStructures = true;
@@ -685,7 +685,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
     s.structureShadowAlpha01 = 0.2f;
-    s.structureStrokeScaleWithZoom = false;
+    s.structureStrokeScaleWithZoom = true;
     s.structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Labels
     s.showLabelsArbitrary = true;
@@ -698,9 +698,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
-    s.labelScaleWithZoom = false;
-    s.labelScaleRefZoom = 1.0f;
-    s.labelOutlineScaleWithZoom = false;
+    s.labelScaleWithZoom = true;
+    s.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
+    s.labelOutlineScaleWithZoom = true;
     s.labelFontIndex = 0;
     // General
     s.exportPaddingPct = 0.015f;
@@ -721,7 +721,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterBri01 = 0.5f;
     s.cellBorderAlpha01 = 0.0f;
     s.cellBorderSizePx = 1.0f;
-    s.cellBorderScaleWithZoom = false;
+    s.cellBorderScaleWithZoom = true;
     s.cellBorderRefZoom = DEFAULT_VIEW_ZOOM;
     s.backgroundNoiseAlpha01 = 0.0f;
     // Biomes
@@ -732,7 +732,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
-    s.biomeOutlineScaleWithZoom = false;
+    s.biomeOutlineScaleWithZoom = true;
     s.biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
     s.biomeUnderwaterAlpha01 = 0.0f;
     // Shading
@@ -751,9 +751,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourAlpha01 = 1.0f;
     s.waterCoastAlpha01 = 1.0f;
     s.waterCoastSizePx = 2.0f;
-    s.waterCoastScaleWithZoom = false;
+    s.waterCoastScaleWithZoom = true;
     s.waterCoastAboveZones = false;
-    s.waterContourScaleWithZoom = false;
+    s.waterContourScaleWithZoom = true;
     s.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
     s.waterRippleAlphaStart01 = 0.8f;
     s.waterRippleAlphaEnd01 = 0.25f;
@@ -765,20 +765,20 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
     s.elevationLinesAlpha01 = 1.0f;
     s.elevationLinesSizePx = 1.0f;
-    s.elevationLinesScaleWithZoom = false;
+    s.elevationLinesScaleWithZoom = true;
     s.elevationLinesRefZoom = DEFAULT_VIEW_ZOOM;
     // Paths
     s.pathSatScale01 = 0.8f;
     s.pathBriScale01 = 1.0f;
     s.showPaths = false;
-    s.pathScaleWithZoom = false;
+    s.pathScaleWithZoom = true;
     s.pathScaleRefZoom = DEFAULT_VIEW_ZOOM;
     // Zones
     s.zoneStrokeAlpha01 = 1.0f;
     s.zoneStrokeSizePx = 2.0f;
     s.zoneStrokeSatScale01 = 1.0f;
     s.zoneStrokeBriScale01 = 1.0f;
-    s.zoneStrokeScaleWithZoom = false;
+    s.zoneStrokeScaleWithZoom = true;
     s.zoneStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Structures
     s.showStructures = false;
@@ -786,7 +786,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.structureSatScale01 = 1.0f;
     s.structureAlphaScale01 = 1.0f;
     s.structureShadowAlpha01 = 0.2f;
-    s.structureStrokeScaleWithZoom = false;
+    s.structureStrokeScaleWithZoom = true;
     s.structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Labels
     s.showLabelsArbitrary = false;
@@ -799,9 +799,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
-    s.labelScaleWithZoom = false;
-    s.labelScaleRefZoom = 1.0f;
-    s.labelOutlineScaleWithZoom = false;
+    s.labelScaleWithZoom = true;
+    s.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
+    s.labelOutlineScaleWithZoom = true;
     s.labelFontIndex = 0;
     // General
     s.exportPaddingPct = 0.015f;
@@ -833,7 +833,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 4.0f;
     s.biomeOutlineAlpha01 = 0.3f;
-    s.biomeOutlineScaleWithZoom = false;
+    s.biomeOutlineScaleWithZoom = true;
     s.biomeOutlineRefZoom = DEFAULT_VIEW_ZOOM;
     s.biomeUnderwaterAlpha01 = 0.0f;
     // Shading
@@ -852,9 +852,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourAlpha01 = 1.0f;
     s.waterCoastAlpha01 = 1.0f;
     s.waterCoastSizePx = 2.0f;
-    s.waterCoastScaleWithZoom = false;
+    s.waterCoastScaleWithZoom = true;
     s.waterCoastAboveZones = false;
-    s.waterContourScaleWithZoom = false;
+    s.waterContourScaleWithZoom = true;
     s.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
     s.waterRippleAlphaStart01 = 0.8f;
     s.waterRippleAlphaEnd01 = 0.25f;
@@ -866,7 +866,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
     s.elevationLinesAlpha01 = 1.0f;
     s.elevationLinesSizePx = 1.0f;
-    s.elevationLinesScaleWithZoom = false;
+    s.elevationLinesScaleWithZoom = true;
     s.elevationLinesRefZoom = DEFAULT_VIEW_ZOOM;
     // Paths
     s.pathSatScale01 = 0.3f;
@@ -900,9 +900,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.labelSizeZonePx = 14.0f;
     s.labelSizePathPx = 12.0f;
     s.labelSizeStructPx = 12.0f;
-    s.labelScaleWithZoom = false;
-    s.labelScaleRefZoom = 1.0f;
-    s.labelOutlineScaleWithZoom = false;
+    s.labelScaleWithZoom = true;
+    s.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
+    s.labelOutlineScaleWithZoom = true;
     s.labelFontIndex = 0;
     // General
     s.exportPaddingPct = 0.0f;
