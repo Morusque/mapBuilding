@@ -1592,9 +1592,9 @@ class MapRenderer {
     float boW = strokeWorldPx(max(0.1f, s.biomeOutlineSizePx), s.biomeOutlineScaleWithZoom, s.biomeOutlineRefZoom);
 
     if (biomeOutlineLayerLand != null) {
+      if (s.antialiasing) biomeOutlineLayerLand.smooth(8); else biomeOutlineLayerLand.noSmooth();
       biomeOutlineLayerLand.beginDraw();
       biomeOutlineLayerLand.clear();
-      if (s.antialiasing) biomeOutlineLayerLand.smooth(8); else biomeOutlineLayerLand.noSmooth();
       biomeOutlineLayerLand.pushMatrix();
       biomeOutlineLayerLand.pushStyle();
       viewport.applyTransform(biomeOutlineLayerLand, targetW, targetH);
@@ -1628,9 +1628,9 @@ class MapRenderer {
     }
 
     if (biomeOutlineLayerWater != null) {
+      if (s.antialiasing) biomeOutlineLayerWater.smooth(8); else biomeOutlineLayerWater.noSmooth();
       biomeOutlineLayerWater.beginDraw();
       biomeOutlineLayerWater.clear();
-      if (s.antialiasing) biomeOutlineLayerWater.smooth(8); else biomeOutlineLayerWater.noSmooth();
       biomeOutlineLayerWater.pushMatrix();
       biomeOutlineLayerWater.pushStyle();
       viewport.applyTransform(biomeOutlineLayerWater, targetW, targetH);
@@ -1707,8 +1707,8 @@ class MapRenderer {
     try {
       cellBorderLayer = app.createGraphics(targetW, targetH, JAVA2D);
       if (cellBorderLayer != null) {
-        if (s.antialiasing) cellBorderLayer.smooth(8); else cellBorderLayer.noSmooth();
         cellBorderLayer.beginDraw();
+        if (s.antialiasing) cellBorderLayer.smooth(8); else cellBorderLayer.noSmooth();
         cellBorderLayer.clear();
         cellBorderLayer.pushMatrix();
         cellBorderLayer.pushStyle();

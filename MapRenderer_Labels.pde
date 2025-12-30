@@ -135,9 +135,9 @@ class LabelRenderer {
     PGraphics lg = ensureLabelLayer(app);
     if (lg == null) return null;
     try {
+      if (s != null && s.antialiasing) lg.smooth(); else lg.noSmooth();
       lg.beginDraw();
       lg.clear();
-      if (s != null && s.antialiasing) lg.smooth(); else lg.noSmooth();
       PGraphics prev = app.g;
       app.g = lg;
       if (s != null) {

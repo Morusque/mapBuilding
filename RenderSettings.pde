@@ -163,7 +163,7 @@ class RenderSettings {
     c.waterContourHue01 = waterContourHue01;
     c.waterContourSat01 = waterContourSat01;
     c.waterContourBri01 = waterContourBri01;
-    c.waterContourAlpha01 = waterCoastAlpha01;
+    c.waterContourAlpha01 = waterContourAlpha01;
     c.waterCoastAlpha01 = waterCoastAlpha01;
     c.waterCoastSizePx = waterCoastSizePx;
     c.waterCoastScaleWithZoom = waterCoastScaleWithZoom;
@@ -264,7 +264,7 @@ class RenderSettings {
     waterContourHue01 = o.waterContourHue01;
     waterContourSat01 = o.waterContourSat01;
     waterContourBri01 = o.waterContourBri01;
-    waterContourAlpha01 = o.waterCoastAlpha01;
+    waterContourAlpha01 = o.waterContourAlpha01;
     waterCoastAlpha01 = o.waterCoastAlpha01;
     waterCoastSizePx = o.waterCoastSizePx;
     waterCoastScaleWithZoom = o.waterCoastScaleWithZoom;
