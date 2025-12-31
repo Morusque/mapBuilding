@@ -1735,7 +1735,8 @@ class RenderLayout {
   IntRect headerBase;
   IntRect headerBiomes;
   IntRect headerShading;
-  IntRect headerContours;
+  IntRect headerCoastlines;
+  IntRect headerElevation;
   IntRect headerPaths;
   IntRect headerZones;
   IntRect headerStructures;
@@ -1763,6 +1764,7 @@ class RenderLayout {
   IntRect lightAzimuthSlider;
   IntRect lightAltitudeSlider;
   IntRect lightDitherSlider;
+  IntRect lightDitherScaleCheckbox;
 
   IntRect waterContourSizeSlider;
   IntRect waterRippleCountSlider;
@@ -1911,12 +1913,14 @@ RenderLayout buildRenderLayout() {
 
     l.lightDitherSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+    l.lightDitherScaleCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
+    curY += PANEL_CHECK_SIZE + PANEL_SECTION_GAP;
   }
 
   // ----- Contours -----
-  l.headerContours = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  l.headerCoastlines = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
   curY += PANEL_TITLE_H + PANEL_ROW_GAP;
-  if (renderSectionContoursOpen) {
+  if (renderSectionCoastlinesOpen) {
     l.waterCoastSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
     l.waterCoastScaleCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
@@ -1924,11 +1928,20 @@ RenderLayout buildRenderLayout() {
     l.waterCoastAboveZonesCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
 
+    l.waterContourCoastAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+
     l.waterContourSizeSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.waterContourScaleCheckbox = new IntRect(innerX, curY, PANEL_CHECK_SIZE, PANEL_CHECK_SIZE);
     curY += PANEL_CHECK_SIZE + PANEL_ROW_GAP;
+
+    int yColor = curY + PANEL_LABEL_H;
+    l.waterContourHSB[0] = new IntRect(innerX, yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    l.waterContourHSB[1] = new IntRect(innerX + (shortSliderW + hsbGap), yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    l.waterContourHSB[2] = new IntRect(innerX + 2 * (shortSliderW + hsbGap), yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H * 2 + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.waterRippleCountSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
@@ -1936,13 +1949,10 @@ RenderLayout buildRenderLayout() {
     l.waterRippleDistanceSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-    int yColor = curY+PANEL_LABEL_H;
-    l.waterContourHSB[0] = new IntRect(innerX, yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
-    l.waterContourHSB[1] = new IntRect(innerX + (shortSliderW + hsbGap), yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
-    l.waterContourHSB[2] = new IntRect(innerX + 2 * (shortSliderW + hsbGap), yColor + PANEL_LABEL_H, shortSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H*2 + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    l.waterRippleAlphaStartSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
-    l.waterContourCoastAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
+    l.waterRippleAlphaEndSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.waterHatchAngleSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
@@ -1955,14 +1965,12 @@ RenderLayout buildRenderLayout() {
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
     l.waterHatchAlphaSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
+    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_SECTION_GAP;
+  }
 
-    l.waterRippleAlphaStartSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-
-    l.waterRippleAlphaEndSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
-    curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
-
+  l.headerElevation = new IntRect(innerX, curY, headerW, PANEL_TITLE_H);
+  curY += PANEL_TITLE_H + PANEL_ROW_GAP;
+  if (renderSectionElevationOpen) {
     l.elevationLinesCountSlider = new IntRect(innerX, curY + PANEL_LABEL_H, longSliderW, PANEL_SLIDER_H);
     curY += PANEL_LABEL_H + PANEL_SLIDER_H + PANEL_ROW_GAP;
 
@@ -2113,7 +2121,7 @@ void drawRenderPanel() {
     registerUiTooltip(layout.biomeSatSlider, tooltipFor("render_biome_sat"));
     drawSlider(layout.biomeBriSlider, renderSettings.biomeBriScale01, "Biomes brightness (" + nf(renderSettings.biomeBriScale01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.biomeBriSlider, tooltipFor("render_biome_bri"));
-    String[] fillLabels = { "Color", "Pattern", "Pattern background" };
+    String[] fillLabels = { "Color", "Pattern", "P-Background" };
     for (int i = 0; i < layout.biomeFillTypeButtons.size(); i++) {
       IntRect b = layout.biomeFillTypeButtons.get(i);
       RenderFillType mode = RenderFillType.RENDER_FILL_COLOR;
@@ -2149,15 +2157,13 @@ void drawRenderPanel() {
     registerUiTooltip(layout.lightAltitudeSlider, tooltipFor("render_light_altitude"));
     drawSlider(layout.lightDitherSlider, constrain(renderSettings.elevationLightDitherPx / 10.0f, 0, 1), "Light dither (" + nf(renderSettings.elevationLightDitherPx, 1, 1) + ")");
     registerUiTooltip(layout.lightDitherSlider, tooltipFor("render_light_dither"));
+    if (layout.lightDitherScaleCheckbox != null) {
+      drawCheckbox(layout.lightDitherScaleCheckbox.x, layout.lightDitherScaleCheckbox.y, layout.lightDitherScaleCheckbox.w, renderSettings.elevationLightDitherScaleWithZoom, "Scale dither with zoom");
+    }
   }
 
-  drawSectionHeader(layout.headerContours, "Contours", renderSectionContoursOpen);
-  if (renderSectionContoursOpen) {
-    drawSlider(layout.waterContourSizeSlider, constrain(renderSettings.waterContourSizePx / 5.0f, 0, 1), "Water contour size (" + nf(renderSettings.waterContourSizePx, 1, 1) + " px)");
-    registerUiTooltip(layout.waterContourSizeSlider, tooltipFor("render_water_contour_size"));
-    if (layout.waterContourScaleCheckbox != null) {
-      drawCheckbox(layout.waterContourScaleCheckbox.x, layout.waterContourScaleCheckbox.y, layout.waterContourScaleCheckbox.w, renderSettings.waterContourScaleWithZoom, "Scale water strokes with zoom");
-    }
+  drawSectionHeader(layout.headerCoastlines, "Coastlines", renderSectionCoastlinesOpen);
+  if (renderSectionCoastlinesOpen) {
     drawSlider(layout.waterCoastSizeSlider, constrain(renderSettings.waterCoastSizePx / 5.0f, 0, 1), "Coastline size (" + nf(renderSettings.waterCoastSizePx, 1, 1) + " px)");
     if (layout.waterCoastScaleCheckbox != null) {
       drawCheckbox(layout.waterCoastScaleCheckbox.x, layout.waterCoastScaleCheckbox.y, layout.waterCoastScaleCheckbox.w, renderSettings.waterCoastScaleWithZoom, "Scale coastline with zoom");
@@ -2165,16 +2171,28 @@ void drawRenderPanel() {
     if (layout.waterCoastAboveZonesCheckbox != null) {
       drawCheckbox(layout.waterCoastAboveZonesCheckbox.x, layout.waterCoastAboveZonesCheckbox.y, layout.waterCoastAboveZonesCheckbox.w, renderSettings.waterCoastAboveZones, "Draw coastlines above zones");
     }
-    drawSlider(layout.waterRippleCountSlider, constrain(renderSettings.waterRippleCount / 5.0f, 0, 1), "Number of ripples (" + renderSettings.waterRippleCount + ")");
-    registerUiTooltip(layout.waterRippleCountSlider, tooltipFor("render_water_ripple_count"));
-    drawSlider(layout.waterRippleDistanceSlider, constrain(renderSettings.waterRippleDistancePx / 40.0f, 0, 1), "Ripple distance (" + nf(renderSettings.waterRippleDistancePx, 1, 1) + " px)");
-    registerUiTooltip(layout.waterRippleDistanceSlider, tooltipFor("render_water_ripple_dist"));
+    drawSlider(layout.waterContourCoastAlphaSlider, renderSettings.waterCoastAlpha01, "Coastline alpha (" + nf(renderSettings.waterCoastAlpha01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.waterContourCoastAlphaSlider, tooltipFor("render_water_coast_alpha"));
+
+    drawSlider(layout.waterContourSizeSlider, constrain(renderSettings.waterContourSizePx / 5.0f, 0, 1), "Water contour size (" + nf(renderSettings.waterContourSizePx, 1, 1) + " px)");
+    registerUiTooltip(layout.waterContourSizeSlider, tooltipFor("render_water_contour_size"));
+    if (layout.waterContourScaleCheckbox != null) {
+      drawCheckbox(layout.waterContourScaleCheckbox.x, layout.waterContourScaleCheckbox.y, layout.waterContourScaleCheckbox.w, renderSettings.waterContourScaleWithZoom, "Scale water strokes with zoom");
+    }
     drawHSBRow(layout.waterContourHSB, "Water contours", renderSettings.waterContourHue01, renderSettings.waterContourSat01, renderSettings.waterContourBri01);
     registerUiTooltip(layout.waterContourHSB[0], tooltipFor("render_water_contour_h"));
     registerUiTooltip(layout.waterContourHSB[1], tooltipFor("render_water_contour_s"));
     registerUiTooltip(layout.waterContourHSB[2], tooltipFor("render_water_contour_b"));
-    drawSlider(layout.waterContourCoastAlphaSlider, renderSettings.waterCoastAlpha01, "Coastline alpha (" + nf(renderSettings.waterCoastAlpha01 * 100, 1, 0) + "%)");
-    registerUiTooltip(layout.waterContourCoastAlphaSlider, tooltipFor("render_water_coast_alpha"));
+
+    drawSlider(layout.waterRippleCountSlider, constrain(renderSettings.waterRippleCount / 5.0f, 0, 1), "Number of ripples (" + renderSettings.waterRippleCount + ")");
+    registerUiTooltip(layout.waterRippleCountSlider, tooltipFor("render_water_ripple_count"));
+    drawSlider(layout.waterRippleDistanceSlider, constrain(renderSettings.waterRippleDistancePx / 40.0f, 0, 1), "Ripple distance (" + nf(renderSettings.waterRippleDistancePx, 1, 1) + " px)");
+    registerUiTooltip(layout.waterRippleDistanceSlider, tooltipFor("render_water_ripple_dist"));
+    drawSlider(layout.waterRippleAlphaStartSlider, renderSettings.waterRippleAlphaStart01, "Ripple near shore alpha (" + nf(renderSettings.waterRippleAlphaStart01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.waterRippleAlphaStartSlider, tooltipFor("render_water_ripple_alpha_start"));
+    drawSlider(layout.waterRippleAlphaEndSlider, renderSettings.waterRippleAlphaEnd01, "Ripple far alpha (" + nf(renderSettings.waterRippleAlphaEnd01 * 100, 1, 0) + "%)");
+    registerUiTooltip(layout.waterRippleAlphaEndSlider, tooltipFor("render_water_ripple_alpha_end"));
+
     drawSlider(layout.waterHatchAngleSlider, constrain((renderSettings.waterHatchAngleDeg + 90.0f) / 180.0f, 0, 1), "Hatching angle (" + nf(renderSettings.waterHatchAngleDeg, 1, 1) + " deg)");
     registerUiTooltip(layout.waterHatchAngleSlider, tooltipFor("render_water_hatch_angle"));
     drawSlider(layout.waterHatchLengthSlider, constrain(renderSettings.waterHatchLengthPx / 400.0f, 0, 1), "Hatching length (" + nf(renderSettings.waterHatchLengthPx, 1, 1) + " px)");
@@ -2184,10 +2202,10 @@ void drawRenderPanel() {
     registerUiTooltip(layout.waterHatchSpacingSlider, tooltipFor("render_water_hatch_spacing"));
     drawSlider(layout.waterHatchAlphaSlider, renderSettings.waterHatchAlpha01, "Hatching alpha (" + nf(renderSettings.waterHatchAlpha01 * 100, 1, 0) + "%)");
     registerUiTooltip(layout.waterHatchAlphaSlider, tooltipFor("render_water_hatch_alpha"));
-    drawSlider(layout.waterRippleAlphaStartSlider, renderSettings.waterRippleAlphaStart01, "Ripple near shore alpha (" + nf(renderSettings.waterRippleAlphaStart01 * 100, 1, 0) + "%)");
-    registerUiTooltip(layout.waterRippleAlphaStartSlider, tooltipFor("render_water_ripple_alpha_start"));
-    drawSlider(layout.waterRippleAlphaEndSlider, renderSettings.waterRippleAlphaEnd01, "Ripple far alpha (" + nf(renderSettings.waterRippleAlphaEnd01 * 100, 1, 0) + "%)");
-    registerUiTooltip(layout.waterRippleAlphaEndSlider, tooltipFor("render_water_ripple_alpha_end"));
+  }
+
+  drawSectionHeader(layout.headerElevation, "Elevation", renderSectionElevationOpen);
+  if (renderSectionElevationOpen) {
     float elevCountNorm = constrain(renderSettings.elevationLinesCount / 24.0f, 0, 1);
     drawSlider(layout.elevationLinesCountSlider, elevCountNorm, "Elevation lines (" + renderSettings.elevationLinesCount + ")");
     registerUiTooltip(layout.elevationLinesCountSlider, tooltipFor("render_elev_lines_count"));

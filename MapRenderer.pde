@@ -733,37 +733,44 @@ class MapRenderer {
     if (s.biomeFillAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f) {
       app.noStroke();
       boolean usePattern = (s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN || s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN_BG);
+      // Precompute biome patterns once per frame to avoid per-cell lookups.
+      String fallbackPatternName = "";
+      PImage fallbackPattern = null;
+      PImage[] biomePatterns = null;
+      if (usePattern) {
+        fallbackPatternName = (s.biomePatternName != null && s.biomePatternName.length() > 0) ? s.biomePatternName : "";
+        if (fallbackPatternName.length() == 0 && model.biomePatternFiles != null && !model.biomePatternFiles.isEmpty()) {
+          fallbackPatternName = model.biomePatternFiles.get(0);
+        }
+        if (fallbackPatternName.length() > 0) {
+          fallbackPattern = cachedPattern(framePatternCache, app, fallbackPatternName);
+        }
+        if (model.biomeTypes != null && !model.biomeTypes.isEmpty()) {
+          int typeCount = model.biomeTypes.size();
+          biomePatterns = new PImage[typeCount];
+          for (int bi = 0; bi < typeCount; bi++) {
+            ZoneType zt = model.biomeTypes.get(bi);
+            String patName = (zt != null) ? model.biomePatternNameForIndex(zt.patternIndex, fallbackPatternName) : fallbackPatternName;
+            biomePatterns[bi] = cachedPattern(framePatternCache, app, patName);
+          }
+        }
+      }
+
       for (Cell c : model.cells) {
         if (c == null || c.vertices == null || c.vertices.size() < 3) continue;
         boolean isWater = c.elevation < seaLevel;
         if (isWater && s.biomeUnderwaterAlpha01 <= 1e-4f) continue;
         if (!isWater && s.biomeFillAlpha01 <= 1e-4f) continue;
         int col = landBase;
-        String patName = s.biomePatternName;
-        if ((patName == null || patName.length() == 0) && model.biomePatternFiles != null && !model.biomePatternFiles.isEmpty()) {
-          patName = model.biomePatternFiles.get(0);
-        }
-        if (model.biomeTypes != null && c.biomeId >= 0 && c.biomeId < model.biomeTypes.size()) {
-          ZoneType zt = model.biomeTypes.get(c.biomeId);
-          if (zt != null) {
-            if (biomeScaledCols != null) {
-              col = biomeScaledCols[c.biomeId];
-            }
-            patName = model.biomePatternNameForIndex(zt.patternIndex, patName);
-          }
+        if (biomeScaledCols != null && c.biomeId >= 0 && c.biomeId < biomeScaledCols.length) {
+          col = biomeScaledCols[c.biomeId];
         }
         float a = isWater ? s.biomeUnderwaterAlpha01 : s.biomeFillAlpha01;
-        PImage pattern = null;
-        boolean canPattern = false;
-        if (usePattern && patName != null) {
-          if (framePatternCache.containsKey(patName)) {
-            pattern = framePatternCache.get(patName);
-          } else {
-            pattern = getPattern(app, patName);
-            framePatternCache.put(patName, pattern);
-          }
-          canPattern = (pattern != null);
+        PImage pattern = fallbackPattern;
+        if (usePattern && biomePatterns != null && c.biomeId >= 0 && c.biomeId < biomePatterns.length) {
+          pattern = biomePatterns[c.biomeId];
         }
+        boolean canPattern = usePattern && pattern != null;
         if (usePattern && canPattern && s.biomeFillType == RenderFillType.RENDER_FILL_PATTERN) {
           drawPatternPoly(app, c.vertices, pattern, col, a);
         } else {
@@ -976,6 +983,13 @@ class MapRenderer {
   private int[] cachedZoneSrcCols = null;
   private float cachedZoneSatScale = -1;
   private float cachedZoneBriScale = -1;
+  private PImage cachedPattern(HashMap<String, PImage> cache, PApplet app, String name) {
+    if (cache == null || app == null || name == null || name.length() == 0) return null;
+    if (cache.containsKey(name)) return cache.get(name);
+    PImage pattern = getPattern(app, name);
+    cache.put(name, pattern);
+    return pattern;
+  }
   private PImage getNoiseTexture(PApplet app) {
     if (noiseTex != null && noiseTex.width == NOISE_TEX_SIZE && noiseTex.height == NOISE_TEX_SIZE) return noiseTex;
     noiseTex = app.createImage(NOISE_TEX_SIZE, NOISE_TEX_SIZE, PConstants.ARGB);
@@ -2417,6 +2431,7 @@ class MapRenderer {
     h = 31 * h + round(s.elevationLightAltitudeDeg * 100.0f);
     h = 31 * h + round(s.elevationLightAlpha01 * 1000.0f);
     h = 31 * h + round(s.elevationLightDitherPx * 1000.0f);
+    h = 31 * h + (s.elevationLightDitherScaleWithZoom ? 1 : 0);
     h = 31 * h + (s.antialiasing ? 1 : 0);
     h = 31 * h + ((model != null && model.cells != null) ? model.cells.size() : 0);
     return h;
@@ -2594,6 +2609,10 @@ class MapRenderer {
 
     float dither = max(0, s.elevationLightDitherPx);
     if (dither > 1e-3f) {
+      if (s.elevationLightDitherScaleWithZoom) {
+        float ref = (s.elevationLightDitherRefZoom > 1e-6f) ? s.elevationLightDitherRefZoom : DEFAULT_VIEW_ZOOM;
+        dither *= max(1e-6f, viewport.zoom) / ref;
+      }
       applyLightDither(elevationLightLayer, dither);
     }
 

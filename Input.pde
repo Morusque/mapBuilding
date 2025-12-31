@@ -778,7 +778,7 @@ void updateActiveSlider(int mx, int my) {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.waterContourCoastAlphaSlider, mx);
       renderSettings.waterCoastAlpha01 = t;
-      renderSettings.waterContourAlpha01 = renderSettings.waterCoastAlpha01; // keep legacy field aligned
+      syncLegacyWaterContourAlpha(renderSettings);
       if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
       markRenderVisualChange();
       break;
@@ -875,7 +875,6 @@ void updateActiveSlider(int mx, int my) {
       RenderLayout l = buildRenderLayout();
       float t = sliderNorm(l.zoneAlphaSlider, mx);
       renderSettings.zoneStrokeAlpha01 = t;
-      renderShowZoneOutlines = t > 0.001f;
       if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
       markRenderVisualChange();
       break;

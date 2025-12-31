@@ -51,7 +51,8 @@ RenderPreset[] renderPresets = buildDefaultRenderPresets();
 boolean renderSectionBaseOpen = false;
 boolean renderSectionBiomesOpen = false;
 boolean renderSectionShadingOpen = false;
-boolean renderSectionContoursOpen = false;
+boolean renderSectionCoastlinesOpen = false;
+boolean renderSectionElevationOpen = false;
 boolean renderSectionPathsOpen = false;
 boolean renderSectionZonesOpen = false;
 boolean renderSectionStructuresOpen = false;
@@ -128,14 +129,6 @@ float elevationNoiseScale = 8.0f;
 float defaultElevation = 0.05f;
 
 // Render toggles
-boolean renderShowWater = true;
-boolean renderShowElevation = true;
-boolean renderShowPaths = true;
-boolean renderShowLabels = true;
-boolean renderShowStructures = true;
-boolean renderShowZoneOutlines = false;
-boolean renderWaterContours = false;
-boolean renderElevationContours = false;
 float renderLightAzimuthDeg = 220.0f;   // 0..360, 0 = +X (east)
 float renderLightAltitudeDeg = 45.0f;   // 0..90, 90 = overhead
 boolean useNewElevationShading = false;
@@ -190,6 +183,11 @@ void markRenderVisualChange() {
 
 void markExportPreviewDirty() {
   exportPreviewDirty = true;
+}
+
+void syncLegacyWaterContourAlpha(RenderSettings target) {
+  if (target == null) return;
+  target.waterContourAlpha01 = target.waterCoastAlpha01;
 }
 
 float labelSizeDefault() {
@@ -548,12 +546,9 @@ void applyRenderPreset(int idx) {
   if (p == null || p.values == null) return;
   renderSettings.applyFrom(p.values);
   renderSettings.activePresetIndex = clamped;
+  syncLegacyWaterContourAlpha(renderSettings);
   // Keep legacy padding in sync until full migration
   renderPaddingPct = renderSettings.exportPaddingPct;
-  renderShowPaths = renderSettings.showPaths;
-  renderShowStructures = renderSettings.showStructures;
-  renderShowZoneOutlines = renderSettings.zoneStrokeAlpha01 > 0.001f;
-  renderShowLabels = renderSettings.showLabelsArbitrary;
 }
 
 void applyBiomeGeneration() {
@@ -1019,7 +1014,7 @@ void draw() {
       drawRenderView(this);
     }
   } else if (!skipWorld) {
-    boolean allowLabels = renderShowLabels;
+    boolean allowLabels = (renderSettings != null) ? renderSettings.showLabelsArbitrary : true;
     switch (currentTool) {
       case EDIT_SITES: {
         mapModel.drawCells(this, true);
@@ -1788,6 +1783,8 @@ JSONObject serializeRenderSettings(RenderSettings s) {
   shading.setFloat("elevationLightAzimuthDeg", s.elevationLightAzimuthDeg);
   shading.setFloat("elevationLightAltitudeDeg", s.elevationLightAltitudeDeg);
   shading.setFloat("elevationLightDitherPx", s.elevationLightDitherPx);
+   shading.setBoolean("elevationLightDitherScaleWithZoom", s.elevationLightDitherScaleWithZoom);
+   shading.setFloat("elevationLightDitherRefZoom", s.elevationLightDitherRefZoom);
   r.setJSONObject("shading", shading);
 
   JSONObject contours = new JSONObject();
@@ -1906,6 +1903,8 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.elevationLightAzimuthDeg = b.getFloat("elevationLightAzimuthDeg", target.elevationLightAzimuthDeg);
     target.elevationLightAltitudeDeg = b.getFloat("elevationLightAltitudeDeg", target.elevationLightAltitudeDeg);
     target.elevationLightDitherPx = b.getFloat("elevationLightDitherPx", target.elevationLightDitherPx);
+    target.elevationLightDitherScaleWithZoom = b.getBoolean("elevationLightDitherScaleWithZoom", target.elevationLightDitherScaleWithZoom);
+    target.elevationLightDitherRefZoom = b.getFloat("elevationLightDitherRefZoom", target.elevationLightDitherRefZoom);
   }
 
   if (r.hasKey("contours")) {
@@ -1928,7 +1927,7 @@ void applyRenderSettingsFromJson(JSONObject r, RenderSettings target) {
     target.waterHatchLengthPx = b.getFloat("waterHatchLengthPx", target.waterHatchLengthPx);
     target.waterHatchSpacingPx = b.getFloat("waterHatchSpacingPx", target.waterHatchSpacingPx);
     target.waterHatchAlpha01 = b.getFloat("waterHatchAlpha01", target.waterHatchAlpha01);
-    target.waterContourAlpha01 = target.waterCoastAlpha01; // keep legacy field in sync
+    syncLegacyWaterContourAlpha(target); // keep legacy field in sync
     target.elevationLinesCount = b.getInt("elevationLinesCount", target.elevationLinesCount);
     String style = b.getString("elevationLinesStyle", target.elevationLinesStyle.name());
     target.elevationLinesStyle = "ELEV_LINES_BASIC".equals(style) ? ElevationLinesStyle.ELEV_LINES_BASIC : target.elevationLinesStyle;
@@ -2276,7 +2275,15 @@ void loadBiomePatternList() {
     }
   }
   Collections.sort(names);
-  if (names.isEmpty()) names.add("dots01.png");
+  if (!names.isEmpty()) {
+    if (renderSettings != null) {
+      String curPat = renderSettings.biomePatternName;
+      boolean keep = (curPat != null && names.contains(curPat));
+      if (!keep) renderSettings.biomePatternName = names.get(0);
+    }
+  } else {
+    println("No biome patterns found under data/sketch patterns directories.");
+  }
   if (mapModel != null) mapModel.setBiomePatternFiles(names);
 }
 

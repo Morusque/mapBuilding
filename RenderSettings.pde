@@ -39,7 +39,7 @@ class RenderSettings {
   float biomeSatScale01 = 1.0f;
   float biomeBriScale01 = 1.0f;
   RenderFillType biomeFillType = RenderFillType.RENDER_FILL_COLOR;
-  String biomePatternName = "dots01.png";
+  String biomePatternName = "";
   float biomeOutlineSizePx = 0.0f;
   float biomeOutlineAlpha01 = 1.0f;
   boolean biomeOutlineScaleWithZoom = false;
@@ -52,6 +52,8 @@ class RenderSettings {
   float elevationLightAzimuthDeg = 220.0f;
   float elevationLightAltitudeDeg = 45.0f;
   float elevationLightDitherPx = 0.0f;
+  boolean elevationLightDitherScaleWithZoom = false;
+  float elevationLightDitherRefZoom = DEFAULT_VIEW_ZOOM;
 
   // Contours
   float waterContourSizePx = 2.0f;
@@ -156,6 +158,8 @@ class RenderSettings {
     c.elevationLightAzimuthDeg = elevationLightAzimuthDeg;
     c.elevationLightAltitudeDeg = elevationLightAltitudeDeg;
     c.elevationLightDitherPx = elevationLightDitherPx;
+    c.elevationLightDitherScaleWithZoom = elevationLightDitherScaleWithZoom;
+    c.elevationLightDitherRefZoom = elevationLightDitherRefZoom;
     // Contours
     c.waterContourSizePx = waterContourSizePx;
     c.waterRippleCount = waterRippleCount;
@@ -257,6 +261,8 @@ class RenderSettings {
     elevationLightAzimuthDeg = o.elevationLightAzimuthDeg;
     elevationLightAltitudeDeg = o.elevationLightAltitudeDeg;
     elevationLightDitherPx = o.elevationLightDitherPx;
+    elevationLightDitherScaleWithZoom = o.elevationLightDitherScaleWithZoom;
+    elevationLightDitherRefZoom = o.elevationLightDitherRefZoom;
     // Contours
     waterContourSizePx = o.waterContourSizePx;
     waterRippleCount = o.waterRippleCount;

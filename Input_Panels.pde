@@ -1291,7 +1291,8 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (queueButtonAction(layout.headerBase, new Runnable() { public void run() { renderSectionBaseOpen = !renderSectionBaseOpen; }})) return true;
   if (queueButtonAction(layout.headerBiomes, new Runnable() { public void run() { renderSectionBiomesOpen = !renderSectionBiomesOpen; }})) return true;
   if (queueButtonAction(layout.headerShading, new Runnable() { public void run() { renderSectionShadingOpen = !renderSectionShadingOpen; }})) return true;
-  if (queueButtonAction(layout.headerContours, new Runnable() { public void run() { renderSectionContoursOpen = !renderSectionContoursOpen; }})) return true;
+  if (queueButtonAction(layout.headerCoastlines, new Runnable() { public void run() { renderSectionCoastlinesOpen = !renderSectionCoastlinesOpen; }})) return true;
+  if (queueButtonAction(layout.headerElevation, new Runnable() { public void run() { renderSectionElevationOpen = !renderSectionElevationOpen; }})) return true;
   if (queueButtonAction(layout.headerPaths, new Runnable() { public void run() { renderSectionPathsOpen = !renderSectionPathsOpen; }})) return true;
   if (queueButtonAction(layout.headerZones, new Runnable() { public void run() { renderSectionZonesOpen = !renderSectionZonesOpen; }})) return true;
   if (queueButtonAction(layout.headerStructures, new Runnable() { public void run() { renderSectionStructuresOpen = !renderSectionStructuresOpen; }})) return true;
@@ -1439,18 +1440,18 @@ boolean handleRenderPanelClick(int mx, int my) {
       markRenderVisualChange();
       return true;
     }
-  }
-
-  // Contours
-  if (renderSectionContoursOpen) {
-    if (layout.waterContourSizeSlider.contains(mx, my)) {
-      float t = sliderNorm(layout.waterContourSizeSlider, mx);
-      renderSettings.waterContourSizePx = constrain(t * 5.0f, 0, 5.0f);
-      activeSlider = SLIDER_RENDER_WATER_CONTOUR_SIZE;
-      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+    if (layout.lightDitherScaleCheckbox != null && layout.lightDitherScaleCheckbox.contains(mx, my)) {
+      renderSettings.elevationLightDitherScaleWithZoom = !renderSettings.elevationLightDitherScaleWithZoom;
+      if (renderSettings.elevationLightDitherScaleWithZoom) renderSettings.elevationLightDitherRefZoom = DEFAULT_VIEW_ZOOM;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateLightCache();
       markRenderVisualChange();
+      markExportPreviewDirty();
       return true;
     }
+  }
+
+  // Coastlines
+  if (renderSectionCoastlinesOpen) {
     if (layout.waterCoastSizeSlider != null && layout.waterCoastSizeSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterCoastSizeSlider, mx);
       renderSettings.waterCoastSizePx = constrain(t * 5.0f, 0, 5.0f);
@@ -1459,16 +1460,9 @@ boolean handleRenderPanelClick(int mx, int my) {
       markRenderVisualChange();
       return true;
     }
-    if (layout.waterContourScaleCheckbox != null && layout.waterContourScaleCheckbox.contains(mx, my)) {
-      renderSettings.waterContourScaleWithZoom = !renderSettings.waterContourScaleWithZoom;
-      if (renderSettings.waterContourScaleWithZoom) renderSettings.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
-      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
-      markRenderVisualChange();
-      markExportPreviewDirty();
-      return true;
-    }
     if (layout.waterCoastScaleCheckbox != null && layout.waterCoastScaleCheckbox.contains(mx, my)) {
       renderSettings.waterCoastScaleWithZoom = !renderSettings.waterCoastScaleWithZoom;
+      if (renderSettings.waterCoastScaleWithZoom) renderSettings.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
       markRenderVisualChange();
       if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
       markExportPreviewDirty();
@@ -1481,6 +1475,34 @@ boolean handleRenderPanelClick(int mx, int my) {
       markExportPreviewDirty();
       return true;
     }
+    if (layout.waterContourCoastAlphaSlider.contains(mx, my)) {
+      float t = sliderNorm(layout.waterContourCoastAlphaSlider, mx);
+      renderSettings.waterCoastAlpha01 = t;
+      syncLegacyWaterContourAlpha(renderSettings);
+      activeSlider = SLIDER_RENDER_WATER_CONTOUR_ALPHA;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
+      return true;
+    }
+    if (layout.waterContourSizeSlider.contains(mx, my)) {
+      float t = sliderNorm(layout.waterContourSizeSlider, mx);
+      renderSettings.waterContourSizePx = constrain(t * 5.0f, 0, 5.0f);
+      activeSlider = SLIDER_RENDER_WATER_CONTOUR_SIZE;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
+      return true;
+    }
+    if (layout.waterContourScaleCheckbox != null && layout.waterContourScaleCheckbox.contains(mx, my)) {
+      renderSettings.waterContourScaleWithZoom = !renderSettings.waterContourScaleWithZoom;
+      if (renderSettings.waterContourScaleWithZoom) renderSettings.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
+      markExportPreviewDirty();
+      return true;
+    }
+    if (layout.waterContourHSB[0].contains(mx, my)) { renderSettings.waterContourHue01 = sliderNorm(layout.waterContourHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_H; if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache(); markRenderVisualChange(); return true; }
+    if (layout.waterContourHSB[1].contains(mx, my)) { renderSettings.waterContourSat01 = sliderNorm(layout.waterContourHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_S; if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache(); markRenderVisualChange(); return true; }
+    if (layout.waterContourHSB[2].contains(mx, my)) { renderSettings.waterContourBri01 = sliderNorm(layout.waterContourHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_B; if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache(); markRenderVisualChange(); return true; }
     if (layout.waterRippleCountSlider.contains(mx, my)) {
       float t = sliderNorm(layout.waterRippleCountSlider, mx);
       renderSettings.waterRippleCount = constrain(round(t * 5.0f), 0, 5);
@@ -1497,14 +1519,18 @@ boolean handleRenderPanelClick(int mx, int my) {
       markRenderVisualChange();
       return true;
     }
-    if (layout.waterContourHSB[0].contains(mx, my)) { renderSettings.waterContourHue01 = sliderNorm(layout.waterContourHSB[0], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_H; if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache(); markRenderVisualChange(); return true; }
-    if (layout.waterContourHSB[1].contains(mx, my)) { renderSettings.waterContourSat01 = sliderNorm(layout.waterContourHSB[1], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_S; if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache(); markRenderVisualChange(); return true; }
-    if (layout.waterContourHSB[2].contains(mx, my)) { renderSettings.waterContourBri01 = sliderNorm(layout.waterContourHSB[2], mx); activeSlider = SLIDER_RENDER_WATER_CONTOUR_B; if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache(); markRenderVisualChange(); return true; }
-    if (layout.waterContourCoastAlphaSlider.contains(mx, my)) {
-      float t = sliderNorm(layout.waterContourCoastAlphaSlider, mx);
-      renderSettings.waterCoastAlpha01 = t;
-      renderSettings.waterContourAlpha01 = renderSettings.waterCoastAlpha01; // keep legacy field in sync
-      activeSlider = SLIDER_RENDER_WATER_CONTOUR_ALPHA;
+    if (layout.waterRippleAlphaStartSlider.contains(mx, my)) {
+      float t = sliderNorm(layout.waterRippleAlphaStartSlider, mx);
+      renderSettings.waterRippleAlphaStart01 = t;
+      activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_START;
+      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
+      markRenderVisualChange();
+      return true;
+    }
+    if (layout.waterRippleAlphaEndSlider.contains(mx, my)) {
+      float t = sliderNorm(layout.waterRippleAlphaEndSlider, mx);
+      renderSettings.waterRippleAlphaEnd01 = t;
+      activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_END;
       if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
       markRenderVisualChange();
       return true;
@@ -1541,22 +1567,10 @@ boolean handleRenderPanelClick(int mx, int my) {
       markRenderVisualChange();
       return true;
     }
-    if (layout.waterRippleAlphaStartSlider.contains(mx, my)) {
-      float t = sliderNorm(layout.waterRippleAlphaStartSlider, mx);
-      renderSettings.waterRippleAlphaStart01 = t;
-      activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_START;
-      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
-      markRenderVisualChange();
-      return true;
-    }
-    if (layout.waterRippleAlphaEndSlider.contains(mx, my)) {
-      float t = sliderNorm(layout.waterRippleAlphaEndSlider, mx);
-      renderSettings.waterRippleAlphaEnd01 = t;
-      activeSlider = SLIDER_RENDER_WATER_RIPPLE_ALPHA_END;
-      if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateCoastCache();
-      markRenderVisualChange();
-      return true;
-    }
+  }
+
+  // Elevation
+  if (renderSectionElevationOpen) {
     if (layout.elevationLinesCountSlider.contains(mx, my)) {
       float t = sliderNorm(layout.elevationLinesCountSlider, mx);
       renderSettings.elevationLinesCount = constrain(round(t * 24.0f), 0, 24);
@@ -1590,7 +1604,6 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (renderSectionPathsOpen) {
     if (layout.pathsShowCheckbox.contains(mx, my)) {
       renderSettings.showPaths = !renderSettings.showPaths;
-      renderShowPaths = renderSettings.showPaths;
       return true;
     }
     if (layout.pathsScaleWithZoomCheckbox != null && layout.pathsScaleWithZoomCheckbox.contains(mx, my)) {
@@ -1621,7 +1634,6 @@ boolean handleRenderPanelClick(int mx, int my) {
     if (layout.zoneAlphaSlider.contains(mx, my)) {
       float t = sliderNorm(layout.zoneAlphaSlider, mx);
       renderSettings.zoneStrokeAlpha01 = t;
-      renderShowZoneOutlines = t > 0.001f;
       activeSlider = SLIDER_RENDER_ZONE_ALPHA;
       if (mapModel != null && mapModel.renderer != null) mapModel.renderer.invalidateZoneCache();
       markRenderVisualChange();
@@ -1665,7 +1677,6 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (renderSectionStructuresOpen) {
     if (layout.structuresShowCheckbox.contains(mx, my)) {
       renderSettings.showStructures = !renderSettings.showStructures;
-      renderShowStructures = renderSettings.showStructures;
       return true;
     }
     if (layout.structuresMergeCheckbox.contains(mx, my)) {
@@ -1691,7 +1702,6 @@ boolean handleRenderPanelClick(int mx, int my) {
   if (renderSectionLabelsOpen) {
     if (layout.labelsArbitraryCheckbox.contains(mx, my)) {
       renderSettings.showLabelsArbitrary = !renderSettings.showLabelsArbitrary;
-      renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
     if (layout.labelsArbSizeSlider.contains(mx, my)) {
@@ -1702,7 +1712,6 @@ boolean handleRenderPanelClick(int mx, int my) {
     }
     if (layout.labelsZonesCheckbox.contains(mx, my)) {
       renderSettings.showLabelsZones = !renderSettings.showLabelsZones;
-      renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
     if (layout.labelsZoneSizeSlider.contains(mx, my)) {
@@ -1713,7 +1722,6 @@ boolean handleRenderPanelClick(int mx, int my) {
     }
     if (layout.labelsPathsCheckbox.contains(mx, my)) {
       renderSettings.showLabelsPaths = !renderSettings.showLabelsPaths;
-      renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
     if (layout.labelsPathSizeSlider.contains(mx, my)) {
@@ -1724,7 +1732,6 @@ boolean handleRenderPanelClick(int mx, int my) {
     }
     if (layout.labelsStructuresCheckbox.contains(mx, my)) {
       renderSettings.showLabelsStructures = !renderSettings.showLabelsStructures;
-      renderShowLabels = renderSettings.showLabelsArbitrary;
       return true;
     }
     if (layout.labelsScaleWithZoomCheckbox != null && layout.labelsScaleWithZoomCheckbox.contains(mx, my)) {
