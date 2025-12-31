@@ -1160,6 +1160,8 @@ class MapRenderer {
     app.stroke(strokeCol);
     float elevW = strokeWorldPx(max(0.1f, renderSettings.elevationLinesSizePx), renderSettings.elevationLinesScaleWithZoom, renderSettings.elevationLinesRefZoom);
     app.strokeWeight(elevW);
+    app.strokeCap(PConstants.ROUND);
+    app.strokeJoin(PConstants.ROUND);
     HashSet<String> caps = drawRoundCaps ? new HashSet<String>() : null;
     float capR = elevW * 0.5f;
 
@@ -1185,16 +1187,18 @@ class MapRenderer {
     g.stroke(strokeCol);
     float elevW = strokeWorldPx(max(0.1f, renderSettings.elevationLinesSizePx), renderSettings.elevationLinesScaleWithZoom, renderSettings.elevationLinesRefZoom);
     g.strokeWeight(elevW);
+    g.strokeCap(PConstants.ROUND);
+    g.strokeJoin(PConstants.ROUND);
     HashSet<String> caps = drawRoundCaps ? new HashSet<String>() : null;
     float capR = elevW * 0.5f;
 
     if (step > 0) {
       for (float iso = start; iso <= end + 1e-6f; iso += step) {
-        drawIsoLine(appCtx, grid, iso, drawRoundCaps, capR, strokeCol, caps);
+        drawIsoLine(g, grid, iso, drawRoundCaps, capR, strokeCol, caps);
       }
     } else {
       for (float iso = start; iso >= end - 1e-6f; iso += step) {
-        drawIsoLine(appCtx, grid, iso, drawRoundCaps, capR, strokeCol, caps);
+        drawIsoLine(g, grid, iso, drawRoundCaps, capR, strokeCol, caps);
       }
     }
     g.popStyle();
@@ -1460,6 +1464,31 @@ class MapRenderer {
       app.ellipse(b.x, b.y, capRadius * 2, capRadius * 2);
     }
     app.popStyle();
+  }
+
+  void drawSeg(PGraphics g, PVector a, PVector b, boolean caps, float capRadius, int capCol, HashSet<String> capsDrawn) {
+    if (a == null || b == null || g == null) return;
+    g.line(a.x, a.y, b.x, b.y);
+    if (!caps || capRadius <= 1e-6f) return;
+    g.pushStyle();
+    g.noStroke();
+    g.fill(capCol);
+    if (capsDrawn != null) {
+      String ka = capKey(a);
+      if (!capsDrawn.contains(ka)) {
+        capsDrawn.add(ka);
+        g.ellipse(a.x, a.y, capRadius * 2, capRadius * 2);
+      }
+      String kb = capKey(b);
+      if (!capsDrawn.contains(kb)) {
+        capsDrawn.add(kb);
+        g.ellipse(b.x, b.y, capRadius * 2, capRadius * 2);
+      }
+    } else {
+      g.ellipse(a.x, a.y, capRadius * 2, capRadius * 2);
+      g.ellipse(b.x, b.y, capRadius * 2, capRadius * 2);
+    }
+    g.popStyle();
   }
 
   PVector interpIso(float x0, float y0, float v0, float x1, float y1, float v1, float iso) {
@@ -2270,6 +2299,52 @@ class MapRenderer {
         g.fill(ci.col);
         float d = ci.r * 2;
         g.ellipse(p.x, p.y, d, d);
+      }
+    }
+  }
+
+  void drawIsoLine(PGraphics g, MapModel.ContourGrid grid, float iso, boolean caps, float capRadius, int capCol, HashSet<String> capsDrawn) {
+    if (grid == null || g == null) return;
+    for (int j = 0; j < grid.rows - 1; j++) {
+      float y0 = grid.oy + j * grid.dy;
+      float y1 = y0 + grid.dy;
+      for (int i = 0; i < grid.cols - 1; i++) {
+        float x0 = grid.ox + i * grid.dx;
+        float x1 = x0 + grid.dx;
+        float v00 = grid.v[j][i];
+        float v10 = grid.v[j][i + 1];
+        float v11 = grid.v[j + 1][i + 1];
+        float v01 = grid.v[j + 1][i];
+
+        int caseId = 0;
+        if (v00 > iso) caseId |= 1;
+        if (v10 > iso) caseId |= 2;
+        if (v11 > iso) caseId |= 4;
+        if (v01 > iso) caseId |= 8;
+
+        if (caseId == 0 || caseId == 15) continue;
+
+        PVector eTop = interpIso(x0, y0, v00, x1, y0, v10, iso);
+        PVector eRight = interpIso(x1, y0, v10, x1, y1, v11, iso);
+        PVector eBottom = interpIso(x0, y1, v01, x1, y1, v11, iso);
+        PVector eLeft = interpIso(x0, y0, v00, x0, y1, v01, iso);
+
+        switch (caseId) {
+          case 1:  drawSeg(g, eLeft, eTop, caps, capRadius, capCol, capsDrawn); break;
+          case 2:  drawSeg(g, eTop, eRight, caps, capRadius, capCol, capsDrawn); break;
+          case 3:  drawSeg(g, eLeft, eRight, caps, capRadius, capCol, capsDrawn); break;
+          case 4:  drawSeg(g, eRight, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 5:  drawSeg(g, eTop, eRight, caps, capRadius, capCol, capsDrawn); drawSeg(g, eLeft, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 6:  drawSeg(g, eTop, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 7:  drawSeg(g, eLeft, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 8:  drawSeg(g, eBottom, eLeft, caps, capRadius, capCol, capsDrawn); break;
+          case 9:  drawSeg(g, eTop, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 10: drawSeg(g, eTop, eLeft, caps, capRadius, capCol, capsDrawn); drawSeg(g, eRight, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 11: drawSeg(g, eRight, eBottom, caps, capRadius, capCol, capsDrawn); break;
+          case 12: drawSeg(g, eRight, eLeft, caps, capRadius, capCol, capsDrawn); break;
+          case 13: drawSeg(g, eRight, eTop, caps, capRadius, capCol, capsDrawn); break;
+          case 14: drawSeg(g, eTop, eLeft, caps, capRadius, capCol, capsDrawn); break;
+        }
       }
     }
   }
