@@ -2437,6 +2437,41 @@ class MapRenderer {
     return h;
   }
 
+  private boolean allocBiomeLayers(PApplet app, RenderSettings s, int targetW, int targetH, boolean preferP2D) {
+    if (app == null) return false;
+    PGraphics land = null;
+    PGraphics water = null;
+    Exception allocErr = null;
+    if (preferP2D) {
+      try {
+        land = app.createGraphics(targetW, targetH, P2D);
+        water = app.createGraphics(targetW, targetH, P2D);
+      } catch (Exception ex) {
+        allocErr = ex;
+      }
+    }
+    if (land == null || water == null) {
+      try {
+        land = app.createGraphics(targetW, targetH, JAVA2D);
+        water = app.createGraphics(targetW, targetH, JAVA2D);
+      } catch (Exception ex) {
+        allocErr = ex;
+      }
+    }
+    biomeLandLayer = land;
+    biomeWaterLayer = water;
+    if (allocErr != null && (land == null || water == null)) {
+      println("Biome layer alloc failed: " + allocErr);
+    }
+    if (biomeLandLayer != null) {
+      if (s.antialiasing) biomeLandLayer.smooth(8); else biomeLandLayer.noSmooth();
+    }
+    if (biomeWaterLayer != null) {
+      if (s.antialiasing) biomeWaterLayer.smooth(8); else biomeWaterLayer.noSmooth();
+    }
+    return biomeLandLayer != null && biomeWaterLayer != null;
+  }
+
   private void ensureBiomeLayer(PApplet app, RenderSettings s) {
     if (model == null || model.cells == null || model.cells.isEmpty() || model.biomeTypes == null) {
       biomeLandLayer = null;
@@ -2459,27 +2494,10 @@ class MapRenderer {
                               biomeLayerBiomeCount != model.biomeTypes.size();
 
     if (sizeChanged) {
-      try {
-        biomeLandLayer = app.createGraphics(targetW, targetH, P2D);
-        biomeWaterLayer = app.createGraphics(targetW, targetH, P2D);
-      } catch (Exception ex) {
-        println("Biome layer P2D alloc failed, falling back to JAVA2D: " + ex);
-        try {
-          biomeLandLayer = app.createGraphics(targetW, targetH, JAVA2D);
-          biomeWaterLayer = app.createGraphics(targetW, targetH, JAVA2D);
-        } catch (Exception ignored) {
-          biomeLandLayer = null;
-          biomeWaterLayer = null;
-        }
-      }
+      boolean ok = allocBiomeLayers(app, s, targetW, targetH, true);
       biomeLayerW = targetW;
       biomeLayerH = targetH;
-      if (biomeLandLayer != null) {
-        if (s.antialiasing) biomeLandLayer.smooth(8); else biomeLandLayer.noSmooth();
-      }
-      if (biomeWaterLayer != null) {
-        if (s.antialiasing) biomeWaterLayer.smooth(8); else biomeWaterLayer.noSmooth();
-      }
+      if (!ok) return;
     } else {
       if (biomeLandLayer != null) {
         if (s.antialiasing) biomeLandLayer.smooth(8); else biomeLandLayer.noSmooth();
@@ -2491,33 +2509,44 @@ class MapRenderer {
     if (biomeLandLayer == null || biomeWaterLayer == null) return;
     if (!(sizeChanged || viewChanged || settingsChanged)) return;
 
-    try {
-      biomeLandLayer.beginDraw();
-      biomeLandLayer.clear();
-      biomeLandLayer.pushMatrix();
-      biomeLandLayer.pushStyle();
-      viewport.applyTransform(biomeLandLayer, biomeLandLayer.width, biomeLandLayer.height);
+    boolean built = false;
+    boolean triedFallback = false;
+    for (int attempt = 0; attempt < 2 && !built; attempt++) {
+      try {
+        biomeLandLayer.beginDraw();
+        biomeLandLayer.clear();
+        biomeLandLayer.pushMatrix();
+        biomeLandLayer.pushStyle();
+        viewport.applyTransform(biomeLandLayer, biomeLandLayer.width, biomeLandLayer.height);
 
-      biomeWaterLayer.beginDraw();
-      biomeWaterLayer.clear();
-      biomeWaterLayer.pushMatrix();
-      biomeWaterLayer.pushStyle();
-      viewport.applyTransform(biomeWaterLayer, biomeWaterLayer.width, biomeWaterLayer.height);
+        biomeWaterLayer.beginDraw();
+        biomeWaterLayer.clear();
+        biomeWaterLayer.pushMatrix();
+        biomeWaterLayer.pushStyle();
+        viewport.applyTransform(biomeWaterLayer, biomeWaterLayer.width, biomeWaterLayer.height);
 
-      drawBiomeLayer(biomeLandLayer, biomeWaterLayer, biomeScaledCols);
+        drawBiomeLayer(biomeLandLayer, biomeWaterLayer, biomeScaledCols);
 
-      biomeLandLayer.popStyle();
-      biomeLandLayer.popMatrix();
-      biomeLandLayer.endDraw();
-      biomeWaterLayer.popStyle();
-      biomeWaterLayer.popMatrix();
-      biomeWaterLayer.endDraw();
-    } catch (Exception ex) {
-      println("Biome layer build failed: " + ex);
-      biomeLandLayer = null;
-      biomeWaterLayer = null;
-      return;
+        biomeLandLayer.popStyle();
+        biomeLandLayer.popMatrix();
+        biomeLandLayer.endDraw();
+        biomeWaterLayer.popStyle();
+        biomeWaterLayer.popMatrix();
+        biomeWaterLayer.endDraw();
+        built = true;
+      } catch (Exception ex) {
+        println("Biome layer build failed: " + ex);
+        biomeLandLayer = null;
+        biomeWaterLayer = null;
+        if (!triedFallback) {
+          triedFallback = true;
+          if (!allocBiomeLayers(app, s, targetW, targetH, false)) {
+            break;
+          }
+        }
+      }
     }
+    if (!built) return;
 
     biomeLayerHash = hash;
     biomeLayerZoom = viewport.zoom;

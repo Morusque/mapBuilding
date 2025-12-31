@@ -1856,17 +1856,10 @@ boolean handleExportPanelClick(int mx, int my) {
       showNotice("Export failed");
     }
   }})) return true;
-  if (layout.scaleButtons != null && !layout.scaleButtons.isEmpty()) {
-    float[] scales = layout.scaleValues;
-    for (int i = 0; i < layout.scaleButtons.size() && i < scales.length; i++) {
-      IntRect b = layout.scaleButtons.get(i);
-      final float target = scales[i];
-      if (b != null && queueButtonAction(b, new Runnable() { public void run() {
-        exportScale = target;
-        markExportPreviewDirty();
-      }})) return true;
-    }
-  }
+  if (layout.setResolutionBtn != null && queueButtonAction(layout.setResolutionBtn, new Runnable() { public void run() {
+    exportScale = max(0.1f, viewport.zoom / DEFAULT_VIEW_ZOOM);
+    markExportPreviewDirty();
+  }})) return true;
   if (queueButtonAction(layout.mapExportBtn, new Runnable() { public void run() {
     String path = exportMapJson();
     if (path != null && path.length() > 0 && !path.startsWith("Failed")) {

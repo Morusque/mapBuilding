@@ -142,7 +142,7 @@ boolean PATH_BIDIRECTIONAL = true; // grow paths from both ends
 int ELEV_STEPS_PATHS = 6;
 boolean siteDirtyDuringDrag = false;
 float renderPaddingPct = 0.01f; // fraction of min(screenW, screenH) cropped from all sides
-float exportScale = 2.0f; // multiplier for PNG export resolution
+float exportScale = 1.0f; // multiplier for PNG export resolution (relative to DEFAULT_VIEW_ZOOM)
 // Nominal initial viewport zoom (matches Viewport constructor); used as label scale reference.
 final float DEFAULT_VIEW_ZOOM = 600.0f;
 boolean fullGenRunning = false;
@@ -2745,36 +2745,43 @@ float[] exportInnerRect() {
   return new float[]{ innerWX, innerWY, innerWW, innerWH };
 }
 
+float[] exportSquareRect() {
+  float worldW = mapModel.maxX - mapModel.minX;
+  float worldH = mapModel.maxY - mapModel.minY;
+  float side = max(worldW, worldH);
+  float cx = (mapModel.minX + mapModel.maxX) * 0.5f;
+  float cy = (mapModel.minY + mapModel.maxY) * 0.5f;
+  return new float[]{ cx - side * 0.5f, cy - side * 0.5f, side, side };
+}
 boolean ensureExportPreview() {
   if (mapModel == null || mapModel.renderer == null) return false;
   if (!exportPreviewDirty && exportPreview != null) return true;
-  float[] rect = exportInnerRect();
+  float[] rect = exportSquareRect();
   float innerWX = rect[0], innerWY = rect[1], innerWW = rect[2], innerWH = rect[3];
   if (innerWW <= 1e-6f || innerWH <= 1e-6f) return false;
 
-  float innerAspect = innerWW / innerWH;
-  float safeScale = constrain(exportScale, 0.1f, 8.0f);
-  int pxH = max(1, round(max(1, height) * safeScale));
-  int pxW = max(1, round(pxH * innerAspect));
-  if (pxW <= 0 || pxH <= 0) return false;
-
-  PGraphics g = null;
-  try { g = createGraphics(pxW, pxH, P2D); } catch (Exception ignored) {}
-  if (g == null) {
-    try { g = createGraphics(pxW, pxH, JAVA2D); } catch (Exception ignored) {}
+  float pixelsPerWorld = max(0.1f, exportScale) * DEFAULT_VIEW_ZOOM;
+  int pxSide = max(1, round(innerWW * pixelsPerWorld));
+  pxSide = constrain(pxSide, 1, 16384);
+  boolean needsAlloc = exportPreview == null || exportPreview.width != pxSide || exportPreview.height != pxSide;
+  if (needsAlloc) {
+    PGraphics g = null;
+    try { g = createGraphics(pxSide, pxSide, P2D); } catch (Exception ignored) {}
+    if (g == null) {
+      try { g = createGraphics(pxSide, pxSide, JAVA2D); } catch (Exception ignored) {}
+    }
+    if (g == null) return false;
+    exportPreview = g;
   }
-  if (g == null) return false;
 
   float prevCenterX = viewport.centerX;
   float prevCenterY = viewport.centerY;
   float prevZoom = viewport.zoom;
 
-  float zoomX = g.width / innerWW;
-  float zoomY = g.height / innerWH;
-  float newZoom = max(zoomX, zoomY);
+  // Center on square map and set zoom from export resolution.
+  viewport.zoom = pixelsPerWorld;
   viewport.centerX = innerWX + innerWW * 0.5f;
   viewport.centerY = innerWY + innerWH * 0.5f;
-  viewport.zoom = newZoom;
 
   triggerRenderPrerequisites();
 
@@ -2783,16 +2790,16 @@ boolean ensureExportPreview() {
   progressDetail = "Export render";
   setProgressStatus("Exporting...");
   try {
-    g.beginDraw();
-    g.background(245);
+    exportPreview.beginDraw();
+    exportPreview.background(245);
     PGraphics prev = this.g;
-    this.g = g;
+    this.g = exportPreview;
     pushMatrix();
-    viewport.applyTransform(g, g.width, g.height);
+    viewport.applyTransform(exportPreview, exportPreview.width, exportPreview.height);
     drawRenderView(this);
     popMatrix();
     this.g = prev;
-    g.endDraw();
+    exportPreview.endDraw();
     progressPct = 0.65f;
 
     // If contour jobs were triggered during the first pass, finish them and redraw
@@ -2802,16 +2809,16 @@ boolean ensureExportPreview() {
         mapModel.stepContourJobs(16);
         safety++;
       }
-      g.beginDraw();
-      g.background(245);
+      exportPreview.beginDraw();
+      exportPreview.background(245);
       PGraphics prev2 = this.g;
-      this.g = g;
+      this.g = exportPreview;
       pushMatrix();
-      viewport.applyTransform(g, g.width, g.height);
+      viewport.applyTransform(exportPreview, exportPreview.width, exportPreview.height);
       drawRenderView(this);
       popMatrix();
       this.g = prev2;
-      g.endDraw();
+      exportPreview.endDraw();
       progressPct = 0.9f;
     }
   } finally {
@@ -2826,7 +2833,6 @@ boolean ensureExportPreview() {
     progressPct = 1.0f;
   }
 
-  exportPreview = g;
   exportPreviewRect = rect;
   exportPreviewDirty = false;
   return true;
@@ -2854,4 +2860,8 @@ void drawExportPreviewView() {
   image(exportPreview, sx, sy, sw, sh);
   popMatrix();
   popStyle();
+}
+// Keep exportScale tied to zoom (continuous). Call after any zoom change.
+void syncExportScaleToZoom() {
+  exportScale = max(0.1f, viewport.zoom / DEFAULT_VIEW_ZOOM);
 }

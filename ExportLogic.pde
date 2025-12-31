@@ -2,106 +2,17 @@
 
 String exportPng() {
   long tExportStart = millis();
-  // Compute inner world rect from render padding
-  float worldW = mapModel.maxX - mapModel.minX;
-  float worldH = mapModel.maxY - mapModel.minY;
-  if (worldW <= 0 || worldH <= 0) return "Failed: invalid world bounds";
-
-  float safePad = constrain(renderPaddingPct, 0, 0.49f); // avoid collapsing to zero
-  float padX = max(0, safePad) * worldW;
-  float padY = max(0, safePad) * worldH;
-  float innerWX = mapModel.minX + padX;
-  float innerWY = mapModel.minY + padY;
-  float innerWW = worldW - padX * 2;
-  float innerWH = worldH - padY * 2;
-  if (innerWW <= 1e-6f || innerWH <= 1e-6f) return "Failed: export padding too large";
-
-  // Match export buffer aspect to the cropped world so we crop instead of showing letterbox bars.
-  float innerAspect = innerWW / innerWH;
-  float safeScale = constrain(exportScale, 0.1f, 8.0f);
-  int pxH = max(1, round(max(1, height) * safeScale));
-  int pxW = max(1, round(pxH * innerAspect));
-  if (pxW <= 0 || pxH <= 0) return "Failed: export size collapsed";
-  PGraphics g = null;
-  try {
-    g = createGraphics(pxW, pxH, P2D);
-  } catch (Exception ignored) {}
-  if (g == null) {
-    try {
-      g = createGraphics(pxW, pxH, JAVA2D);
-    } catch (Exception ignored) {}
-  }
-  if (g == null) return "Failed to allocate buffer";
-
-  float prevCenterX = viewport.centerX;
-  float prevCenterY = viewport.centerY;
-  float prevZoom = viewport.zoom;
-
-  // Fit inner world rect to buffer while preserving aspect
-  float zoomX = g.width / innerWW;
-  float zoomY = g.height / innerWH;
-  float newZoom = max(zoomX, zoomY); // fill buffer; slight overzoom is fine (cropped)
-  viewport.centerX = innerWX + innerWW * 0.5f;
-  viewport.centerY = innerWY + innerWH * 0.5f;
-  viewport.zoom = newZoom;
-
-  // Ensure distance/elevation grids are ready before rendering/exporting
-  long tPrepStart = millis();
-  triggerRenderPrerequisites();
-  long tPrepEnd = millis();
-
-  renderingForExport = true;
-  g.beginDraw();
-  g.background(245);
-  // Temporarily redirect drawing to offscreen buffer
-  PGraphics prev = this.g;
-  this.g = g;
-  pushMatrix();
-  viewport.applyTransform(g, g.width, g.height);
-  drawRenderView(this);
-  popMatrix();
-  this.g = prev;
-  g.endDraw();
-  long tFirstPassEnd = millis();
-
-  // If contour jobs were triggered during the first pass, finish them and redraw
-  if (mapModel.isContourJobRunning()) {
-    int safety = 0;
-    while (mapModel.isContourJobRunning() && safety < 80) {
-      mapModel.stepContourJobs(16);
-      safety++;
-    }
-    g.beginDraw();
-    g.background(245);
-    PGraphics prev2 = this.g;
-    this.g = g;
-    pushMatrix();
-    viewport.applyTransform(g, g.width, g.height);
-    drawRenderView(this);
-    popMatrix();
-    this.g = prev2;
-    g.endDraw();
-  }
-  long tSecondPassEnd = millis();
-
-  // Restore viewport
-  viewport.centerX = prevCenterX;
-  viewport.centerY = prevCenterY;
-  viewport.zoom = prevZoom;
-
+  if (!ensureExportPreview()) return "Export failed: preview unavailable";
+  if (exportPreview == null) return "Export failed: no buffer";
   String dir = "exports";
   java.io.File folder = new java.io.File(dir);
   folder.mkdirs();
   String ts = nf(year(), 4, 0) + nf(month(), 2, 0) + nf(day(), 2, 0) + "_" +
               nf(hour(), 2, 0) + nf(minute(), 2, 0) + nf(second(), 2, 0);
   String path = dir + java.io.File.separator + "map_" + ts + ".png";
-  g.save(path);
-
+  exportPreview.save(path);
   long tExportEnd = millis();
-  println("Export timing ms: prep=" + (tPrepEnd - tPrepStart) +
-          " firstPass=" + (tFirstPassEnd - tPrepEnd) +
-          " secondPass=" + (tSecondPassEnd - tFirstPassEnd) +
-          " total=" + (tExportEnd - tExportStart));
+  println("Export timing ms: total=" + (tExportEnd - tExportStart));
   return path;
 }
 
@@ -121,7 +32,7 @@ String exportSvg() {
   if (innerWW <= 1e-6f || innerWH <= 1e-6f) return "Failed: export padding too large";
 
   float innerAspect = innerWW / innerWH;
-  float safeScale = constrain(exportScale, 0.1f, 8.0f);
+  float safeScale = max(0.1f, exportScale);
   int pxH = max(1, round(max(1, height) * safeScale));
   int pxW = max(1, round(pxH * innerAspect));
   if (pxW <= 0 || pxH <= 0) return "Failed: export size collapsed";

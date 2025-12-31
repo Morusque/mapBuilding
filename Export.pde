@@ -7,8 +7,7 @@ class ExportLayout {
   IntRect pngBtn;
   IntRect svgBtn;
   IntRect geoJsonBtn;
-  ArrayList<IntRect> scaleButtons = new ArrayList<IntRect>();
-  float[] scaleValues = { 0.25f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f };
+  IntRect setResolutionBtn;
   IntRect mapExportBtn;
   IntRect mapImportBtn;
   int mapSectionY;
@@ -28,22 +27,8 @@ ExportLayout buildExportLayout() {
   l.geoJsonBtn = new IntRect(l.panel.x + PANEL_PADDING, curY, 140, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
 
-  int btnW = 44;
-  int btnH = PANEL_BUTTON_H;
-  float[] scales = l.scaleValues;
-  int perRow = 4;
-  int bx = l.panel.x + PANEL_PADDING;
-  int by = curY + PANEL_LABEL_H;
-  for (int i = 0; i < scales.length; i++) {
-    if (i > 0 && i % perRow == 0) {
-      by += btnH + PANEL_ROW_GAP;
-      bx = l.panel.x + PANEL_PADDING;
-    }
-    IntRect b = new IntRect(bx, by, btnW, btnH);
-    l.scaleButtons.add(b);
-    bx += btnW + PANEL_ROW_GAP;
-  }
-  curY = by + btnH + PANEL_SECTION_GAP;
+  l.setResolutionBtn = new IntRect(l.panel.x + PANEL_PADDING, curY, 220, PANEL_BUTTON_H);
+  curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
   l.bodyY = curY;
   curY += PANEL_LABEL_H * 2 + PANEL_SECTION_GAP;
 
@@ -87,20 +72,15 @@ void drawExportPanel() {
   text("Export GeoJSON", layout.geoJsonBtn.x + layout.geoJsonBtn.w / 2, layout.geoJsonBtn.y + layout.geoJsonBtn.h / 2);
   registerUiTooltip(layout.geoJsonBtn, tooltipFor("export_geojson"));
 
-  // Resolution scale buttons
+  // Resolution control
+  drawBevelButton(layout.setResolutionBtn.x, layout.setResolutionBtn.y, layout.setResolutionBtn.w, layout.setResolutionBtn.h, false);
+  fill(10);
+  textAlign(CENTER, CENTER);
+  text("Set resolution from zoom", layout.setResolutionBtn.x + layout.setResolutionBtn.w / 2, layout.setResolutionBtn.y + layout.setResolutionBtn.h / 2);
+  registerUiTooltip(layout.setResolutionBtn, tooltipFor("export_scale"));
   fill(0);
   textAlign(LEFT, BOTTOM);
-  text("Resolution scale", layout.panel.x + PANEL_PADDING, layout.scaleButtons.get(0).y - 4);
-  float[] scales = layout.scaleValues;
-  for (int i = 0; i < layout.scaleButtons.size() && i < scales.length; i++) {
-    IntRect b = layout.scaleButtons.get(i);
-    boolean active = abs(exportScale - scales[i]) < 1e-6f;
-    drawBevelButton(b.x, b.y, b.w, b.h, active);
-    fill(active ? 0 : 10);
-    textAlign(CENTER, CENTER);
-    text("x" + nf(scales[i], 1, (scales[i] < 1) ? 2 : 0), b.x + b.w / 2, b.y + b.h / 2);
-    registerUiTooltip(b, tooltipFor("export_scale"));
-  }
+  text("Current export scale: x" + nf(exportScale, 1, 2), layout.panel.x + PANEL_PADDING, layout.setResolutionBtn.y - 6);
 
   fill(60);
   textAlign(LEFT, TOP);
