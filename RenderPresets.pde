@@ -22,7 +22,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 1.0f;
     s.biomeBriScale01 = 1.0f;
     s.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
-    s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.5f;
     s.biomeOutlineScaleWithZoom = true;
@@ -123,7 +122,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.4f;
     s.biomeBriScale01 = 1.0f;
     s.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
-    s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 0.0f;
     s.biomeOutlineAlpha01 = 0.0f;
     s.biomeOutlineScaleWithZoom = true;
@@ -224,7 +222,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.75f;
     s.biomeBriScale01 = 1.0f;
     s.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
-    s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
     s.biomeOutlineScaleWithZoom = true;
@@ -288,16 +285,16 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.showLabelsZones = true;
     s.showLabelsPaths = true;
     s.showLabelsStructures = false;
-    s.labelOutlineAlpha01 = 0.0f;
-    s.labelOutlineSizePx = 1.0f;
-    s.labelSizeArbPx = 12.0f;
-    s.labelSizeZonePx = 14.0f;
-    s.labelSizePathPx = 12.0f;
-    s.labelSizeStructPx = 12.0f;
+    s.labelOutlineAlpha01 = 1.0f;
+    s.labelOutlineSizePx = 2.0f;
+    s.labelSizeArbPx = 16.0f;
+    s.labelSizeZonePx = 17.0f;
+    s.labelSizePathPx = 15.0f;
+    s.labelSizeStructPx = 14.0f;
     s.labelScaleWithZoom = true;
     s.labelScaleRefZoom = DEFAULT_VIEW_ZOOM;
     s.labelOutlineScaleWithZoom = true;
-    s.labelFontIndex = 0;
+    s.labelFontIndex = 2;
     // General
     s.exportPaddingPct = 0.02f;
     s.antialiasing = true;
@@ -325,7 +322,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.0f;
     s.biomeBriScale01 = 1.0f;
     s.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
-    s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
     s.biomeOutlineScaleWithZoom = true;
@@ -415,7 +411,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.landBri01 = 1.0f;
     s.waterHue01 = 0.0f;
     s.waterSat01 = 0.0f;
-    s.waterBri01 = 0.25f;
+    s.waterBri01 = 1.0f;
     s.cellBorderAlpha01 = 0.0f;
     s.cellBorderSizePx = 1.0f;
     s.cellBorderScaleWithZoom = true;
@@ -424,9 +420,8 @@ RenderPreset[] buildDefaultRenderPresets() {
     // Biomes
     s.biomeFillAlpha01 = 1.0f;
     s.biomeSatScale01 = 0.0f;
-    s.biomeBriScale01 = 1.0f;
+    s.biomeBriScale01 = 0.0f;
     s.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
-    s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
     s.biomeOutlineScaleWithZoom = true;
@@ -440,7 +435,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLightDitherPx = 0.0f;
     // Contours
     s.waterContourSizePx = 2.0f;
-    s.waterRippleCount = 3;
+    s.waterRippleCount = 0;
     s.waterRippleDistancePx = 4.0f;
     s.waterContourHue01 = 0.0f;
     s.waterContourSat01 = 0.0f;
@@ -454,10 +449,10 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.waterContourRefZoom = DEFAULT_VIEW_ZOOM;
     s.waterRippleAlphaStart01 = 0.8f;
     s.waterRippleAlphaEnd01 = 0.25f;
-    s.waterHatchAngleDeg = 0.0f;
-    s.waterHatchLengthPx = 0.0f;
-    s.waterHatchSpacingPx = 12.0f;
-    s.waterHatchAlpha01 = 0.0f;
+    s.waterHatchAngleDeg = -40.0f;
+    s.waterHatchLengthPx = 8.0f;
+    s.waterHatchSpacingPx = 4.0f;
+    s.waterHatchAlpha01 = 1.0f;
     s.elevationLinesCount = 2;
     s.elevationLinesStyle = ElevationLinesStyle.ELEV_LINES_BASIC;
     s.elevationLinesAlpha01 = 1.0f;
@@ -482,7 +477,7 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.mergeStructures = false;
     s.structureSatScale01 = 0.0f;
     s.structureAlphaScale01 = 1.0f;
-    s.structureShadowAlpha01 = 0.25f;
+    s.structureShadowAlpha01 = 1.0f;
     s.structureStrokeScaleWithZoom = true;
     s.structureStrokeRefZoom = DEFAULT_VIEW_ZOOM;
     // Labels
@@ -527,7 +522,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.9f;
     s.biomeBriScale01 = 1.0f;
     s.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
-    s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 2.0f;
     s.biomeOutlineAlpha01 = 0.9f;
     s.biomeOutlineScaleWithZoom = true;
@@ -628,7 +622,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 0.3f;
     s.biomeBriScale01 = 1.0f;
     s.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
-    s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
     s.biomeOutlineScaleWithZoom = true;
@@ -729,7 +722,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 1.0f;
     s.biomeBriScale01 = 1.0f;
     s.biomeFillType = RenderFillType.RENDER_FILL_COLOR;
-    s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 1.0f;
     s.biomeOutlineAlpha01 = 0.0f;
     s.biomeOutlineScaleWithZoom = true;
@@ -830,7 +822,6 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.biomeSatScale01 = 1.0f;
     s.biomeBriScale01 = 1.0f;
     s.biomeFillType = RenderFillType.RENDER_FILL_PATTERN;
-    s.biomePatternName = "dots01.png";
     s.biomeOutlineSizePx = 4.0f;
     s.biomeOutlineAlpha01 = 0.3f;
     s.biomeOutlineScaleWithZoom = true;
