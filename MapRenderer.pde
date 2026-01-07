@@ -1407,46 +1407,20 @@ class MapRenderer {
   void drawZoneOutlinesRender(PApplet app, RenderSettings s) {
     if (s == null) return;
     boolean drawZones = s.zoneStrokeAlpha01 > 1e-4f && model.zones != null;
-    boolean drawBiomes = s.biomeOutlineSizePx > 1e-4f && (s.biomeOutlineAlpha01 > 1e-4f || s.biomeUnderwaterAlpha01 > 1e-4f);
-    if (!drawZones && !drawBiomes) return;
-
-    if (drawZones) {
-      ensureZoneLayer(app, s);
-      if (zoneLayer != null) {
-        app.pushStyle();
-        app.pushMatrix();
-        app.resetMatrix();
-        app.tint(255, constrain(s.zoneStrokeAlpha01, 0, 1) * 255);
-        app.image(zoneLayer, 0, 0);
-        app.popMatrix();
-        app.popStyle();
-      }
-    } else {
+    if (!drawZones) {
       zoneLayer = null;
+      return;
     }
-
-    if (drawBiomes) {
-      ensureBiomeLayer(app, s);
-      if (biomeLandLayer != null) {
-        app.pushStyle();
-        app.pushMatrix();
-        app.resetMatrix();
-        float landAlpha = constrain(s.biomeFillAlpha01, 0, 1);
-        if (landAlpha > 1e-4f) {
-          app.tint(255, landAlpha * 255);
-          app.image(biomeLandLayer, 0, 0);
-        }
-        float waterAlpha = constrain(s.biomeUnderwaterAlpha01, 0, 1);
-        if (waterAlpha > 1e-4f && biomeWaterLayer != null) {
-          app.tint(255, waterAlpha * 255);
-          app.image(biomeWaterLayer, 0, 0);
-        }
-        app.popMatrix();
-        app.popStyle();
-      }
-    } else {
-      biomeLandLayer = null;
-      biomeWaterLayer = null;
+    // Biome fills/lines are already rendered in drawRenderAdvanced; avoid re-blending above contours.
+    ensureZoneLayer(app, s);
+    if (zoneLayer != null) {
+      app.pushStyle();
+      app.pushMatrix();
+      app.resetMatrix();
+      app.tint(255, constrain(s.zoneStrokeAlpha01, 0, 1) * 255);
+      app.image(zoneLayer, 0, 0);
+      app.popMatrix();
+      app.popStyle();
     }
   }
 

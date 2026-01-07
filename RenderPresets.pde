@@ -134,7 +134,9 @@ RenderPreset[] buildDefaultRenderPresets() {
     s.elevationLightAlpha01 = 0.6f;
     s.elevationLightAzimuthDeg = 200.0f;
     s.elevationLightAltitudeDeg = 60.0f;
-    s.elevationLightDitherPx = 0.0f;
+    s.elevationLightDitherPx = 3.0f;
+    s.elevationLightDitherScaleWithZoom = true;
+    s.elevationLightDitherRefZoom = DEFAULT_VIEW_ZOOM;
     // Contours
     s.waterContourSizePx = 5.0f;
     s.waterRippleCount = 0;

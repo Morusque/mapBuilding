@@ -7,6 +7,7 @@ class ExportLayout {
   IntRect pngBtn;
   IntRect svgBtn;
   IntRect geoJsonBtn;
+  int exportScaleLabelY;
   IntRect setResolutionBtn;
   IntRect mapExportBtn;
   IntRect mapImportBtn;
@@ -26,6 +27,9 @@ ExportLayout buildExportLayout() {
 
   l.geoJsonBtn = new IntRect(l.panel.x + PANEL_PADDING, curY, 140, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_ROW_GAP;
+
+  l.exportScaleLabelY = curY;
+  curY += PANEL_LABEL_H + PANEL_ROW_GAP;
 
   l.setResolutionBtn = new IntRect(l.panel.x + PANEL_PADDING, curY, 220, PANEL_BUTTON_H);
   curY += PANEL_BUTTON_H + PANEL_SECTION_GAP;
@@ -79,8 +83,8 @@ void drawExportPanel() {
   text("Set resolution from zoom", layout.setResolutionBtn.x + layout.setResolutionBtn.w / 2, layout.setResolutionBtn.y + layout.setResolutionBtn.h / 2);
   registerUiTooltip(layout.setResolutionBtn, tooltipFor("export_scale"));
   fill(0);
-  textAlign(LEFT, BOTTOM);
-  text("Current export scale: x" + nf(exportScale, 1, 2), layout.panel.x + PANEL_PADDING, layout.setResolutionBtn.y - 6);
+  textAlign(LEFT, TOP);
+  text("Current export scale: x" + nf(exportScale, 1, 2), labelX, layout.exportScaleLabelY);
 
   fill(60);
   textAlign(LEFT, TOP);

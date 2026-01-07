@@ -172,6 +172,8 @@ void markRenderDirty() {
     mapModel.renderer.invalidateZoneCache();
     mapModel.renderer.invalidateLightCache();
     mapModel.renderer.invalidateCellBorderLayer();
+    mapModel.renderer.invalidateElevationLineLayer();
+    mapModel.renderer.invalidateWaterDetailLayer();
   }
 }
 
@@ -549,6 +551,7 @@ void applyRenderPreset(int idx) {
   syncLegacyWaterContourAlpha(renderSettings);
   // Keep legacy padding in sync until full migration
   renderPaddingPct = renderSettings.exportPaddingPct;
+  markRenderDirty();
 }
 
 void applyBiomeGeneration() {
